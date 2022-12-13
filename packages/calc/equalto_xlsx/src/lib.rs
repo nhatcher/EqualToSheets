@@ -1305,7 +1305,7 @@ fn parse_reference(s: &str) -> CellReferenceRC {
 // Public methods
 
 /// Imports a file from disk into an internal representation
-pub fn load_from_excel(file_name: &str, locale: &str, tz: &str, wb_type: WorkbookType) -> Workbook {
+pub fn load_from_excel(file_name: &str, locale: &str, tz: &str) -> Workbook {
     let file_path = std::path::Path::new(file_name);
     let file = fs::File::open(file_path).unwrap();
     let reader = BufReader::new(file);
@@ -1329,7 +1329,6 @@ pub fn load_from_excel(file_name: &str, locale: &str, tz: &str, wb_type: Workboo
             tz: tz.to_string(),
             locale: locale.to_string(),
         },
-        wb_type,
     }
 }
 

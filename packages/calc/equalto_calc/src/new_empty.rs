@@ -12,7 +12,7 @@ use crate::{
     language::get_language,
     locale::get_locale,
     model::{Environment, Model},
-    types::{Workbook, WorkbookSettings, WorkbookType, Worksheet},
+    types::{Workbook, WorkbookSettings, Worksheet},
 };
 
 /// You can use all alphanumeric characters but not the following special characters:
@@ -290,7 +290,6 @@ impl Model {
         name: &str,
         locale_id: &str,
         timezone: &str,
-        wb_type: WorkbookType,
         env: Environment,
     ) -> Result<Model, String> {
         let tz: Tz = match &timezone.parse() {
@@ -312,7 +311,6 @@ impl Model {
                 tz: timezone.to_string(),
                 locale: locale_id.to_string(),
             },
-            wb_type,
         };
         let parsed_formulas = Vec::new();
         let worksheets = &workbook.worksheets;

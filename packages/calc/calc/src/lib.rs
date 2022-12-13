@@ -11,7 +11,6 @@ use equalto_calc::{
     },
     model::{ExcelValue, Model, Style},
     number_format,
-    types::WorkbookType,
 };
 
 use equalto_calc::model::Environment;
@@ -187,18 +186,11 @@ impl JSModel {
         JSModel { model }
     }
 
-    pub fn new_empty(name: &str, locale: &str, timezone: &str, wb_type: &str) -> JSModel {
+    pub fn new_empty(name: &str, locale: &str, timezone: &str) -> JSModel {
         let env = Environment {
             get_milliseconds_since_epoch,
         };
-        let wb_type = match wb_type {
-            "Standard" => WorkbookType::Standard,
-            "EqualToPlanCalculation" => WorkbookType::EqualToPlanCalculation,
-            "EqualToPlanAnalysis" => WorkbookType::EqualToPlanAnalysis,
-            "EqualToPayoutProfile" => WorkbookType::EqualToPayoutProfile,
-            _ => panic!("Invalid workbook type"),
-        };
-        let model = Model::new_empty(name, locale, timezone, wb_type, env).unwrap();
+        let model = Model::new_empty(name, locale, timezone, env).unwrap();
         JSModel { model }
     }
 
@@ -348,13 +340,6 @@ impl JSModel {
     pub fn get_tabs(&self) -> String {
         // FIXME: This should not return a string but an object
         self.model.get_tabs()
-    }
-
-    pub fn add_equalto_read_only_styles(&mut self) -> JsResult {
-        match self.model.add_equalto_read_only_styles() {
-            Ok(()) => JsResult::get_success(),
-            Err(message) => JsResult::get_error(&message),
-        }
     }
 
     pub fn create_named_style(&mut self, style_name: &str, style_js: &JsValue) -> JsResult {

@@ -1,9 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::{
-    model::{Environment, Model},
-    types::WorkbookType,
-};
+use crate::model::{Environment, Model};
 
 // 8 November 2022 12:13 Berlin time
 pub fn mock_get_milliseconds_since_epoch() -> i64 {
@@ -14,7 +11,6 @@ pub fn new_empty_model() -> Model {
         "model",
         "en",
         "Europe/Berlin",
-        WorkbookType::Standard,
         Environment {
             get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
         },

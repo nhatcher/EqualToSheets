@@ -131,7 +131,7 @@ pub fn test_file(file_path: &str) -> Result<(), String> {
     let env = Environment {
         get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
     };
-    let model = load_from_excel(file_path, "en", "UTC", WorkbookType::Standard);
+    let model = load_from_excel(file_path, "en", "UTC");
     let s1 = serde_json::to_string(&model).unwrap();
     let m1 = match Model::from_json(&s1, env.clone()) {
         Ok(model1) => model1,

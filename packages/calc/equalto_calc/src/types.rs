@@ -47,20 +47,13 @@ pub struct Tab {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
-pub enum WorkbookType {
-    Standard,
-    EqualToPlanCalculation,
-    EqualToPlanAnalysis,
-    EqualToPayoutProfile,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct WorkbookSettings {
     pub tz: String,
     pub locale: String,
 }
 /// An internal representation of an EqualTo Workbook
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct Workbook {
     pub shared_strings: Vec<String>,
     pub defined_names: Vec<DefinedName>,
@@ -68,8 +61,6 @@ pub struct Workbook {
     pub styles: Styles,
     pub name: String,
     pub settings: WorkbookSettings,
-    #[serde(rename = "type")]
-    pub wb_type: WorkbookType,
 }
 
 /// A defined name. The `sheet_id` is the sheet index in case the name is local

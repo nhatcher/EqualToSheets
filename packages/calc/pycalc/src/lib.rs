@@ -3,7 +3,6 @@ use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
 use equalto_calc::{
     expressions::lexer::util::get_tokens as tokenizer,
     model::{Environment, Model},
-    types::WorkbookType,
 };
 use equalto_xlsx::compare::compare;
 use equalto_xlsx::load_from_excel;
@@ -432,13 +431,6 @@ impl PyModel {
         }
     }
 
-    pub fn add_equalto_read_only_styles(&mut self) -> PyResult<()> {
-        match self.model.add_equalto_read_only_styles() {
-            Ok(()) => Ok(()),
-            Err(s) => Err(PyValueError::new_err(s)),
-        }
-    }
-
     pub fn set_sheet_color(&mut self, sheet: i32, color: &str) -> PyResult<()> {
         match self.model.set_sheet_color(sheet, color) {
             Ok(_) => Ok(()),
@@ -461,36 +453,22 @@ pub fn loads(data: String) -> PyModel {
 }
 
 #[pyfunction]
-pub fn load_excel(file_path: &str, locale: &str, tz: &str, wb_type: &str) -> PyModel {
+pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyModel {
     let env = Environment {
         get_milliseconds_since_epoch,
     };
-    let wb_type = match wb_type {
-        "Standard" => WorkbookType::Standard,
-        "EqualToPlanCalculation" => WorkbookType::EqualToPlanCalculation,
-        "EqualToPlanAnalysis" => WorkbookType::EqualToPlanAnalysis,
-        "EqualToPayoutProfile" => WorkbookType::EqualToPayoutProfile,
-        _ => panic!("Invalid workbook type"),
-    };
-    let model = load_from_excel(file_path, locale, tz, wb_type);
+    let model = load_from_excel(file_path, locale, tz);
     let s = serde_json::to_string(&model).unwrap();
     let model = Model::from_json(&s, env).unwrap();
     PyModel { model }
 }
 
 #[pyfunction]
-pub fn create(name: &str, locale: &str, tz: &str, wb_type: &str) -> PyModel {
+pub fn create(name: &str, locale: &str, tz: &str) -> PyModel {
     let env = Environment {
         get_milliseconds_since_epoch,
     };
-    let wb_type = match wb_type {
-        "Standard" => WorkbookType::Standard,
-        "EqualToPlanCalculation" => WorkbookType::EqualToPlanCalculation,
-        "EqualToPlanAnalysis" => WorkbookType::EqualToPlanAnalysis,
-        "EqualToPayoutProfile" => WorkbookType::EqualToPayoutProfile,
-        _ => panic!("Invalid workbook type"),
-    };
-    let model = Model::new_empty(name, locale, tz, wb_type, env).unwrap();
+    let model = Model::new_empty(name, locale, tz, env).unwrap();
     PyModel { model }
 }
 

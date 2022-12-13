@@ -239,17 +239,6 @@ impl Model {
         column_ref: i32,
         row_ref: i32,
     ) -> CalcResult {
-        if !self.is_today_available() {
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "TODAY is not available in this workbook type".to_string(),
-            };
-        }
         let args_count = args.len();
         if args_count != 0 {
             return CalcResult::Error {

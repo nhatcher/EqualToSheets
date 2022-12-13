@@ -1,6 +1,6 @@
 use std::{fs, io};
 
-use equalto_calc::types::{Workbook, WorkbookType};
+use equalto_calc::types::Workbook;
 use equalto_xlsx::compare::test_file;
 use equalto_xlsx::load_from_excel;
 
@@ -9,12 +9,7 @@ use equalto_xlsx::load_from_excel;
 
 #[test]
 fn test_example() {
-    let model = load_from_excel(
-        "tests/example.xlsx",
-        "en",
-        "Europe/Berlin",
-        WorkbookType::Standard,
-    );
+    let model = load_from_excel("tests/example.xlsx", "en", "Europe/Berlin");
     assert_eq!(model.worksheets[0].frozen_rows, 0);
     assert_eq!(model.worksheets[0].frozen_columns, 0);
     let contents =
@@ -26,12 +21,7 @@ fn test_example() {
 #[test]
 fn test_freeze() {
     // freeze has 3 frozen columns and 2 frozen rows
-    let model = load_from_excel(
-        "tests/freeze.xlsx",
-        "en",
-        "Europe/Berlin",
-        WorkbookType::Standard,
-    );
+    let model = load_from_excel("tests/freeze.xlsx", "en", "Europe/Berlin");
     assert_eq!(model.worksheets[0].frozen_rows, 2);
     assert_eq!(model.worksheets[0].frozen_columns, 3);
 }
@@ -39,12 +29,7 @@ fn test_freeze() {
 #[test]
 fn test_split() {
     // We test that a workbook with split panes do not produce frozen rows and columns
-    let model = load_from_excel(
-        "tests/split.xlsx",
-        "en",
-        "Europe/Berlin",
-        WorkbookType::Standard,
-    );
+    let model = load_from_excel("tests/split.xlsx", "en", "Europe/Berlin");
     assert_eq!(model.worksheets[0].frozen_rows, 0);
     assert_eq!(model.worksheets[0].frozen_columns, 0);
 }

@@ -1,7 +1,6 @@
 #![deny(clippy::unwrap_used)]
 pub mod calc_result;
 pub mod cell;
-pub mod equalto;
 pub mod expressions;
 pub mod formatter;
 pub mod language;

@@ -1993,12 +1993,15 @@ impl Model {
         }
     }
 
-    pub(crate) fn is_today_available(&self) -> bool {
-        match self.workbook.wb_type {
-            WorkbookType::Standard => true,
-            WorkbookType::EqualToPlanAnalysis => true,
-            WorkbookType::EqualToPlanCalculation => false,
-            WorkbookType::EqualToPayoutProfile => false,
-        }
+    /// Removes all data on a sheet, including the cell styles
+    pub fn remove_sheet_data(&mut self, sheet_index: i32) -> Result<(), String> {
+        let worksheet = match self.workbook.worksheets.get_mut(sheet_index as usize) {
+            Some(s) => s,
+            None => return Err("Wrong worksheet index".to_string()),
+        };
+
+        // Remove all data
+        worksheet.sheet_data = HashMap::new();
+        Ok(())
     }
 }
