@@ -1,0 +1,353 @@
+use std::fmt;
+
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
+
+use crate::language::Language;
+
+use super::{lexer::LexerError, types::ParsedReference};
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub enum OpCompare {
+    LessThan,
+    GreaterThan,
+    Equal,
+    LessOrEqualThan,
+    GreaterOrEqualThan,
+    NonEqual,
+}
+
+impl fmt::Display for OpCompare {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OpCompare::LessThan => write!(fmt, "<"),
+            OpCompare::GreaterThan => write!(fmt, ">"),
+            OpCompare::Equal => write!(fmt, "="),
+            OpCompare::LessOrEqualThan => write!(fmt, "<="),
+            OpCompare::GreaterOrEqualThan => write!(fmt, ">="),
+            OpCompare::NonEqual => write!(fmt, "<>"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub enum OpUnary {
+    Minus,
+    Percentage,
+}
+
+impl fmt::Display for OpUnary {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OpUnary::Minus => write!(fmt, "-"),
+            OpUnary::Percentage => write!(fmt, "%"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub enum OpSum {
+    Add,
+    Minus,
+}
+
+impl fmt::Display for OpSum {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OpSum::Add => write!(fmt, "+"),
+            OpSum::Minus => write!(fmt, "-"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub enum OpProduct {
+    Times,
+    Divide,
+}
+
+impl fmt::Display for OpProduct {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OpProduct::Times => write!(fmt, "*"),
+            OpProduct::Divide => write!(fmt, "/"),
+        }
+    }
+}
+
+/// List of `errors`
+/// Note that "#ERROR!" and "#N/IMPL!" are not part of the xlsx standard
+///  * "#ERROR!" means there was an error processing the formula (for instance "=A1+")
+///  * "#N/IMPL!" means the formula or feature in Excel but has not been implemented in EqualTo
+/// Note that they are serialized/deserialized by index
+#[derive(Serialize_repr, Deserialize_repr, Debug, PartialEq, Eq, Clone)]
+#[repr(u8)]
+pub enum Error {
+    REF,
+    NAME,
+    VALUE,
+    DIV,
+    NA,
+    NUM,
+    ERROR,
+    NIMPL,
+    SPILL,
+    CALC,
+    CIRC,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::REF => write!(fmt, "#REF!"),
+            Error::NAME => write!(fmt, "#NAME?"),
+            Error::VALUE => write!(fmt, "#VALUE!"),
+            Error::DIV => write!(fmt, "#DIV/0!"),
+            Error::NA => write!(fmt, "#N/A"),
+            Error::NUM => write!(fmt, "#NUM!"),
+            Error::ERROR => write!(fmt, "#ERROR!"),
+            Error::NIMPL => write!(fmt, "#N/IMPL"),
+            Error::SPILL => write!(fmt, "#SPILL!"),
+            Error::CALC => write!(fmt, "#CALC!"),
+            Error::CIRC => write!(fmt, "#CIRC!"),
+        }
+    }
+}
+impl Error {
+    pub fn to_localized_error_string(&self, language: &Language) -> String {
+        match self {
+            Error::REF => language.errors.ref_value.to_string(),
+            Error::NAME => language.errors.name.to_string(),
+            Error::VALUE => language.errors.value.to_string(),
+            Error::DIV => language.errors.div.to_string(),
+            Error::NA => language.errors.na.to_string(),
+            Error::NUM => language.errors.num.to_string(),
+            Error::ERROR => language.errors.error.to_string(),
+            Error::NIMPL => language.errors.nimpl.to_string(),
+            Error::SPILL => language.errors.spill.to_string(),
+            Error::CALC => language.errors.calc.to_string(),
+            Error::CIRC => language.errors.circ.to_string(),
+        }
+    }
+}
+
+pub fn get_error_by_name(name: &str, language: &Language) -> Option<Error> {
+    let errors = &language.errors;
+    if name == errors.ref_value {
+        return Some(Error::REF);
+    } else if name == errors.name {
+        return Some(Error::NAME);
+    } else if name == errors.value {
+        return Some(Error::VALUE);
+    } else if name == errors.div {
+        return Some(Error::DIV);
+    } else if name == errors.na {
+        return Some(Error::NA);
+    } else if name == errors.num {
+        return Some(Error::NUM);
+    } else if name == errors.error {
+        return Some(Error::ERROR);
+    } else if name == errors.nimpl {
+        return Some(Error::NIMPL);
+    } else if name == errors.spill {
+        return Some(Error::SPILL);
+    } else if name == errors.calc {
+        return Some(Error::CALC);
+    } else if name == errors.circ {
+        return Some(Error::CIRC);
+    }
+    None
+}
+
+pub fn get_error_by_english_name(name: &str) -> Option<Error> {
+    if name == "#REF!" {
+        return Some(Error::REF);
+    } else if name == "#NAME?" {
+        return Some(Error::NAME);
+    } else if name == "#VALUE!" {
+        return Some(Error::VALUE);
+    } else if name == "#DIV/0!" {
+        return Some(Error::DIV);
+    } else if name == "#N/A" {
+        return Some(Error::NA);
+    } else if name == "#NUM!" {
+        return Some(Error::NUM);
+    } else if name == "#ERROR!" {
+        return Some(Error::ERROR);
+    } else if name == "#N/IMPL!" {
+        return Some(Error::NIMPL);
+    } else if name == "#SPILL!" {
+        return Some(Error::SPILL);
+    } else if name == "#CALC!" {
+        return Some(Error::CALC);
+    } else if name == "#CIRC!" {
+        return Some(Error::CIRC);
+    }
+    None
+}
+
+pub fn is_english_error_string(name: &str) -> bool {
+    let names = vec![
+        "#REF!", "#NAME?", "#VALUE!", "#DIV/0!", "#N/A", "#NUM!", "#ERROR!", "#N/IMPL!", "#SPILL!",
+        "#CALC!", "#CIRC!",
+    ];
+    names.iter().any(|e| *e == name)
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub enum TokenType {
+    ILLEGAL(LexerError),
+    EOF,
+    IDENT(String),      // abc123
+    STRING(String),     // "A season"
+    NUMBER(f64),        // 123.4
+    BOOLEAN(bool),      // TRUE | FALSE
+    ERROR(Error),       // #VALUE!
+    COMPARE(OpCompare), // <,>, ...
+    SUM(OpSum),         // +,-
+    PRODUCT(OpProduct), // *,/
+    POWER,              // ^
+    LPAREN,             // (
+    RPAREN,             // )
+    COLON,              // :
+    SEMICOLON,          // ;
+    LBRACKET,           // [
+    RBRACKET,           // ]
+    LBRACE,             // {
+    RBRACE,             // }
+    COMMA,              // ,
+    BANG,               // !
+    PERCENT,            // %
+    AND,                // &
+    REFERENCE {
+        sheet: Option<String>,
+        row: i32,
+        column: i32,
+        absolute_column: bool,
+        absolute_row: bool,
+    },
+    RANGE {
+        sheet: Option<String>,
+        left: ParsedReference,
+        right: ParsedReference,
+    },
+}
+
+impl fmt::Display for TokenType {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        use self::TokenType::*;
+        match self {
+            ILLEGAL(_) => write!(fmt, "Illegal"),
+            EOF => write!(fmt, ""),
+            IDENT(value) => write!(fmt, "{}", value),
+            STRING(value) => write!(fmt, "\"{}\"", value),
+            NUMBER(value) => write!(fmt, "{}", value),
+            BOOLEAN(value) => write!(fmt, "{}", value),
+            ERROR(value) => write!(fmt, "{}", value),
+            COMPARE(value) => write!(fmt, "{}", value),
+            SUM(value) => write!(fmt, "{}", value),
+            PRODUCT(value) => write!(fmt, "{}", value),
+            POWER => write!(fmt, "^"),
+            LPAREN => write!(fmt, "("),
+            RPAREN => write!(fmt, ")"),
+            COLON => write!(fmt, ":"),
+            SEMICOLON => write!(fmt, ";"),
+            LBRACKET => write!(fmt, "["),
+            RBRACKET => write!(fmt, "]"),
+            LBRACE => write!(fmt, "{{"),
+            RBRACE => write!(fmt, "}}"),
+            COMMA => write!(fmt, ","),
+            BANG => write!(fmt, "!"),
+            PERCENT => write!(fmt, "%"),
+            AND => write!(fmt, "&"),
+            REFERENCE {
+                sheet,
+                row,
+                column,
+                absolute_column,
+                absolute_row,
+            } => {
+                let row_data = if *absolute_row {
+                    format!("{}", row)
+                } else {
+                    format!("${}", row)
+                };
+                let column_data = if *absolute_column {
+                    format!("{}", column)
+                } else {
+                    format!("${}", column)
+                };
+                match sheet {
+                    Some(name) => write!(fmt, "{}!{}{}", name, column_data, row_data),
+                    None => write!(fmt, "{}{}", column, row),
+                }
+            }
+            RANGE { sheet, left, right } => {
+                let row_left_data = if left.absolute_row {
+                    format!("{}", left.row)
+                } else {
+                    format!("${}", left.row)
+                };
+                let column_left_data = if left.absolute_column {
+                    format!("{}", left.column)
+                } else {
+                    format!("${}", left.column)
+                };
+
+                let row_right_data = if right.absolute_row {
+                    format!("{}", right.row)
+                } else {
+                    format!("${}", right.row)
+                };
+                let column_right_data = if right.absolute_column {
+                    format!("{}", right.column)
+                } else {
+                    format!("${}", right.column)
+                };
+                match sheet {
+                    Some(name) => write!(
+                        fmt,
+                        "{}!{}{}:{}{}",
+                        name, column_left_data, row_left_data, column_right_data, row_right_data
+                    ),
+                    None => write!(
+                        fmt,
+                        "{}{}:{}{}",
+                        left.column, left.row, right.column, right.row
+                    ),
+                }
+            }
+        }
+    }
+}
+
+pub fn index(token: &TokenType) -> u32 {
+    use self::TokenType::*;
+    match token {
+        ILLEGAL(..) => 1,
+        EOF => 2,
+        IDENT(..) => 3,
+        STRING(..) => 4,
+        NUMBER(..) => 6,
+        BOOLEAN(..) => 7,
+        ERROR(..) => 8,
+        SUM(..) => 9,
+        PRODUCT(..) => 10,
+        POWER => 14,
+        LPAREN => 15,
+        RPAREN => 16,
+        COLON => 17,
+        SEMICOLON => 18,
+        LBRACKET => 19,
+        RBRACKET => 20,
+        LBRACE => 21,
+        RBRACE => 22,
+        COMMA => 23,
+        BANG => 24,
+        PERCENT => 30,
+        AND => 31,
+        REFERENCE { .. } => 34,
+        RANGE { .. } => 35,
+        COMPARE(..) => 37,
+    }
+}

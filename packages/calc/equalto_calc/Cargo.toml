@@ -1,0 +1,18 @@
+[package]
+name = "equalto_calc"
+version = "0.1.0"
+authors = ["Nicolás Hatcher <nicolas.hatcher@equalto.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_repr = "0.1"
+ryu = "1.0"
+chrono = "0.4"
+chrono-tz = "0.7.0"
+regex = "1.0"
+lazy_static = "1.4.0"
+

@@ -1,0 +1,15 @@
+[workspace]
+
+members = [
+  "calc",
+  "equalto_calc",
+  "equalto_xlsx",
+  "pycalc",
+]
+
+exclude = [
+  "generate_locale",
+]
+
+[profile.release]
+lto = true

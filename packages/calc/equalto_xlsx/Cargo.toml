@@ -1,0 +1,22 @@
+[package]
+name = "equalto_xlsx"
+version = "0.1.0"
+authors = ["Nicolás Hatcher <nicolas.hatcher@equalto.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zip = "0.5"
+roxmltree = "0.13.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+equalto_calc = { path = "../equalto_calc" }
+
+[lib]
+name = "equalto_xlsx"
+path = "src/lib.rs"
+
+[[bin]]
+name = "test"
+path = "src/bin/test.rs"
