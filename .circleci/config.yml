@@ -1,0 +1,57 @@
+version: 2.1
+orbs:
+  docker: circleci/docker@1.0.0
+workflows:
+  test-build-deploy:
+    jobs:
+      - build-and-test-calc:
+          context:
+            - docker-hub-creds
+
+jobs:
+  build-and-test-calc:
+    docker:
+      - image: equaltodev/rust:1.65.0-1
+        auth:
+          username: $DOCKER_HUB_ID
+          password: $DOCKER_HUB_PASSWORD
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Create rust checksum file
+          command: |
+            # We would like to cache the rust builds based on when the rust stuff was last changed.
+            # It would have been straightforward to cache based on the (git) tree object, BUT -
+            # CircleCI does not allow specifying arbitrary environment variables or command output
+            # in the cache key template.
+            # To get around that, we stuff the tree id in a file and use its checksum as pat of the
+            # cache key.
+            CALC_TREE_ID=$(git rev-parse HEAD:packages/calc)
+            CI_CONFIG_ID="$(git rev-parse HEAD:.circleci/config.yml)"
+            echo "${CALC_TREE_ID}/${CI_CONFIG_ID}" > rust-build-and-test-cache-key.txt
+      - restore_cache:
+          keys:
+            - rust-build-and-test-v0.1-{{ checksum "rust-build-and-test-cache-key.txt" }}
+      - run:
+          name: Build EqualTo Calc module
+          command: |
+            # skip build if the artifacts exist in cache
+            if [[ -d rust_cache/build ]]; then
+              mkdir -p packages/calc/build/www/pkg packages/calc/build/www/pkg_node packages/calc/build/bin packages/calc/build/pkg
+              cp -rv rust_cache/build/* packages/calc/build/
+            else
+              cd packages/calc
+              make server tests web lint
+              # save to cache paths
+              mkdir -p ../../rust_cache/build
+              cp -rv build/* ../../rust_cache/build/
+            fi
+      - save_cache:
+          key: rust-build-and-test-v0.1-{{ checksum "rust-build-and-test-cache-key.txt" }}
+          paths:
+            - rust_cache
+      - persist_to_workspace:
+          root: ~/repo/packages/
+          paths:
+            - calc/build
