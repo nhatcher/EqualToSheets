@@ -1,0 +1,19 @@
+name: PRs reviews reminder
+
+on:
+  schedule:
+    # At 9:00 UTC every day
+    - cron: "0 9 * * 1-5"
+
+jobs:
+  pr-reviews-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: davideviolante/pr-reviews-reminder-action@v1.5.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          webhook-url: "https://hooks.slack.com/services/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"
+          provider: "slack"
+          channel: "#dev"
+          github-provider-map: "DiarmuidGlynn:U01JEBAQRLJ,sienkiewiczkm:U01JTEQTT4Z,Manu-Gimenez:U01LH0RB6NR,Mateusz-Kopec:U01JLUW836G,NicolasHatcher:U01JH626FK4,TomaszLaskowski:U01JM08MLH2"
