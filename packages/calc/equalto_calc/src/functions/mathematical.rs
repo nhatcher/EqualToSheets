@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use crate::{
     calc_result::{CalcResult, CellReference},
     expressions::parser::Node,
@@ -70,7 +72,7 @@ impl Model {
                 }
             };
         }
-        if result.is_nan() {
+        if result.is_nan() || result.is_infinite() {
             return CalcResult::Number(0.0);
         }
         CalcResult::Number(result)
@@ -137,7 +139,7 @@ impl Model {
                 }
             };
         }
-        if result.is_nan() {
+        if result.is_nan() || result.is_infinite() {
             return CalcResult::Number(0.0);
         }
         CalcResult::Number(result)
@@ -381,5 +383,413 @@ impl Model {
         } else {
             CalcResult::Number((value * scale).ceil() / scale)
         }
+    }
+
+    pub(crate) fn fn_sin(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.sin();
+        CalcResult::Number(result)
+    }
+    pub(crate) fn fn_cos(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.cos();
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_tan(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.tan();
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_sinh(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.sinh();
+        CalcResult::Number(result)
+    }
+    pub(crate) fn fn_cosh(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.cosh();
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_tanh(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.tanh();
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_asin(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.asin();
+        if result.is_nan() || result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Invalid argument for ASIN".to_string(),
+            };
+        }
+        CalcResult::Number(result)
+    }
+    pub(crate) fn fn_acos(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.acos();
+        if result.is_nan() || result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Invalid argument for COS".to_string(),
+            };
+        }
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_atan(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.atan();
+        if result.is_nan() || result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Invalid argument for ATAN".to_string(),
+            };
+        }
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_asinh(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.asinh();
+        if result.is_nan() || result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Invalid argument for ASINH".to_string(),
+            };
+        }
+        CalcResult::Number(result)
+    }
+    pub(crate) fn fn_acosh(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.acosh();
+        if result.is_nan() || result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Invalid argument for ACOSH".to_string(),
+            };
+        }
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_atanh(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        let value = match self.get_number(&args[0], sheet, column_ref, row_ref) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let result = value.atanh();
+        if result.is_nan() || result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Invalid argument for ATANH".to_string(),
+            };
+        }
+        CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_pi(
+        &mut self,
+        args: &[Node],
+        sheet: i32,
+        column_ref: i32,
+        row_ref: i32,
+    ) -> CalcResult {
+        if !args.is_empty() {
+            // Incorrect number of arguments
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: CellReference {
+                    sheet,
+                    row: row_ref,
+                    column: column_ref,
+                },
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        CalcResult::Number(PI)
     }
 }

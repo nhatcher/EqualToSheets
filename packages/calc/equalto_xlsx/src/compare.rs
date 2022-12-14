@@ -52,7 +52,7 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
                 Cell::CellFormulaNumber { v: value1, .. },
                 Cell::CellFormulaNumber { v: value2, .. },
             ) => {
-                if (to_precision(*value1, 15) - to_precision(*value2, 15)).abs() > f64::EPSILON {
+                if (to_precision(*value1, 14) - to_precision(*value2, 14)).abs() > f64::EPSILON {
                     diffs.push(Diff {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,

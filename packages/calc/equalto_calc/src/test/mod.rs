@@ -22,6 +22,7 @@ mod test_quote_prefix;
 mod test_sheets;
 mod test_styles;
 mod test_today;
+mod test_trigonometric;
 mod util;
 
 mod test_number_format;

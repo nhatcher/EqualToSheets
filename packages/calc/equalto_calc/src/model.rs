@@ -405,6 +405,24 @@ impl Model {
                 "TRUE" => CalcResult::Boolean(true),
                 "XOR" => self.fn_xor(args, sheet, column_ref, row_ref),
                 // Math and trigonometry
+                "SIN" => self.fn_sin(args, sheet, column_ref, row_ref),
+                "COS" => self.fn_cos(args, sheet, column_ref, row_ref),
+                "TAN" => self.fn_tan(args, sheet, column_ref, row_ref),
+
+                "ASIN" => self.fn_asin(args, sheet, column_ref, row_ref),
+                "ACOS" => self.fn_acos(args, sheet, column_ref, row_ref),
+                "ATAN" => self.fn_atan(args, sheet, column_ref, row_ref),
+
+                "SINH" => self.fn_sinh(args, sheet, column_ref, row_ref),
+                "COSH" => self.fn_cosh(args, sheet, column_ref, row_ref),
+                "TANH" => self.fn_tanh(args, sheet, column_ref, row_ref),
+
+                "ASINH" => self.fn_asinh(args, sheet, column_ref, row_ref),
+                "ACOSH" => self.fn_acosh(args, sheet, column_ref, row_ref),
+                "ATANH" => self.fn_atanh(args, sheet, column_ref, row_ref),
+
+                "PI" => self.fn_pi(args, sheet, column_ref, row_ref),
+
                 "MAX" => self.fn_max(args, sheet, column_ref, row_ref),
                 "MIN" => self.fn_min(args, sheet, column_ref, row_ref),
                 "ROUND" => self.fn_round(args, sheet, column_ref, row_ref),
@@ -474,7 +492,7 @@ impl Model {
                     sheet,
                     row_ref,
                     column_ref,
-                    "Invalid function".to_string(),
+                    format!("Invalid function: {}", name),
                 ),
             },
             ArrayKind(_) => {
