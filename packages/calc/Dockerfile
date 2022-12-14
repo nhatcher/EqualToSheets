@@ -1,4 +1,5 @@
-FROM equaltodev/rust:1.65.0-1
+FROM equaltodev/rust:1.65.0-2
+# FROM equaltodev/rust-arm:1.65.0-2 - to run on ARM
 
 # To build/test cross arch, add a `--platform` arg to the FROM line above.
 # For example, to build/test arm64 (M1 macs), the above should say:

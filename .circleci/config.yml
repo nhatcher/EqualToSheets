@@ -11,7 +11,7 @@ workflows:
 jobs:
   build-and-test-calc:
     docker:
-      - image: equaltodev/rust:1.65.0-1
+      - image: equaltodev/rust:1.65.0-2
         auth:
           username: $DOCKER_HUB_ID
           password: $DOCKER_HUB_PASSWORD
@@ -42,7 +42,7 @@ jobs:
               cp -rv rust_cache/build/* packages/calc/build/
             else
               cd packages/calc
-              make server tests web lint
+              make tests web server
               # save to cache paths
               mkdir -p ../../rust_cache/build
               cp -rv build/* ../../rust_cache/build/
@@ -55,3 +55,5 @@ jobs:
           root: ~/repo/packages/
           paths:
             - calc/build
+      - store_artifacts:
+          path: ~/repo/packages/calc/target/llvm-cov

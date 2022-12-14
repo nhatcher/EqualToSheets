@@ -1,6 +1,6 @@
 # Rust base image with clippy, rustfmt and wasm-pack
 
-# Must be build using this command from the cal directory - (note the '.' build context):
+# Must be build using this command from the calc directory - (note the '.' build context):
 # docker buildx build --platform linux/arm64,linux/amd64  -f rust.dockerfile . -t equaltodev/rust:{rust-version}-{image-version} --push
 
 FROM rust:1.65.0-slim
@@ -18,12 +18,13 @@ RUN apt update \
   && apt -y --no-install-recommends upgrade \
   && apt install --no-install-recommends -y curl make python3-dev git binaryen pkg-config libssl-dev \
   && rm -rf /var/cache/apt/archives/*.deb \
-  && rustup component add clippy rustfmt \
+  && rustup component add clippy rustfmt llvm-tools-preview \
   && rustup target add wasm32-unknown-unknown \
   && ./install-wasm  || ( \
-      cargo install wasm-pack --version 0.10.3 --locked \
-    ) \
+  cargo install wasm-pack --version 0.10.3 --locked \
+  ) \
   && cargo install wasm-bindgen-cli --version 0.2.83 --locked \
+  && cargo install cargo-llvm-cov  --version  0.5.2 --locked \
   && make fetch \
   && chmod -R a+rwX /usr/local/cargo/registry
 

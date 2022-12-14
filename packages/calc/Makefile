@@ -1,5 +1,4 @@
 BUILD = cargo build --release --locked
-COVERAGE = cargo tarpaulin -v
 
 modules = equalto_calc equalto_xlsx calc
 
@@ -64,22 +63,18 @@ lint:
 format:
 	cargo fmt
 
-cargo-tests:
-	cargo test --no-default-features
+coverage:
+	cargo llvm-cov --no-default-features --html
 
 excel-tests:
 	cargo test -p equalto_xlsx
 
-tests: cargo-tests excel-tests lint
+tests: lint coverage
 
 docs:
 	cargo doc --no-deps
 
-coverage:
-	cd equalto_calc && $(COVERAGE)
-	cd equalto_xlsx && $(COVERAGE)
-
 fetch:
 	cargo fetch
 
-.PHONY: lint format cargo-tests docs coverage all
+.PHONY: clean lint format coverage tests docs fetch all
