@@ -26,6 +26,3 @@ mod workbook;
 
 #[cfg(test)]
 mod test;
-
-#[macro_use]
-extern crate lazy_static;

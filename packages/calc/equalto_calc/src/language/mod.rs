@@ -1,3 +1,4 @@
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
@@ -32,10 +33,10 @@ pub struct Language {
     pub errors: Errors,
 }
 
-lazy_static! {
-    static ref LANGUAGES: HashMap<String, Language> =
-        serde_json::from_str(include_str!("language.json")).expect("Failed parsing language file");
-}
+static LANGUAGES: Lazy<HashMap<String, Language>> = Lazy::new(|| {
+    serde_json::from_str(include_str!("language.json")).expect("Failed parsing language file")
+});
+
 pub fn get_language(id: &str) -> Result<&Language, String> {
     let language = LANGUAGES
         .get(id)

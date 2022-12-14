@@ -1,3 +1,4 @@
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
@@ -49,10 +50,9 @@ pub struct DecimalFormats {
     pub standard: String,
 }
 
-lazy_static! {
-    static ref LOCALES: HashMap<String, Locale> =
-        serde_json::from_str(include_str!("locales.json")).expect("Failed parsing locale");
-}
+static LOCALES: Lazy<HashMap<String, Locale>> = Lazy::new(|| {
+    serde_json::from_str(include_str!("locales.json")).expect("Failed parsing locale")
+});
 
 pub fn get_locale(_id: &str) -> Result<&Locale, String> {
     // TODO: pass the locale once we implement locales in Rust
