@@ -24,12 +24,12 @@ web:
 	cd calc && wasm-pack build --target nodejs --out-dir pkg_node
 	cd calc && for i in pkg/*.wasm; do \
 			output_file="pkg/$$(basename "$$i" .wasm).opt.wasm"; \
-			/usr/bin/wasm-opt "$$i" -o "$$output_file" -O; \
+			(/usr/bin/wasm-opt "$$i" -o "$$output_file" -O || wasm-opt "$$i" -o "$$output_file" -O); \
 			mv "$$output_file" "$$i"; \
 		done
 	cd calc && for i in pkg_node/*.wasm; do \
 			output_file="pkg_node/$$(basename "$$i" .wasm).opt.wasm"; \
-			/usr/bin/wasm-opt "$$i" -o "$$output_file" -O; \
+			(/usr/bin/wasm-opt "$$i" -o "$$output_file" -O || wasm-opt "$$i" -o "$$output_file" -O); \
 			mv "$$output_file" "$$i"; \
 		done
 	mkdir -p build/www/pkg
