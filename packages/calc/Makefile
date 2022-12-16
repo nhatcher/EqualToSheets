@@ -8,8 +8,13 @@ bin:
 	$(BUILD)
 	mkdir -p build/bin/
 	cp target/release/test build/bin/
-	cp -r pycalc/pkg/ build/
-	cp target/release/libpycalc.so build/pkg/pycalc/_pycalc.so
+	cp -r pycalc/pkg build/
+	bash -c " \
+	if [ -a 'target/release/libpycalc.so' ] ; then \
+		cp target/release/libpycalc.so build/pkg/pycalc/_pycalc.so; \
+	else \
+		cp target/release/libpycalc.dylib build/pkg/pycalc/_pycalc.so; \
+	fi"
 
 server: bin
 	rm -rf /server/bin
