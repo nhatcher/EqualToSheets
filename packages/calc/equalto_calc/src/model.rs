@@ -149,14 +149,7 @@ impl Model {
         self.workbook.shared_strings.iter().position(|r| r == str)
     }
 
-    fn get_range(
-        &self,
-        left: &Node,
-        right: &Node,
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    fn get_range(&self, left: &Node, right: &Node, cell: CellReference) -> CalcResult {
         match (left, right) {
             (
                 Node::ReferenceKind {
@@ -179,18 +172,18 @@ impl Model {
                 let mut row1 = *row_left;
                 let mut column1 = *column_left;
                 if !absolute_row_left {
-                    row1 += row_ref;
+                    row1 += cell.row;
                 }
                 if !absolute_column_left {
-                    column1 += column_ref;
+                    column1 += cell.column;
                 }
                 let mut row2 = *row_right;
                 let mut column2 = *column_right;
                 if !absolute_row_right {
-                    row2 += row_ref;
+                    row2 += cell.row;
                 }
                 if !absolute_column_right {
-                    column2 += column_ref;
+                    column2 += cell.column;
                 }
                 // FIXME: HACK. The parser is currently parsing Sheet3!A1:A10 as Sheet3!A1:(present sheet)!A10
                 CalcResult::Range {
@@ -208,11 +201,7 @@ impl Model {
             }
             _ => CalcResult::Error {
                 error: Error::NIMPL,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Function not implemented".to_string(),
             },
         }
@@ -221,22 +210,20 @@ impl Model {
     pub(crate) fn evaluate_node_in_context(
         &mut self,
         node: &Node,
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
+        cell: CellReference,
     ) -> CalcResult {
         use Node::*;
         match node {
             OpSumKind { kind, left, right } => {
                 // In the future once the feature try trait stabilizes we could use the '?' operator for this :)
                 // See: https://play.rust-lang.org/?version=nightly&mode=debug&edition=2018&gist=236044e8321a1450988e6ffe5a27dab5
-                let l = match self.get_number(left, sheet, column_ref, row_ref) {
+                let l = match self.get_number(left, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
                     }
                 };
-                let r = match self.get_number(right, sheet, column_ref, row_ref) {
+                let r = match self.get_number(right, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
@@ -262,34 +249,24 @@ impl Model {
                 let mut row1 = *row;
                 let mut column1 = *column;
                 if !absolute_row {
-                    row1 += row_ref;
+                    row1 += cell.row;
                 }
                 if !absolute_column {
-                    column1 += column_ref;
+                    column1 += cell.column;
                 }
-                self.evaluate_cell(*sheet_index, row1, column1)
+                self.evaluate_cell(CellReference {
+                    sheet: *sheet_index,
+                    row: row1,
+                    column: column1,
+                })
             }
-            WrongReferenceKind {
-                sheet_name: _,
-                absolute_row: _,
-                absolute_column: _,
-                row: _,
-                column: _,
-            } => CalcResult::new_error(
-                Error::REF,
-                sheet,
-                row_ref,
-                column_ref,
-                "Wrong reference".to_string(),
-            ),
-            OpRangeKind { left, right } => self.get_range(left, right, sheet, column_ref, row_ref),
-            WrongRangeKind { .. } => CalcResult::new_error(
-                Error::REF,
-                sheet,
-                row_ref,
-                column_ref,
-                "Wrong range".to_string(),
-            ),
+            WrongReferenceKind { .. } => {
+                CalcResult::new_error(Error::REF, cell, "Wrong reference".to_string())
+            }
+            OpRangeKind { left, right } => self.get_range(left, right, cell),
+            WrongRangeKind { .. } => {
+                CalcResult::new_error(Error::REF, cell, "Wrong range".to_string())
+            }
             RangeKind {
                 sheet_index,
                 row1,
@@ -307,12 +284,12 @@ impl Model {
                     row: if *absolute_row1 {
                         *row1
                     } else {
-                        *row1 + row_ref
+                        *row1 + cell.row
                     },
                     column: if *absolute_column1 {
                         *column1
                     } else {
-                        *column1 + column_ref
+                        *column1 + cell.column
                     },
                 },
                 right: CellReference {
@@ -320,23 +297,23 @@ impl Model {
                     row: if *absolute_row2 {
                         *row2
                     } else {
-                        *row2 + row_ref
+                        *row2 + cell.row
                     },
                     column: if *absolute_column2 {
                         *column2
                     } else {
-                        *column2 + column_ref
+                        *column2 + cell.column
                     },
                 },
             },
             OpConcatenateKind { left, right } => {
-                let l = match self.get_string(left, sheet, column_ref, row_ref) {
+                let l = match self.get_string(left, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
                     }
                 };
-                let r = match self.get_string(right, sheet, column_ref, row_ref) {
+                let r = match self.get_string(right, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
@@ -346,13 +323,13 @@ impl Model {
                 CalcResult::String(result)
             }
             OpProductKind { kind, left, right } => {
-                let l = match self.get_number(left, sheet, column_ref, row_ref) {
+                let l = match self.get_number(left, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
                     }
                 };
-                let r = match self.get_number(right, sheet, column_ref, row_ref) {
+                let r = match self.get_number(right, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
@@ -364,9 +341,7 @@ impl Model {
                         if r == 0.0 {
                             return CalcResult::new_error(
                                 Error::DIV,
-                                sheet,
-                                row_ref,
-                                column_ref,
+                                cell,
                                 "Divide by Zero".to_string(),
                             );
                         }
@@ -376,13 +351,13 @@ impl Model {
                 CalcResult::Number(result)
             }
             OpPowerKind { left, right } => {
-                let l = match self.get_number(left, sheet, column_ref, row_ref) {
+                let l = match self.get_number(left, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
                     }
                 };
-                let r = match self.get_number(right, sheet, column_ref, row_ref) {
+                let r = match self.get_number(right, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
@@ -393,134 +368,120 @@ impl Model {
             }
             FunctionKind { name, args } => match name.as_str() {
                 // Logical
-                "AND" => self.fn_and(args, sheet, column_ref, row_ref),
+                "AND" => self.fn_and(args, cell),
                 "FALSE" => CalcResult::Boolean(false),
-                "IF" => self.fn_if(args, sheet, column_ref, row_ref),
-                "IFERROR" => self.fn_iferror(args, sheet, column_ref, row_ref),
-                "IFNA" => self.fn_ifna(args, sheet, column_ref, row_ref),
-                "IFS" => self.fn_ifs(args, sheet, column_ref, row_ref),
-                "NOT" => self.fn_not(args, sheet, column_ref, row_ref),
-                "OR" => self.fn_or(args, sheet, column_ref, row_ref),
-                "SWITCH" => self.fn_switch(args, sheet, column_ref, row_ref),
+                "IF" => self.fn_if(args, cell),
+                "IFERROR" => self.fn_iferror(args, cell),
+                "IFNA" => self.fn_ifna(args, cell),
+                "IFS" => self.fn_ifs(args, cell),
+                "NOT" => self.fn_not(args, cell),
+                "OR" => self.fn_or(args, cell),
+                "SWITCH" => self.fn_switch(args, cell),
                 "TRUE" => CalcResult::Boolean(true),
-                "XOR" => self.fn_xor(args, sheet, column_ref, row_ref),
+                "XOR" => self.fn_xor(args, cell),
                 // Math and trigonometry
-                "SIN" => self.fn_sin(args, sheet, column_ref, row_ref),
-                "COS" => self.fn_cos(args, sheet, column_ref, row_ref),
-                "TAN" => self.fn_tan(args, sheet, column_ref, row_ref),
+                "SIN" => self.fn_sin(args, cell),
+                "COS" => self.fn_cos(args, cell),
+                "TAN" => self.fn_tan(args, cell),
 
-                "ASIN" => self.fn_asin(args, sheet, column_ref, row_ref),
-                "ACOS" => self.fn_acos(args, sheet, column_ref, row_ref),
-                "ATAN" => self.fn_atan(args, sheet, column_ref, row_ref),
+                "ASIN" => self.fn_asin(args, cell),
+                "ACOS" => self.fn_acos(args, cell),
+                "ATAN" => self.fn_atan(args, cell),
 
-                "SINH" => self.fn_sinh(args, sheet, column_ref, row_ref),
-                "COSH" => self.fn_cosh(args, sheet, column_ref, row_ref),
-                "TANH" => self.fn_tanh(args, sheet, column_ref, row_ref),
+                "SINH" => self.fn_sinh(args, cell),
+                "COSH" => self.fn_cosh(args, cell),
+                "TANH" => self.fn_tanh(args, cell),
 
-                "ASINH" => self.fn_asinh(args, sheet, column_ref, row_ref),
-                "ACOSH" => self.fn_acosh(args, sheet, column_ref, row_ref),
-                "ATANH" => self.fn_atanh(args, sheet, column_ref, row_ref),
+                "ASINH" => self.fn_asinh(args, cell),
+                "ACOSH" => self.fn_acosh(args, cell),
+                "ATANH" => self.fn_atanh(args, cell),
 
-                "PI" => self.fn_pi(args, sheet, column_ref, row_ref),
+                "PI" => self.fn_pi(args, cell),
 
-                "MAX" => self.fn_max(args, sheet, column_ref, row_ref),
-                "MIN" => self.fn_min(args, sheet, column_ref, row_ref),
-                "ROUND" => self.fn_round(args, sheet, column_ref, row_ref),
-                "ROUNDDOWN" => self.fn_rounddown(args, sheet, column_ref, row_ref),
-                "ROUNDUP" => self.fn_roundup(args, sheet, column_ref, row_ref),
-                "SUM" => self.fn_sum(args, sheet, column_ref, row_ref),
-                "SUMIF" => self.fn_sumif(args, sheet, column_ref, row_ref),
-                "SUMIFS" => self.fn_sumifs(args, sheet, column_ref, row_ref),
+                "MAX" => self.fn_max(args, cell),
+                "MIN" => self.fn_min(args, cell),
+                "ROUND" => self.fn_round(args, cell),
+                "ROUNDDOWN" => self.fn_rounddown(args, cell),
+                "ROUNDUP" => self.fn_roundup(args, cell),
+                "SUM" => self.fn_sum(args, cell),
+                "SUMIF" => self.fn_sumif(args, cell),
+                "SUMIFS" => self.fn_sumifs(args, cell),
                 // Lookup and Reference
-                "COLUMN" => self.fn_column(args, sheet, column_ref, row_ref),
-                "COLUMNS" => self.fn_columns(args, sheet, column_ref, row_ref),
-                "INDEX" => self.fn_index(args, sheet, column_ref, row_ref),
-                "INDIRECT" => self.fn_indirect(args, sheet, column_ref, row_ref),
-                "HLOOKUP" => self.fn_hlookup(args, sheet, column_ref, row_ref),
-                "LOOKUP" => self.fn_lookup(args, sheet, column_ref, row_ref),
-                "MATCH" => self.fn_match(args, sheet, column_ref, row_ref),
-                "OFFSET" => self.fn_offset(args, sheet, column_ref, row_ref),
-                "ROW" => self.fn_row(args, sheet, column_ref, row_ref),
-                "ROWS" => self.fn_rows(args, sheet, column_ref, row_ref),
-                "VLOOKUP" => self.fn_vlookup(args, sheet, column_ref, row_ref),
-                "XLOOKUP" => self.fn_xlookup(args, sheet, column_ref, row_ref),
+                "COLUMN" => self.fn_column(args, cell),
+                "COLUMNS" => self.fn_columns(args, cell),
+                "INDEX" => self.fn_index(args, cell),
+                "INDIRECT" => self.fn_indirect(args, cell),
+                "HLOOKUP" => self.fn_hlookup(args, cell),
+                "LOOKUP" => self.fn_lookup(args, cell),
+                "MATCH" => self.fn_match(args, cell),
+                "OFFSET" => self.fn_offset(args, cell),
+                "ROW" => self.fn_row(args, cell),
+                "ROWS" => self.fn_rows(args, cell),
+                "VLOOKUP" => self.fn_vlookup(args, cell),
+                "XLOOKUP" => self.fn_xlookup(args, cell),
                 // Text
-                "CONCAT" => self.fn_concat(args, sheet, column_ref, row_ref),
-                "FIND" => self.fn_find(args, sheet, column_ref, row_ref),
-                "LEFT" => self.fn_left(args, sheet, column_ref, row_ref),
-                "LEN" => self.fn_len(args, sheet, column_ref, row_ref),
-                "LOWER" => self.fn_lower(args, sheet, column_ref, row_ref),
-                "MID" => self.fn_mid(args, sheet, column_ref, row_ref),
-                "RIGHT" => self.fn_right(args, sheet, column_ref, row_ref),
-                "SEARCH" => self.fn_search(args, sheet, column_ref, row_ref),
-                "TEXT" => self.fn_text(args, sheet, column_ref, row_ref),
-                "TRIM" => self.fn_trim(args, sheet, column_ref, row_ref),
-                "UPPER" => self.fn_upper(args, sheet, column_ref, row_ref),
+                "CONCAT" => self.fn_concat(args, cell),
+                "FIND" => self.fn_find(args, cell),
+                "LEFT" => self.fn_left(args, cell),
+                "LEN" => self.fn_len(args, cell),
+                "LOWER" => self.fn_lower(args, cell),
+                "MID" => self.fn_mid(args, cell),
+                "RIGHT" => self.fn_right(args, cell),
+                "SEARCH" => self.fn_search(args, cell),
+                "TEXT" => self.fn_text(args, cell),
+                "TRIM" => self.fn_trim(args, cell),
+                "UPPER" => self.fn_upper(args, cell),
                 // Information
-                "ISNUMBER" => self.fn_isnumber(args, sheet, column_ref, row_ref),
-                "ISNONTEXT" => self.fn_isnontext(args, sheet, column_ref, row_ref),
-                "ISTEXT" => self.fn_istext(args, sheet, column_ref, row_ref),
-                "ISLOGICAL" => self.fn_islogical(args, sheet, column_ref, row_ref),
-                "ISBLANK" => self.fn_isblank(args, sheet, column_ref, row_ref),
-                "ISERR" => self.fn_iserr(args, sheet, column_ref, row_ref),
-                "ISERROR" => self.fn_iserror(args, sheet, column_ref, row_ref),
-                "ISNA" => self.fn_isna(args, sheet, column_ref, row_ref),
-                "NA" => {
-                    CalcResult::new_error(Error::NA, sheet, row_ref, column_ref, "".to_string())
-                }
+                "ISNUMBER" => self.fn_isnumber(args, cell),
+                "ISNONTEXT" => self.fn_isnontext(args, cell),
+                "ISTEXT" => self.fn_istext(args, cell),
+                "ISLOGICAL" => self.fn_islogical(args, cell),
+                "ISBLANK" => self.fn_isblank(args, cell),
+                "ISERR" => self.fn_iserr(args, cell),
+                "ISERROR" => self.fn_iserror(args, cell),
+                "ISNA" => self.fn_isna(args, cell),
+                "NA" => CalcResult::new_error(Error::NA, cell, "".to_string()),
                 // Statistical
-                "AVERAGE" => self.fn_average(args, sheet, column_ref, row_ref),
-                "AVERAGEA" => self.fn_averagea(args, sheet, column_ref, row_ref),
-                "AVERAGEIF" => self.fn_averageif(args, sheet, column_ref, row_ref),
-                "AVERAGEIFS" => self.fn_averageifs(args, sheet, column_ref, row_ref),
-                "COUNT" => self.fn_count(args, sheet, column_ref, row_ref),
-                "COUNTA" => self.fn_counta(args, sheet, column_ref, row_ref),
-                "COUNTBLANK" => self.fn_countblank(args, sheet, column_ref, row_ref),
-                "COUNTIF" => self.fn_countif(args, sheet, column_ref, row_ref),
-                "COUNTIFS" => self.fn_countifs(args, sheet, column_ref, row_ref),
-                "MAXIFS" => self.fn_maxifs(args, sheet, column_ref, row_ref),
-                "MINIFS" => self.fn_minifs(args, sheet, column_ref, row_ref),
+                "AVERAGE" => self.fn_average(args, cell),
+                "AVERAGEA" => self.fn_averagea(args, cell),
+                "AVERAGEIF" => self.fn_averageif(args, cell),
+                "AVERAGEIFS" => self.fn_averageifs(args, cell),
+                "COUNT" => self.fn_count(args, cell),
+                "COUNTA" => self.fn_counta(args, cell),
+                "COUNTBLANK" => self.fn_countblank(args, cell),
+                "COUNTIF" => self.fn_countif(args, cell),
+                "COUNTIFS" => self.fn_countifs(args, cell),
+                "MAXIFS" => self.fn_maxifs(args, cell),
+                "MINIFS" => self.fn_minifs(args, cell),
                 // Date and Time
-                "YEAR" => self.fn_year(args, sheet, column_ref, row_ref),
-                "DAY" => self.fn_day(args, sheet, column_ref, row_ref),
-                "MONTH" => self.fn_month(args, sheet, column_ref, row_ref),
-                "DATE" => self.fn_date(args, sheet, column_ref, row_ref),
-                "EDATE" => self.fn_edate(args, sheet, column_ref, row_ref),
-                "TODAY" => self.fn_today(args, sheet, column_ref, row_ref),
-                _ => CalcResult::new_error(
-                    Error::ERROR,
-                    sheet,
-                    row_ref,
-                    column_ref,
-                    format!("Invalid function: {}", name),
-                ),
+                "YEAR" => self.fn_year(args, cell),
+                "DAY" => self.fn_day(args, cell),
+                "MONTH" => self.fn_month(args, cell),
+                "DATE" => self.fn_date(args, cell),
+                "EDATE" => self.fn_edate(args, cell),
+                "TODAY" => self.fn_today(args, cell),
+                _ => {
+                    CalcResult::new_error(Error::ERROR, cell, format!("Invalid function: {}", name))
+                }
             },
             ArrayKind(_) => {
                 // TODO: NOT IMPLEMENTED
-                CalcResult::new_error(
-                    Error::NIMPL,
-                    sheet,
-                    row_ref,
-                    column_ref,
-                    "Arrays not implemented".to_string(),
-                )
+                CalcResult::new_error(Error::NIMPL, cell, "Arrays not implemented".to_string())
             }
             VariableKind(_) => {
                 // TODO: NOT IMPLEMENTED
                 CalcResult::new_error(
                     Error::NIMPL,
-                    sheet,
-                    row_ref,
-                    column_ref,
+                    cell,
                     "Defined names not implemented".to_string(),
                 )
             }
             CompareKind { kind, left, right } => {
-                let l = self.evaluate_node_in_context(left, sheet, column_ref, row_ref);
+                let l = self.evaluate_node_in_context(left, cell);
                 if l.is_error() {
                     return l;
                 }
-                let r = self.evaluate_node_in_context(right, sheet, column_ref, row_ref);
+                let r = self.evaluate_node_in_context(right, cell);
                 if r.is_error() {
                     return r;
                 }
@@ -571,7 +532,7 @@ impl Model {
                 }
             }
             UnaryKind { kind, right } => {
-                let r = match self.get_number(right, sheet, column_ref, row_ref) {
+                let r = match self.get_number(right, cell) {
                     Ok(f) => f,
                     Err(s) => {
                         return s;
@@ -582,18 +543,14 @@ impl Model {
                     OpUnary::Percentage => CalcResult::Number(r / 100.0),
                 }
             }
-            ErrorKind(kind) => {
-                CalcResult::new_error(kind.clone(), sheet, row_ref, column_ref, "".to_string())
-            }
+            ErrorKind(kind) => CalcResult::new_error(kind.clone(), cell, "".to_string()),
             ParseErrorKind {
                 formula,
                 message,
                 position: _,
             } => CalcResult::new_error(
                 Error::ERROR,
-                sheet,
-                row_ref,
-                column_ref,
+                cell,
                 format!("Error parsing {}: {}", formula, message),
             ),
             EmptyArgKind => CalcResult::EmptyArg,
@@ -614,7 +571,8 @@ impl Model {
     /// Sets `result` in the cell given by `sheet` sheet index, row and column
     /// Note that will panic if the cell does not exist
     /// It will do nothing if the cell does not have a formula
-    fn set_cell_value(&mut self, sheet: i32, row: i32, column: i32, result: &CalcResult) {
+    fn set_cell_value(&mut self, cell_reference: CellReference, result: &CalcResult) {
+        let CellReference { sheet, column, row } = cell_reference;
         let cell = &self.workbook.worksheets[sheet as usize].sheet_data[&row][&column];
         let s = cell.get_style();
         if let Some(f) = cell.get_formula() {
@@ -682,20 +640,17 @@ impl Model {
                     };
                 }
                 CalcResult::Range { left, right } => {
-                    let range = &Range {
-                        left: left.clone(),
-                        right: right.clone(),
+                    let range = Range {
+                        left: *left,
+                        right: *right,
                     };
-                    let cell_reference = CellReference { sheet, column, row };
-                    if let Some(c) = self.implicit_intersection(&cell_reference, range) {
-                        let v = self.evaluate_cell(c.sheet, c.row, c.column);
-                        self.set_cell_value(sheet, row, column, &v);
+                    if let Some(intersection_cell) =
+                        self.implicit_intersection(&cell_reference, &range)
+                    {
+                        let v = self.evaluate_cell(intersection_cell);
+                        self.set_cell_value(cell_reference, &v);
                     } else {
-                        let o = match self.cell_reference_to_string(&CellReference {
-                            sheet,
-                            column,
-                            row,
-                        }) {
+                        let o = match self.cell_reference_to_string(&cell_reference) {
                             Ok(s) => s,
                             Err(_) => "".to_string(),
                         };
@@ -790,7 +745,7 @@ impl Model {
         }
     }
 
-    fn get_cell_value(&self, cell: &Cell, sheet: i32, row: i32, column: i32) -> CalcResult {
+    fn get_cell_value(&self, cell: &Cell, cell_reference: CellReference) -> CalcResult {
         use Cell::*;
         match cell {
             EmptyCell { .. } => CalcResult::EmptyCell,
@@ -798,19 +753,19 @@ impl Model {
             NumberCell { v, .. } => CalcResult::Number(*v),
             ErrorCell { ei, .. } => {
                 let message = ei.to_localized_error_string(&self.language);
-                CalcResult::new_error(ei.clone(), sheet, row, column, message)
+                CalcResult::new_error(ei.clone(), cell_reference, message)
             }
             SharedString { si, .. } => {
                 if let Some(s) = self.workbook.shared_strings.get(*si as usize) {
                     CalcResult::String(s.clone())
                 } else {
                     let message = "Invalid shared string".to_string();
-                    CalcResult::new_error(Error::ERROR, sheet, row, column, message)
+                    CalcResult::new_error(Error::ERROR, cell_reference, message)
                 }
             }
             CellFormula { .. } => CalcResult::Error {
                 error: Error::ERROR,
-                origin: CellReference { sheet, column, row },
+                origin: cell_reference,
                 message: "Unevaluated formula".to_string(),
             },
             CellFormulaBoolean { v, .. } => CalcResult::Boolean(*v),
@@ -818,17 +773,11 @@ impl Model {
             CellFormulaString { v, .. } => CalcResult::String(v.clone()),
             CellFormulaError { ei, o, m, .. } => {
                 if let Some(cell_reference) = self.parse_reference(o) {
-                    CalcResult::new_error(
-                        ei.clone(),
-                        cell_reference.sheet,
-                        cell_reference.row,
-                        cell_reference.column,
-                        m.clone(),
-                    )
+                    CalcResult::new_error(ei.clone(), cell_reference, m.clone())
                 } else {
                     CalcResult::Error {
                         error: ei.clone(),
-                        origin: CellReference { sheet, column, row },
+                        origin: cell_reference,
                         message: ei.to_localized_error_string(&self.language),
                     }
                 }
@@ -865,15 +814,15 @@ impl Model {
         }
     }
 
-    pub(crate) fn evaluate_cell(&mut self, sheet: i32, row: i32, column: i32) -> CalcResult {
-        let row_data = match self.workbook.worksheets[sheet as usize]
+    pub(crate) fn evaluate_cell(&mut self, cell_reference: CellReference) -> CalcResult {
+        let row_data = match self.workbook.worksheets[cell_reference.sheet as usize]
             .sheet_data
-            .get(&row)
+            .get(&cell_reference.row)
         {
             Some(r) => r,
             None => return CalcResult::EmptyCell,
         };
-        let cell = match row_data.get(&column) {
+        let cell = match row_data.get(&cell_reference.column) {
             Some(c) => c,
             None => {
                 return CalcResult::EmptyCell;
@@ -882,32 +831,33 @@ impl Model {
 
         match cell.get_formula() {
             Some(f) => {
-                let key = format!("{}!{}!{}", sheet, column, row);
+                let key = format!(
+                    "{}!{}!{}",
+                    cell_reference.sheet, cell_reference.column, cell_reference.row,
+                );
                 match self.cells.get(&key) {
                     Some('c') => {
                         return CalcResult::new_error(
                             Error::CIRC,
-                            sheet,
-                            row,
-                            column,
+                            cell_reference,
                             "Circular reference detected".to_string(),
                         );
                     }
                     Some('t') => {
-                        return self.get_cell_value(cell, sheet, row, column);
+                        return self.get_cell_value(cell, cell_reference);
                     }
                     _ => {
                         self.cells.insert(key.clone(), 'c');
                     }
                 }
                 // mark cell as being evaluated
-                let node = &self.parsed_formulas[sheet as usize][f as usize].clone();
-                let result = self.evaluate_node_in_context(node, sheet, column, row);
-                self.set_cell_value(sheet, row, column, &result);
+                let node = &self.parsed_formulas[cell_reference.sheet as usize][f as usize].clone();
+                let result = self.evaluate_node_in_context(node, cell_reference);
+                self.set_cell_value(cell_reference, &result);
                 self.cells.insert(key, 't');
                 result
             }
-            None => self.get_cell_value(cell, sheet, row, column),
+            None => self.get_cell_value(cell, cell_reference),
         }
     }
 
@@ -1670,7 +1620,11 @@ impl Model {
         let cells = self.get_all_cells();
 
         for cell in cells {
-            self.evaluate_cell(cell.index, cell.row, cell.column);
+            self.evaluate_cell(CellReference {
+                sheet: cell.index,
+                row: cell.row,
+                column: cell.column,
+            });
         }
     }
 

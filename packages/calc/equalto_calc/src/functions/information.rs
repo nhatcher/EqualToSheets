@@ -6,165 +6,75 @@ use crate::{
 };
 
 impl Model {
-    pub(crate) fn fn_isnumber(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_isnumber(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Number(_) => return CalcResult::Boolean(true),
                 _ => {
                     return CalcResult::Boolean(false);
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_istext(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_istext(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::String(_) => return CalcResult::Boolean(true),
                 _ => {
                     return CalcResult::Boolean(false);
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_isnontext(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_isnontext(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::String(_) => return CalcResult::Boolean(false),
                 _ => {
                     return CalcResult::Boolean(true);
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_islogical(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_islogical(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Boolean(_) => return CalcResult::Boolean(true),
                 _ => {
                     return CalcResult::Boolean(false);
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_isblank(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_isblank(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::EmptyCell => return CalcResult::Boolean(true),
                 _ => {
                     return CalcResult::Boolean(false);
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_iserror(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_iserror(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Error { .. } => return CalcResult::Boolean(true),
                 _ => {
                     return CalcResult::Boolean(false);
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_iserr(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_iserr(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Error { error, .. } => {
                     if Error::NA == error {
                         return CalcResult::Boolean(false);
@@ -177,25 +87,11 @@ impl Model {
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
-    pub(crate) fn fn_isna(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_isna(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Error { error, .. } => {
                     if error == Error::NA {
                         return CalcResult::Boolean(true);
@@ -208,14 +104,6 @@ impl Model {
                 }
             };
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
 }

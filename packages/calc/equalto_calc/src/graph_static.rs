@@ -261,7 +261,7 @@ impl Model {
             if visited_cells.contains(cell) {
                 return;
             }
-            visited_cells.push(cell.clone());
+            visited_cells.push(*cell);
 
             // We first get all explicit dependencies. That is dependencies that appear on the formula
             let node = &self.parsed_formulas[sheet as usize][f as usize].clone();
@@ -273,7 +273,7 @@ impl Model {
             // Add all direct dependencies and recurse into them if we don't have them yet
             for cell in &direct_dependencies.cells {
                 if !dependencies.cells.contains(cell) {
-                    dependencies.cells.push(cell.clone());
+                    dependencies.cells.push(*cell);
                     self.add_static_dependencies(cell, dependencies, visited_cells);
                 }
             }

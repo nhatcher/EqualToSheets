@@ -164,7 +164,11 @@ impl Model {
                 column = left.column + index;
                 row = left.row;
             }
-            let value = self.evaluate_cell(left.sheet, row, column);
+            let value = self.evaluate_cell(CellReference {
+                sheet: left.sheet,
+                row,
+                column,
+            });
             result.push(value);
         }
         result

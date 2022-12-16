@@ -46,16 +46,10 @@ fn search(search_for: &str, text: &str, start: usize) -> Option<i32> {
 }
 
 impl Model {
-    pub(crate) fn fn_concat(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_concat(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         let mut result = "".to_string();
         for arg in args {
-            match self.evaluate_node_in_context(arg, sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(arg, cell) {
                 CalcResult::String(value) => result = format!("{}{}", result, value),
                 CalcResult::Number(value) => result = format!("{}{}", result, value),
                 CalcResult::EmptyCell | CalcResult::EmptyArg => {}
@@ -66,30 +60,22 @@ impl Model {
                         result = format!("{}FALSE", result);
                     }
                 }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    };
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { left, right } => {
                     if left.sheet != right.sheet {
                         return CalcResult::new_error(
                             Error::VALUE,
-                            sheet,
-                            row_ref,
-                            column_ref,
+                            cell,
                             "Ranges are in different sheets".to_string(),
                         );
                     }
                     for row in left.row..(right.row + 1) {
                         for column in left.column..(right.column + 1) {
-                            match self.evaluate_cell(left.sheet, row, column) {
+                            match self.evaluate_cell(CellReference {
+                                sheet: left.sheet,
+                                row,
+                                column,
+                            }) {
                                 CalcResult::String(value) => {
                                     result = format!("{}{}", result, value);
                                 }
@@ -103,17 +89,7 @@ impl Model {
                                         result = format!("{}FALSE", result);
                                     }
                                 }
-                                CalcResult::Error {
-                                    error,
-                                    origin,
-                                    message,
-                                } => {
-                                    return CalcResult::Error {
-                                        error,
-                                        origin,
-                                        message,
-                                    };
-                                }
+                                error @ CalcResult::Error { .. } => return error,
                                 CalcResult::EmptyCell | CalcResult::EmptyArg => {}
                                 CalcResult::Range { .. } => {}
                             }
@@ -124,15 +100,9 @@ impl Model {
         }
         CalcResult::String(result)
     }
-    pub(crate) fn fn_text(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_text(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 2 {
-            let value = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            let value = match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Number(f) => f,
                 CalcResult::String(s) => {
                     return CalcResult::String(s);
@@ -140,32 +110,18 @@ impl Model {
                 CalcResult::Boolean(b) => {
                     return CalcResult::Boolean(b);
                 }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    };
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
                 CalcResult::EmptyCell | CalcResult::EmptyArg => 0.0,
             };
-            let format_code = match self.get_string(&args[1], sheet, column_ref, row_ref) {
+            let format_code = match self.get_string(&args[1], cell) {
                 Ok(s) => s,
                 Err(s) => return s,
             };
@@ -173,25 +129,13 @@ impl Model {
             if let Some(_e) = d.error {
                 return CalcResult::Error {
                     error: Error::VALUE,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Invalid format code".to_string(),
                 };
             }
             CalcResult::String(d.text)
         } else {
-            CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            }
+            CalcResult::new_args_number_error(cell)
         }
     }
 
@@ -203,35 +147,20 @@ impl Model {
     ///  * If start_num is not greater than zero, FIND and FINDB return the #VALUE! error value.
     ///  * If start_num is greater than the length of within_text, FIND and FINDB return the #VALUE! error value.
     /// NB: FINDB is not implemented. It is the same as FIND function unless locale is a DBCS (Double Byte Character Set)
-    pub(crate) fn fn_find(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_find(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() < 2 || args.len() > 3 {
-            // Incorrect number of arguments
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            };
+            return CalcResult::new_args_number_error(cell);
         }
-        let find_text = match self.get_string(&args[0], sheet, column_ref, row_ref) {
+        let find_text = match self.get_string(&args[0], cell) {
             Ok(s) => s,
             Err(s) => return s,
         };
-        let within_text = match self.get_string(&args[1], sheet, column_ref, row_ref) {
+        let within_text = match self.get_string(&args[1], cell) {
             Ok(s) => s,
             Err(s) => return s,
         };
         let start_num = if args.len() == 3 {
-            match self.get_number(&args[2], sheet, column_ref, row_ref) {
+            match self.get_number(&args[2], cell) {
                 Ok(s) => s.floor(),
                 Err(s) => return s,
             }
@@ -242,11 +171,7 @@ impl Model {
         if start_num < 1.0 {
             return CalcResult::Error {
                 error: Error::VALUE,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Start num must be >= 1".to_string(),
             };
         }
@@ -255,11 +180,7 @@ impl Model {
         if start_num > within_text.len() {
             return CalcResult::Error {
                 error: Error::VALUE,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Start num greater than length".to_string(),
             };
         }
@@ -268,11 +189,7 @@ impl Model {
         } else {
             CalcResult::Error {
                 error: Error::VALUE,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Text not found".to_string(),
             }
         }
@@ -282,35 +199,20 @@ impl Model {
     ///  * Allows wildcards
     ///  * It is case insensitive
     /// SEARCH(find_text, within_text, [start_num])
-    pub(crate) fn fn_search(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_search(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() < 2 || args.len() > 3 {
-            // Incorrect number of arguments
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            };
+            return CalcResult::new_args_number_error(cell);
         }
-        let find_text = match self.get_string(&args[0], sheet, column_ref, row_ref) {
+        let find_text = match self.get_string(&args[0], cell) {
             Ok(s) => s,
             Err(s) => return s,
         };
-        let within_text = match self.get_string(&args[1], sheet, column_ref, row_ref) {
+        let within_text = match self.get_string(&args[1], cell) {
             Ok(s) => s,
             Err(s) => return s,
         };
         let start_num = if args.len() == 3 {
-            match self.get_number(&args[2], sheet, column_ref, row_ref) {
+            match self.get_number(&args[2], cell) {
                 Ok(s) => s.floor(),
                 Err(s) => return s,
             }
@@ -321,11 +223,7 @@ impl Model {
         if start_num < 1.0 {
             return CalcResult::Error {
                 error: Error::VALUE,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Start num must be >= 1".to_string(),
             };
         }
@@ -334,11 +232,7 @@ impl Model {
         if start_num > within_text.len() {
             return CalcResult::Error {
                 error: Error::VALUE,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Start num greater than length".to_string(),
             };
         }
@@ -352,26 +246,16 @@ impl Model {
         } else {
             CalcResult::Error {
                 error: Error::VALUE,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Text not found".to_string(),
             }
         }
     }
 
     // LEN, LEFT, RIGHT, MID, LOWER, UPPER, TRIM
-    pub(crate) fn fn_len(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_len(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            let s = match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Number(v) => format!("{}", v),
                 CalcResult::String(v) => v,
                 CalcResult::Boolean(b) => {
@@ -381,26 +265,12 @@ impl Model {
                         "FALSE".to_string()
                     }
                 }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    }
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
@@ -408,26 +278,12 @@ impl Model {
             };
             return CalcResult::Number(s.chars().count() as f64);
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
 
-    pub(crate) fn fn_trim(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_trim(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            let s = match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Number(v) => format!("{}", v),
                 CalcResult::String(v) => v,
                 CalcResult::Boolean(b) => {
@@ -437,26 +293,12 @@ impl Model {
                         "FALSE".to_string()
                     }
                 }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    }
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
@@ -464,26 +306,12 @@ impl Model {
             };
             return CalcResult::String(s.trim().to_owned());
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
 
-    pub(crate) fn fn_lower(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_lower(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            let s = match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Number(v) => format!("{}", v),
                 CalcResult::String(v) => v,
                 CalcResult::Boolean(b) => {
@@ -493,26 +321,12 @@ impl Model {
                         "FALSE".to_string()
                     }
                 }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    }
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
@@ -520,26 +334,12 @@ impl Model {
             };
             return CalcResult::String(s.to_lowercase());
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
 
-    pub(crate) fn fn_upper(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_upper(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() == 1 {
-            let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+            let s = match self.evaluate_node_in_context(&args[0], cell) {
                 CalcResult::Number(v) => format!("{}", v),
                 CalcResult::String(v) => v,
                 CalcResult::Boolean(b) => {
@@ -549,26 +349,12 @@ impl Model {
                         "FALSE".to_string()
                     }
                 }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    }
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
@@ -576,36 +362,14 @@ impl Model {
             };
             return CalcResult::String(s.to_uppercase());
         }
-        CalcResult::Error {
-            error: Error::ERROR,
-            origin: CellReference {
-                sheet,
-                row: row_ref,
-                column: column_ref,
-            },
-            message: "Wrong number of arguments".to_string(),
-        }
+        CalcResult::new_args_number_error(cell)
     }
 
-    pub(crate) fn fn_left(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_left(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() > 2 || args.is_empty() {
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            };
+            return CalcResult::new_args_number_error(cell);
         }
-        let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+        let s = match self.evaluate_node_in_context(&args[0], cell) {
             CalcResult::Number(v) => format!("{}", v),
             CalcResult::String(v) => v,
             CalcResult::Boolean(b) => {
@@ -615,89 +379,42 @@ impl Model {
                     "FALSE".to_string()
                 }
             }
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => {
-                return CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                }
-            }
+            error @ CalcResult::Error { .. } => return error,
             CalcResult::Range { .. } => {
                 // Implicit Intersection not implemented
                 return CalcResult::Error {
                     error: Error::NIMPL,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Implicit Intersection not implemented".to_string(),
                 };
             }
             CalcResult::EmptyCell | CalcResult::EmptyArg => "".to_string(),
         };
         let num_chars = if args.len() == 2 {
-            match self.evaluate_node_in_context(&args[1], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[1], cell) {
                 CalcResult::Number(v) => {
                     if v < 0.0 {
                         return CalcResult::Error {
                             error: Error::VALUE,
-                            origin: CellReference {
-                                sheet,
-                                row: row_ref,
-                                column: column_ref,
-                            },
+                            origin: cell,
                             message: "Number must be >= 0".to_string(),
                         };
                     }
                     v.floor() as usize
                 }
-                CalcResult::String(_) => {
+                CalcResult::Boolean(_) | CalcResult::String(_) => {
                     return CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Expecting number".to_string(),
                     };
                 }
-                CalcResult::Boolean(_) => {
-                    return CalcResult::Error {
-                        error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
-                        message: "Expecting number".to_string(),
-                    }
-                }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    }
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
@@ -716,25 +433,11 @@ impl Model {
         CalcResult::String(result)
     }
 
-    pub(crate) fn fn_right(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_right(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() > 2 || args.is_empty() {
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            };
+            return CalcResult::new_args_number_error(cell);
         }
-        let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+        let s = match self.evaluate_node_in_context(&args[0], cell) {
             CalcResult::Number(v) => format!("{}", v),
             CalcResult::String(v) => v,
             CalcResult::Boolean(b) => {
@@ -744,89 +447,42 @@ impl Model {
                     "FALSE".to_string()
                 }
             }
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => {
-                return CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                }
-            }
+            error @ CalcResult::Error { .. } => return error,
             CalcResult::Range { .. } => {
                 // Implicit Intersection not implemented
                 return CalcResult::Error {
                     error: Error::NIMPL,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Implicit Intersection not implemented".to_string(),
                 };
             }
             CalcResult::EmptyCell | CalcResult::EmptyArg => "".to_string(),
         };
         let num_chars = if args.len() == 2 {
-            match self.evaluate_node_in_context(&args[1], sheet, column_ref, row_ref) {
+            match self.evaluate_node_in_context(&args[1], cell) {
                 CalcResult::Number(v) => {
                     if v < 0.0 {
                         return CalcResult::Error {
                             error: Error::VALUE,
-                            origin: CellReference {
-                                sheet,
-                                row: row_ref,
-                                column: column_ref,
-                            },
+                            origin: cell,
                             message: "Number must be >= 0".to_string(),
                         };
                     }
                     v.floor() as usize
                 }
-                CalcResult::String(_) => {
+                CalcResult::Boolean(_) | CalcResult::String(_) => {
                     return CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Expecting number".to_string(),
                     };
                 }
-                CalcResult::Boolean(_) => {
-                    return CalcResult::Error {
-                        error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
-                        message: "Expecting number".to_string(),
-                    }
-                }
-                CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                } => {
-                    return CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    }
-                }
+                error @ CalcResult::Error { .. } => return error,
                 CalcResult::Range { .. } => {
                     // Implicit Intersection not implemented
                     return CalcResult::Error {
                         error: Error::NIMPL,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Implicit Intersection not implemented".to_string(),
                     };
                 }
@@ -845,25 +501,11 @@ impl Model {
         return CalcResult::String(result.chars().rev().collect::<String>());
     }
 
-    pub(crate) fn fn_mid(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_mid(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() != 3 {
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            };
+            return CalcResult::new_args_number_error(cell);
         }
-        let s = match self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref) {
+        let s = match self.evaluate_node_in_context(&args[0], cell) {
             CalcResult::Number(v) => format!("{}", v),
             CalcResult::String(v) => v,
             CalcResult::Boolean(b) => {
@@ -873,91 +515,51 @@ impl Model {
                     "FALSE".to_string()
                 }
             }
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => {
-                return CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                }
-            }
+            error @ CalcResult::Error { .. } => return error,
             CalcResult::Range { .. } => {
                 // Implicit Intersection not implemented
                 return CalcResult::Error {
                     error: Error::NIMPL,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Implicit Intersection not implemented".to_string(),
                 };
             }
             CalcResult::EmptyCell | CalcResult::EmptyArg => "".to_string(),
         };
-        let start_num = match self.evaluate_node_in_context(&args[1], sheet, column_ref, row_ref) {
+        let start_num = match self.evaluate_node_in_context(&args[1], cell) {
             CalcResult::Number(v) => {
                 if v < 1.0 {
                     return CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Number must be >= 1".to_string(),
                     };
                 }
                 v.floor() as usize
             }
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => {
-                return CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                }
-            }
+            error @ CalcResult::Error { .. } => return error,
             CalcResult::Range { .. } => {
                 // Implicit Intersection not implemented
                 return CalcResult::Error {
                     error: Error::NIMPL,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Implicit Intersection not implemented".to_string(),
                 };
             }
             _ => {
                 return CalcResult::Error {
                     error: Error::VALUE,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Expecting number".to_string(),
                 };
             }
         };
-        let num_chars = match self.evaluate_node_in_context(&args[2], sheet, column_ref, row_ref) {
+        let num_chars = match self.evaluate_node_in_context(&args[2], cell) {
             CalcResult::Number(v) => {
                 if v < 0.0 {
                     return CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Number must be >= 0".to_string(),
                     };
                 }
@@ -966,45 +568,23 @@ impl Model {
             CalcResult::String(_) => {
                 return CalcResult::Error {
                     error: Error::VALUE,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Expecting number".to_string(),
                 };
             }
             CalcResult::Boolean(_) => {
                 return CalcResult::Error {
                     error: Error::VALUE,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Expecting number".to_string(),
                 }
             }
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => {
-                return CalcResult::Error {
-                    error,
-                    origin,
-                    message,
-                }
-            }
+            error @ CalcResult::Error { .. } => return error,
             CalcResult::Range { .. } => {
                 // Implicit Intersection not implemented
                 return CalcResult::Error {
                     error: Error::NIMPL,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Implicit Intersection not implemented".to_string(),
                 };
             }

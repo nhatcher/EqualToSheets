@@ -148,40 +148,21 @@ impl Model {
     ///          in ascending order. If not sorted, invalid results will be returned.
     ///   * -2 - Perform a binary search that relies on lookup_array being sorted
     ///          in descending order. If not sorted, invalid results will be returned.
-    pub(crate) fn fn_xlookup(
-        &mut self,
-        args: &[Node],
-        sheet: i32,
-        column_ref: i32,
-        row_ref: i32,
-    ) -> CalcResult {
+    pub(crate) fn fn_xlookup(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() < 3 || args.len() > 6 {
-            // Incorrect number of arguments
-            return CalcResult::Error {
-                error: Error::ERROR,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
-                message: "Wrong number of arguments".to_string(),
-            };
+            return CalcResult::new_args_number_error(cell);
         }
-        let lookup_value = self.evaluate_node_in_context(&args[0], sheet, column_ref, row_ref);
+        let lookup_value = self.evaluate_node_in_context(&args[0], cell);
         if lookup_value.is_error() {
             return lookup_value;
         }
         // Get optional arguments
         let if_not_found = if args.len() >= 4 {
-            let v = self.evaluate_node_in_context(&args[3], sheet, column_ref, row_ref);
+            let v = self.evaluate_node_in_context(&args[3], cell);
             match v {
                 CalcResult::EmptyArg => CalcResult::Error {
                     error: Error::NA,
-                    origin: CellReference {
-                        sheet,
-                        row: row_ref,
-                        column: column_ref,
-                    },
+                    origin: cell,
                     message: "Not found".to_string(),
                 },
                 _ => v,
@@ -190,16 +171,12 @@ impl Model {
             // default
             CalcResult::Error {
                 error: Error::NA,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Not found".to_string(),
             }
         };
         let match_mode = if args.len() >= 5 {
-            match self.get_number(&args[4], sheet, column_ref, row_ref) {
+            match self.get_number(&args[4], cell) {
                 Ok(c) => match c.floor() as i32 {
                     -1 => MatchMode::ExactMatchSmaller,
                     1 => MatchMode::ExactMatchLarger,
@@ -208,11 +185,7 @@ impl Model {
                     _ => {
                         return CalcResult::Error {
                             error: Error::VALUE,
-                            origin: CellReference {
-                                sheet,
-                                row: row_ref,
-                                column: column_ref,
-                            },
+                            origin: cell,
                             message: "Unexpected number".to_string(),
                         };
                     }
@@ -224,7 +197,7 @@ impl Model {
             MatchMode::ExactMatch
         };
         let search_mode = if args.len() == 6 {
-            match self.get_number(&args[5], sheet, column_ref, row_ref) {
+            match self.get_number(&args[5], cell) {
                 Ok(c) => match c.floor() as i32 {
                     1 => SearchMode::StartAtFirstItem,
                     -1 => SearchMode::StartAtLastItem,
@@ -233,11 +206,7 @@ impl Model {
                     _ => {
                         return CalcResult::Error {
                             error: Error::ERROR,
-                            origin: CellReference {
-                                sheet,
-                                row: row_ref,
-                                column: column_ref,
-                            },
+                            origin: cell,
                             message: "Unexpected number".to_string(),
                         };
                     }
@@ -249,7 +218,7 @@ impl Model {
             SearchMode::StartAtFirstItem
         };
         // lookup_array
-        match self.evaluate_node_in_context(&args[1], sheet, column_ref, row_ref) {
+        match self.evaluate_node_in_context(&args[1], cell) {
             CalcResult::Range { left, right } => {
                 let is_row_vector;
                 if left.row == right.row {
@@ -260,16 +229,12 @@ impl Model {
                     // second argument must be a vector
                     return CalcResult::Error {
                         error: Error::ERROR,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Second argument must be a vector".to_string(),
                     };
                 }
                 // return array
-                match self.evaluate_node_in_context(&args[2], sheet, column_ref, row_ref) {
+                match self.evaluate_node_in_context(&args[2], cell) {
                     CalcResult::Range {
                         left: result_left,
                         right: result_right,
@@ -280,11 +245,7 @@ impl Model {
                         {
                             return CalcResult::Error {
                                 error: Error::VALUE,
-                                origin: CellReference {
-                                    sheet,
-                                    row: row_ref,
-                                    column: column_ref,
-                                },
+                                origin: cell,
                                 message: "Arrays must be of the same size".to_string(),
                             };
                         }
@@ -320,11 +281,11 @@ impl Model {
                                             if is_row_vector { index as i32 } else { 0 };
                                         let column_index =
                                             if is_row_vector { 0 } else { index as i32 };
-                                        self.evaluate_cell(
-                                            result_left.sheet,
-                                            result_left.row + row_index,
-                                            result_left.column + column_index,
-                                        )
+                                        self.evaluate_cell(CellReference {
+                                            sheet: result_left.sheet,
+                                            row: result_left.row + row_index,
+                                            column: result_left.column + column_index,
+                                        })
                                     }
                                     None => if_not_found,
                                 }
@@ -362,28 +323,33 @@ impl Model {
                                         let column =
                                             result_left.column + if is_row_vector { 0 } else { l };
                                         if match_mode == MatchMode::ExactMatch {
-                                            let value = self.evaluate_cell(
-                                                left.sheet,
-                                                left.row + if is_row_vector { l } else { 0 },
-                                                left.column + if is_row_vector { 0 } else { l },
-                                            );
+                                            let value = self.evaluate_cell(CellReference {
+                                                sheet: left.sheet,
+                                                row: left.row + if is_row_vector { l } else { 0 },
+                                                column: left.column
+                                                    + if is_row_vector { 0 } else { l },
+                                            });
                                             if compare_values(&value, &lookup_value) == 0 {
-                                                self.evaluate_cell(result_left.sheet, row, column)
+                                                self.evaluate_cell(CellReference {
+                                                    sheet: result_left.sheet,
+                                                    row,
+                                                    column,
+                                                })
                                             } else {
                                                 if_not_found
                                             }
                                         } else if match_mode == MatchMode::ExactMatchSmaller
                                             || match_mode == MatchMode::ExactMatchLarger
                                         {
-                                            self.evaluate_cell(result_left.sheet, row, column)
+                                            self.evaluate_cell(CellReference {
+                                                sheet: result_left.sheet,
+                                                row,
+                                                column,
+                                            })
                                         } else {
                                             CalcResult::Error {
                                                 error: Error::VALUE,
-                                                origin: CellReference {
-                                                    sheet,
-                                                    row: row_ref,
-                                                    column: column_ref,
-                                                },
+                                                origin: cell,
                                                 message: "Cannot use wildcard in binary search"
                                                     .to_string(),
                                             }
@@ -393,42 +359,18 @@ impl Model {
                             }
                         }
                     }
-                    CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    } => CalcResult::Error {
-                        error,
-                        origin,
-                        message,
-                    },
+                    error @ CalcResult::Error { .. } => error,
                     _ => CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference {
-                            sheet,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Range expected".to_string(),
                     },
                 }
             }
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => CalcResult::Error {
-                error,
-                origin,
-                message,
-            },
+            error @ CalcResult::Error { .. } => error,
             _ => CalcResult::Error {
                 error: Error::NA,
-                origin: CellReference {
-                    sheet,
-                    row: row_ref,
-                    column: column_ref,
-                },
+                origin: cell,
                 message: "Range expected".to_string(),
             },
         }

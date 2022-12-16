@@ -8,20 +8,16 @@ impl Model {
     pub(crate) fn get_number(
         &mut self,
         node: &Node,
-        sheet: i32,
-        column: i32,
-        row: i32,
+        cell: CellReference,
     ) -> Result<f64, CalcResult> {
-        let c = self.evaluate_node_in_context(node, sheet, column, row);
-        self.cast_to_number(c, sheet, column, row)
+        let result = self.evaluate_node_in_context(node, cell);
+        self.cast_to_number(result, cell)
     }
 
     fn cast_to_number(
         &mut self,
         result: CalcResult,
-        sheet: i32,
-        column: i32,
-        row: i32,
+        cell: CellReference,
     ) -> Result<f64, CalcResult> {
         match result {
             CalcResult::Number(f) => Ok(f),
@@ -29,9 +25,7 @@ impl Model {
                 Ok(f) => Ok(f),
                 _ => Err(CalcResult::new_error(
                     Error::VALUE,
-                    sheet,
-                    row,
-                    column,
+                    cell,
                     "Expecting number".to_string(),
                 )),
             },
@@ -43,36 +37,16 @@ impl Model {
                 }
             }
             CalcResult::EmptyCell | CalcResult::EmptyArg => Ok(0.0),
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => Err(CalcResult::Error {
-                error,
-                origin,
-                message,
-            }),
+            error @ CalcResult::Error { .. } => Err(error),
             CalcResult::Range { left, right } => {
-                match self.implicit_intersection(
-                    &CellReference { sheet, column, row },
-                    &Range { left, right },
-                ) {
+                match self.implicit_intersection(&cell, &Range { left, right }) {
                     Some(cell_reference) => {
-                        let c = self.evaluate_cell(
-                            cell_reference.sheet,
-                            cell_reference.row,
-                            cell_reference.column,
-                        );
-                        self.cast_to_number(
-                            c,
-                            cell_reference.sheet,
-                            cell_reference.row,
-                            cell_reference.column,
-                        )
+                        let result = self.evaluate_cell(cell_reference);
+                        self.cast_to_number(result, cell_reference)
                     }
                     None => Err(CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference { sheet, column, row },
+                        origin: cell,
                         message: "Invalid reference".to_string(),
                     }),
                 }
@@ -83,20 +57,16 @@ impl Model {
     pub(crate) fn get_string(
         &mut self,
         node: &Node,
-        sheet: i32,
-        column: i32,
-        row: i32,
+        cell: CellReference,
     ) -> Result<String, CalcResult> {
-        let c = self.evaluate_node_in_context(node, sheet, column, row);
-        self.cast_to_string(c, sheet, column, row)
+        let result = self.evaluate_node_in_context(node, cell);
+        self.cast_to_string(result, cell)
     }
 
     fn cast_to_string(
         &mut self,
         result: CalcResult,
-        sheet: i32,
-        column: i32,
-        row: i32,
+        cell: CellReference,
     ) -> Result<String, CalcResult> {
         match result {
             CalcResult::Number(f) => Ok(format!("{}", f)),
@@ -109,36 +79,16 @@ impl Model {
                 }
             }
             CalcResult::EmptyCell | CalcResult::EmptyArg => Ok("".to_string()),
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => Err(CalcResult::Error {
-                error,
-                origin,
-                message,
-            }),
+            error @ CalcResult::Error { .. } => Err(error),
             CalcResult::Range { left, right } => {
-                match self.implicit_intersection(
-                    &CellReference { sheet, column, row },
-                    &Range { left, right },
-                ) {
+                match self.implicit_intersection(&cell, &Range { left, right }) {
                     Some(cell_reference) => {
-                        let c = self.evaluate_cell(
-                            cell_reference.sheet,
-                            cell_reference.row,
-                            cell_reference.column,
-                        );
-                        self.cast_to_string(
-                            c,
-                            cell_reference.sheet,
-                            cell_reference.row,
-                            cell_reference.column,
-                        )
+                        let result = self.evaluate_cell(cell_reference);
+                        self.cast_to_string(result, cell_reference)
                     }
                     None => Err(CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference { sheet, column, row },
+                        origin: cell,
                         message: "Invalid reference".to_string(),
                     }),
                 }
@@ -149,20 +99,16 @@ impl Model {
     pub(crate) fn get_boolean(
         &mut self,
         node: &Node,
-        sheet: i32,
-        column: i32,
-        row: i32,
+        cell: CellReference,
     ) -> Result<bool, CalcResult> {
-        let c = self.evaluate_node_in_context(node, sheet, column, row);
-        self.cast_to_bool(c, sheet, column, row)
+        let result = self.evaluate_node_in_context(node, cell);
+        self.cast_to_bool(result, cell)
     }
 
     fn cast_to_bool(
         &mut self,
         result: CalcResult,
-        sheet: i32,
-        column: i32,
-        row: i32,
+        cell: CellReference,
     ) -> Result<bool, CalcResult> {
         match result {
             CalcResult::Number(f) => {
@@ -179,42 +125,22 @@ impl Model {
                 }
                 Err(CalcResult::Error {
                     error: Error::VALUE,
-                    origin: CellReference { sheet, column, row },
+                    origin: cell,
                     message: "Expected boolean".to_string(),
                 })
             }
             CalcResult::Boolean(b) => Ok(b),
             CalcResult::EmptyCell | CalcResult::EmptyArg => Ok(false),
-            CalcResult::Error {
-                error,
-                origin,
-                message,
-            } => Err(CalcResult::Error {
-                error,
-                origin,
-                message,
-            }),
+            error @ CalcResult::Error { .. } => Err(error),
             CalcResult::Range { left, right } => {
-                match self.implicit_intersection(
-                    &CellReference { sheet, column, row },
-                    &Range { left, right },
-                ) {
+                match self.implicit_intersection(&cell, &Range { left, right }) {
                     Some(cell_reference) => {
-                        let c = self.evaluate_cell(
-                            cell_reference.sheet,
-                            cell_reference.row,
-                            cell_reference.column,
-                        );
-                        self.cast_to_bool(
-                            c,
-                            cell_reference.sheet,
-                            cell_reference.row,
-                            cell_reference.column,
-                        )
+                        let result = self.evaluate_cell(cell_reference);
+                        self.cast_to_bool(result, cell_reference)
                     }
                     None => Err(CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference { sheet, column, row },
+                        origin: cell,
                         message: "Invalid reference".to_string(),
                     }),
                 }
@@ -226,9 +152,7 @@ impl Model {
     pub(crate) fn get_reference(
         &mut self,
         node: &Node,
-        sheet_ref: i32,
-        column_ref: i32,
-        row_ref: i32,
+        cell: CellReference,
     ) -> Result<Range, CalcResult> {
         match node {
             Node::ReferenceKind {
@@ -241,21 +165,18 @@ impl Model {
             } => {
                 let left = CellReference {
                     sheet: *sheet_index,
-                    row: if *absolute_row { *row } else { *row + row_ref },
+                    row: if *absolute_row { *row } else { *row + cell.row },
                     column: if *absolute_column {
                         *column
                     } else {
-                        *column + column_ref
+                        *column + cell.column
                     },
                 };
 
-                Ok(Range {
-                    left: left.clone(),
-                    right: left,
-                })
+                Ok(Range { left, right: left })
             }
             _ => {
-                let value = self.evaluate_node_in_context(node, sheet_ref, column_ref, row_ref);
+                let value = self.evaluate_node_in_context(node, cell);
                 if value.is_error() {
                     return Err(value);
                 }
@@ -264,11 +185,7 @@ impl Model {
                 } else {
                     Err(CalcResult::Error {
                         error: Error::VALUE,
-                        origin: CellReference {
-                            sheet: sheet_ref,
-                            row: row_ref,
-                            column: column_ref,
-                        },
+                        origin: cell,
                         message: "Expected reference".to_string(),
                     })
                 }

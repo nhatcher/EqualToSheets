@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use crate::expressions::token::Error;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Copy)]
 pub struct CellReference {
     pub sheet: i32,
     pub column: i32,
@@ -34,17 +34,18 @@ pub(crate) enum CalcResult {
 }
 
 impl CalcResult {
-    pub fn new_error(
-        error: Error,
-        sheet: i32,
-        row: i32,
-        column: i32,
-        message: String,
-    ) -> CalcResult {
+    pub fn new_error(error: Error, origin: CellReference, message: String) -> CalcResult {
         CalcResult::Error {
             error,
-            origin: CellReference { sheet, column, row },
+            origin,
             message,
+        }
+    }
+    pub fn new_args_number_error(origin: CellReference) -> CalcResult {
+        CalcResult::Error {
+            error: Error::ERROR,
+            origin,
+            message: "Wrong number of arguments".to_string(),
         }
     }
     pub fn is_error(&self) -> bool {
