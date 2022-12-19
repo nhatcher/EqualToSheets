@@ -333,24 +333,4 @@ impl Model {
         model.parse_formulas();
         Ok(model)
     }
-
-    /// Adds a sheet with a specific name and sheet id
-    /// Fails if a worksheet with that name already exists or the name is invalid
-    /// Fails if sheet_id is already in use
-    /// TODO: When we get rid of refresh_workbook_json, we can remove this function to not leak the sheet_id logic.
-    pub fn add_equalto_sheet(&mut self, sheet_name: &str, sheet_id: i32) -> Result<(), String> {
-        if !is_valid_sheet_name(sheet_name) {
-            return Err(format!("Invalid name for a sheet: '{}'", sheet_name));
-        }
-        if self.get_sheet_index_by_name(sheet_name).is_some() {
-            return Err(format!("Sheet name already used: '{}'", sheet_name));
-        }
-        if self.get_sheet_index_by_sheet_id(sheet_id).is_some() {
-            return Err(format!("Sheet id already used: {}", sheet_id));
-        }
-        let worksheet = Model::new_empty_worksheet(sheet_name, sheet_id);
-        self.workbook.worksheets.push(worksheet);
-        self.reset_formulas();
-        Ok(())
-    }
 }

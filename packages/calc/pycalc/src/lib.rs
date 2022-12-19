@@ -373,10 +373,6 @@ impl PyModel {
         Ok(self.model.add_sheet(new_name).is_ok())
     }
 
-    pub fn add_equalto_sheet(&mut self, new_name: &str, sheet_id: i32) -> PyResult<bool> {
-        Ok(self.model.add_equalto_sheet(new_name, sheet_id).is_ok())
-    }
-
     pub fn rename_sheet(&mut self, old_name: &str, new_name: &str) -> PyResult<bool> {
         Ok(self.model.rename_sheet(old_name, new_name).is_ok())
     }

@@ -35,42 +35,6 @@ fn test_add_remove_sheets() {
 }
 
 #[test]
-fn test_add_equalto_sheet() {
-    let mut model = new_empty_model();
-    assert_eq!(model.get_worksheet_names(), ["Sheet1"]);
-
-    let r = model.add_equalto_sheet("New sheet", 1337);
-    assert!(r.is_ok());
-    assert_eq!(model.get_worksheet_names(), ["Sheet1", "New sheet"]);
-
-    let tabs = model.get_tabs();
-    assert_eq!(tabs, *"[{\"name\":\"Sheet1\",\"state\":\"visible\",\"index\":0,\"sheet_id\":1},{\"name\":\"New sheet\",\"state\":\"visible\",\"index\":1,\"sheet_id\":1337}]");
-}
-
-#[test]
-fn test_add_equalto_sheet_validation() {
-    let mut model = new_empty_model();
-    assert_eq!(model.get_worksheet_names(), ["Sheet1"]);
-
-    assert_eq!(
-        model.add_equalto_sheet("Sheet1", 1337),
-        Err("Sheet name already used: \'Sheet1\'".to_string())
-    );
-
-    assert_eq!(
-        model.add_equalto_sheet("Invalid[]", 1337),
-        Err("Invalid name for a sheet: \'Invalid[]\'".to_string())
-    );
-
-    assert_eq!(
-        model.add_equalto_sheet("Sheet2", 1),
-        Err("Sheet id already used: 1".to_string())
-    );
-
-    assert_eq!(model.get_worksheet_names(), ["Sheet1"]);
-}
-
-#[test]
 fn test_rename_delete_to_existing() {
     let mut model = new_empty_model();
     model.new_sheet();
