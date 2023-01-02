@@ -59,6 +59,10 @@ impl PyModel {
             .extend_to(sheet, row, column, target_row, target_column))
     }
 
+    pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<bool> {
+        Ok(self.model.has_formula(sheet, row, column))
+    }
+
     pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
         Ok(self.model.get_formula_or_value(sheet, row, column))
     }
@@ -70,7 +74,21 @@ impl PyModel {
         }
     }
 
-    pub fn set_input(&mut self, sheet: i32, row: i32, column: i32, value: String, style: i32) {
+    pub fn get_cell_value_by_index(
+        &self,
+        sheet: i32,
+        row: i32,
+        column: i32,
+    ) -> PyResult<String> {
+        Ok(self.model.get_cell_value_by_index(sheet, row, column).to_json_str())
+    }
+
+    pub fn get_cell_type(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
+        Ok(self.model.get_cell_type(sheet, row, column) as i32)
+    }
+
+    pub fn set_input(&mut self, sheet: i32, row: i32, column: i32, value: String) {
+        let style = self.model.get_cell_style_index(sheet, row, column);
         self.model.set_input(sheet, row, column, value, style)
     }
 
@@ -369,6 +387,10 @@ impl PyModel {
         Ok(self.model.get_worksheet_names())
     }
 
+    pub fn get_worksheet_ids(&self) -> PyResult<Vec<i32>> {
+        Ok(self.model.get_worksheet_ids())
+    }
+
     pub fn add_sheet(&mut self, new_name: &str) -> PyResult<bool> {
         Ok(self.model.add_sheet(new_name).is_ok())
     }
@@ -390,8 +412,11 @@ impl PyModel {
     }
 
     pub fn update_cell_with_number(&mut self, sheet: i32, row: i32, column: i32, value: f64) {
-        self.model
-            .update_cell_with_number(sheet, row, column, value);
+        self.model.update_cell_with_number(sheet, row, column, value);
+    }
+
+    pub fn update_cell_with_bool(&mut self, sheet: i32, row: i32, column: i32, value: bool) {
+        self.model.update_cell_with_bool(sheet, row, column, value);
     }
 
     pub fn set_sheet_row_style(&mut self, sheet: i32, row: i32, style_name: &str) -> PyResult<()> {

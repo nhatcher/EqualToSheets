@@ -1,5 +1,6 @@
 mod test_actions;
 mod test_binary_search;
+mod test_cell;
 mod test_circular_references;
 mod test_column_width;
 mod test_criteria;

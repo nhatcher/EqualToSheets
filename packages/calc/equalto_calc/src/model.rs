@@ -1436,7 +1436,7 @@ impl Model {
         Ok(self.get_cell_value_by_index(sheet_index, row, column))
     }
 
-    fn get_cell_value_by_index(&self, sheet_index: i32, row: i32, column: i32) -> ExcelValue {
+    pub fn get_cell_value_by_index(&self, sheet_index: i32, row: i32, column: i32) -> ExcelValue {
         let cell = self.get_cell_at(sheet_index as i32, row, column);
 
         match cell {
@@ -1460,6 +1460,10 @@ impl Model {
                 ExcelValue::String(v)
             }
         }
+    }
+
+    pub fn get_cell_type(&self, sheet_index: i32, row: i32, column: i32) -> CellType {
+        self.get_cell_at(sheet_index, row, column).get_type()
     }
 
     pub fn set_cells_with_values_json(&mut self, input_json: &str) -> Result<(), String> {
@@ -1952,6 +1956,10 @@ impl Model {
     /// Returns a list with all the names of the worksheets
     pub fn get_worksheet_names(&self) -> Vec<String> {
         self.workbook.get_worksheet_names()
+    }
+
+    pub fn get_worksheet_ids(&self) -> Vec<i32> {
+        self.workbook.get_worksheet_ids()
     }
 
     /// Returns a JSON string of the workbook

@@ -105,6 +105,22 @@ impl Cell {
         }
     }
 
+    pub fn get_type(&self) -> CellType {
+        match self {
+            Cell::EmptyCell { .. } => CellType::Number,
+            Cell::BooleanCell { .. } => CellType::LogicalValue,
+            Cell::NumberCell { .. } => CellType::Number,
+            Cell::ErrorCell { .. } => CellType::ErrorValue,
+            // TODO: An empty string should likely be considered a Number (like an empty cell).
+            Cell::SharedString { .. } => CellType::Text,
+            Cell::CellFormula { .. } => CellType::Number,
+            Cell::CellFormulaBoolean { .. } => CellType::LogicalValue,
+            Cell::CellFormulaNumber { .. } => CellType::Number,
+            Cell::CellFormulaString { .. } => CellType::Text,
+            Cell::CellFormulaError { .. } => CellType::ErrorValue,
+        }
+    }
+
     /// Return a JSON string representation of the Cell
     pub fn to_json(&self) -> String {
         match self {

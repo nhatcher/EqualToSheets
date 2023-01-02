@@ -146,6 +146,17 @@ impl Default for Color {
     }
 }
 
+/// Cell type enum matching Excel TYPE() function values.
+#[derive(Debug, Eq, PartialEq)]
+pub enum CellType {
+    Number = 1,
+    Text = 2,
+    LogicalValue = 4,
+    ErrorValue = 16,
+    Array = 64,
+    CompoundData = 128,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum Cell {

@@ -7,6 +7,7 @@ workflows:
       - build-and-test-calc:
           context:
             - docker-hub-creds
+      - build-and-test-python-sdk
 
 jobs:
   build-and-test-calc:
@@ -42,7 +43,7 @@ jobs:
               cp -rv rust_cache/build/* packages/calc/build/
             else
               cd packages/calc
-              make tests web server
+              make tests web
               # save to cache paths
               mkdir -p ../../rust_cache/build
               cp -rv build/* ../../rust_cache/build/
@@ -57,3 +58,29 @@ jobs:
             - calc/build
       - store_artifacts:
           path: ~/repo/packages/calc/target/llvm-cov
+  build-and-test-python-sdk:
+    docker:
+      - image: rust:1.65.0-slim
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt -y --no-install-recommends upgrade
+            apt install --no-install-recommends -y make python3 pip
+      - run:
+          name: Build EqualTo python SDK
+          command: make venv
+          working_directory: ./packages/sdk/python
+      - run:
+          name: Run linters
+          command: make lint
+          working_directory: ./packages/sdk/python
+      - run:
+          name: Run tests
+          command: make coverage
+          working_directory: ./packages/sdk/python
+      - store_artifacts:
+          path: ~/repo/packages/sdk/python/tests/htmlcov

@@ -4,7 +4,6 @@ members = [
   "calc",
   "equalto_calc",
   "equalto_xlsx",
-  "pycalc",
 ]
 
 exclude = [

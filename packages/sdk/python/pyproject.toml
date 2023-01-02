@@ -1,0 +1,78 @@
+[project]
+name = "equalto-python"
+version = "0.0.1"
+author = "EqualTo"
+author_email = "dev@equalto.com"
+packages = ["equalto"]
+description=  "EqualTo python SDK"
+python_requires = ">=3.8"
+zip_safe = false
+include_package_data = true
+
+
+[project.optional-dependencies]
+dev = [
+  "black==22.12.0",
+  "isort==5.11.3",
+  "mypy==0.991",
+  "pytest==7.2.0",
+  "pytest-cov==4.0.0",
+  "pytest-mock==3.10.0",
+  "wemake-python-styleguide==0.17.0",
+]
+
+
+[build-system]
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
+
+
+[tool.black]
+line-length = 120
+target-version = ["py38"]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+
+
+[tool.isort]
+line_length = 120
+include_trailing_comma = true
+multi_line_output = 3
+default_section = "THIRDPARTY"
+
+
+[tool.mypy]
+python_version = "3.8"
+allow_redefinition = false
+check_untyped_defs = true
+disallow_untyped_decorators = true
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+ignore_errors = false
+ignore_missing_imports = true
+implicit_reexport = false
+local_partial_types = true
+strict_optional = true
+strict_equality = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unreachable = true
+warn_no_return = true

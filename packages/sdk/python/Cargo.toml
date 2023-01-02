@@ -1,0 +1,26 @@
+[package]
+name = "_pycalc"
+version = "0.1.0"
+authors = ["EqualTo <dev@equalto.com>"]
+edition = "2021"
+
+
+[lib]
+name = "_pycalc"
+crate-type = ["cdylib"]
+
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+equalto_calc = { path = "../../calc/equalto_calc" }
+equalto_xlsx = { path = "../../calc/equalto_xlsx" }
+
+
+[dependencies.pyo3]
+version = "0.17.3"
+
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]

@@ -2,27 +2,7 @@ BUILD = cargo build --release --locked
 
 modules = equalto_calc equalto_xlsx calc
 
-all: bin web
-
-bin:
-	$(BUILD)
-	mkdir -p build/bin/
-	cp target/release/test build/bin/
-	cp -r pycalc/pkg build/
-	bash -c " \
-	if [ -a 'target/release/libpycalc.so' ] ; then \
-		cp target/release/libpycalc.so build/pkg/pycalc/_pycalc.so; \
-	else \
-		cp target/release/libpycalc.dylib build/pkg/pycalc/_pycalc.so; \
-	fi"
-
-server: bin
-	rm -rf /server/bin
-	mkdir -p /server/bin
-	cp -r build/bin /server/bin/calc
-	rm -rf /server/pkg
-	mkdir -p /server/pkg
-	cp -r build/pkg /server/
+all: web
 
 web:
 	cd calc && wasm-pack build --target bundler
@@ -56,7 +36,6 @@ clean:
 	rm -r -f target
 	rm -r -f calc/pkg
 	rm -r -f calc/target
-	rm -r -f pycalc/target
 	rm -r -f equalto_calc/target
 	rm -r -f equalto_xlsx/target
 
