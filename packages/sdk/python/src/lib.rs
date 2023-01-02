@@ -96,8 +96,9 @@ impl PyModel {
         self.model.set_cells_with_values_json(input_json).unwrap();
     }
 
-    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) {
-        self.model.delete_cell(sheet, row, column)
+    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> PyResult<()> {
+        self.model.delete_cell(sheet, row, column).unwrap();
+        Ok(())
     }
 
     pub fn evaluate(&mut self) {
@@ -152,19 +153,31 @@ impl PyModel {
     }
 
     pub fn get_navigation_right_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self.model.get_navigation_right_edge(sheet, row, column))
+        Ok(self
+            .model
+            .get_navigation_right_edge(sheet, row, column)
+            .unwrap())
     }
 
     pub fn get_navigation_left_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self.model.get_navigation_left_edge(sheet, row, column))
+        Ok(self
+            .model
+            .get_navigation_left_edge(sheet, row, column)
+            .unwrap())
     }
 
     pub fn get_navigation_top_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self.model.get_navigation_top_edge(sheet, row, column))
+        Ok(self
+            .model
+            .get_navigation_top_edge(sheet, row, column)
+            .unwrap())
     }
 
     pub fn get_navigation_bottom_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self.model.get_navigation_bottom_edge(sheet, row, column))
+        Ok(self
+            .model
+            .get_navigation_bottom_edge(sheet, row, column)
+            .unwrap())
     }
 
     pub fn get_navigation_home(&self, sheet: i32) -> Cell {

@@ -41,7 +41,7 @@ fn test_shift_cells_right() {
     model.evaluate();
 
     // Check B1 is now empty
-    assert!(model.is_empty_cell(0, 1, 2));
+    assert!(model.is_empty_cell(0, 1, 2).unwrap());
 
     // C1 is the old B1
     assert_eq!(model._get_text("C1"), *"2");
@@ -261,7 +261,7 @@ fn test_insert_columns() {
     model.evaluate();
 
     // Check F1 is now empty
-    assert!(model.is_empty_cell(0, 1, 6));
+    assert!(model.is_empty_cell(0, 1, 6).unwrap());
 
     // The old F1 is K1
     assert_eq!(model._get_formula("K1"), *"=B1");
@@ -305,7 +305,7 @@ fn test_insert_rows() {
     model.evaluate();
 
     // Check C6 is now empty
-    assert!(model.is_empty_cell(0, 6, 3));
+    assert!(model.is_empty_cell(0, 6, 3).unwrap());
 
     // Old C6 is now C11
     assert_eq!(model._get_formula("C11"), *"=C5");

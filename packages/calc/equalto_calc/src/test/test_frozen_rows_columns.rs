@@ -31,19 +31,22 @@ fn test_empty_model() {
 #[test]
 fn test_invalid_sheet() {
     let mut model = new_empty_model();
-    assert_eq!(model.get_frozen_rows(1), Err("Invalid sheet".to_string()));
+    assert_eq!(
+        model.get_frozen_rows(1),
+        Err("Invalid sheet index".to_string())
+    );
     assert_eq!(
         model.get_frozen_columns(3),
-        Err("Invalid sheet".to_string())
+        Err("Invalid sheet index".to_string())
     );
 
     assert_eq!(
         model.set_frozen_rows(3, 3),
-        Err("Invalid sheet".to_string())
+        Err("Invalid sheet index".to_string())
     );
     assert_eq!(
         model.set_frozen_columns(3, 5),
-        Err("Invalid sheet".to_string())
+        Err("Invalid sheet index".to_string())
     );
 }
 

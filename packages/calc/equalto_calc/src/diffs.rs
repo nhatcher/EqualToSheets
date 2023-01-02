@@ -86,7 +86,10 @@ impl Model {
         // Walk over every formula
         let cells = self.get_all_cells();
         for cell in cells {
-            if let Some(f) = self.get_cell_formula_index(cell.index, cell.row, cell.column) {
+            if let Some(f) = self
+                .get_cell_formula_index(cell.index, cell.row, cell.column)
+                .expect("Expected cell formula index")
+            {
                 let sheet = cell.index;
                 let row = cell.row;
                 let column = cell.column;

@@ -66,7 +66,8 @@ impl Model {
         let value = self.get_formula_or_value(sheet, source_row, source_column);
         let style = self.get_cell_style_index(sheet, source_row, source_column);
         self.set_input(sheet, target_row, target_column, value, style);
-        self.remove_cell(sheet, source_row, source_column);
+        self.remove_cell(sheet, source_row, source_column)
+            .expect("Expected cell to exist");
     }
 
     pub fn insert_columns(
@@ -131,7 +132,8 @@ impl Model {
                     if col >= column + column_count {
                         self.move_cell(sheet, r, col, r, col - column_count);
                     } else {
-                        self.remove_cell(sheet, r, col);
+                        self.remove_cell(sheet, r, col)
+                            .expect("Expected cell to exist");
                     }
                 }
             }
@@ -235,7 +237,8 @@ impl Model {
                     // remove all cells in row
                     // FIXME: We could just remove the entire row in one go
                     for column in columns {
-                        self.remove_cell(sheet, r, column);
+                        self.remove_cell(sheet, r, column)
+                            .expect("Expected cell to exist");
                     }
                 }
             }
@@ -374,7 +377,8 @@ impl Model {
             if r >= row {
                 if r < row + cell_count {
                     // delete the cell
-                    self.remove_cell(sheet, r, column);
+                    self.remove_cell(sheet, r, column)
+                        .expect("Expected cell to exist");
                 } else {
                     self.move_cell(sheet, r, column, r - cell_count, column);
                 }
@@ -414,8 +418,8 @@ impl Model {
         for col in sorted_columns {
             if col >= column {
                 if col < column + cell_count {
-                    // delete the cell
-                    self.remove_cell(sheet, row, col);
+                    self.remove_cell(sheet, row, col)
+                        .expect("Expected cell to exist");
                 } else {
                     self.move_cell(sheet, row, col, row, col - cell_count);
                 }
@@ -451,7 +455,10 @@ impl Model {
         // Now walk over every formula swapping the references
         let cells = self.get_all_cells();
         for cell in cells {
-            if let Some(f) = self.get_cell_formula_index(cell.index, cell.row, cell.column) {
+            if let Some(f) = self
+                .get_cell_formula_index(cell.index, cell.row, cell.column)
+                .expect("Expected cell formula index")
+            {
                 // Get a copy of the AST
                 let node = &mut self.parsed_formulas[sheet as usize][f as usize].clone();
                 let cell_reference = CellReferenceRC {

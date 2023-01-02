@@ -63,46 +63,101 @@ fn test_move_formula_wrong_args() {
     };
 
     // different sheet
-    let area = &Area {
-        sheet: 1,
-        row: 5,
-        column: 5,
-        width: 1,
-        height: 1,
-    };
-    let t = model.move_cell_value_to_area(source, value, target, area);
-    assert!(t.is_err());
+    {
+        let area = &Area {
+            sheet: 1,
+            row: 5,
+            column: 5,
+            width: 1,
+            height: 1,
+        };
+        let t = model.move_cell_value_to_area(source, value, target, area);
+        assert_eq!(
+            t,
+            Err("Source and area are in different sheets".to_string())
+        );
+    }
 
     // not in area
-    let area = &Area {
-        sheet: 0,
-        row: 6,
-        column: 4,
-        width: 5,
-        height: 5,
-    };
-    let t = model.move_cell_value_to_area(source, value, target, area);
-    assert!(t.is_err());
+    {
+        let area = &Area {
+            sheet: 0,
+            row: 6,
+            column: 4,
+            width: 5,
+            height: 5,
+        };
+        let t = model.move_cell_value_to_area(source, value, target, area);
+        assert_eq!(t, Err("Source is outside the area".to_string()));
+    }
 
-    let area = &Area {
-        sheet: 0,
-        row: 1,
-        column: 4,
-        width: 5,
-        height: 2,
-    };
-    let t = model.move_cell_value_to_area(source, value, target, area);
-    assert!(t.is_err());
+    {
+        let area = &Area {
+            sheet: 0,
+            row: 1,
+            column: 4,
+            width: 5,
+            height: 2,
+        };
+        let t = model.move_cell_value_to_area(source, value, target, area);
+        assert_eq!(t, Err("Source is outside the area".to_string()));
+    }
 
-    let area = &Area {
-        sheet: 0,
-        row: 1,
-        column: 6,
-        width: 20,
-        height: 5,
-    };
-    let t = model.move_cell_value_to_area(source, value, target, area);
-    assert!(t.is_err());
+    {
+        let area = &Area {
+            sheet: 0,
+            row: 1,
+            column: 6,
+            width: 20,
+            height: 5,
+        };
+        let t = model.move_cell_value_to_area(source, value, target, area);
+        assert_eq!(t, Err("Source is outside the area".to_string()));
+    }
+
+    // Invalid sheet indexes
+    assert_eq!(
+        model.move_cell_value_to_area(
+            &CellReferenceIndex {
+                sheet: 0,
+                row: 1,
+                column: 4,
+            },
+            value,
+            &CellReferenceIndex {
+                sheet: 16,
+                row: 1,
+                column: 1,
+            },
+            &Area {
+                sheet: 0,
+                row: 1,
+                column: 4,
+                width: 5,
+                height: 2,
+            }
+        ),
+        Err("Could not find target worksheet: Invalid sheet index".to_string())
+    );
+    assert_eq!(
+        model.move_cell_value_to_area(
+            &CellReferenceIndex {
+                sheet: 3,
+                column: 1,
+                row: 1,
+            },
+            value,
+            target,
+            &Area {
+                sheet: 3,
+                row: 1,
+                column: 1,
+                width: 5,
+                height: 5,
+            },
+        ),
+        Err("Could not find source worksheet: Invalid sheet index".to_string())
+    );
 }
 
 #[test]

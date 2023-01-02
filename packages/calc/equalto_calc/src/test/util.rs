@@ -50,6 +50,8 @@ impl Model {
         let cell_reference = self._parse_reference(cell);
         let column = cell_reference.column;
         let row = cell_reference.row;
-        self.get_cell(cell_reference.sheet, row, column).unwrap()
+        self.get_cell(cell_reference.sheet, row, column)
+            .unwrap()
+            .unwrap()
     }
 }

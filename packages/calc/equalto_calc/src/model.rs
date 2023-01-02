@@ -17,7 +17,7 @@ use crate::{
         parser::move_formula::{move_formula, MoveContext},
         token::{self, get_error_by_name},
         types::*,
-        utils,
+        utils::{self, is_valid_row},
     },
     expressions::{
         lexer::LexerMode,
@@ -558,14 +558,12 @@ impl Model {
     }
 
     fn cell_reference_to_string(&self, cell_reference: &CellReference) -> Result<String, String> {
-        let sheet = match self.workbook.worksheets.get(cell_reference.sheet as usize) {
-            Some(s) => s,
-            None => return Err("Invalid sheet".to_string()),
-        };
-        let column = match utils::number_to_column(cell_reference.column) {
-            Some(c) => c,
-            None => return Err("Invalid column".to_string()),
-        };
+        let sheet = self.workbook.worksheet(cell_reference.sheet)?;
+        let column = utils::number_to_column(cell_reference.column)
+            .ok_or_else(|| "Invalid column".to_string())?;
+        if !is_valid_row(cell_reference.row) {
+            return Err("Invalid row".to_string());
+        }
         Ok(format!("{}!{}{}", sheet.name, column, cell_reference.row))
     }
     /// Sets `result` in the cell given by `sheet` sheet index, row and column
@@ -687,34 +685,23 @@ impl Model {
     }
 
     pub fn set_sheet_color(&mut self, sheet: i32, color: &str) -> Result<(), String> {
-        if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
-            if color.is_empty() {
-                worksheet.color = Color::None;
-                return Ok(());
-            } else if is_valid_hex_color(color) {
-                worksheet.color = Color::RGB(color.to_string());
-                return Ok(());
-            }
-            Err(format!("Invalid color: {}", color))
-        } else {
-            Err("Invalid sheet".to_string())
+        let mut worksheet = self.workbook.worksheet_mut(sheet)?;
+        if color.is_empty() {
+            worksheet.color = Color::None;
+            return Ok(());
+        } else if is_valid_hex_color(color) {
+            worksheet.color = Color::RGB(color.to_string());
+            return Ok(());
         }
+        Err(format!("Invalid color: {}", color))
     }
 
     pub fn get_frozen_rows(&self, sheet: i32) -> Result<i32, String> {
-        if let Some(worksheet) = self.workbook.worksheets.get(sheet as usize) {
-            Ok(worksheet.frozen_rows)
-        } else {
-            Err("Invalid sheet".to_string())
-        }
+        Ok(self.workbook.worksheet(sheet)?.frozen_rows)
     }
 
     pub fn get_frozen_columns(&self, sheet: i32) -> Result<i32, String> {
-        if let Some(worksheet) = self.workbook.worksheets.get(sheet as usize) {
-            Ok(worksheet.frozen_columns)
-        } else {
-            Err("Invalid sheet".to_string())
-        }
+        Ok(self.workbook.worksheet(sheet)?.frozen_columns)
     }
 
     pub fn set_frozen_rows(&mut self, sheet: i32, frozen_rows: i32) -> Result<(), String> {
@@ -727,7 +714,7 @@ impl Model {
             worksheet.frozen_rows = frozen_rows;
             Ok(())
         } else {
-            Err("Invalid sheet".to_string())
+            Err("Invalid sheet index".to_string())
         }
     }
 
@@ -741,7 +728,7 @@ impl Model {
             worksheet.frozen_columns = frozen_columns;
             Ok(())
         } else {
-            Err("Invalid sheet".to_string())
+            Err("Invalid sheet index".to_string())
         }
     }
 
@@ -785,33 +772,40 @@ impl Model {
         }
     }
 
-    pub fn get_cell(&self, sheet: i32, row: i32, column: i32) -> Option<&Cell> {
-        let worksheet = self.workbook.worksheets.get(sheet as usize)?;
+    pub fn get_cell(&self, sheet: i32, row: i32, column: i32) -> Result<Option<&Cell>, String> {
+        let worksheet = self.workbook.worksheet(sheet)?;
         let sheet_data = &worksheet.sheet_data;
-        let data_row = sheet_data.get(&row)?;
-        data_row.get(&column)
+
+        if let Some(data_row) = sheet_data.get(&row) {
+            Ok(data_row.get(&column))
+        } else {
+            Ok(None)
+        }
     }
 
-    pub fn get_cell_mut(&mut self, sheet: i32, row: i32, column: i32) -> Option<&mut Cell> {
+    pub(crate) fn get_cell_mut(&mut self, sheet: i32, row: i32, column: i32) -> Option<&mut Cell> {
         let worksheet = self.workbook.worksheets.get_mut(sheet as usize)?;
         let data_row = worksheet.sheet_data.get_mut(&row)?;
         data_row.get_mut(&column)
     }
 
-    pub fn is_empty_cell(&self, sheet: i32, row: i32, column: i32) -> bool {
-        let worksheet = &self.workbook.worksheets[sheet as usize];
+    /// Returns true if cell is completely empty.
+    /// Cell with formula that evaluates to empty string is not considered empty.
+    pub fn is_empty_cell(&self, sheet: i32, row: i32, column: i32) -> Result<bool, String> {
+        let worksheet = self.workbook.worksheet(sheet)?;
         let sheet_data = &worksheet.sheet_data;
-        if let Some(data_row) = sheet_data.get(&row) {
+
+        let is_empty = if let Some(data_row) = sheet_data.get(&row) {
             if let Some(cell) = data_row.get(&column) {
-                match cell {
-                    Cell::EmptyCell { .. } => return true,
-                    _ => return false,
-                }
+                matches!(cell, Cell::EmptyCell { .. })
+            } else {
+                true
             }
-            true
         } else {
             true
-        }
+        };
+
+        Ok(is_empty)
     }
 
     pub(crate) fn evaluate_cell(&mut self, cell_reference: CellReference) -> CalcResult {
@@ -874,24 +868,20 @@ impl Model {
     // Public API
     /// Returns a model from a String representation of a workbook
     pub fn from_json(s: &str, env: Environment) -> Result<Model, String> {
-        let workbook: Workbook = match serde_json::from_str(s) {
-            Ok(w) => w,
-            Err(_) => return Err("Error parsing workbook".to_string()),
-        };
+        let workbook: Workbook =
+            serde_json::from_str(s).map_err(|_| "Error parsing workbook".to_string())?;
         let parsed_formulas = Vec::new();
         let worksheets = &workbook.worksheets;
         let parser = Parser::new(worksheets.iter().map(|s| s.get_name()).collect());
         let cells = HashMap::new();
-        let locale = match get_locale(&workbook.settings.locale) {
-            Ok(l) => l.clone(),
-            Err(_) => return Err("Invalid locale".to_string()),
-        };
-        let tz: Tz = match &workbook.settings.tz.parse() {
-            Ok(t) => *t,
-            Err(_) => {
-                return Err(format!("Invalid timezone: {}", &workbook.settings.tz));
-            }
-        };
+        let locale = get_locale(&workbook.settings.locale)
+            .map_err(|_| "Invalid locale".to_string())?
+            .clone();
+        let tz: Tz = workbook
+            .settings
+            .tz
+            .parse()
+            .map_err(|_| format!("Invalid timezone: {}", workbook.settings.tz))?;
 
         // FIXME: Add support for display languages
         let language = get_language("en").expect("").clone();
@@ -968,12 +958,11 @@ impl Model {
         target: &CellReferenceIndex,
         area: &Area,
     ) -> Result<String, String> {
-        let source_sheet_name = match self.workbook.worksheets.get(source.sheet as usize) {
-            Some(ws) => ws.get_name(),
-            None => {
-                return Err("Invalid worksheet index".to_owned());
-            }
-        };
+        let source_sheet_name = self
+            .workbook
+            .worksheet(source.sheet)
+            .map_err(|e| format!("Could not find source worksheet: {}", e))?
+            .get_name();
         if source.sheet != area.sheet {
             return Err("Source and area are in different sheets".to_string());
         }
@@ -983,12 +972,11 @@ impl Model {
         if source.column < area.column || source.column >= area.column + area.width {
             return Err("Source is outside the area".to_string());
         }
-        let target_sheet_name = match self.workbook.worksheets.get(target.sheet as usize) {
-            Some(ws) => ws.get_name(),
-            None => {
-                return Err("Invalid worksheet index".to_owned());
-            }
-        };
+        let target_sheet_name = self
+            .workbook
+            .worksheet(target.sheet)
+            .map_err(|e| format!("Could not find target worksheet: {}", e))?
+            .get_name();
         if let Some(formula) = value.strip_prefix('=') {
             let cell_reference = CellReferenceRC {
                 sheet: source_sheet_name.to_owned(),
@@ -1022,7 +1010,7 @@ impl Model {
         target_row: i32,
         target_column: i32,
     ) -> String {
-        match self.get_cell(sheet, row, column) {
+        match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => match cell.get_formula() {
                 None => cell.get_text(&self.workbook.shared_strings, &self.language),
                 Some(i) => {
@@ -1077,7 +1065,7 @@ impl Model {
 
     /// Returns a formula if the cell has one or the value of the cell
     pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> String {
-        match self.get_cell(sheet, row, column) {
+        match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => match cell.get_formula() {
                 None => cell.get_text(&self.workbook.shared_strings, &self.language),
                 Some(i) => {
@@ -1096,7 +1084,7 @@ impl Model {
 
     /// Checks if cell has formula
     pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> bool {
-        match self.get_cell(sheet, row, column) {
+        match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_formula().is_some(),
             None => false,
         }
@@ -1104,7 +1092,7 @@ impl Model {
 
     /// Returns a text representation of the value of the cell
     pub fn get_text_at(&self, sheet: i32, row: i32, column: i32) -> String {
-        match self.get_cell(sheet, row, column) {
+        match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_text(&self.workbook.shared_strings, &self.language),
             None => "".to_string(),
         }
@@ -1112,7 +1100,7 @@ impl Model {
 
     /// Returns the information needed to display a cell in the UI
     pub fn get_ui_cell(&self, sheet: i32, row: i32, column: i32) -> UICell {
-        return match self.get_cell(sheet, row, column) {
+        return match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_ui_cell(&self.workbook.shared_strings, &self.language),
             None => UICell {
                 kind: "empty".to_string(),
@@ -1210,17 +1198,18 @@ impl Model {
         formatter::format::format_number(value, &format_code, &self.locale)
     }
 
-    pub(crate) fn get_cell_formula_index(&self, sheet: i32, row: i32, column: i32) -> Option<i32> {
-        match &self.workbook.worksheets[sheet as usize]
-            .sheet_data
-            .get(&row)
-        {
-            Some(full_row) => match full_row.get(&column) {
-                Some(cell) => cell.get_formula(),
-                None => None,
-            },
-            None => None,
+    pub(crate) fn get_cell_formula_index(
+        &self,
+        sheet: i32,
+        row: i32,
+        column: i32,
+    ) -> Result<Option<i32>, String> {
+        if let Some(full_row) = self.workbook.worksheet(sheet)?.sheet_data.get(&row) {
+            if let Some(cell) = full_row.get(&column) {
+                return Ok(cell.get_formula());
+            }
         }
+        Ok(None)
     }
 
     pub(crate) fn shift_cell_formula(
@@ -1230,7 +1219,10 @@ impl Model {
         column: i32,
         displace_data: &DisplaceData,
     ) {
-        if let Some(f) = self.get_cell_formula_index(sheet, row, column) {
+        if let Some(f) = self
+            .get_cell_formula_index(sheet, row, column)
+            .expect("Expected cell formula index")
+        {
             let node = &self.parsed_formulas[sheet as usize][f as usize].clone();
             let cell_reference = CellReferenceRC {
                 sheet: self.workbook.worksheets[sheet as usize].get_name(),
@@ -1406,6 +1398,9 @@ impl Model {
     }
 
     fn set_cell_with_string(&mut self, sheet: i32, row: i32, column: i32, value: &str, style: i32) {
+        // Interestingly, `self.workbook.worksheet()` cannot be used because it would create two
+        // mutable borrows of worksheet. However, I suspect that lexical lifetimes silently help
+        // here, so there is no issue with inlined call.
         let worksheets = &mut self.workbook.worksheets;
         let worksheet = &mut worksheets[sheet as usize];
         let shared_strings = &mut self.workbook.shared_strings;
@@ -1607,7 +1602,7 @@ impl Model {
 
     /// Returns the Cell. Used in tests
     pub fn get_cell_at(&self, sheet: i32, row: i32, column: i32) -> Cell {
-        match self.get_cell(sheet, row, column) {
+        match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.clone(),
             None => Cell::EmptyCell {
                 t: "empty".to_string(),
@@ -1729,22 +1724,22 @@ impl Model {
 
     /// Deletes a cell by setting it empty.
     /// TODO: A better name would be set_cell_empty or remove_cell_contents
-    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) {
-        let worksheets = &mut self.workbook.worksheets;
-        let worksheet = &mut worksheets[sheet as usize];
+    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), String> {
+        let worksheet = self.workbook.worksheet_mut(sheet)?;
         worksheet.set_cell_empty(row, column);
+        Ok(())
     }
 
-    pub fn remove_cell(&mut self, sheet: i32, row: i32, column: i32) {
-        let worksheets = &mut self.workbook.worksheets;
-        let worksheet = &mut worksheets[sheet as usize];
+    /// Deletes a cell by removing it from worksheet data.
+    pub fn remove_cell(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), String> {
+        let worksheet = self.workbook.worksheet_mut(sheet)?;
+
         let sheet_data = &mut worksheet.sheet_data;
-        if sheet_data.contains_key(&row) {
-            sheet_data
-                .get_mut(&row)
-                .expect("expected row")
-                .remove(&column);
+        if let Some(row_data) = sheet_data.get_mut(&row) {
+            row_data.remove(&column);
         }
+
+        Ok(())
     }
 
     /// Changes the height of a row.
@@ -1872,7 +1867,7 @@ impl Model {
 
     pub fn get_cell_style_index(&self, sheet: i32, row: i32, column: i32) -> i32 {
         // First check the cell, then row, the column
-        match self.get_cell(sheet, row, column) {
+        match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_style() as i32,
             None => {
                 let rows = &self.workbook.worksheets[sheet as usize].rows;
@@ -1983,5 +1978,164 @@ impl Model {
         // Remove all data
         worksheet.sheet_data = HashMap::new();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test::util::new_empty_model;
+
+    #[test]
+    fn test_value_needs_quoting() {
+        let en_language = get_language("en").expect("en language expected");
+
+        assert!(!value_needs_quoting("", en_language));
+        assert!(!value_needs_quoting("hello", en_language));
+
+        assert!(value_needs_quoting("12", en_language));
+        assert!(value_needs_quoting("true", en_language));
+        assert!(value_needs_quoting("False", en_language));
+
+        assert!(value_needs_quoting("=A1", en_language));
+
+        assert!(value_needs_quoting("#REF!", en_language));
+        assert!(value_needs_quoting("#NAME?", en_language));
+    }
+
+    #[test]
+    fn test_is_valid_hex_color() {
+        assert!(is_valid_hex_color("#000000"));
+        assert!(is_valid_hex_color("#ffffff"));
+
+        assert!(!is_valid_hex_color("000000"));
+        assert!(!is_valid_hex_color("ffffff"));
+
+        assert!(!is_valid_hex_color("#gggggg"));
+
+        // Not obvious cases unrecognized as colors
+        assert!(!is_valid_hex_color("#ffffff "));
+        assert!(!is_valid_hex_color("#fff")); // CSS shorthand
+        assert!(!is_valid_hex_color("#ffffff00")); // with alpha channel
+    }
+
+    #[test]
+    fn test_cell_reference_to_string() {
+        let model = new_empty_model();
+        let reference = CellReference {
+            sheet: 0,
+            row: 32,
+            column: 16,
+        };
+        assert_eq!(
+            model.cell_reference_to_string(&reference),
+            Ok("Sheet1!P32".to_string())
+        )
+    }
+
+    #[test]
+    fn test_cell_reference_to_string_invalid_worksheet() {
+        let model = new_empty_model();
+        let reference = CellReference {
+            sheet: 10,
+            row: 1,
+            column: 1,
+        };
+        assert_eq!(
+            model.cell_reference_to_string(&reference),
+            Err("Invalid sheet index".to_string())
+        )
+    }
+
+    #[test]
+    fn test_cell_reference_to_string_invalid_column() {
+        let model = new_empty_model();
+        let reference = CellReference {
+            sheet: 0,
+            row: 1,
+            column: 20_000,
+        };
+        assert_eq!(
+            model.cell_reference_to_string(&reference),
+            Err("Invalid column".to_string())
+        )
+    }
+
+    #[test]
+    fn test_cell_reference_to_string_invalid_row() {
+        let model = new_empty_model();
+        let reference = CellReference {
+            sheet: 0,
+            row: 2_000_000,
+            column: 1,
+        };
+        assert_eq!(
+            model.cell_reference_to_string(&reference),
+            Err("Invalid row".to_string())
+        )
+    }
+
+    #[test]
+    fn test_get_cell() {
+        let mut model = new_empty_model();
+        model._set("A1", "35");
+        model._set("A2", "");
+
+        assert_eq!(
+            model.get_cell(0, 1, 1),
+            Ok(Some(&Cell::NumberCell {
+                t: "n".to_string(),
+                v: 35.0,
+                s: 0
+            }))
+        );
+
+        assert_eq!(
+            model.get_cell(0, 2, 1),
+            Ok(Some(&Cell::SharedString {
+                t: "s".to_string(),
+                si: 0,
+                s: 0,
+            }))
+        );
+        assert_eq!(model.get_cell(0, 2, 2), Ok(None))
+    }
+
+    #[test]
+    fn test_get_cell_invalid_sheet() {
+        let model = new_empty_model();
+        assert_eq!(
+            model.get_cell(5, 1, 1),
+            Err("Invalid sheet index".to_string()),
+        )
+    }
+
+    #[test]
+    fn test_get_cell_formula_index_for_unset_cell() {
+        let model = new_empty_model();
+        assert_eq!(model.get_cell_formula_index(0, 1, 1), Ok(None))
+    }
+
+    #[test]
+    fn test_get_cell_formula_index_for_non_formula_value() {
+        let mut model = new_empty_model();
+        model._set("A1", "45");
+        assert_eq!(model.get_cell_formula_index(0, 1, 1), Ok(None))
+    }
+
+    #[test]
+    fn test_get_cell_formula_index_for_formula() {
+        let mut model = new_empty_model();
+        model._set("A1", "=1+1");
+        assert_eq!(model.get_cell_formula_index(0, 1, 1), Ok(Some(0)))
+    }
+
+    #[test]
+    fn test_get_cell_formula_index_for_invalid_worksheet() {
+        let model = new_empty_model();
+        assert_eq!(
+            model.get_cell_formula_index(3, 1, 1),
+            Err("Invalid sheet index".to_string())
+        )
     }
 }

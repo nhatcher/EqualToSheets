@@ -277,11 +277,11 @@ impl JSModel {
     }
 
     pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) {
-        self.model.delete_cell(sheet, row, column)
+        self.model.delete_cell(sheet, row, column).unwrap();
     }
 
     pub fn remove_cell(&mut self, sheet: i32, row: i32, column: i32) {
-        self.model.remove_cell(sheet, row, column)
+        self.model.remove_cell(sheet, row, column).unwrap();
     }
 
     pub fn evaluate(&mut self) {
@@ -395,19 +395,27 @@ impl JSModel {
     }
 
     pub fn get_navigation_right_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
-        self.model.get_navigation_right_edge(sheet, row, column)
+        self.model
+            .get_navigation_right_edge(sheet, row, column)
+            .unwrap()
     }
 
     pub fn get_navigation_left_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
-        self.model.get_navigation_left_edge(sheet, row, column)
+        self.model
+            .get_navigation_left_edge(sheet, row, column)
+            .unwrap()
     }
 
     pub fn get_navigation_top_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
-        self.model.get_navigation_top_edge(sheet, row, column)
+        self.model
+            .get_navigation_top_edge(sheet, row, column)
+            .unwrap()
     }
 
     pub fn get_navigation_bottom_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
-        self.model.get_navigation_bottom_edge(sheet, row, column)
+        self.model
+            .get_navigation_bottom_edge(sheet, row, column)
+            .unwrap()
     }
 
     pub fn get_navigation_home(&self, sheet: i32) -> Cell {

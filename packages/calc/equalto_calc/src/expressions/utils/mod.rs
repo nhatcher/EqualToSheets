@@ -39,9 +39,13 @@ pub fn is_valid_column(column: &str) -> bool {
     column_to_number(column) <= LAST_COLUMN
 }
 
-pub fn is_valid_row(row: &str) -> bool {
+pub fn is_valid_row(row: i32) -> bool {
+    row <= LAST_ROW
+}
+
+fn is_valid_row_str(row: &str) -> bool {
     match row.parse::<i32>() {
-        Ok(r) => r <= LAST_ROW,
+        Ok(r) => is_valid_row(r),
         Err(_r) => false,
     }
 }
@@ -166,7 +170,7 @@ pub fn parse_reference_a1(r: &str) -> Option<ParsedReference> {
     if !is_valid_column(&column) {
         return None;
     }
-    if !is_valid_row(&row) {
+    if !is_valid_row_str(&row) {
         return None;
     }
     let row = match row.parse::<i32>() {

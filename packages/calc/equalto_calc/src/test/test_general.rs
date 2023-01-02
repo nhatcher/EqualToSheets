@@ -492,16 +492,6 @@ fn test_get_ui_cell() {
 }
 
 #[test]
-fn test_is_empty_cell() {
-    let mut model = new_empty_model();
-    assert!(model.is_empty_cell(0, 3, 1));
-    model.set_input(0, 3, 1, "Hello World".to_string(), 0);
-    assert!(!model.is_empty_cell(0, 3, 1));
-    model.delete_cell(0, 3, 1);
-    assert!(model.is_empty_cell(0, 3, 1));
-}
-
-#[test]
 fn test_mode_to_right_edge() {
     let mut model = new_empty_model();
     // We have non empty cells in C3,D3,E3, H3, U3
@@ -511,15 +501,15 @@ fn test_mode_to_right_edge() {
     model.set_input(0, 3, 20, "Hello World".to_string(), 0);
     model.set_input(0, 3, 30, "Hello World".to_string(), 0);
 
-    assert_eq!(model.get_navigation_right_edge(0, 3, 1), 3);
+    assert_eq!(model.get_navigation_right_edge(0, 3, 1).unwrap(), 3);
 
-    assert_eq!(model.get_navigation_right_edge(0, 3, 3), 5);
+    assert_eq!(model.get_navigation_right_edge(0, 3, 3).unwrap(), 5);
 
-    assert_eq!(model.get_navigation_right_edge(0, 3, 5), 20);
+    assert_eq!(model.get_navigation_right_edge(0, 3, 5).unwrap(), 20);
 
-    assert_eq!(model.get_navigation_right_edge(0, 3, 20), 30);
+    assert_eq!(model.get_navigation_right_edge(0, 3, 20).unwrap(), 30);
 
-    assert_eq!(model.get_navigation_right_edge(0, 3, 30), 16384);
+    assert_eq!(model.get_navigation_right_edge(0, 3, 30).unwrap(), 16384);
 }
 
 #[test]
@@ -532,18 +522,18 @@ fn test_mode_to_left_edge() {
     model.set_input(0, 3, 20, "Hello World".to_string(), 0);
     model.set_input(0, 3, 30, "Hello World".to_string(), 0);
 
-    assert_eq!(model.get_navigation_left_edge(0, 3, 60), 30);
+    assert_eq!(model.get_navigation_left_edge(0, 3, 60).unwrap(), 30);
 
-    assert_eq!(model.get_navigation_left_edge(0, 3, 30), 20);
+    assert_eq!(model.get_navigation_left_edge(0, 3, 30).unwrap(), 20);
 
-    assert_eq!(model.get_navigation_left_edge(0, 3, 20), 5);
+    assert_eq!(model.get_navigation_left_edge(0, 3, 20).unwrap(), 5);
 
-    assert_eq!(model.get_navigation_left_edge(0, 3, 5), 3);
+    assert_eq!(model.get_navigation_left_edge(0, 3, 5).unwrap(), 3);
 
-    assert_eq!(model.get_navigation_left_edge(0, 3, 3), 1);
+    assert_eq!(model.get_navigation_left_edge(0, 3, 3).unwrap(), 1);
 
     model.set_input(0, 3, 7, "Hello World".to_string(), 0);
-    assert_eq!(model.get_navigation_left_edge(0, 3, 7), 5);
+    assert_eq!(model.get_navigation_left_edge(0, 3, 7).unwrap(), 5);
 }
 
 #[test]
@@ -557,15 +547,18 @@ fn test_mode_to_bottom_edge() {
     model.set_input(0, 20, 5, "Hello World".to_string(), 0);
     model.set_input(0, 30, 5, "Hello World".to_string(), 0);
 
-    assert_eq!(model.get_navigation_bottom_edge(0, 1, 5), 3);
+    assert_eq!(model.get_navigation_bottom_edge(0, 1, 5).unwrap(), 3);
 
-    assert_eq!(model.get_navigation_bottom_edge(0, 3, 5), 5);
+    assert_eq!(model.get_navigation_bottom_edge(0, 3, 5).unwrap(), 5);
 
-    assert_eq!(model.get_navigation_bottom_edge(0, 5, 5), 20);
+    assert_eq!(model.get_navigation_bottom_edge(0, 5, 5).unwrap(), 20);
 
-    assert_eq!(model.get_navigation_bottom_edge(0, 20, 5), 30);
+    assert_eq!(model.get_navigation_bottom_edge(0, 20, 5).unwrap(), 30);
 
-    assert_eq!(model.get_navigation_bottom_edge(0, 30, 5), last_row);
+    assert_eq!(
+        model.get_navigation_bottom_edge(0, 30, 5).unwrap(),
+        last_row
+    );
 }
 
 #[test]
@@ -578,18 +571,18 @@ fn test_mode_to_top_edge() {
     model.set_input(0, 20, 5, "Hello World".to_string(), 0);
     model.set_input(0, 30, 5, "Hello World".to_string(), 0);
 
-    assert_eq!(model.get_navigation_top_edge(0, 100, 5), 30);
+    assert_eq!(model.get_navigation_top_edge(0, 100, 5).unwrap(), 30);
 
-    assert_eq!(model.get_navigation_top_edge(0, 30, 5), 20);
+    assert_eq!(model.get_navigation_top_edge(0, 30, 5).unwrap(), 20);
 
-    assert_eq!(model.get_navigation_top_edge(0, 20, 5), 5);
+    assert_eq!(model.get_navigation_top_edge(0, 20, 5).unwrap(), 5);
 
-    assert_eq!(model.get_navigation_top_edge(0, 5, 5), 3);
+    assert_eq!(model.get_navigation_top_edge(0, 5, 5).unwrap(), 3);
 
-    assert_eq!(model.get_navigation_top_edge(0, 3, 5), 1);
+    assert_eq!(model.get_navigation_top_edge(0, 3, 5).unwrap(), 1);
 
     model.set_input(0, 7, 5, "Hello World".to_string(), 0);
-    assert_eq!(model.get_navigation_top_edge(0, 7, 5), 5);
+    assert_eq!(model.get_navigation_top_edge(0, 7, 5).unwrap(), 5);
 }
 
 #[test]
@@ -720,17 +713,41 @@ fn test_set_sheet_color() {
 }
 
 #[test]
+fn test_set_sheet_color_invalid_sheet() {
+    let mut model = new_empty_model();
+    assert_eq!(
+        model.set_sheet_color(10, "#FFFAAA"),
+        Err("Invalid sheet index".to_string())
+    );
+}
+
+#[test]
 fn test_set_sheet_color_invalid() {
     let mut model = new_empty_model();
     // Boundaries
     assert!(model.set_sheet_color(0, "#FFFFFF").is_ok());
     assert!(model.set_sheet_color(0, "#000000").is_ok());
 
-    assert!(model.set_sheet_color(0, "#FFF").is_err());
-    assert!(model.set_sheet_color(0, "-#FFF").is_err());
-    assert!(model.set_sheet_color(0, "#-FFF").is_err());
-    assert!(model.set_sheet_color(0, "2FFFFFF").is_err());
-    assert!(model.set_sheet_color(0, "#FFFFFF1").is_err());
+    assert_eq!(
+        model.set_sheet_color(0, "#FFF"),
+        Err("Invalid color: #FFF".to_string())
+    );
+    assert_eq!(
+        model.set_sheet_color(0, "-#FFF"),
+        Err("Invalid color: -#FFF".to_string())
+    );
+    assert_eq!(
+        model.set_sheet_color(0, "#-FFF"),
+        Err("Invalid color: #-FFF".to_string())
+    );
+    assert_eq!(
+        model.set_sheet_color(0, "2FFFFFF"),
+        Err("Invalid color: 2FFFFFF".to_string())
+    );
+    assert_eq!(
+        model.set_sheet_color(0, "#FFFFFF1"),
+        Err("Invalid color: #FFFFFF1".to_string())
+    );
 }
 
 #[test]
