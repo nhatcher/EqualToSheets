@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from equalto.cell import Cell, CellType
-from equalto.exceptions import WorkbookError
+from equalto.exceptions import WorkbookError, WorkbookValueError
 from equalto.workbook import Workbook
 
 
@@ -97,3 +97,86 @@ def test_delete_cell(cell: Cell) -> None:
     cell.delete()
     assert not cell.value
     # TODO: Once styles are introduced, confirm that the cell style is deleted as well.
+
+
+def test_int_value(cell: Cell) -> None:
+    cell.value = 42.0
+    assert cell.int_value == 42
+
+
+@pytest.mark.parametrize(
+    "value, error",
+    [
+        ("foobar", "'foobar' is not a number"),
+        (True, "True is not a number"),
+        (None, "'' is not a number"),
+        ("4", "'4' is not a number"),  # the value is not automatically converted
+        (4.2, "4.2 is not an integer"),
+    ],
+)
+def test_int_value_error(cell: Cell, value: Any, error: str) -> None:
+    cell.value = value
+    with pytest.raises(WorkbookValueError, match=error):
+        _ = cell.int_value  # noqa: WPS122
+
+
+@pytest.mark.parametrize("value", [4.2, 7.0, -1.2, -100.0])
+def test_float_value(cell: Cell, value: float) -> None:
+    cell.value = value
+    assert cell.float_value == value
+
+
+@pytest.mark.parametrize(
+    "value, error",
+    [
+        ("foobar", "'foobar' is not a number"),
+        (True, "True is not a number"),
+        (None, "'' is not a number"),
+        ("4.2", "'4.2' is not a number"),  # the value is not automatically converted
+    ],
+)
+def test_float_value_error(cell: Cell, value: Any, error: str) -> None:
+    cell.value = value
+    with pytest.raises(WorkbookValueError, match=error):
+        _ = cell.float_value  # noqa: WPS122
+
+
+@pytest.mark.parametrize("value", ["foobar", "=A1", "#VALUE!", "4.2", "1", "True", ""])
+def test_str_value(cell: Cell, value: str) -> None:
+    cell.value = value
+    assert cell.str_value == value
+
+
+@pytest.mark.parametrize(
+    "value, error",
+    [
+        (4.2, "4.2 is not a string value"),
+        (7, "7.0 is not a string value"),
+        (True, "True is not a string value"),
+    ],
+)
+def test_str_value_error(cell: Cell, value: Any, error: str) -> None:
+    cell.value = value
+    with pytest.raises(WorkbookValueError, match=error):
+        _ = cell.str_value  # noqa: WPS122
+
+
+@pytest.mark.parametrize("value", [True, False])
+def test_bool_value(cell: Cell, value: bool) -> None:
+    cell.value = value
+    assert cell.bool_value is value
+
+
+@pytest.mark.parametrize(
+    "value, error",
+    [
+        ("foobar", "'foobar' is not a logical value"),
+        (4.2, "4.2 is not a logical value"),
+        (7, "7.0 is not a logical value"),
+        ("True", "'True' is not a logical value"),  # the value is not automatically converted
+    ],
+)
+def test_bool_value_error(cell: Cell, value: Any, error: str) -> None:
+    cell.value = value
+    with pytest.raises(WorkbookValueError, match=error):
+        _ = cell.bool_value  # noqa: WPS122

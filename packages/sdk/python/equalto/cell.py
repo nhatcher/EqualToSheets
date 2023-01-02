@@ -5,7 +5,7 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from equalto.exceptions import WorkbookError
+from equalto.exceptions import WorkbookError, WorkbookValueError
 
 if TYPE_CHECKING:
     from equalto._pycalc import PyCalcModel
@@ -62,6 +62,34 @@ class Cell:
             raise ValueError(f"unrecognized value type ({value=})")
 
         self._model.evaluate()
+
+    @property
+    def str_value(self) -> str:
+        value = self.value
+        if not isinstance(value, str):
+            raise WorkbookValueError(f"{repr(value)} is not a string value")
+        return value
+
+    @property
+    def float_value(self) -> float:
+        value = self.value
+        if not isinstance(value, float):
+            raise WorkbookValueError(f"{repr(value)} is not a number")
+        return value
+
+    @property
+    def int_value(self) -> int:
+        float_value = self.float_value
+        if not float_value.is_integer():
+            raise WorkbookValueError(f"{float_value} is not an integer")
+        return int(float_value)
+
+    @property
+    def bool_value(self) -> bool:
+        value = self.value
+        if not isinstance(value, bool):
+            raise WorkbookValueError(f"{repr(value)} is not a logical value")
+        return value
 
     @property
     def formula(self) -> str | None:

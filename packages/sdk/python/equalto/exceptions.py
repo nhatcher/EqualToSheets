@@ -4,3 +4,7 @@ class WorkbookError(Exception):
 
 class CellReferenceError(WorkbookError):
     """Invalid cell reference error."""
+
+
+class WorkbookValueError(WorkbookError, ValueError):
+    """Workbook value error."""
