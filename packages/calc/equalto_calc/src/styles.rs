@@ -130,7 +130,7 @@ impl Model {
 
     pub fn set_cell_style(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         style: &Style,
@@ -164,7 +164,7 @@ impl Model {
     /// Sets the style "style_name" in cell
     pub fn set_cell_style_by_name(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         style_name: &str,
@@ -186,7 +186,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn set_sheet_style(&mut self, sheet: i32, style_name: &str) -> Result<(), String> {
+    pub fn set_sheet_style(&mut self, sheet: u32, style_name: &str) -> Result<(), String> {
         let style_index = self.get_style_index_by_name(style_name)?;
         self.workbook.worksheets[sheet as usize].cols = vec![Col {
             min: 1,
@@ -200,7 +200,7 @@ impl Model {
 
     pub fn set_sheet_row_style(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         style_name: &str,
     ) -> Result<(), String> {
@@ -225,7 +225,7 @@ impl Model {
 
     pub fn set_sheet_column_style(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         column: i32,
         style_name: &str,
     ) -> Result<(), String> {

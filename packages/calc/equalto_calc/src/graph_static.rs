@@ -328,10 +328,10 @@ impl Model {
             .ok_or(format!("Can't parse reference: {}", input_cell))?;
 
         // Get a list with all the "forbidden" sheet indices from the sheet names
-        let mut sheet_indices: Vec<i32> = vec![];
+        let mut sheet_indices: Vec<u32> = vec![];
         for sheet_name in sheets {
             if let Some(sheet_index) = self.get_sheet_index_by_name(sheet_name) {
-                sheet_indices.push(sheet_index as i32);
+                sheet_indices.push(sheet_index);
             } else {
                 return Err(format!("Bad sheet name: {}", sheet_name));
             }

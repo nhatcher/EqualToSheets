@@ -8,7 +8,7 @@ use crate::{
     number_format::to_excel_precision_str,
 };
 
-pub(crate) fn ref_is_in_area(sheet: i32, row: i32, column: i32, area: &Area) -> bool {
+pub(crate) fn ref_is_in_area(sheet: u32, row: i32, column: i32, area: &Area) -> bool {
     if area.sheet != sheet {
         return false;
     }

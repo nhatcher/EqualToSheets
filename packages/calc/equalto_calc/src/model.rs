@@ -55,7 +55,7 @@ pub struct Model {
 }
 
 pub struct CellIndex {
-    pub index: i32,
+    pub index: u32,
     pub row: i32,
     pub column: i32,
 }
@@ -93,7 +93,7 @@ impl ExcelValue {
 }
 
 /// sheet, row, column, value
-pub type InputData = HashMap<i32, HashMap<i32, HashMap<i32, ExcelValue>>>;
+pub type InputData = HashMap<u32, HashMap<i32, HashMap<i32, ExcelValue>>>;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Style {
@@ -188,12 +188,12 @@ impl Model {
                 // FIXME: HACK. The parser is currently parsing Sheet3!A1:A10 as Sheet3!A1:(present sheet)!A10
                 CalcResult::Range {
                     left: CellReference {
-                        sheet: *sheet_left as i32,
+                        sheet: *sheet_left,
                         row: row1,
                         column: column1,
                     },
                     right: CellReference {
-                        sheet: *sheet_left as i32,
+                        sheet: *sheet_left,
                         row: row2,
                         column: column2,
                     },
@@ -684,7 +684,7 @@ impl Model {
         }
     }
 
-    pub fn set_sheet_color(&mut self, sheet: i32, color: &str) -> Result<(), String> {
+    pub fn set_sheet_color(&mut self, sheet: u32, color: &str) -> Result<(), String> {
         let mut worksheet = self.workbook.worksheet_mut(sheet)?;
         if color.is_empty() {
             worksheet.color = Color::None;
@@ -696,15 +696,15 @@ impl Model {
         Err(format!("Invalid color: {}", color))
     }
 
-    pub fn get_frozen_rows(&self, sheet: i32) -> Result<i32, String> {
+    pub fn get_frozen_rows(&self, sheet: u32) -> Result<i32, String> {
         Ok(self.workbook.worksheet(sheet)?.frozen_rows)
     }
 
-    pub fn get_frozen_columns(&self, sheet: i32) -> Result<i32, String> {
+    pub fn get_frozen_columns(&self, sheet: u32) -> Result<i32, String> {
         Ok(self.workbook.worksheet(sheet)?.frozen_columns)
     }
 
-    pub fn set_frozen_rows(&mut self, sheet: i32, frozen_rows: i32) -> Result<(), String> {
+    pub fn set_frozen_rows(&mut self, sheet: u32, frozen_rows: i32) -> Result<(), String> {
         if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
             if frozen_rows < 0 {
                 return Err("Frozen rows cannot be negative".to_string());
@@ -718,7 +718,7 @@ impl Model {
         }
     }
 
-    pub fn set_frozen_columns(&mut self, sheet: i32, frozen_columns: i32) -> Result<(), String> {
+    pub fn set_frozen_columns(&mut self, sheet: u32, frozen_columns: i32) -> Result<(), String> {
         if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
             if frozen_columns < 0 {
                 return Err("Frozen columns cannot be negative".to_string());
@@ -772,7 +772,7 @@ impl Model {
         }
     }
 
-    pub fn get_cell(&self, sheet: i32, row: i32, column: i32) -> Result<Option<&Cell>, String> {
+    pub fn get_cell(&self, sheet: u32, row: i32, column: i32) -> Result<Option<&Cell>, String> {
         let worksheet = self.workbook.worksheet(sheet)?;
         let sheet_data = &worksheet.sheet_data;
 
@@ -783,7 +783,7 @@ impl Model {
         }
     }
 
-    pub(crate) fn get_cell_mut(&mut self, sheet: i32, row: i32, column: i32) -> Option<&mut Cell> {
+    pub(crate) fn get_cell_mut(&mut self, sheet: u32, row: i32, column: i32) -> Option<&mut Cell> {
         let worksheet = self.workbook.worksheets.get_mut(sheet as usize)?;
         let data_row = worksheet.sheet_data.get_mut(&row)?;
         data_row.get_mut(&column)
@@ -791,7 +791,7 @@ impl Model {
 
     /// Returns true if cell is completely empty.
     /// Cell with formula that evaluates to empty string is not considered empty.
-    pub fn is_empty_cell(&self, sheet: i32, row: i32, column: i32) -> Result<bool, String> {
+    pub fn is_empty_cell(&self, sheet: u32, row: i32, column: i32) -> Result<bool, String> {
         let worksheet = self.workbook.worksheet(sheet)?;
         let sheet_data = &worksheet.sheet_data;
 
@@ -855,11 +855,11 @@ impl Model {
         }
     }
 
-    pub(crate) fn get_sheet_index_by_name(&self, name: &str) -> Option<usize> {
+    pub(crate) fn get_sheet_index_by_name(&self, name: &str) -> Option<u32> {
         let worksheets = &self.workbook.worksheets;
         for (index, worksheet) in worksheets.iter().enumerate() {
             if worksheet.get_name().to_uppercase() == name.to_uppercase() {
-                return Some(index);
+                return Some(index as u32);
             }
         }
         None
@@ -932,7 +932,7 @@ impl Model {
         let sheet = match self.get_sheet_index_by_name(&sheet_name) {
             Some(s) => s,
             None => return None,
-        } as i32;
+        };
         let row = match row.parse::<i32>() {
             Ok(r) => r,
             Err(_) => return None,
@@ -1004,7 +1004,7 @@ impl Model {
     /// 'Extends' the value from cell [sheet, row, column] to [target_row, target_column]
     pub fn extend_to(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         target_row: i32,
@@ -1064,7 +1064,7 @@ impl Model {
     }
 
     /// Returns a formula if the cell has one or the value of the cell
-    pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> String {
+    pub fn get_formula_or_value(&self, sheet: u32, row: i32, column: i32) -> String {
         match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => match cell.get_formula() {
                 None => cell.get_text(&self.workbook.shared_strings, &self.language),
@@ -1083,7 +1083,7 @@ impl Model {
     }
 
     /// Checks if cell has formula
-    pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> bool {
+    pub fn has_formula(&self, sheet: u32, row: i32, column: i32) -> bool {
         match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_formula().is_some(),
             None => false,
@@ -1091,7 +1091,7 @@ impl Model {
     }
 
     /// Returns a text representation of the value of the cell
-    pub fn get_text_at(&self, sheet: i32, row: i32, column: i32) -> String {
+    pub fn get_text_at(&self, sheet: u32, row: i32, column: i32) -> String {
         match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_text(&self.workbook.shared_strings, &self.language),
             None => "".to_string(),
@@ -1099,7 +1099,7 @@ impl Model {
     }
 
     /// Returns the information needed to display a cell in the UI
-    pub fn get_ui_cell(&self, sheet: i32, row: i32, column: i32) -> UICell {
+    pub fn get_ui_cell(&self, sheet: u32, row: i32, column: i32) -> UICell {
         return match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_ui_cell(&self.workbook.shared_strings, &self.language),
             None => UICell {
@@ -1130,7 +1130,7 @@ impl Model {
                             let mut row_data = Vec::new();
                             for column in left.column..=right.column {
                                 let excel_value =
-                                    self.get_cell_value_by_index(sheet_index as i32, row, column);
+                                    self.get_cell_value_by_index(sheet_index, row, column);
                                 row_data.push(excel_value);
                             }
                             data.push(row_data);
@@ -1165,16 +1165,13 @@ impl Model {
                             let mut row_data = Vec::new();
                             for column in left.column..=right.column {
                                 let excel_value =
-                                    self.get_cell_value_by_index(sheet_index as i32, row, column);
+                                    self.get_cell_value_by_index(sheet_index, row, column);
 
                                 let value = match excel_value {
                                     ExcelValue::String(s) => s,
                                     ExcelValue::Number(number) => {
-                                        let style = self.get_style_for_cell(
-                                            sheet_index as i32,
-                                            row,
-                                            column,
-                                        );
+                                        let style =
+                                            self.get_style_for_cell(sheet_index, row, column);
                                         format_number(number, &style.num_fmt, &self.locale).text
                                     }
                                     ExcelValue::Boolean(b) => format!("{}", b).to_uppercase(),
@@ -1200,7 +1197,7 @@ impl Model {
 
     pub(crate) fn get_cell_formula_index(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
     ) -> Result<Option<i32>, String> {
@@ -1214,7 +1211,7 @@ impl Model {
 
     pub(crate) fn shift_cell_formula(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         displace_data: &DisplaceData,
@@ -1241,7 +1238,7 @@ impl Model {
     // This assumes the cell exists. Do not make public
     pub(crate) fn set_input_with_formula(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         formula: &str,
@@ -1271,7 +1268,7 @@ impl Model {
 
     /// Updates the value of a cell with some text
     /// It does not change the style unless needs to add "quoting"
-    pub fn update_cell_with_text(&mut self, sheet: i32, row: i32, column: i32, value: &str) {
+    pub fn update_cell_with_text(&mut self, sheet: u32, row: i32, column: i32, value: &str) {
         let style_index = self.get_cell_style_index(sheet, row, column);
         let new_style_index;
         if value_needs_quoting(value, &self.language) {
@@ -1286,7 +1283,7 @@ impl Model {
 
     /// Updates the value of a cell with a boolean value
     /// It does not change the style
-    pub fn update_cell_with_bool(&mut self, sheet: i32, row: i32, column: i32, value: bool) {
+    pub fn update_cell_with_bool(&mut self, sheet: u32, row: i32, column: i32, value: bool) {
         let style_index = self.get_cell_style_index(sheet, row, column);
         let new_style_index = if self.style_is_quote_prefix(style_index) {
             self.get_style_without_quote_prefix(style_index)
@@ -1299,7 +1296,7 @@ impl Model {
 
     /// Updates the value of a cell with a number
     /// It does not change the style
-    pub fn update_cell_with_number(&mut self, sheet: i32, row: i32, column: i32, value: f64) {
+    pub fn update_cell_with_number(&mut self, sheet: u32, row: i32, column: i32, value: f64) {
         let style_index = self.get_cell_style_index(sheet, row, column);
         let new_style_index = if self.style_is_quote_prefix(style_index) {
             self.get_style_without_quote_prefix(style_index)
@@ -1314,7 +1311,7 @@ impl Model {
     /// The value is always a string, so we need to try to cast it into numbers/bools/errors
     pub fn set_input(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         value: String,
@@ -1397,7 +1394,7 @@ impl Model {
         }
     }
 
-    fn set_cell_with_string(&mut self, sheet: i32, row: i32, column: i32, value: &str, style: i32) {
+    fn set_cell_with_string(&mut self, sheet: u32, row: i32, column: i32, value: &str, style: i32) {
         // Interestingly, `self.workbook.worksheet()` cannot be used because it would create two
         // mutable borrows of worksheet. However, I suspect that lexical lifetimes silently help
         // here, so there is no issue with inlined call.
@@ -1431,8 +1428,8 @@ impl Model {
         Ok(self.get_cell_value_by_index(sheet_index, row, column))
     }
 
-    pub fn get_cell_value_by_index(&self, sheet_index: i32, row: i32, column: i32) -> ExcelValue {
-        let cell = self.get_cell_at(sheet_index as i32, row, column);
+    pub fn get_cell_value_by_index(&self, sheet_index: u32, row: i32, column: i32) -> ExcelValue {
+        let cell = self.get_cell_at(sheet_index, row, column);
 
         match cell {
             Cell::EmptyCell { .. } => ExcelValue::String("".to_string()),
@@ -1457,7 +1454,7 @@ impl Model {
         }
     }
 
-    pub fn get_cell_type(&self, sheet_index: i32, row: i32, column: i32) -> CellType {
+    pub fn get_cell_type(&self, sheet_index: u32, row: i32, column: i32) -> CellType {
         self.get_cell_at(sheet_index, row, column).get_type()
     }
 
@@ -1555,7 +1552,7 @@ impl Model {
                 sorted_columns.sort_unstable();
                 for column in sorted_columns {
                     cells.push(CellIndex {
-                        index: index as i32,
+                        index: index as u32,
                         row: *row,
                         column: *column,
                     });
@@ -1566,7 +1563,7 @@ impl Model {
     }
 
     /// Returns dimension of the sheet: (min_row, min_column, max_row, max_column)
-    pub fn get_sheet_dimension(&self, sheet: i32) -> (i32, i32, i32, i32) {
+    pub fn get_sheet_dimension(&self, sheet: u32) -> (i32, i32, i32, i32) {
         // FIXME, this should be read from the worksheet:
         // self.workbook.worksheets[sheet as usize].dimension
         let mut min_column = -1;
@@ -1601,7 +1598,7 @@ impl Model {
     }
 
     /// Returns the Cell. Used in tests
-    pub fn get_cell_at(&self, sheet: i32, row: i32, column: i32) -> Cell {
+    pub fn get_cell_at(&self, sheet: u32, row: i32, column: i32) -> Cell {
         match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.clone(),
             None => Cell::EmptyCell {
@@ -1665,7 +1662,7 @@ impl Model {
     }
 
     /// Return the width of a column in pixels
-    pub fn get_column_width(&self, sheet: i32, column: i32) -> f64 {
+    pub fn get_column_width(&self, sheet: u32, column: i32) -> f64 {
         let cols = &self.workbook.worksheets[sheet as usize].cols;
         for col in cols {
             let min = col.min;
@@ -1682,7 +1679,7 @@ impl Model {
     }
 
     /// Returns the height of a row in pixels
-    pub fn get_row_height(&self, sheet: i32, row: i32) -> f64 {
+    pub fn get_row_height(&self, sheet: u32, row: i32) -> f64 {
         let rows = &self.workbook.worksheets[sheet as usize].rows;
         for r in rows {
             if r.r == row {
@@ -1714,7 +1711,7 @@ impl Model {
 
     // FIXME: This should return an object
     /// Returns a JSON string with the set of merge cells
-    pub fn get_merge_cells(&self, sheet: i32) -> String {
+    pub fn get_merge_cells(&self, sheet: u32) -> String {
         let merge_cells = &self.workbook.worksheets[sheet as usize].merge_cells;
         match serde_json::to_string(&merge_cells) {
             Ok(s) => s,
@@ -1724,14 +1721,14 @@ impl Model {
 
     /// Deletes a cell by setting it empty.
     /// TODO: A better name would be set_cell_empty or remove_cell_contents
-    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), String> {
+    pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
         let worksheet = self.workbook.worksheet_mut(sheet)?;
         worksheet.set_cell_empty(row, column);
         Ok(())
     }
 
     /// Deletes a cell by removing it from worksheet data.
-    pub fn remove_cell(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), String> {
+    pub fn remove_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
         let worksheet = self.workbook.worksheet_mut(sheet)?;
 
         let sheet_data = &mut worksheet.sheet_data;
@@ -1745,7 +1742,7 @@ impl Model {
     /// Changes the height of a row.
     ///   * If the row does not a have a style we add it.
     ///   * If it has we modify the height and make sure it is applied.
-    pub fn set_row_height(&mut self, sheet: i32, row: i32, height: f64) {
+    pub fn set_row_height(&mut self, sheet: u32, row: i32, height: f64) {
         let rows = &mut self.workbook.worksheets[sheet as usize].rows;
         for r in rows.iter_mut() {
             if r.r == row {
@@ -1765,7 +1762,7 @@ impl Model {
     /// Changes the width of a column.
     ///   * If the column does not a have a width we simply add it
     ///   * If it has, it might be part of a range and we ned to split the range.
-    pub fn set_column_width(&mut self, sheet: i32, column: i32, width: f64) {
+    pub fn set_column_width(&mut self, sheet: u32, column: i32, width: f64) {
         let cols = &mut self.workbook.worksheets[sheet as usize].cols;
         let mut col = Col {
             min: column,
@@ -1828,7 +1825,7 @@ impl Model {
     }
 
     /// A sheet is read only iff all columns are read only
-    fn is_sheet_read_only(&self, sheet: i32) -> bool {
+    fn is_sheet_read_only(&self, sheet: u32) -> bool {
         let cols = &self.workbook.worksheets[sheet as usize].cols;
         let mut last_col = 0;
         for col in cols {
@@ -1852,7 +1849,7 @@ impl Model {
     }
 
     /// Returns true if the row is read only or if the whole sheet is read only
-    pub fn is_row_read_only(&self, sheet: i32, row: i32) -> bool {
+    pub fn is_row_read_only(&self, sheet: u32, row: i32) -> bool {
         let rows = &self.workbook.worksheets[sheet as usize].rows;
         for r in rows {
             if r.r == row {
@@ -1865,7 +1862,7 @@ impl Model {
         self.is_sheet_read_only(sheet)
     }
 
-    pub fn get_cell_style_index(&self, sheet: i32, row: i32, column: i32) -> i32 {
+    pub fn get_cell_style_index(&self, sheet: u32, row: i32, column: i32) -> i32 {
         // First check the cell, then row, the column
         match self.get_cell(sheet, row, column).expect("Cell expected") {
             Some(cell) => cell.get_style() as i32,
@@ -1893,7 +1890,7 @@ impl Model {
         }
     }
 
-    pub fn get_style_for_cell(&self, sheet: i32, row: i32, column: i32) -> Style {
+    pub fn get_style_for_cell(&self, sheet: u32, row: i32, column: i32) -> Style {
         self.get_style(self.get_cell_style_index(sheet, row, column))
     }
 
@@ -1969,8 +1966,8 @@ impl Model {
     }
 
     /// Removes all data on a sheet, including the cell styles
-    pub fn remove_sheet_data(&mut self, sheet_index: i32) -> Result<(), String> {
-        let worksheet = match self.workbook.worksheets.get_mut(sheet_index as usize) {
+    pub fn remove_sheet_data(&mut self, sheet: u32) -> Result<(), String> {
+        let worksheet = match self.workbook.worksheets.get_mut(sheet as usize) {
             Some(s) => s,
             None => return Err("Wrong worksheet index".to_string()),
         };

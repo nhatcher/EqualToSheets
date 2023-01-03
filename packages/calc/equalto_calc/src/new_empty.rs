@@ -111,7 +111,7 @@ impl Model {
     pub fn insert_sheet(
         &mut self,
         sheet_name: &str,
-        sheet_index: i32,
+        sheet_index: u32,
         sheet_id: Option<i32>,
     ) -> Result<(), String> {
         if !is_valid_sheet_name(sheet_name) {
@@ -143,7 +143,7 @@ impl Model {
     /// Adds a sheet with a specific name
     /// Fails if a worksheet with that name already exists or the name is invalid
     pub fn add_sheet(&mut self, sheet_name: &str) -> Result<(), String> {
-        self.insert_sheet(sheet_name, self.workbook.worksheets.len() as i32, None)
+        self.insert_sheet(sheet_name, self.workbook.worksheets.len() as u32, None)
     }
 
     /// Renames a sheet and updates all existing references to that sheet.
@@ -172,7 +172,7 @@ impl Model {
                 let mut formulas = Vec::new();
                 for formula in &worksheet.shared_formulas {
                     let mut t = self.parser.parse(formula, cell_reference);
-                    rename_sheet_in_node(&mut t, sheet_index as i32, new_name);
+                    rename_sheet_in_node(&mut t, sheet_index, new_name);
                     formulas.push(to_rc_format(&t));
                 }
                 worksheet.shared_formulas = formulas;
@@ -180,7 +180,7 @@ impl Model {
             self.parser.set_lexer_mode(LexerMode::A1);
             // Update the name of the worksheet
             let worksheets = &mut self.workbook.worksheets;
-            worksheets[sheet_index].set_name(new_name);
+            worksheets[sheet_index as usize].set_name(new_name);
             self.reset_formulas();
             return Ok(());
         }
@@ -194,7 +194,7 @@ impl Model {
     ///   * The target sheet name is invalid
     pub fn rename_sheet_by_index(
         &mut self,
-        sheet_index: i32,
+        sheet_index: u32,
         new_name: &str,
     ) -> Result<(), String> {
         if !is_valid_sheet_name(new_name) {
@@ -204,8 +204,8 @@ impl Model {
             return Err(format!("Sheet already exists: '{}'", new_name));
         }
         let worksheets = &self.workbook.worksheets;
-        let sheet_count = worksheets.len() as i32;
-        if sheet_index >= sheet_count || sheet_index < 0 {
+        let sheet_count = worksheets.len() as u32;
+        if sheet_index >= sheet_count {
             return Err("Sheet index out of bounds".to_string());
         }
         // Parse all formulas with the old name
@@ -222,7 +222,7 @@ impl Model {
             let mut formulas = Vec::new();
             for formula in &worksheet.shared_formulas {
                 let mut t = self.parser.parse(formula, cell_reference);
-                rename_sheet_in_node(&mut t, sheet_index as i32, new_name);
+                rename_sheet_in_node(&mut t, sheet_index, new_name);
                 formulas.push(to_rc_format(&t));
             }
             worksheet.shared_formulas = formulas;
@@ -239,9 +239,9 @@ impl Model {
     /// Deletes a sheet by index. Fails if:
     ///   * The sheet does not exists
     ///   * It is the last sheet
-    pub fn delete_sheet(&mut self, sheet_index: i32) -> Result<(), String> {
+    pub fn delete_sheet(&mut self, sheet_index: u32) -> Result<(), String> {
         let worksheets = &self.workbook.worksheets;
-        let sheet_count = worksheets.len() as i32;
+        let sheet_count = worksheets.len() as u32;
         if sheet_count == 1 {
             return Err("Cannot delete only sheet".to_string());
         };
@@ -258,7 +258,7 @@ impl Model {
     ///   * It is the last sheet
     pub fn delete_sheet_by_name(&mut self, name: &str) -> Result<(), String> {
         if let Some(sheet_index) = self.get_sheet_index_by_name(name) {
-            self.delete_sheet(sheet_index as i32)
+            self.delete_sheet(sheet_index)
         } else {
             Err("Sheet not found".to_string())
         }
@@ -269,17 +269,17 @@ impl Model {
     ///   * It is the last sheet
     pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: i32) -> Result<(), String> {
         if let Some(sheet_index) = self.get_sheet_index_by_sheet_id(sheet_id) {
-            self.delete_sheet(sheet_index as i32)
+            self.delete_sheet(sheet_index)
         } else {
             Err("Sheet not found".to_string())
         }
     }
 
-    pub(crate) fn get_sheet_index_by_sheet_id(&self, sheet_id: i32) -> Option<usize> {
+    pub(crate) fn get_sheet_index_by_sheet_id(&self, sheet_id: i32) -> Option<u32> {
         let worksheets = &self.workbook.worksheets;
         for (index, worksheet) in worksheets.iter().enumerate() {
             if worksheet.sheet_id == sheet_id {
-                return Some(index);
+                return Some(index as u32);
             }
         }
         None

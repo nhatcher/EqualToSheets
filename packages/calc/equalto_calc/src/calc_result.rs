@@ -4,7 +4,7 @@ use crate::expressions::token::Error;
 
 #[derive(Clone, PartialEq, Eq, Copy)]
 pub struct CellReference {
-    pub sheet: i32,
+    pub sheet: u32,
     pub column: i32,
     pub row: i32,
 }

@@ -203,7 +203,6 @@ fn test_rename_sheet_by_index_error() {
     model.new_sheet();
     assert!(model.rename_sheet_by_index(0, "OldSheet").is_ok());
     assert!(model.rename_sheet_by_index(2, "NewSheet").is_err());
-    assert!(model.rename_sheet_by_index(-1, "NewSheet").is_err());
 }
 
 #[test]

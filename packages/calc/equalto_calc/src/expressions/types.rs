@@ -36,14 +36,14 @@ pub struct CellReferenceRC {
 
 #[derive(Serialize, Deserialize)]
 pub struct CellReferenceIndex {
-    pub sheet: i32,
+    pub sheet: u32,
     pub column: i32,
     pub row: i32,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Area {
-    pub sheet: i32,
+    pub sheet: u32,
     pub row: i32,
     pub column: i32,
     pub width: i32,

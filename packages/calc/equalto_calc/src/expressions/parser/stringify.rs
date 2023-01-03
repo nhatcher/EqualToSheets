@@ -6,29 +6,29 @@ use crate::{expressions::types::CellReferenceRC, number_format::to_excel_precisi
 
 pub enum DisplaceData {
     Column {
-        sheet: i32,
+        sheet: u32,
         column: i32,
         delta: i32,
     },
     Row {
-        sheet: i32,
+        sheet: u32,
         row: i32,
         delta: i32,
     },
     CellHorizontal {
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         delta: i32,
     },
     CellVertical {
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         delta: i32,
     },
     ColumnMove {
-        sheet: i32,
+        sheet: u32,
         column: i32,
         delta: i32,
     },
@@ -458,7 +458,7 @@ fn stringify(
     }
 }
 
-pub(crate) fn rename_sheet_in_node(node: &mut Node, sheet_index: i32, new_name: &str) {
+pub(crate) fn rename_sheet_in_node(node: &mut Node, sheet_index: u32, new_name: &str) {
     match node {
         // Rename
         Node::ReferenceKind {

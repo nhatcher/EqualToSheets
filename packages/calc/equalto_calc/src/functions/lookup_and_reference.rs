@@ -698,7 +698,7 @@ impl Model {
                         let sheet_index;
                         if let Some(name) = sheet_name {
                             match self.get_sheet_index_by_name(&name) {
-                                Some(i) => sheet_index = i as i32,
+                                Some(i) => sheet_index = i,
                                 None => {
                                     return CalcResult::Error {
                                         error: Error::REF,
@@ -728,7 +728,7 @@ impl Model {
                         let sheet_index;
                         if let Some(name) = sheet_name {
                             match self.get_sheet_index_by_name(&name) {
-                                Some(i) => sheet_index = i as i32,
+                                Some(i) => sheet_index = i,
                                 None => {
                                     return CalcResult::Error {
                                         error: Error::REF,

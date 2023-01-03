@@ -115,7 +115,7 @@ impl JsResult {
 #[wasm_bindgen]
 #[derive(Serialize, Deserialize)]
 pub struct AreaJs {
-    pub sheet: i32,
+    pub sheet: u32,
     pub row: i32,
     pub column: i32,
     pub width: i32,
@@ -125,7 +125,7 @@ pub struct AreaJs {
 #[wasm_bindgen]
 #[derive(Serialize, Deserialize)]
 struct CellIndexJs {
-    pub sheet: i32,
+    pub sheet: u32,
     pub row: i32,
     pub column: i32,
 }
@@ -198,11 +198,11 @@ impl JSModel {
         self.model.to_json_str()
     }
 
-    pub fn get_text_at(&self, sheet: i32, row: i32, column: i32) -> String {
+    pub fn get_text_at(&self, sheet: u32, row: i32, column: i32) -> String {
         self.model.get_text_at(sheet, row, column)
     }
 
-    pub fn get_ui_cell(&self, sheet: i32, row: i32, column: i32) -> String {
+    pub fn get_ui_cell(&self, sheet: u32, row: i32, column: i32) -> String {
         let c = self.model.get_ui_cell(sheet, row, column);
         // FIXME: This should return an object not a string
         json!({"kind": c.kind, "value": c.value, "details": c.details}).to_string()
@@ -237,7 +237,7 @@ impl JSModel {
 
     pub fn extend_to(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         target_row: i32,
@@ -247,28 +247,28 @@ impl JSModel {
             .extend_to(sheet, row, column, target_row, target_column)
     }
 
-    pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> String {
+    pub fn get_formula_or_value(&self, sheet: u32, row: i32, column: i32) -> String {
         self.model.get_formula_or_value(sheet, row, column)
     }
 
-    pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> bool {
+    pub fn has_formula(&self, sheet: u32, row: i32, column: i32) -> bool {
         self.model.has_formula(sheet, row, column)
     }
 
-    pub fn set_input(&mut self, sheet: i32, row: i32, column: i32, value: String, style: i32) {
+    pub fn set_input(&mut self, sheet: u32, row: i32, column: i32, value: String, style: i32) {
         self.model.set_input(sheet, row, column, value, style)
     }
 
-    pub fn update_cell_with_text(&mut self, sheet: i32, row: i32, column: i32, value: &str) {
+    pub fn update_cell_with_text(&mut self, sheet: u32, row: i32, column: i32, value: &str) {
         self.model.update_cell_with_text(sheet, row, column, value)
     }
 
-    pub fn update_cell_with_number(&mut self, sheet: i32, row: i32, column: i32, value: f64) {
+    pub fn update_cell_with_number(&mut self, sheet: u32, row: i32, column: i32, value: f64) {
         self.model
             .update_cell_with_number(sheet, row, column, value)
     }
 
-    pub fn update_cell_with_bool(&mut self, sheet: i32, row: i32, column: i32, value: bool) {
+    pub fn update_cell_with_bool(&mut self, sheet: u32, row: i32, column: i32, value: bool) {
         self.model.update_cell_with_bool(sheet, row, column, value)
     }
 
@@ -276,11 +276,11 @@ impl JSModel {
         self.model.set_cells_with_values_json(input_json).unwrap();
     }
 
-    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) {
+    pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) {
         self.model.delete_cell(sheet, row, column).unwrap();
     }
 
-    pub fn remove_cell(&mut self, sheet: i32, row: i32, column: i32) {
+    pub fn remove_cell(&mut self, sheet: u32, row: i32, column: i32) {
         self.model.remove_cell(sheet, row, column).unwrap();
     }
 
@@ -288,51 +288,51 @@ impl JSModel {
         self.model.evaluate()
     }
 
-    pub fn get_column_width(&self, sheet: i32, column: i32) -> f64 {
+    pub fn get_column_width(&self, sheet: u32, column: i32) -> f64 {
         self.model.get_column_width(sheet, column)
     }
 
-    pub fn get_row_height(&self, sheet: i32, row: i32) -> f64 {
+    pub fn get_row_height(&self, sheet: u32, row: i32) -> f64 {
         self.model.get_row_height(sheet, row)
     }
 
-    pub fn set_column_width(&mut self, sheet: i32, column: i32, width: f64) {
+    pub fn set_column_width(&mut self, sheet: u32, column: i32, width: f64) {
         self.model.set_column_width(sheet, column, width);
     }
 
-    pub fn set_row_height(&mut self, sheet: i32, row: i32, height: f64) {
+    pub fn set_row_height(&mut self, sheet: u32, row: i32, height: f64) {
         self.model.set_row_height(sheet, row, height);
     }
 
-    pub fn get_frozen_rows(&self, sheet: i32) -> IntegerResult {
+    pub fn get_frozen_rows(&self, sheet: u32) -> IntegerResult {
         match self.model.get_frozen_rows(sheet) {
             Ok(value) => IntegerResult::get_success(value),
             Err(message) => IntegerResult::get_error(&message),
         }
     }
 
-    pub fn get_frozen_columns(&self, sheet: i32) -> IntegerResult {
+    pub fn get_frozen_columns(&self, sheet: u32) -> IntegerResult {
         match self.model.get_frozen_columns(sheet) {
             Ok(value) => IntegerResult::get_success(value),
             Err(message) => IntegerResult::get_error(&message),
         }
     }
 
-    pub fn set_frozen_columns(&mut self, sheet: i32, frozen_columns: i32) -> JsResult {
+    pub fn set_frozen_columns(&mut self, sheet: u32, frozen_columns: i32) -> JsResult {
         match self.model.set_frozen_columns(sheet, frozen_columns) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
         }
     }
 
-    pub fn set_frozen_rows(&mut self, sheet: i32, frozen_rows: i32) -> JsResult {
+    pub fn set_frozen_rows(&mut self, sheet: u32, frozen_rows: i32) -> JsResult {
         match self.model.set_frozen_rows(sheet, frozen_rows) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
         }
     }
 
-    pub fn get_merge_cells(&self, sheet: i32) -> String {
+    pub fn get_merge_cells(&self, sheet: u32) -> String {
         // FIXME: This should return an object not a string
         self.model.get_merge_cells(sheet)
     }
@@ -353,7 +353,7 @@ impl JSModel {
         }
     }
 
-    pub fn get_sheet_dimension(&self, sheet: i32) -> SheetDimension {
+    pub fn get_sheet_dimension(&self, sheet: u32) -> SheetDimension {
         let (min_row, min_column, max_row, max_column) = self.model.get_sheet_dimension(sheet);
         SheetDimension {
             min_row,
@@ -363,14 +363,14 @@ impl JSModel {
         }
     }
 
-    pub fn set_sheet_style(&mut self, sheet: i32, style_name: &str) -> JsResult {
+    pub fn set_sheet_style(&mut self, sheet: u32, style_name: &str) -> JsResult {
         match self.model.set_sheet_style(sheet, style_name) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
         }
     }
 
-    pub fn set_sheet_row_style(&mut self, sheet: i32, row: i32, style_name: &str) -> JsResult {
+    pub fn set_sheet_row_style(&mut self, sheet: u32, row: i32, style_name: &str) -> JsResult {
         match self.model.set_sheet_row_style(sheet, row, style_name) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
@@ -379,7 +379,7 @@ impl JSModel {
 
     pub fn set_sheet_column_style(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         column: i32,
         style_name: &str,
     ) -> JsResult {
@@ -389,41 +389,41 @@ impl JSModel {
         }
     }
 
-    pub fn get_style_for_cell(&self, sheet: i32, row: i32, column: i32) -> String {
+    pub fn get_style_for_cell(&self, sheet: u32, row: i32, column: i32) -> String {
         // FIXME: This should not return a string but an object
         serde_json::to_string(&self.model.get_style_for_cell(sheet, row, column)).unwrap()
     }
 
-    pub fn get_navigation_right_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
+    pub fn get_navigation_right_edge(&self, sheet: u32, row: i32, column: i32) -> i32 {
         self.model
             .get_navigation_right_edge(sheet, row, column)
             .unwrap()
     }
 
-    pub fn get_navigation_left_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
+    pub fn get_navigation_left_edge(&self, sheet: u32, row: i32, column: i32) -> i32 {
         self.model
             .get_navigation_left_edge(sheet, row, column)
             .unwrap()
     }
 
-    pub fn get_navigation_top_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
+    pub fn get_navigation_top_edge(&self, sheet: u32, row: i32, column: i32) -> i32 {
         self.model
             .get_navigation_top_edge(sheet, row, column)
             .unwrap()
     }
 
-    pub fn get_navigation_bottom_edge(&self, sheet: i32, row: i32, column: i32) -> i32 {
+    pub fn get_navigation_bottom_edge(&self, sheet: u32, row: i32, column: i32) -> i32 {
         self.model
             .get_navigation_bottom_edge(sheet, row, column)
             .unwrap()
     }
 
-    pub fn get_navigation_home(&self, sheet: i32) -> Cell {
+    pub fn get_navigation_home(&self, sheet: u32) -> Cell {
         let (row, column) = self.model.get_navigation_home(sheet);
         Cell { row, column }
     }
 
-    pub fn get_navigation_end(&self, sheet: i32) -> Cell {
+    pub fn get_navigation_end(&self, sheet: u32) -> Cell {
         let (row, column) = self.model.get_navigation_end(sheet);
         Cell { row, column }
     }
@@ -432,15 +432,15 @@ impl JSModel {
         self.model.new_sheet();
     }
 
-    pub fn rename_sheet(&mut self, sheet_index: i32, new_name: &str) -> JsResult {
-        match self.model.rename_sheet_by_index(sheet_index, new_name) {
+    pub fn rename_sheet(&mut self, sheet: u32, new_name: &str) -> JsResult {
+        match self.model.rename_sheet_by_index(sheet, new_name) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
         }
     }
 
-    pub fn delete_sheet(&mut self, sheet_index: i32) -> JsResult {
-        match self.model.delete_sheet(sheet_index) {
+    pub fn delete_sheet(&mut self, sheet: u32) -> JsResult {
+        match self.model.delete_sheet(sheet) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
         }
@@ -455,7 +455,7 @@ impl JSModel {
 
     pub fn set_cell_style(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         style_js: &JsValue,
@@ -472,7 +472,7 @@ impl JSModel {
 
     pub fn set_cell_style_by_name(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         style_name: &str,
@@ -486,13 +486,13 @@ impl JSModel {
         }
     }
 
-    pub fn get_cell_style_index(&self, sheet: i32, row: i32, column: i32) -> i32 {
+    pub fn get_cell_style_index(&self, sheet: u32, row: i32, column: i32) -> i32 {
         self.model.get_cell_style_index(sheet, row, column)
     }
 
     pub fn shift_cells_right(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -506,7 +506,7 @@ impl JSModel {
 
     pub fn shift_cells_left(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -520,7 +520,7 @@ impl JSModel {
 
     pub fn shift_cells_down(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -534,7 +534,7 @@ impl JSModel {
 
     pub fn shift_cells_up(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -546,7 +546,7 @@ impl JSModel {
         }
     }
 
-    pub fn insert_columns(&mut self, sheet: i32, column: i32, column_count: i32) -> JsResult {
+    pub fn insert_columns(&mut self, sheet: u32, column: i32, column_count: i32) -> JsResult {
         let result = self.model.insert_columns(sheet, column, column_count);
         match result {
             Ok(()) => JsResult::get_success(),
@@ -554,7 +554,7 @@ impl JSModel {
         }
     }
 
-    pub fn delete_columns(&mut self, sheet: i32, column: i32, column_count: i32) -> JsResult {
+    pub fn delete_columns(&mut self, sheet: u32, column: i32, column_count: i32) -> JsResult {
         let result = self.model.delete_columns(sheet, column, column_count);
         match result {
             Ok(()) => JsResult::get_success(),
@@ -562,7 +562,7 @@ impl JSModel {
         }
     }
 
-    pub fn insert_rows(&mut self, sheet: i32, row: i32, row_count: i32) -> JsResult {
+    pub fn insert_rows(&mut self, sheet: u32, row: i32, row_count: i32) -> JsResult {
         let result = self.model.insert_rows(sheet, row, row_count);
         match result {
             Ok(()) => JsResult::get_success(),
@@ -570,7 +570,7 @@ impl JSModel {
         }
     }
 
-    pub fn delete_rows(&mut self, sheet: i32, row: i32, row_count: i32) -> JsResult {
+    pub fn delete_rows(&mut self, sheet: u32, row: i32, row_count: i32) -> JsResult {
         let result = self.model.delete_rows(sheet, row, row_count);
         match result {
             Ok(()) => JsResult::get_success(),
@@ -578,18 +578,18 @@ impl JSModel {
         }
     }
 
-    pub fn is_row_read_only(&self, sheet: i32, row: i32) -> bool {
+    pub fn is_row_read_only(&self, sheet: u32, row: i32) -> bool {
         self.model.is_row_read_only(sheet, row)
     }
 
-    pub fn get_row_undo_data(&self, sheet: i32, row: i32) -> String {
+    pub fn get_row_undo_data(&self, sheet: u32, row: i32) -> String {
         match self.model.get_row_undo_data(sheet, row) {
             Ok(s) => s,
             Err(_) => json!({"success": false}).to_string(),
         }
     }
 
-    pub fn set_row_undo_data(&mut self, sheet: i32, row: i32, row_data_str: &str) -> JsResult {
+    pub fn set_row_undo_data(&mut self, sheet: u32, row: i32, row_data_str: &str) -> JsResult {
         match self.model.set_row_undo_data(sheet, row, row_data_str) {
             Ok(_) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
@@ -599,7 +599,7 @@ impl JSModel {
     pub fn forward_references(
         &mut self,
         source_data: &str,
-        target_sheet: i32,
+        target_sheet: u32,
         target_row: i32,
         target_column: i32,
     ) -> String {
@@ -684,7 +684,7 @@ impl JSModel {
         }
     }
 
-    pub fn set_sheet_color(&mut self, sheet: i32, color: &str) -> JsResult {
+    pub fn set_sheet_color(&mut self, sheet: u32, color: &str) -> JsResult {
         match self.model.set_sheet_color(sheet, color) {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),

@@ -37,7 +37,7 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
     let mut diffs = Vec::new();
     let cells = m1.get_all_cells();
     for cell in cells {
-        let sheet = cell.index as i32;
+        let sheet = cell.index;
         let row = cell.row;
         let column = cell.column;
         let cell1 = &m1.get_cell_at(sheet, row, column);

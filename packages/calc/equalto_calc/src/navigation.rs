@@ -5,7 +5,7 @@ use crate::model::Model;
 impl Model {
     pub fn get_navigation_right_edge(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
     ) -> Result<i32, String> {
@@ -46,7 +46,7 @@ impl Model {
 
     pub fn get_navigation_left_edge(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
     ) -> Result<i32, String> {
@@ -87,7 +87,7 @@ impl Model {
 
     pub fn get_navigation_top_edge(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
     ) -> Result<i32, String> {
@@ -128,7 +128,7 @@ impl Model {
 
     pub fn get_navigation_bottom_edge(
         &self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
     ) -> Result<i32, String> {
@@ -167,12 +167,12 @@ impl Model {
         }
     }
 
-    pub fn get_navigation_home(&self, sheet: i32) -> (i32, i32) {
+    pub fn get_navigation_home(&self, sheet: u32) -> (i32, i32) {
         let dimension = self.get_sheet_dimension(sheet);
         (dimension.0, dimension.1)
     }
 
-    pub fn get_navigation_end(&self, sheet: i32) -> (i32, i32) {
+    pub fn get_navigation_end(&self, sheet: u32) -> (i32, i32) {
         let dimension = self.get_sheet_dimension(sheet);
         (dimension.2, dimension.3)
     }

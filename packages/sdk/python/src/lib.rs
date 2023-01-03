@@ -35,11 +35,18 @@ impl PyModel {
     }
 
     pub fn get_text_at(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
-        Ok(self.model.get_text_at(sheet, row, column))
+        Ok(self
+            .model
+            .get_text_at(sheet.try_into().unwrap(), row, column))
     }
 
     pub fn get_ui_cell(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
-        Ok(serde_json::to_string(&self.model.get_ui_cell(sheet, row, column)).unwrap())
+        Ok(serde_json::to_string(
+            &self
+                .model
+                .get_ui_cell(sheet.try_into().unwrap(), row, column),
+        )
+        .unwrap())
     }
 
     pub fn format_number(&self, value: f64, format_code: String) -> PyResult<String> {
@@ -54,17 +61,25 @@ impl PyModel {
         target_row: i32,
         target_column: i32,
     ) -> PyResult<String> {
-        Ok(self
-            .model
-            .extend_to(sheet, row, column, target_row, target_column))
+        Ok(self.model.extend_to(
+            sheet.try_into().unwrap(),
+            row,
+            column,
+            target_row,
+            target_column,
+        ))
     }
 
     pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<bool> {
-        Ok(self.model.has_formula(sheet, row, column))
+        Ok(self
+            .model
+            .has_formula(sheet.try_into().unwrap(), row, column))
     }
 
     pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
-        Ok(self.model.get_formula_or_value(sheet, row, column))
+        Ok(self
+            .model
+            .get_formula_or_value(sheet.try_into().unwrap(), row, column))
     }
 
     pub fn get_cell_value_by_ref(&self, cell_reference: &str) -> PyResult<String> {
@@ -74,20 +89,21 @@ impl PyModel {
         }
     }
 
-    pub fn get_cell_value_by_index(
-        &self,
-        sheet: i32,
-        row: i32,
-        column: i32,
-    ) -> PyResult<String> {
-        Ok(self.model.get_cell_value_by_index(sheet, row, column).to_json_str())
+    pub fn get_cell_value_by_index(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
+        Ok(self
+            .model
+            .get_cell_value_by_index(sheet.try_into().unwrap(), row, column)
+            .to_json_str())
     }
 
     pub fn get_cell_type(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self.model.get_cell_type(sheet, row, column) as i32)
+        Ok(self
+            .model
+            .get_cell_type(sheet.try_into().unwrap(), row, column) as i32)
     }
 
     pub fn set_input(&mut self, sheet: i32, row: i32, column: i32, value: String) {
+        let sheet: u32 = sheet.try_into().unwrap();
         let style = self.model.get_cell_style_index(sheet, row, column);
         self.model.set_input(sheet, row, column, value, style)
     }
@@ -97,7 +113,9 @@ impl PyModel {
     }
 
     pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> PyResult<()> {
-        self.model.delete_cell(sheet, row, column).unwrap();
+        self.model
+            .delete_cell(sheet.try_into().unwrap(), row, column)
+            .unwrap();
         Ok(())
     }
 
@@ -125,23 +143,27 @@ impl PyModel {
     }
 
     pub fn get_column_width(&self, sheet: i32, column: i32) -> PyResult<f64> {
-        Ok(self.model.get_column_width(sheet, column))
+        Ok(self
+            .model
+            .get_column_width(sheet.try_into().unwrap(), column))
     }
 
     pub fn get_row_height(&self, sheet: i32, row: i32) -> PyResult<f64> {
-        Ok(self.model.get_row_height(sheet, row))
+        Ok(self.model.get_row_height(sheet.try_into().unwrap(), row))
     }
 
     pub fn set_column_width(&mut self, sheet: i32, column: i32, width: f64) {
-        self.model.set_column_width(sheet, column, width);
+        self.model
+            .set_column_width(sheet.try_into().unwrap(), column, width);
     }
 
     pub fn set_row_height(&mut self, sheet: i32, row: i32, height: f64) {
-        self.model.set_row_height(sheet, row, height);
+        self.model
+            .set_row_height(sheet.try_into().unwrap(), row, height);
     }
 
     pub fn get_merge_cells(&self, sheet: i32) -> PyResult<String> {
-        Ok(self.model.get_merge_cells(sheet))
+        Ok(self.model.get_merge_cells(sheet.try_into().unwrap()))
     }
 
     pub fn get_tabs(&self) -> PyResult<String> {
@@ -149,59 +171,70 @@ impl PyModel {
     }
 
     pub fn get_style_for_cell(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
-        Ok(serde_json::to_string(&self.model.get_style_for_cell(sheet, row, column)).unwrap())
+        Ok(serde_json::to_string(&self.model.get_style_for_cell(
+            sheet.try_into().unwrap(),
+            row,
+            column,
+        ))
+        .unwrap())
     }
 
     pub fn get_navigation_right_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
         Ok(self
             .model
-            .get_navigation_right_edge(sheet, row, column)
+            .get_navigation_right_edge(sheet.try_into().unwrap(), row, column)
             .unwrap())
     }
 
     pub fn get_navigation_left_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
         Ok(self
             .model
-            .get_navigation_left_edge(sheet, row, column)
+            .get_navigation_left_edge(sheet.try_into().unwrap(), row, column)
             .unwrap())
     }
 
     pub fn get_navigation_top_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
         Ok(self
             .model
-            .get_navigation_top_edge(sheet, row, column)
+            .get_navigation_top_edge(sheet.try_into().unwrap(), row, column)
             .unwrap())
     }
 
     pub fn get_navigation_bottom_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
         Ok(self
             .model
-            .get_navigation_bottom_edge(sheet, row, column)
+            .get_navigation_bottom_edge(sheet.try_into().unwrap(), row, column)
             .unwrap())
     }
 
     pub fn get_navigation_home(&self, sheet: i32) -> Cell {
-        let (row, column) = self.model.get_navigation_home(sheet);
+        let (row, column) = self.model.get_navigation_home(sheet.try_into().unwrap());
         Cell { row, column }
     }
 
     pub fn get_navigation_end(&self, sheet: i32) -> PyResult<Cell> {
-        let (row, column) = self.model.get_navigation_end(sheet);
+        let (row, column) = self.model.get_navigation_end(sheet.try_into().unwrap());
         Ok(Cell { row, column })
     }
 
     pub fn set_cell_style(&mut self, sheet: i32, row: i32, column: i32, style: &str) {
         self.model
-            .set_cell_style(sheet, row, column, &serde_json::from_str(style).unwrap())
+            .set_cell_style(
+                sheet.try_into().unwrap(),
+                row,
+                column,
+                &serde_json::from_str(style).unwrap(),
+            )
             .unwrap()
     }
 
     pub fn get_cell_style_index(&self, sheet: i32, row: i32, column: i32) -> i32 {
-        self.model.get_cell_style_index(sheet, row, column)
+        self.model
+            .get_cell_style_index(sheet.try_into().unwrap(), row, column)
     }
 
-    pub fn remove_sheet_data(&mut self, sheet_index: i32) -> PyResult<()> {
-        match self.model.remove_sheet_data(sheet_index) {
+    pub fn remove_sheet_data(&mut self, sheet: i32) -> PyResult<()> {
+        match self.model.remove_sheet_data(sheet.try_into().unwrap()) {
             Ok(()) => Ok(()),
             Err(message) => Err(PyValueError::new_err(message)),
         }
@@ -213,7 +246,10 @@ impl PyModel {
         sheet_index: i32,
         sheet_id: Option<i32>,
     ) -> PyResult<()> {
-        match self.model.insert_sheet(sheet_name, sheet_index, sheet_id) {
+        match self
+            .model
+            .insert_sheet(sheet_name, sheet_index.try_into().unwrap(), sheet_id)
+        {
             Ok(()) => Ok(()),
             Err(message) => Err(PyValueError::new_err(message)),
         }
@@ -230,14 +266,20 @@ impl PyModel {
         column1: i32,
         column2: i32,
     ) -> PyResult<()> {
-        match self.model.swap_cells_in_row(sheet, row, column1, column2) {
+        match self
+            .model
+            .swap_cells_in_row(sheet.try_into().unwrap(), row, column1, column2)
+        {
             Ok(()) => Ok(()),
             Err(message) => Err(PyValueError::new_err(message)),
         }
     }
 
     pub fn move_column_action(&mut self, sheet: i32, column: i32, delta: i32) -> PyResult<()> {
-        match self.model.move_column_action(sheet, column, delta) {
+        match self
+            .model
+            .move_column_action(sheet.try_into().unwrap(), column, delta)
+        {
             Ok(()) => Ok(()),
             Err(message) => Err(PyValueError::new_err(message)),
         }
@@ -250,7 +292,9 @@ impl PyModel {
         column: i32,
         cell_count: i32,
     ) -> PyResult<String> {
-        let result = self.model.shift_cells_right(sheet, row, column, cell_count);
+        let result =
+            self.model
+                .shift_cells_right(sheet.try_into().unwrap(), row, column, cell_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -267,7 +311,9 @@ impl PyModel {
         column: i32,
         cell_count: i32,
     ) -> PyResult<String> {
-        let result = self.model.shift_cells_left(sheet, row, column, cell_count);
+        let result =
+            self.model
+                .shift_cells_left(sheet.try_into().unwrap(), row, column, cell_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -284,7 +330,9 @@ impl PyModel {
         column: i32,
         cell_count: i32,
     ) -> PyResult<String> {
-        let result = self.model.shift_cells_down(sheet, row, column, cell_count);
+        let result =
+            self.model
+                .shift_cells_down(sheet.try_into().unwrap(), row, column, cell_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -301,7 +349,9 @@ impl PyModel {
         column: i32,
         cell_count: i32,
     ) -> PyResult<String> {
-        let result = self.model.shift_cells_up(sheet, row, column, cell_count);
+        let result = self
+            .model
+            .shift_cells_up(sheet.try_into().unwrap(), row, column, cell_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -317,7 +367,9 @@ impl PyModel {
         column: i32,
         column_count: i32,
     ) -> PyResult<String> {
-        let result = self.model.insert_columns(sheet, column, column_count);
+        let result = self
+            .model
+            .insert_columns(sheet.try_into().unwrap(), column, column_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -333,7 +385,9 @@ impl PyModel {
         column: i32,
         column_count: i32,
     ) -> PyResult<String> {
-        let result = self.model.delete_columns(sheet, column, column_count);
+        let result = self
+            .model
+            .delete_columns(sheet.try_into().unwrap(), column, column_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -344,7 +398,9 @@ impl PyModel {
     }
 
     pub fn insert_rows(&mut self, sheet: i32, row: i32, row_count: i32) -> PyResult<String> {
-        let result = self.model.insert_rows(sheet, row, row_count);
+        let result = self
+            .model
+            .insert_rows(sheet.try_into().unwrap(), row, row_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -355,7 +411,9 @@ impl PyModel {
     }
 
     pub fn delete_rows(&mut self, sheet: i32, row: i32, row_count: i32) -> PyResult<String> {
-        let result = self.model.delete_rows(sheet, row, row_count);
+        let result = self
+            .model
+            .delete_rows(sheet.try_into().unwrap(), row, row_count);
         match result {
             Ok(()) => Ok("{\"success\":true}".to_string()),
             Err(message) => Ok(format!(
@@ -387,9 +445,9 @@ impl PyModel {
         column: i32,
         style_name: &str,
     ) -> PyResult<()> {
-        let result = self
-            .model
-            .set_cell_style_by_name(sheet, row, column, style_name);
+        let result =
+            self.model
+                .set_cell_style_by_name(sheet.try_into().unwrap(), row, column, style_name);
         match result {
             Ok(()) => Ok(()),
             Err(message) => Err(PyValueError::new_err(message)),
@@ -421,19 +479,25 @@ impl PyModel {
     }
 
     pub fn update_cell_with_text(&mut self, sheet: i32, row: i32, column: i32, value: &str) {
-        self.model.update_cell_with_text(sheet, row, column, value);
+        self.model
+            .update_cell_with_text(sheet.try_into().unwrap(), row, column, value);
     }
 
     pub fn update_cell_with_number(&mut self, sheet: i32, row: i32, column: i32, value: f64) {
-        self.model.update_cell_with_number(sheet, row, column, value);
+        self.model
+            .update_cell_with_number(sheet.try_into().unwrap(), row, column, value);
     }
 
     pub fn update_cell_with_bool(&mut self, sheet: i32, row: i32, column: i32, value: bool) {
-        self.model.update_cell_with_bool(sheet, row, column, value);
+        self.model
+            .update_cell_with_bool(sheet.try_into().unwrap(), row, column, value);
     }
 
     pub fn set_sheet_row_style(&mut self, sheet: i32, row: i32, style_name: &str) -> PyResult<()> {
-        match self.model.set_sheet_row_style(sheet, row, style_name) {
+        match self
+            .model
+            .set_sheet_row_style(sheet.try_into().unwrap(), row, style_name)
+        {
             Ok(()) => Ok(()),
             Err(s) => Err(PyValueError::new_err(s)),
         }
@@ -445,14 +509,20 @@ impl PyModel {
         column: i32,
         style_name: &str,
     ) -> PyResult<()> {
-        match self.model.set_sheet_column_style(sheet, column, style_name) {
+        match self
+            .model
+            .set_sheet_column_style(sheet.try_into().unwrap(), column, style_name)
+        {
             Ok(()) => Ok(()),
             Err(s) => Err(PyValueError::new_err(s)),
         }
     }
 
     pub fn set_sheet_style(&mut self, sheet: i32, style_name: &str) -> PyResult<()> {
-        match self.model.set_sheet_style(sheet, style_name) {
+        match self
+            .model
+            .set_sheet_style(sheet.try_into().unwrap(), style_name)
+        {
             Ok(()) => Ok(()),
             Err(s) => Err(PyValueError::new_err(s)),
         }
@@ -466,7 +536,7 @@ impl PyModel {
     }
 
     pub fn set_sheet_color(&mut self, sheet: i32, color: &str) -> PyResult<()> {
-        match self.model.set_sheet_color(sheet, color) {
+        match self.model.set_sheet_color(sheet.try_into().unwrap(), color) {
             Ok(_) => Ok(()),
             Err(s) => Err(PyValueError::new_err(s)),
         }

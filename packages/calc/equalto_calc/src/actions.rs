@@ -17,7 +17,7 @@ impl Model {
         }
     }
     /// Returns the list of columns in row
-    fn get_columns_for_row(&self, sheet: i32, row: i32, descending: bool) -> Vec<i32> {
+    fn get_columns_for_row(&self, sheet: u32, row: i32, descending: bool) -> Vec<i32> {
         let worksheet = &self.workbook.worksheets[sheet as usize];
         if let Some(row_data) = worksheet.sheet_data.get(&row) {
             let mut columns: Vec<i32> = row_data.keys().copied().collect();
@@ -32,7 +32,7 @@ impl Model {
     }
 
     /// Returns the list of row in a column
-    fn get_rows_for_column(&self, sheet: i32, column: i32, descending: bool) -> Vec<i32> {
+    fn get_rows_for_column(&self, sheet: u32, column: i32, descending: bool) -> Vec<i32> {
         let worksheet = &self.workbook.worksheets[sheet as usize];
         let mut rows: Vec<i32> = vec![];
         let all_rows: Vec<_> = worksheet.sheet_data.keys().collect();
@@ -57,7 +57,7 @@ impl Model {
     /// Assumes that cell exists, otherwise will panic.
     fn move_cell(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         source_row: i32,
         source_column: i32,
         target_row: i32,
@@ -72,7 +72,7 @@ impl Model {
 
     pub fn insert_columns(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         column: i32,
         column_count: i32,
     ) -> Result<(), &'static str> {
@@ -111,7 +111,7 @@ impl Model {
 
     pub fn delete_columns(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         column: i32,
         column_count: i32,
     ) -> Result<(), &'static str> {
@@ -151,7 +151,7 @@ impl Model {
 
     pub fn insert_rows(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         row_count: i32,
     ) -> Result<(), &'static str> {
@@ -212,7 +212,7 @@ impl Model {
 
     pub fn delete_rows(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         row_count: i32,
     ) -> Result<(), &'static str> {
@@ -271,7 +271,7 @@ impl Model {
     // Returns an error if there is content in some of the last cell_count columns.
     pub fn shift_cells_right(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -313,7 +313,7 @@ impl Model {
 
     pub fn shift_cells_down(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -357,7 +357,7 @@ impl Model {
     // delete cells
     pub fn shift_cells_up(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -399,7 +399,7 @@ impl Model {
     // delete cells
     pub fn shift_cells_left(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column: i32,
         cell_count: i32,
@@ -439,7 +439,7 @@ impl Model {
 
     pub fn swap_cells_in_row(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         column1: i32,
         column2: i32,
@@ -513,7 +513,7 @@ impl Model {
     /// NOTE: This does NOT move the data in the columns or move the colum styles
     pub fn move_column_action(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         column: i32,
         delta: i32,
     ) -> Result<(), &'static str> {

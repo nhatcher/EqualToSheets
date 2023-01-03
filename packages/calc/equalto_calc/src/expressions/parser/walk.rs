@@ -5,7 +5,7 @@ use crate::expressions::types::{Area, CellReferenceIndex};
 pub(crate) fn swap_references(
     node: &mut Node,
     context: &CellReferenceIndex,
-    sheet_index: i32,
+    sheet_index: u32,
     row: i32,
     column1: i32,
     column2: i32,
@@ -111,7 +111,7 @@ pub(crate) fn forward_references(
     node: &mut Node,
     context: &CellReferenceIndex,
     source_area: &Area,
-    target_sheet: i32,
+    target_sheet: u32,
     target_sheet_name: &str,
     target_row: i32,
     target_column: i32,

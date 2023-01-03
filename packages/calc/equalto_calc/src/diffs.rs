@@ -22,7 +22,7 @@ pub enum CellValue {
 pub enum Diff {
     #[serde(rename_all = "camelCase")]
     SetCellValue {
-        sheet: i32,
+        sheet: u32,
         column: i32,
         row: i32,
         new_value: CellValue,
@@ -37,7 +37,7 @@ impl Model {
     /// FIXME: This two methods only make sense in the front-end.
     /// All the undo/redo logic should be completely rewritten in Rust
     /// Returns the data of all cells in a row. Enough to reconstruct it.
-    pub fn get_row_undo_data(&self, sheet: i32, row: i32) -> Result<String, String> {
+    pub fn get_row_undo_data(&self, sheet: u32, row: i32) -> Result<String, String> {
         if let Some(worksheet) = self.workbook.worksheets.get(sheet as usize) {
             if let Some(row_data) = worksheet.sheet_data.get(&row) {
                 match serde_json::to_string(row_data) {
@@ -55,7 +55,7 @@ impl Model {
     /// Sets the row undo data
     pub fn set_row_undo_data(
         &mut self,
-        sheet: i32,
+        sheet: u32,
         row: i32,
         row_data_str: &str,
     ) -> Result<(), String> {
@@ -71,7 +71,7 @@ impl Model {
     pub fn forward_references(
         &mut self,
         source_area: &Area,
-        target_sheet: i32,
+        target_sheet: u32,
         target_row: i32,
         target_column: i32,
     ) -> Result<Vec<Diff>, String> {

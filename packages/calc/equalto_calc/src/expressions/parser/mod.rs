@@ -53,7 +53,7 @@ mod test_move_formula;
 
 pub(crate) struct Reference<'a> {
     sheet_name: &'a Option<String>,
-    sheet_index: i32,
+    sheet_index: u32,
     absolute_row: bool,
     absolute_column: bool,
     row: i32,
@@ -67,7 +67,7 @@ pub enum Node {
     StringKind(String),
     ReferenceKind {
         sheet_name: Option<String>,
-        sheet_index: i32,
+        sheet_index: u32,
         absolute_row: bool,
         absolute_column: bool,
         row: i32,
@@ -75,7 +75,7 @@ pub enum Node {
     },
     RangeKind {
         sheet_name: Option<String>,
-        sheet_index: i32,
+        sheet_index: u32,
         absolute_row1: bool,
         absolute_column1: bool,
         row1: i32,
@@ -184,11 +184,11 @@ impl Parser {
         self.parse_expr()
     }
 
-    fn get_sheet_index_by_name(&self, name: &str) -> Option<i32> {
+    fn get_sheet_index_by_name(&self, name: &str) -> Option<u32> {
         let worksheets = &self.worksheets;
         for (i, sheet) in worksheets.iter().enumerate() {
             if sheet == name {
-                return Some(i as i32);
+                return Some(i as u32);
             }
         }
         None
