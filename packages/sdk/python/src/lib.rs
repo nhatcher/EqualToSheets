@@ -1,4 +1,5 @@
-use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
+use pyo3::exceptions::{PyException, PyValueError};
+use pyo3::{create_exception, prelude::*, wrap_pyfunction};
 
 use equalto_calc::{
     expressions::lexer::util::get_tokens as tokenizer,
@@ -14,6 +15,8 @@ fn get_milliseconds_since_epoch() -> i64 {
     let start = SystemTime::now();
     start.duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
 }
+
+create_exception!(_pycalc, WorkbookError, PyException);
 
 #[pyclass]
 pub struct PyModel {
@@ -462,8 +465,10 @@ impl PyModel {
         Ok(self.model.get_worksheet_ids())
     }
 
-    pub fn add_sheet(&mut self, new_name: &str) -> PyResult<bool> {
-        Ok(self.model.add_sheet(new_name).is_ok())
+    pub fn add_sheet(&mut self, name: &str) -> PyResult<()> {
+        self.model
+            .add_sheet(name)
+            .map_err(|e| WorkbookError::new_err(e))
     }
 
     pub fn rename_sheet(&mut self, old_name: &str, new_name: &str) -> PyResult<bool> {
@@ -608,7 +613,7 @@ pub fn test_panic() {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn _pycalc(_: Python, m: &PyModule) -> PyResult<()> {
+fn _pycalc(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(loads, m)?).unwrap();
     m.add_function(wrap_pyfunction!(create, m)?).unwrap();
@@ -616,6 +621,7 @@ fn _pycalc(_: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compare_models, m)?)
         .unwrap();
     m.add_function(wrap_pyfunction!(test_panic, m)?).unwrap();
+    m.add("WorkbookError", py.get_type::<WorkbookError>())?;
     // m.add_class::<PyModel>()?;
     Ok(())
 }

@@ -69,11 +69,7 @@ class WorkbookSheets:
         return len(self._sheet_index_to_sheet_id)
 
     def add(self, name: str) -> Sheet:
-        result = self._model.add_sheet(name)
-        if not result:
-            # TODO: Shouldn't rust raise a proper exception with error message instead of
-            #       returning a boolean?
-            raise WorkbookError(f'could not create "{name}" sheet')
+        self._model.add_sheet(name)
         self._load_sheets_metadata()
         return self[-1]
 

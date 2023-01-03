@@ -83,7 +83,7 @@ def test_add_sheet(empty_workbook: Workbook) -> None:
 
 
 def test_add_sheet_name_in_use(empty_workbook: Workbook) -> None:
-    with pytest.raises(WorkbookError, match='could not create "Sheet1" sheet'):
+    with pytest.raises(WorkbookError, match="A worksheet already exists with that name"):
         empty_workbook.sheets.add(empty_workbook.sheets[0].name)
 
 
