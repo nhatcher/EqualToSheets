@@ -42,11 +42,12 @@ fn test_xlsx() {
         .collect::<Result<Vec<_>, io::Error>>()
         .unwrap();
     entries.sort();
-    for file_name in entries {
-        let file_name_str = file_name.to_str().unwrap();
-        println!("{}", file_name_str);
-        if file_name_str.ends_with(".xlsx") {
-            assert!(test_file(file_name_str).is_ok());
+    for file_path in entries {
+        let file_name_str = file_path.file_name().unwrap().to_str().unwrap();
+        let file_path_str = file_path.to_str().unwrap();
+        println!("{}", file_path_str);
+        if file_name_str.ends_with(".xlsx") && !file_name_str.starts_with('~') {
+            assert!(test_file(file_path_str).is_ok());
         } else {
             println!("skipping");
         }
