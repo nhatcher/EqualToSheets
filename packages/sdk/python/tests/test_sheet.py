@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from equalto.exceptions import CellReferenceError, WorkbookError
@@ -31,6 +33,84 @@ def test_get_sheet_by_negative_index(example_workbook: Workbook) -> None:
 def test_sheets_len(empty_workbook: Workbook, example_workbook: Workbook) -> None:
     assert len(empty_workbook.sheets) == 1
     assert len(example_workbook.sheets) == 8
+
+
+def test_sheets_iter(example_workbook: Workbook) -> None:
+    assert [(sheet.index, sheet.name) for sheet in example_workbook.sheets] == [
+        (0, "Sheet1"),
+        (1, "Second"),
+        (2, "Sheet4"),
+        (3, "shared"),
+        (4, "Table"),
+        (5, "Sheet2"),
+        (6, "Created fourth"),
+        (7, "Hidden"),
+    ]
+
+
+def test_sheet_delete(example_workbook: Workbook) -> None:
+    sheet = example_workbook.sheets["Sheet4"]
+    sheet_table = example_workbook.sheets["Table"]
+    assert sheet.index < sheet_table.index
+
+    sheet.delete()
+
+    assert _get_sheets(example_workbook) == [
+        (0, "Sheet1"),
+        (1, "Second"),
+        (2, "shared"),
+        (3, "Table"),
+        (4, "Sheet2"),
+        (5, "Created fourth"),
+        (6, "Hidden"),
+    ]
+
+    # confirm that references to other sheets are not broken
+    assert sheet_table.name == "Table"
+    assert sheet_table.index == 3
+    assert sheet_table["A1"].value == "Cars"
+
+
+def test_delete_sheet_by_name(example_workbook: Workbook) -> None:
+    del example_workbook.sheets["Table"]
+
+    assert _get_sheets(example_workbook) == [
+        (0, "Sheet1"),
+        (1, "Second"),
+        (2, "Sheet4"),
+        (3, "shared"),
+        (4, "Sheet2"),
+        (5, "Created fourth"),
+        (6, "Hidden"),
+    ]
+
+
+def test_delete_sheet_by_index(example_workbook: Workbook) -> None:
+    del example_workbook.sheets[6]
+
+    assert _get_sheets(example_workbook) == [
+        (0, "Sheet1"),
+        (1, "Second"),
+        (2, "Sheet4"),
+        (3, "shared"),
+        (4, "Table"),
+        (5, "Sheet2"),
+        (6, "Hidden"),
+    ]
+
+
+def test_delete_only_sheet(empty_workbook: Workbook) -> None:
+    assert len(empty_workbook.sheets) == 1
+    with pytest.raises(WorkbookError, match="Cannot delete only sheet"):
+        del empty_workbook.sheets[0]
+
+
+def test_delete_non_existent_sheet(example_workbook: WorkbookError) -> None:
+    sheet = example_workbook.sheets[0]
+    sheet.delete()
+
+    with pytest.raises(WorkbookError, match="Sheet not found"):
+        sheet.delete()
 
 
 def test_non_existent_sheet_name(empty_workbook: Workbook) -> None:
@@ -97,9 +177,60 @@ def test_add_sheet_name_in_use(empty_workbook: Workbook) -> None:
         empty_workbook.sheets.add(empty_workbook.sheets[0].name)
 
 
+def test_add_sheet_invalid_name(empty_workbook: Workbook) -> None:
+    with pytest.raises(WorkbookError, match="Invalid name for a sheet: '.*?'"):
+        empty_workbook.sheets.add(".*?")
+
+
+def test_rename_sheet(example_workbook: Workbook) -> None:
+    assert _get_sheets(example_workbook) == [
+        (0, "Sheet1"),
+        (1, "Second"),
+        (2, "Sheet4"),
+        (3, "shared"),
+        (4, "Table"),
+        (5, "Sheet2"),
+        (6, "Created fourth"),
+        (7, "Hidden"),
+    ]
+
+    sheet = example_workbook.sheets["Sheet4"]
+    sheet.name = "New name of Sheet4"
+
+    assert sheet.name == "New name of Sheet4"
+    assert _get_sheets(example_workbook) == [
+        (0, "Sheet1"),
+        (1, "Second"),
+        (2, "New name of Sheet4"),
+        (3, "shared"),
+        (4, "Table"),
+        (5, "Sheet2"),
+        (6, "Created fourth"),
+        (7, "Hidden"),
+    ]
+
+
+def test_rename_sheet_noop(sheet: Sheet) -> None:
+    sheet.name = sheet.name
+
+
+def test_rename_sheet_name_in_use(example_workbook: Workbook) -> None:
+    with pytest.raises(WorkbookError, match="Sheet already exists: 'Second'"):
+        example_workbook.sheets[0].name = "Second"
+
+
+def test_rename_sheet_invalid_name(sheet: Sheet) -> None:
+    with pytest.raises(WorkbookError, match="Invalid name for a sheet: '.*?'"):
+        sheet.name = ".*?"
+
+
 def test_delete_cell(sheet: Sheet) -> None:
     reference = "A1"
 
     sheet[reference].value = 42
     del sheet[reference]
     assert not sheet[reference].value
+
+
+def _get_sheets(workbook: Workbook) -> list[tuple[int, str]]:
+    return [(sheet.index, sheet.name) for sheet in workbook.sheets]

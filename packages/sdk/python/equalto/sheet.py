@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 from equalto.cell import Cell
 from equalto.exceptions import CellReferenceError, WorkbookError
@@ -43,9 +43,24 @@ class Sheet:
     def name(self) -> str:
         return self.workbook_sheets.get_sheet_name(self.sheet_id)
 
+    @name.setter
+    def name(self, new_name: str) -> None:
+        if self.name == new_name:
+            return
+        self._model.rename_sheet(self.index, new_name)
+        self.workbook_sheets.load_sheets_metadata()
+
     @property
     def index(self) -> int:
         return self.workbook_sheets.get_sheet_index(self.sheet_id)
+
+    def delete(self) -> None:
+        self._model.delete_sheet_by_sheet_id(self.sheet_id)
+        self.workbook_sheets.load_sheets_metadata()
+
+    @cached_property
+    def _model(self) -> PyCalcModel:
+        return self.workbook_sheets._model  # noqa: WPS437
 
 
 class WorkbookSheets:
@@ -53,7 +68,7 @@ class WorkbookSheets:
 
     def __init__(self, workbook: Workbook) -> None:
         self.workbook = workbook
-        self._load_sheets_metadata()
+        self.load_sheets_metadata()
 
     def __getitem__(self, key: str | int) -> Sheet:
         """Get sheet by either name or index."""
@@ -65,15 +80,22 @@ class WorkbookSheets:
             return Sheet(self, sheet_id=self._get_sheet_id_from_index(index=key))
         raise ValueError("invalid sheet lookup key type")  # pragma: no cover
 
+    def __delitem__(self, key: str | int) -> None:
+        """Delete the sheet."""
+        self[key].delete()
+
     def __len__(self) -> int:
         return len(self._sheet_index_to_sheet_id)
+
+    def __iter__(self) -> Generator[Sheet, None, None]:
+        return (self[index] for index in range(len(self)))
 
     def add(self, name: str | None = None) -> Sheet:
         if name is None:
             self._model.new_sheet()
         else:
             self._model.add_sheet(name)
-        self._load_sheets_metadata()
+        self.load_sheets_metadata()
         return self[-1]
 
     def get_sheet_name(self, sheet_id: int) -> str:
@@ -87,7 +109,7 @@ class WorkbookSheets:
     _sheet_index_to_sheet_id: dict[int, int]
     _sheet_id_to_sheet_index: dict[int, int]
 
-    def _load_sheets_metadata(self) -> None:
+    def load_sheets_metadata(self) -> None:
         """
         Load sheets metadata from the workbook.
 

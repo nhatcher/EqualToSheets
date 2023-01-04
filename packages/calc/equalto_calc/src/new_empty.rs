@@ -152,37 +152,8 @@ impl Model {
     ///   * The target sheet already exists
     ///   * The target sheet name is invalid
     pub fn rename_sheet(&mut self, old_name: &str, new_name: &str) -> Result<(), String> {
-        if !is_valid_sheet_name(new_name) {
-            return Err(format!("Invalid name for a sheet: '{}'", new_name));
-        }
-        if self.get_sheet_index_by_name(new_name).is_some() {
-            return Err(format!("Sheet already exists: '{}'", new_name));
-        }
         if let Some(sheet_index) = self.get_sheet_index_by_name(old_name) {
-            // Parse all formulas with the old name
-            self.parser.set_lexer_mode(LexerMode::R1C1);
-            // We use iter because the default would be a mut_iter and we don't need a mutable reference
-            let worksheets = &mut self.workbook.worksheets;
-            for worksheet in worksheets {
-                let cell_reference = &Some(CellReferenceRC {
-                    sheet: worksheet.get_name(),
-                    row: 1,
-                    column: 1,
-                });
-                let mut formulas = Vec::new();
-                for formula in &worksheet.shared_formulas {
-                    let mut t = self.parser.parse(formula, cell_reference);
-                    rename_sheet_in_node(&mut t, sheet_index, new_name);
-                    formulas.push(to_rc_format(&t));
-                }
-                worksheet.shared_formulas = formulas;
-            }
-            self.parser.set_lexer_mode(LexerMode::A1);
-            // Update the name of the worksheet
-            let worksheets = &mut self.workbook.worksheets;
-            worksheets[sheet_index as usize].set_name(new_name);
-            self.reset_formulas();
-            return Ok(());
+            return self.rename_sheet_by_index(sheet_index, new_name);
         }
         Err(format!("Could not find sheet {}", old_name))
     }

@@ -476,16 +476,16 @@ impl PyModel {
         Ok(())
     }
 
-    pub fn rename_sheet(&mut self, old_name: &str, new_name: &str) -> PyResult<bool> {
-        Ok(self.model.rename_sheet(old_name, new_name).is_ok())
+    pub fn rename_sheet(&mut self, sheet: i32, new_name: &str) -> PyResult<()> {
+        self.model
+            .rename_sheet_by_index(sheet.try_into().unwrap(), new_name)
+            .map_err(|e| WorkbookError::new_err(e))
     }
 
-    pub fn delete_sheet_by_name(&mut self, name: &str) -> PyResult<bool> {
-        Ok(self.model.delete_sheet_by_name(name).is_ok())
-    }
-
-    pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: i32) -> PyResult<bool> {
-        Ok(self.model.delete_sheet_by_sheet_id(sheet_id).is_ok())
+    pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: i32) -> PyResult<()> {
+        self.model
+            .delete_sheet_by_sheet_id(sheet_id)
+            .map_err(|e| WorkbookError::new_err(e))
     }
 
     pub fn update_cell_with_text(&mut self, sheet: i32, row: i32, column: i32, value: &str) {
