@@ -651,7 +651,7 @@ impl Model {
     /// CHOOSE(index_num, value1, [value2], ...)
     /// Uses index_num to return a value from the list of value arguments.
     pub(crate) fn fn_choose(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
-        if args.len() < 2 || args.len() > 255 {
+        if args.len() < 2 {
             return CalcResult::new_args_number_error(cell);
         }
 

@@ -5,12 +5,8 @@ use crate::test::util::new_empty_model;
 #[test]
 fn test_fn_choose_args_number() {
     let mut model = new_empty_model();
-    let mut args = "1".to_string();
-    for x in 2..=256 {
-        args = format!("{}, {}", args, x);
-    }
-    model._set("A1", "=CHOOSE(1)");
-    model._set("A2", &format!("=CHOOSE({})", args));
+    model._set("A1", "=CHOOSE()");
+    model._set("A2", "=CHOOSE(1)");
     model.evaluate();
 
     assert_eq!(model._get_text("A1"), *"#ERROR!");
@@ -42,7 +38,7 @@ fn test_fn_choose_basic_tests() {
     model._set("B2", "2");
     model._set("B3", "3");
     model._set("A1", "=CHOOSE(3.1, B1, B2, B3)");
-    // FIXME: Doesn't seem to work, even though it should be allowed.
+    // FIXME: Not supported by lexer
     model._set("A2", "=SUM(B1:CHOOSE(1, B1, B2, B3))");
     model._set("A3", "=SUM(CHOOSE(3, B1:B1, B1:B2, B1:B3))");
     model._set("A4", "=CHOOSE(3,\"Wide\",115,\"world\",8)");
