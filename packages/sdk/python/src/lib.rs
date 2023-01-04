@@ -471,6 +471,11 @@ impl PyModel {
             .map_err(|e| WorkbookError::new_err(e))
     }
 
+    pub fn new_sheet(&mut self) -> PyResult<()> {
+        self.model.new_sheet();
+        Ok(())
+    }
+
     pub fn rename_sheet(&mut self, old_name: &str, new_name: &str) -> PyResult<bool> {
         Ok(self.model.rename_sheet(old_name, new_name).is_ok())
     }

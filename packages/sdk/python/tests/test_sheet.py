@@ -82,6 +82,16 @@ def test_add_sheet(empty_workbook: Workbook) -> None:
     assert sheet.index == 1
 
 
+def test_add_sheet_default_name(empty_workbook: Workbook) -> None:
+    sheet = empty_workbook.sheets.add()
+    assert sheet.name == "Sheet2"
+    assert sheet.index == 1
+
+    sheet = empty_workbook.sheets.add()
+    assert sheet.name == "Sheet3"
+    assert sheet.index == 2
+
+
 def test_add_sheet_name_in_use(empty_workbook: Workbook) -> None:
     with pytest.raises(WorkbookError, match="A worksheet already exists with that name"):
         empty_workbook.sheets.add(empty_workbook.sheets[0].name)

@@ -68,8 +68,11 @@ class WorkbookSheets:
     def __len__(self) -> int:
         return len(self._sheet_index_to_sheet_id)
 
-    def add(self, name: str) -> Sheet:
-        self._model.add_sheet(name)
+    def add(self, name: str | None = None) -> Sheet:
+        if name is None:
+            self._model.new_sheet()
+        else:
+            self._model.add_sheet(name)
         self._load_sheets_metadata()
         return self[-1]
 
