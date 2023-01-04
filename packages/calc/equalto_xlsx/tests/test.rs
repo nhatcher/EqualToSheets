@@ -43,7 +43,12 @@ fn test_xlsx() {
         .unwrap();
     entries.sort();
     for file_name in entries {
-        println!("{}", file_name.to_string_lossy());
-        assert!(test_file(file_name.to_str().unwrap()).is_ok());
+        let file_name_str = file_name.to_str().unwrap();
+        println!("{}", file_name_str);
+        if file_name_str.ends_with(".xlsx") {
+            assert!(test_file(file_name_str).is_ok());
+        } else {
+            println!("skipping");
+        }
     }
 }

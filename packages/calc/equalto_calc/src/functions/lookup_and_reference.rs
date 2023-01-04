@@ -648,6 +648,29 @@ impl Model {
         }
     }
 
+    /// CHOOSE(index_num, value1, [value2], ...)
+    /// Uses index_num to return a value from the list of value arguments.
+    pub(crate) fn fn_choose(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() < 2 || args.len() > 255 {
+            return CalcResult::new_args_number_error(cell);
+        }
+
+        let index_num = match self.get_number(&args[0], cell) {
+            Ok(index_num) => index_num as usize,
+            Err(calc_err) => return calc_err,
+        };
+
+        if index_num < 1 || index_num > (args.len() - 1) {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "Invalid index".to_string(),
+            };
+        }
+
+        self.evaluate_node_in_context(&args[index_num], cell)
+    }
+
     // COLUMNS(range)
     // Returns the number of columns in range
     pub(crate) fn fn_columns(&mut self, args: &[Node], cell: CellReference) -> CalcResult {

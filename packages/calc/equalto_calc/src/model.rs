@@ -407,6 +407,7 @@ impl Model {
                 "SUMIF" => self.fn_sumif(args, cell),
                 "SUMIFS" => self.fn_sumifs(args, cell),
                 // Lookup and Reference
+                "CHOOSE" => self.fn_choose(args, cell),
                 "COLUMN" => self.fn_column(args, cell),
                 "COLUMNS" => self.fn_columns(args, cell),
                 "INDEX" => self.fn_index(args, cell),
