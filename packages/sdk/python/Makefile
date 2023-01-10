@@ -44,10 +44,13 @@ lint: $(VENV_NAME)/bin/activate
 	@${VENV_NAME}/bin/python -m flake8 ./equalto ./tests
 	@${VENV_NAME}/bin/python -m black --check ./equalto ./tests
 	@${VENV_NAME}/bin/python -m isort --check ./equalto ./tests
+	cargo fmt --check
+	cargo clippy --all-targets --all-features -- -D warnings
 
 fmt: $(VENV_NAME)/bin/activate
 	@${VENV_NAME}/bin/python -m black ./equalto ./tests
 	@${VENV_NAME}/bin/python -m isort ./equalto ./tests
+	cargo fmt
 
 clean:
 	@rm -rf $(VENV_NAME) target/

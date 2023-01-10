@@ -70,6 +70,7 @@ jobs:
             apt update
             apt -y --no-install-recommends upgrade
             apt install --no-install-recommends -y make python3 pip
+            rustup component add rustfmt clippy
       - run:
           name: Build EqualTo python SDK
           command: make venv
