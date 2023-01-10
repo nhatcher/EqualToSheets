@@ -18,7 +18,7 @@ class Sheet:
 
     Instances of this class reference the underlying sheet by `sheet_id` and use dynamic properties
     to access the name and the index. This way the objects don't need to be recreated when
-    the sheets are renamed/moved.
+    the sheets are renamed or deleted.
     """
 
     def __init__(self, workbook_sheets: WorkbookSheets, sheet_id: int) -> None:
@@ -26,7 +26,7 @@ class Sheet:
         self.sheet_id = sheet_id
 
     def __getitem__(self, key: str) -> Cell:
-        """Get cell by Excel reference."""
+        """Get cell by the reference (i.e. "A1")."""
         sheet_name, row, column = parse_cell_reference(key)
         if sheet_name is not None:
             raise CellReferenceError("sheet name cannot be specified in this context")
@@ -48,19 +48,23 @@ class Sheet:
         if self.name == new_name:
             return
         self._model.rename_sheet(self.index, new_name)
-        self.workbook_sheets.load_sheets_metadata()
+        self._load_sheets_metadata()
 
     @property
     def index(self) -> int:
         return self.workbook_sheets.get_sheet_index(self.sheet_id)
 
     def delete(self) -> None:
+        """Delete the sheet and its content."""
         self._model.delete_sheet_by_sheet_id(self.sheet_id)
-        self.workbook_sheets.load_sheets_metadata()
+        self._load_sheets_metadata()
 
     @cached_property
     def _model(self) -> PyCalcModel:
         return self.workbook_sheets._model  # noqa: WPS437
+
+    def _load_sheets_metadata(self) -> None:
+        self.workbook_sheets._load_sheets_metadata()  # noqa: WPS437
 
 
 class WorkbookSheets:
@@ -68,7 +72,7 @@ class WorkbookSheets:
 
     def __init__(self, workbook: Workbook) -> None:
         self.workbook = workbook
-        self.load_sheets_metadata()
+        self._load_sheets_metadata()
 
     def __getitem__(self, key: str | int) -> Sheet:
         """Get sheet by either name or index."""
@@ -81,7 +85,7 @@ class WorkbookSheets:
         raise ValueError("invalid sheet lookup key type")  # pragma: no cover
 
     def __delitem__(self, key: str | int) -> None:
-        """Delete the sheet."""
+        """Delete the sheet and its content."""
         self[key].delete()
 
     def __len__(self) -> int:
@@ -91,11 +95,17 @@ class WorkbookSheets:
         return (self[index] for index in range(len(self)))
 
     def add(self, name: str | None = None) -> Sheet:
+        """
+        Add a new sheet to the workbook. The sheet will be added at the end of existing sheets.
+
+        If `name` is specified, it needs to be unique withing the workbook.
+        If `name` is not specified, the name of the new sheet will be determined automatically.
+        """
         if name is None:
             self._model.new_sheet()
         else:
             self._model.add_sheet(name)
-        self.load_sheets_metadata()
+        self._load_sheets_metadata()
         return self[-1]
 
     def get_sheet_name(self, sheet_id: int) -> str:
@@ -109,7 +119,7 @@ class WorkbookSheets:
     _sheet_index_to_sheet_id: dict[int, int]
     _sheet_id_to_sheet_index: dict[int, int]
 
-    def load_sheets_metadata(self) -> None:
+    def _load_sheets_metadata(self) -> None:
         """
         Load sheets metadata from the workbook.
 

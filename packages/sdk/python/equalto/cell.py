@@ -41,6 +41,7 @@ class Cell:
 
     @property
     def value(self) -> float | bool | str | None:
+        """Get raw value from the represented cell."""
         value = json.loads(self._model.get_cell_value_by_index(*self._cell_ref))
         assert value is None or isinstance(value, (float, bool, str))
         return value

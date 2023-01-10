@@ -1,5 +1,4 @@
 import os
-from unittest.mock import patch
 
 import pytest
 
@@ -8,7 +7,7 @@ from equalto.exceptions import WorkbookError
 
 
 def test_load_workbook() -> None:
-    filename = os.path.join(os.path.dirname(__file__), "example.xlsx")
+    filename = os.path.join(os.path.dirname(__file__), "xlsx", "example.xlsx")
     workbook = equalto.load(filename)
 
     assert workbook["Sheet1!A1"].value == "A string"
@@ -16,13 +15,15 @@ def test_load_workbook() -> None:
     assert workbook["Second!A1"].value == "Tres"
 
 
-def test_load_workbook_error_handling() -> None:
-    """Errors coming from pycalc should be wrapped in WorkbookError."""
-    # PanicException should be caught and wrapped in WorkbookError
-    with pytest.raises(WorkbookError, match="No such file or directory"):
-        equalto.load(os.path.join(os.path.dirname(__file__), "non-existent.xlsx"))
-
-    # confirm that non-panic base exceptions are re-raised
-    with patch("equalto.load_excel", side_effect=BaseException):
-        with pytest.raises(BaseException):
-            equalto.load("filename.xlsx")
+@pytest.mark.parametrize(
+    "file_name, error",
+    [
+        ("non_existent.xlsx", "I/O Error: No such file or directory"),
+        ("not_zip_file.xlsx", "Zip Error: invalid Zip archive"),
+        ("corrupt.xlsx", 'XML Error: Missing "name" XML attribute'),
+    ],
+)
+def test_load_workbook_error_handling(file_name: str, error: str) -> None:
+    with pytest.raises(WorkbookError, match=error):
+        path = os.path.join(os.path.dirname(__file__), "xlsx", file_name)
+        equalto.load(path)

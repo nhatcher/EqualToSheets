@@ -1,7 +1,6 @@
 from datetime import timezone
 
 import pytest
-from pytest_mock import MockerFixture
 
 import equalto
 from equalto.exceptions import WorkbookError
@@ -17,8 +16,7 @@ def test_create_new_workbook() -> None:
     assert workbook["Sheet1!B1"].value == 3
 
 
-def test_create_new_workbook_error_handling(mocker: MockerFixture) -> None:
+def test_create_new_workbook_error_handling() -> None:
     """Errors coming from pycalc should be wrapped in WorkbookError."""
-    mocker.patch("equalto.create", side_effect=Exception("cannot create a new workbook"))
-    with pytest.raises(WorkbookError, match="cannot create a new workbook"):
-        equalto.new("en-US", timezone.utc)
+    with pytest.raises(WorkbookError, match="Invalid timezone: not a timezone"):
+        equalto.new("en-US", "not a timezone")  # type: ignore

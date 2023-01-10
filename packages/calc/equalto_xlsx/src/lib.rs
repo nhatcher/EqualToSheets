@@ -61,8 +61,9 @@ use equalto_calc::expressions::{
 use equalto_calc::expressions::{types::CellReferenceRC, utils::column_to_number};
 use equalto_calc::types::*;
 
-use roxmltree::Node;
+use roxmltree::{ExpandedName, Node};
 use serde::{Deserialize, Serialize};
+use std::num::ParseIntError;
 
 use std::fs;
 use std::{
@@ -72,10 +73,12 @@ use std::{
 
 mod colors;
 pub mod compare;
+pub mod error;
 mod shared_strings;
 mod types;
 
 use crate::colors::{get_indexed_color, get_themed_color};
+use crate::error::XlsxError;
 use crate::shared_strings::read_shared_strings;
 use crate::types::ExcelArchive;
 
@@ -104,7 +107,17 @@ struct Relationship {
 
 // Private methods
 
-fn get_color(node: Node) -> Color {
+#[inline]
+fn get_attribute<'a, 'n, 'm, N>(node: &'a Node, attr_name: N) -> Result<&'a str, XlsxError>
+where
+    N: Into<ExpandedName<'n, 'm>>,
+{
+    let attr_name = attr_name.into();
+    node.attribute(attr_name)
+        .ok_or_else(|| XlsxError::XMLError(format!("Missing \"{:?}\" XML attribute", attr_name)))
+}
+
+fn get_color(node: Node) -> Result<Color, XlsxError> {
     // 18.3.1.15 color (Data Bar Color)
     if node.has_attribute("rgb") {
         let mut val = node.attribute("rgb").unwrap().to_string();
@@ -112,32 +125,32 @@ fn get_color(node: Node) -> Color {
         if val.len() == 8 {
             val = format!("#{}", &val[2..8]);
         }
-        Color::RGB(val)
+        Ok(Color::RGB(val))
     } else if node.has_attribute("indexed") {
-        let index = node.attribute("indexed").unwrap().parse::<i32>().unwrap();
+        let index = node.attribute("indexed").unwrap().parse::<i32>()?;
         let rgb = get_indexed_color(index);
-        Color::RGB(rgb)
+        Ok(Color::RGB(rgb))
     // Color::Indexed(val)
     } else if node.has_attribute("theme") {
-        let theme = node.attribute("theme").unwrap().parse::<i32>().unwrap();
+        let theme = node.attribute("theme").unwrap().parse::<i32>()?;
         let tint = match node.attribute("tint") {
             Some(t) => t.parse::<f64>().unwrap_or(0.0),
             None => 0.0,
         };
         let rgb = get_themed_color(theme, tint);
-        Color::RGB(rgb)
+        Ok(Color::RGB(rgb))
     // Color::Theme { theme, tint }
     } else if node.has_attribute("auto") {
         // TODO: Is this correct?
         // A boolean value indicating the color is automatic and system color dependent.
-        Color::None
+        Ok(Color::None)
     } else {
         println!("Unexpected color node {:?}", node);
-        Color::None
+        Ok(Color::None)
     }
 }
 
-fn get_border(node: Node, name: &str) -> BorderItem {
+fn get_border(node: Node, name: &str) -> Result<BorderItem, XlsxError> {
     let style;
     let color;
     let border_nodes = node
@@ -156,7 +169,7 @@ fn get_border(node: Node, name: &str) -> BorderItem {
             .filter(|n| n.has_tag_name("color"))
             .collect::<Vec<Node>>();
         if color_node.len() == 1 {
-            color = get_color(color_node[0]);
+            color = get_color(color_node[0])?;
         } else {
             color = Color::None;
         }
@@ -164,7 +177,7 @@ fn get_border(node: Node, name: &str) -> BorderItem {
         style = "none".to_string();
         color = Color::None;
     }
-    BorderItem { style, color }
+    Ok(BorderItem { style, color })
 }
 
 fn get_bool(node: Node, s: &str) -> bool {
@@ -181,12 +194,15 @@ fn get_number(node: Node, s: &str) -> i32 {
     node.attribute(s).unwrap_or("0").parse::<i32>().unwrap_or(0)
 }
 
-fn load_styles(archive: &mut ExcelArchive) -> Styles {
-    let mut file = archive.by_name("xl/styles.xml").unwrap();
+fn load_styles(archive: &mut ExcelArchive) -> Result<Styles, XlsxError> {
+    let mut file = archive.by_name("xl/styles.xml")?;
     let mut text = String::new();
-    file.read_to_string(&mut text).unwrap();
-    let doc = roxmltree::Document::parse(&text).unwrap();
-    let style_sheet = doc.root().first_child().unwrap();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
+    let style_sheet = doc
+        .root()
+        .first_child()
+        .ok_or_else(|| XlsxError::XMLError("Corrupt XML structure".to_string()))?;
 
     let mut num_fmts = Vec::new();
     let num_fmts_nodes = style_sheet
@@ -232,7 +248,7 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
                         .unwrap_or(11);
                 }
                 "color" => {
-                    color = get_color(feature);
+                    color = get_color(feature)?;
                 }
                 "u" => {
                     u = true;
@@ -293,10 +309,10 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
         for feature in pattern_fill.children() {
             match feature.tag_name().name() {
                 "fgColor" => {
-                    fg_color = get_color(feature);
+                    fg_color = get_color(feature)?;
                 }
                 "bgColor" => {
-                    bg_color = get_color(feature);
+                    bg_color = get_color(feature)?;
                 }
                 _ => {
                     println!("Unexpected pattern");
@@ -319,11 +335,11 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
     for border in border_nodes.children() {
         let diagonal_up = get_bool_false(border, "diagonal_up");
         let diagonal_down = get_bool_false(border, "diagonal_down");
-        let left = get_border(border, "left");
-        let right = get_border(border, "right");
-        let top = get_border(border, "top");
-        let bottom = get_border(border, "bottom");
-        let diagonal = get_border(border, "diagonal");
+        let left = get_border(border, "left")?;
+        let right = get_border(border, "right")?;
+        let top = get_border(border, "top")?;
+        let bottom = get_border(border, "bottom")?;
+        let diagonal = get_border(border, "diagonal")?;
         borders.push(Border {
             diagonal_up,
             diagonal_down,
@@ -372,7 +388,7 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
         .filter(|n| n.has_tag_name("cellStyles"))
         .collect::<Vec<Node>>()[0];
     for cell_style in cell_style_nodes.children() {
-        let name = cell_style.attribute("name").unwrap().to_string();
+        let name = get_attribute(&cell_style, "name")?.to_string();
         let xf_id = get_number(cell_style, "xfId");
         let builtin_id = get_number(cell_style, "builtinId");
         style_names.insert(xf_id, name.clone());
@@ -389,7 +405,7 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
         .filter(|n| n.has_tag_name("cellXfs"))
         .collect::<Vec<Node>>()[0];
     for xfs in cell_xfs_nodes.children() {
-        let xf_id = xfs.attribute("xfId").unwrap().parse::<i32>().unwrap();
+        let xf_id = get_attribute(&xfs, "xfId")?.parse::<i32>()?;
         let num_fmt_id = get_number(xfs, "numFmtId");
         let font_id = get_number(xfs, "fontId");
         let fill_id = get_number(xfs, "fillId");
@@ -451,7 +467,7 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
     //     </mruColors>
     // </colors>
 
-    Styles {
+    Ok(Styles {
         num_fmts,
         fonts,
         fills,
@@ -459,14 +475,16 @@ fn load_styles(archive: &mut ExcelArchive) -> Styles {
         cell_style_xfs,
         cell_xfs,
         cell_styles,
-    }
+    })
 }
 
-fn load_relationships(archive: &mut ExcelArchive) -> HashMap<String, Relationship> {
-    let mut file = archive.by_name("xl/_rels/workbook.xml.rels").unwrap();
+fn load_relationships(
+    archive: &mut ExcelArchive,
+) -> Result<HashMap<String, Relationship>, XlsxError> {
+    let mut file = archive.by_name("xl/_rels/workbook.xml.rels")?;
     let mut text = String::new();
-    file.read_to_string(&mut text).unwrap();
-    let doc = roxmltree::Document::parse(&text).unwrap();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
     let nodes: Vec<Node> = doc
         .descendants()
         .filter(|n| n.has_tag_name("Relationship"))
@@ -474,21 +492,21 @@ fn load_relationships(archive: &mut ExcelArchive) -> HashMap<String, Relationshi
     let mut rels = HashMap::new();
     for node in nodes {
         rels.insert(
-            node.attribute("Id").unwrap().to_string(),
+            get_attribute(&node, "Id")?.to_string(),
             Relationship {
-                rel_type: node.attribute("Type").unwrap().to_string(),
-                target: node.attribute("Target").unwrap().to_string(),
+                rel_type: get_attribute(&node, "Type")?.to_string(),
+                target: get_attribute(&node, "Target")?.to_string(),
             },
         );
     }
-    rels
+    Ok(rels)
 }
 
-fn load_workbook(archive: &mut ExcelArchive) -> WorkbookXML {
-    let mut file = archive.by_name("xl/workbook.xml").unwrap();
+fn load_workbook(archive: &mut ExcelArchive) -> Result<WorkbookXML, XlsxError> {
+    let mut file = archive.by_name("xl/workbook.xml")?;
     let mut text = String::new();
-    file.read_to_string(&mut text).unwrap();
-    let doc = roxmltree::Document::parse(&text).unwrap();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
     let mut defined_names = Vec::new();
     let mut sheets = Vec::new();
     // Get the sheets
@@ -497,16 +515,17 @@ fn load_workbook(archive: &mut ExcelArchive) -> WorkbookXML {
         .filter(|n| n.has_tag_name("sheet"))
         .collect();
     for sheet in sheet_nodes {
-        let name = sheet.attribute("name").unwrap().to_string();
-        let sheet_id = sheet.attribute("sheetId").unwrap().to_string();
-        let sheet_id = sheet_id.parse::<i32>().unwrap();
-        let id = sheet
-            .attribute((
+        let name = get_attribute(&sheet, "name")?.to_string();
+        let sheet_id = get_attribute(&sheet, "sheetId")?.to_string();
+        let sheet_id = sheet_id.parse::<i32>()?;
+        let id = get_attribute(
+            &sheet,
+            (
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
                 "id",
-            ))
-            .unwrap()
-            .to_string();
+            ),
+        )?
+        .to_string();
         let state = match sheet.attribute("state") {
             Some(s) => s.to_string(),
             None => "visible".to_string(),
@@ -524,11 +543,11 @@ fn load_workbook(archive: &mut ExcelArchive) -> WorkbookXML {
         .filter(|n| n.has_tag_name("definedName"))
         .collect();
     for node in name_nodes {
-        let name = node.attribute("name").unwrap().to_string();
-        let formula = node.text().unwrap().to_string();
+        let name = get_attribute(&node, "name")?.to_string();
+        let formula = node.text().unwrap_or("").to_string();
         let sheet_id = match node.attribute("localSheetId") {
             Some(s) => {
-                let index = s.parse::<usize>().unwrap();
+                let index = s.parse::<usize>()?;
                 Some(sheets[index].sheet_id)
             }
             None => None,
@@ -540,10 +559,10 @@ fn load_workbook(archive: &mut ExcelArchive) -> WorkbookXML {
         })
     }
     // read the relationships file
-    WorkbookXML {
+    Ok(WorkbookXML {
         worksheets: sheets,
         defined_names,
-    }
+    })
 }
 
 fn get_column_from_ref(s: &str) -> String {
@@ -557,13 +576,16 @@ fn get_column_from_ref(s: &str) -> String {
     column.into_iter().collect()
 }
 
-fn load_comments(archive: &mut ExcelArchive, path: &str) -> Vec<Comment> {
+fn load_comments(archive: &mut ExcelArchive, path: &str) -> Result<Vec<Comment>, XlsxError> {
     let mut comments = Vec::new();
-    let mut file = archive.by_name(path).unwrap();
+    let mut file = archive.by_name(path)?;
     let mut text = String::new();
-    file.read_to_string(&mut text).unwrap();
-    let doc = roxmltree::Document::parse(&text).unwrap();
-    let ws = doc.root().first_child().unwrap();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
+    let ws = doc
+        .root()
+        .first_child()
+        .ok_or_else(|| XlsxError::XMLError("Corrupt XML structure".to_string()))?;
     let comment_list = ws
         .children()
         .filter(|n| n.has_tag_name("commentList"))
@@ -576,7 +598,7 @@ fn load_comments(archive: &mut ExcelArchive, path: &str) -> Vec<Comment> {
                 .map(|n| n.text().unwrap().to_string())
                 .collect::<Vec<String>>()
                 .join("");
-            let cell_ref = comment.attribute("ref").unwrap().to_string();
+            let cell_ref = get_attribute(&comment, "ref")?.to_string();
             // TODO: Read author_name from the list of authors
             let author_name = "".to_string();
             comments.push(Comment {
@@ -588,10 +610,10 @@ fn load_comments(archive: &mut ExcelArchive, path: &str) -> Vec<Comment> {
         }
     }
 
-    comments
+    Ok(comments)
 }
 
-fn load_sheet_rels(archive: &mut ExcelArchive, path: &str) -> Vec<Comment> {
+fn load_sheet_rels(archive: &mut ExcelArchive, path: &str) -> Result<Vec<Comment>, XlsxError> {
     // ...xl/worksheets/sheet6.xml -> xl/worksheets/_rels/sheet6.xml.rels
     let mut comments = Vec::new();
     let v: Vec<&str> = path.split("/worksheets/").collect();
@@ -601,29 +623,29 @@ fn load_sheet_rels(archive: &mut ExcelArchive, path: &str) -> Vec<Comment> {
     path.push_str(".rels");
     let file = archive.by_name(&path);
     if file.is_err() {
-        return vec![];
+        return Ok(vec![]);
     }
     let mut text = String::new();
-    file.unwrap().read_to_string(&mut text).unwrap();
-    let doc = roxmltree::Document::parse(&text).unwrap();
+    file.unwrap().read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
 
     let rels = doc
         .root()
         .first_child()
-        .unwrap()
+        .ok_or_else(|| XlsxError::XMLError("Corrupt XML structure".to_string()))?
         .children()
         .collect::<Vec<Node>>();
     for rel in rels {
-        let t = rel.attribute("Type").unwrap().to_string();
+        let t = get_attribute(&rel, "Type")?.to_string();
         if t.ends_with("comments") {
-            let mut target = rel.attribute("Target").unwrap().to_string();
+            let mut target = get_attribute(&rel, "Target")?.to_string();
             // Target="../comments1.xlsx"
             target.replace_range(..2, v[0]);
-            comments = load_comments(archive, &target);
+            comments = load_comments(archive, &target)?;
             break;
         }
     }
-    comments
+    Ok(comments)
 }
 
 fn get_formula_index(formula: &str, shared_formulas: &[String]) -> Option<i32> {
@@ -635,7 +657,7 @@ fn get_formula_index(formula: &str, shared_formulas: &[String]) -> Option<i32> {
     None
 }
 
-fn load_columns(ws: Node) -> Vec<Col> {
+fn load_columns(ws: Node) -> Result<Vec<Col>, XlsxError> {
     // cols
     // <cols>
     //     <col min="5" max="5" width="38.26953125" customWidth="1"/>
@@ -649,12 +671,12 @@ fn load_columns(ws: Node) -> Vec<Col> {
         .collect::<Vec<Node>>();
     if columns.len() == 1 {
         for col in columns[0].children() {
-            let min = col.attribute("min").unwrap();
-            let min = min.parse::<i32>().unwrap();
-            let max = col.attribute("max").unwrap();
-            let max = max.parse::<i32>().unwrap();
-            let width = col.attribute("width").unwrap();
-            let width = width.parse::<f64>().unwrap();
+            let min = get_attribute(&col, "min")?;
+            let min = min.parse::<i32>()?;
+            let max = get_attribute(&col, "max")?;
+            let max = max.parse::<i32>()?;
+            let width = get_attribute(&col, "width")?;
+            let width = width.parse::<f64>()?;
             let custom_width = matches!(col.attribute("customWidth"), Some("1"));
             let style = col
                 .attribute("style")
@@ -668,10 +690,10 @@ fn load_columns(ws: Node) -> Vec<Col> {
             })
         }
     }
-    cols
+    Ok(cols)
 }
 
-fn load_merge_cells(ws: Node) -> Vec<String> {
+fn load_merge_cells(ws: Node) -> Result<Vec<String>, XlsxError> {
     // 18.3.1.55 Merge Cells
     // <mergeCells count="1">
     //    <mergeCell ref="K7:L10"/>
@@ -683,14 +705,14 @@ fn load_merge_cells(ws: Node) -> Vec<String> {
         .collect::<Vec<Node>>();
     if merge_cells_nodes.len() == 1 {
         for merge_cell in merge_cells_nodes[0].children() {
-            let reference = merge_cell.attribute("ref").unwrap().to_string();
+            let reference = get_attribute(&merge_cell, "ref")?.to_string();
             merge_cells.push(reference);
         }
     }
-    merge_cells
+    Ok(merge_cells)
 }
 
-fn load_sheet_color(ws: Node) -> Color {
+fn load_sheet_color(ws: Node) -> Result<Color, XlsxError> {
     // <sheetPr>
     //     <tabColor theme="5" tint="-0.249977111117893"/>
     // </sheetPr>
@@ -705,10 +727,10 @@ fn load_sheet_color(ws: Node) -> Color {
             .filter(|n| n.has_tag_name("tabColor"))
             .collect::<Vec<Node>>();
         if tabs.len() == 1 {
-            color = get_color(tabs[0]);
+            color = get_color(tabs[0])?;
         }
     }
-    color
+    Ok(color)
 }
 
 fn get_cell_from_excel(
@@ -915,13 +937,16 @@ fn load_sheet(
     sheet_id: i32,
     state: &str,
     worksheets: &[String],
-) -> Worksheet {
-    let comments = load_sheet_rels(archive, path);
-    let mut file = archive.by_name(path).unwrap();
+) -> Result<Worksheet, XlsxError> {
+    let comments = load_sheet_rels(archive, path)?;
+    let mut file = archive.by_name(path)?;
     let mut text = String::new();
-    file.read_to_string(&mut text).unwrap();
-    let doc = roxmltree::Document::parse(&text).unwrap();
-    let ws = doc.root().first_child().unwrap();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
+    let ws = doc
+        .root()
+        .first_child()
+        .ok_or_else(|| XlsxError::XMLError("Corrupt XML structure".to_string()))?;
     let mut shared_formulas = Vec::new();
 
     let dimension = load_dimension(ws);
@@ -974,8 +999,8 @@ fn load_sheet(
         frozen_rows = get_number(pane[0], "ySplit");
     }
 
-    let cols = load_columns(ws);
-    let color = load_sheet_color(ws);
+    let cols = load_columns(ws)?;
+    let color = load_sheet_color(ws)?;
 
     // sheetData
     // <row r="1" spans="1:15" x14ac:dyDescent="0.35">
@@ -1001,7 +1026,7 @@ fn load_sheet(
     let mut index_map = HashMap::new();
     for row in sheet_data_nodes.children() {
         // This is the row number 1-indexed
-        let row_index = row.attribute("r").unwrap().parse::<i32>().unwrap();
+        let row_index = get_attribute(&row, "r")?.parse::<i32>()?;
         // `spans` is not used in EqualTo at the moment (it's an optimization)
         // let spans = row.attribute("spans");
         // This is the height of the row
@@ -1043,7 +1068,7 @@ fn load_sheet(
         // Unused attributes
         // cm (cell metadata), ph (Show Phonetic), vm (value metadata)
         for cell in row.children() {
-            let cell_ref = cell.attribute("r").unwrap();
+            let cell_ref = get_attribute(&cell, "r")?;
             let column_letter = get_column_from_ref(cell_ref);
             let column = column_to_number(column_letter.as_str());
 
@@ -1107,14 +1132,14 @@ fn load_sheet(
                 match formula_type {
                     "shared" => {
                         // We have a shared formula
-                        let si = fs[0].attribute("si").unwrap();
-                        let si = si.parse::<i32>().unwrap();
+                        let si = get_attribute(&fs[0], "si")?;
+                        let si = si.parse::<i32>()?;
                         match fs[0].attribute("ref") {
                             Some(_) => {
                                 // It's the mother cell. We do not use the ref attribute in EqualTo
-                                let formula = fs[0].text().unwrap().to_string();
+                                let formula = fs[0].text().unwrap_or("").to_string();
                                 let context = format!("{}!{}", sheet_name, cell_ref);
-                                let formula = from_a1_to_rc(formula, worksheets, context);
+                                let formula = from_a1_to_rc(formula, worksheets, context)?;
                                 match index_map.get(&si) {
                                     Some(index) => {
                                         // The index for that formula already exists meaning we bumped into a daughter cell first
@@ -1166,9 +1191,9 @@ fn load_sheet(
                     }
                     "normal" => {
                         // Its a cell with a simple formula
-                        let formula = fs[0].text().unwrap().to_string();
+                        let formula = fs[0].text().unwrap_or("").to_string();
                         let context = format!("{}!{}", sheet_name, cell_ref);
-                        let formula = from_a1_to_rc(formula, worksheets, context);
+                        let formula = from_a1_to_rc(formula, worksheets, context)?;
                         match get_formula_index(&formula, &shared_formulas) {
                             Some(index) => formula_index = index,
                             None => {
@@ -1195,7 +1220,7 @@ fn load_sheet(
         sheet_data.insert(row_index, data_row);
     }
 
-    let merge_cells = load_merge_cells(ws);
+    let merge_cells = load_merge_cells(ws)?;
 
     // Conditional Formatting
     // <conditionalFormatting sqref="B1:B9">
@@ -1211,7 +1236,7 @@ fn load_sheet(
     // pageSetup
     // <pageSetup orientation="portrait" r:id="rId1"/>
 
-    Worksheet {
+    Ok(Worksheet {
         dimension,
         cols,
         rows,
@@ -1225,14 +1250,14 @@ fn load_sheet(
         comments,
         frozen_rows,
         frozen_columns,
-    }
+    })
 }
 
 fn load_sheets(
     archive: &mut ExcelArchive,
     rels: &HashMap<String, Relationship>,
     workbook: &WorkbookXML,
-) -> Vec<Worksheet> {
+) -> Result<Vec<Worksheet>, XlsxError> {
     let worksheets = &workbook.worksheets;
     let ws_list: Vec<String> = worksheets.iter().map(|s| s.name.clone()).collect();
     let mut sheets = Vec::new();
@@ -1251,24 +1276,28 @@ fn load_sheets(
                 sheet.sheet_id, //&rel_id,
                 &state,
                 &ws_list,
-            ));
+            )?);
         }
     }
-    sheets
+    Ok(sheets)
 }
 
-fn from_a1_to_rc(formula: String, worksheets: &[String], context: String) -> String {
+fn from_a1_to_rc(
+    formula: String,
+    worksheets: &[String],
+    context: String,
+) -> Result<String, XlsxError> {
     let mut parser = Parser::new(worksheets.to_owned());
-    let cell_reference = parse_reference(&context);
+    let cell_reference = parse_reference(&context)?;
     let t = parser.parse(&formula, &Some(cell_reference));
-    to_rc_format(&t)
+    Ok(to_rc_format(&t))
 }
 
 // This parses Sheet1!AS23 into sheet, column and row
 // FIXME: This is buggy. Does not check that is a valid sheet name or column
 // There is a similar named function in equalto_calc. We probably should fix both at the same time.
 // NB: Maybe use regexes for this?
-fn parse_reference(s: &str) -> CellReferenceRC {
+fn parse_reference(s: &str) -> Result<CellReferenceRC, ParseIntError> {
     let bytes = s.as_bytes();
     let mut sheet_name = "".to_string();
     let mut column = "".to_string();
@@ -1296,30 +1325,35 @@ fn parse_reference(s: &str) -> CellReferenceRC {
             }
         }
     }
-    CellReferenceRC {
+    Ok(CellReferenceRC {
         sheet: sheet_name,
-        row: row.parse::<i32>().unwrap(),
+        row: row.parse::<i32>()?,
         column: column_to_number(&column),
-    }
+    })
 }
+
 // Public methods
 
 /// Imports a file from disk into an internal representation
-pub fn load_from_excel(file_name: &str, locale: &str, tz: &str) -> Workbook {
+pub fn load_from_excel(file_name: &str, locale: &str, tz: &str) -> Result<Workbook, XlsxError> {
     let file_path = std::path::Path::new(file_name);
-    let file = fs::File::open(file_path).unwrap();
+    let file = fs::File::open(file_path)?;
     let reader = BufReader::new(file);
-    let name = file_path.file_stem().unwrap().to_string_lossy().to_string();
+    let name = file_path
+        .file_stem()
+        .ok_or_else(|| XlsxError::IOError("Could not extract workbook name".to_string()))?
+        .to_string_lossy()
+        .to_string();
 
-    let mut archive = zip::ZipArchive::new(reader).unwrap();
+    let mut archive = zip::ZipArchive::new(reader)?;
 
-    let shared_strings = read_shared_strings(&mut archive);
-    let workbook = load_workbook(&mut archive);
-    let rels = load_relationships(&mut archive);
+    let shared_strings = read_shared_strings(&mut archive)?;
+    let workbook = load_workbook(&mut archive)?;
+    let rels = load_relationships(&mut archive)?;
 
-    let worksheets = load_sheets(&mut archive, &rels, &workbook);
-    let styles = load_styles(&mut archive);
-    Workbook {
+    let worksheets = load_sheets(&mut archive, &rels, &workbook)?;
+    let styles = load_styles(&mut archive)?;
+    Ok(Workbook {
         shared_strings,
         defined_names: workbook.defined_names,
         worksheets,
@@ -1329,7 +1363,7 @@ pub fn load_from_excel(file_name: &str, locale: &str, tz: &str) -> Workbook {
             tz: tz.to_string(),
             locale: locale.to_string(),
         },
-    }
+    })
 }
 
 /// Exports an internal representation of a workbook into an equivalent EqualTo json format

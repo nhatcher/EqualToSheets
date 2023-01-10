@@ -6,7 +6,7 @@ use equalto_calc::{
     model::{Environment, Model},
 };
 use equalto_xlsx::compare::compare;
-use equalto_xlsx::load_from_excel;
+use equalto_xlsx::{error::XlsxError, load_from_excel};
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -466,9 +466,7 @@ impl PyModel {
     }
 
     pub fn add_sheet(&mut self, name: &str) -> PyResult<()> {
-        self.model
-            .add_sheet(name)
-            .map_err(|e| WorkbookError::new_err(e))
+        self.model.add_sheet(name).map_err(WorkbookError::new_err)
     }
 
     pub fn new_sheet(&mut self) -> PyResult<()> {
@@ -479,13 +477,13 @@ impl PyModel {
     pub fn rename_sheet(&mut self, sheet: i32, new_name: &str) -> PyResult<()> {
         self.model
             .rename_sheet_by_index(sheet.try_into().unwrap(), new_name)
-            .map_err(|e| WorkbookError::new_err(e))
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: i32) -> PyResult<()> {
         self.model
             .delete_sheet_by_sheet_id(sheet_id)
-            .map_err(|e| WorkbookError::new_err(e))
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn update_cell_with_text(&mut self, sheet: i32, row: i32, column: i32, value: &str) {
@@ -566,24 +564,30 @@ pub fn loads(data: String) -> PyModel {
     PyModel { model }
 }
 
-#[pyfunction]
-pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyModel {
-    let env = Environment {
-        get_milliseconds_since_epoch,
-    };
-    let model = load_from_excel(file_path, locale, tz);
-    let s = serde_json::to_string(&model).unwrap();
-    let model = Model::from_json(&s, env).unwrap();
-    PyModel { model }
+impl WorkbookError {
+    fn from_xlsx_error(error: XlsxError) -> PyErr {
+        WorkbookError::new_err(error.to_string())
+    }
 }
 
 #[pyfunction]
-pub fn create(name: &str, locale: &str, tz: &str) -> PyModel {
+pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
     let env = Environment {
         get_milliseconds_since_epoch,
     };
-    let model = Model::new_empty(name, locale, tz, env).unwrap();
-    PyModel { model }
+    let model = load_from_excel(file_path, locale, tz).map_err(WorkbookError::from_xlsx_error)?;
+    let s = serde_json::to_string(&model).map_err(|e| WorkbookError::new_err(e.to_string()))?;
+    let model = Model::from_json(&s, env).map_err(WorkbookError::new_err)?;
+    Ok(PyModel { model })
+}
+
+#[pyfunction]
+pub fn create(name: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
+    let env = Environment {
+        get_milliseconds_since_epoch,
+    };
+    let model = Model::new_empty(name, locale, tz, env).map_err(WorkbookError::new_err)?;
+    Ok(PyModel { model })
 }
 
 #[pyfunction]

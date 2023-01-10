@@ -17,7 +17,7 @@ class Workbook:
         self._model = model
 
     def __getitem__(self, key: str) -> Cell:
-        """Get cell by Excel reference."""
+        """Get cell by the reference (i.e. "Sheet1!A1")."""
         sheet_name, row, column = parse_cell_reference(key)
         if sheet_name is None:
             raise CellReferenceError(f'"{key}" reference is missing the sheet name')
@@ -32,4 +32,5 @@ class Workbook:
 
     @cached_property
     def sheets(self) -> WorkbookSheets:
+        """Get container with workbook sheets."""
         return WorkbookSheets(self)

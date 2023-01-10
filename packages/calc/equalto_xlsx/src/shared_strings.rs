@@ -1,3 +1,4 @@
+use crate::error::XlsxError;
 use crate::types::ExcelArchive;
 use roxmltree::Node;
 use std::io::Read;
@@ -5,19 +6,19 @@ use std::io::Read;
 /// Reads the list of shared strings in an Excel workbook
 /// Note than in EqualTo we lose _internal_ styling of a string
 /// See Section 18.4
-pub(crate) fn read_shared_strings(archive: &mut ExcelArchive) -> Vec<String> {
+pub(crate) fn read_shared_strings(archive: &mut ExcelArchive) -> Result<Vec<String>, XlsxError> {
     match archive.by_name("xl/sharedStrings.xml") {
         Ok(mut file) => {
             let mut text = String::new();
-            file.read_to_string(&mut text).unwrap();
+            file.read_to_string(&mut text)?;
             read_shared_strings_from_string(&text)
         }
-        Err(_e) => Vec::new(),
+        Err(_e) => Ok(Vec::new()),
     }
 }
 
-fn read_shared_strings_from_string(text: &str) -> Vec<String> {
-    let doc = roxmltree::Document::parse(text).unwrap();
+fn read_shared_strings_from_string(text: &str) -> Result<Vec<String>, XlsxError> {
+    let doc = roxmltree::Document::parse(text)?;
     let mut shared_strings = Vec::new();
     let nodes: Vec<Node> = doc.descendants().filter(|n| n.has_tag_name("si")).collect();
     for node in nodes {
@@ -29,7 +30,7 @@ fn read_shared_strings_from_string(text: &str) -> Vec<String> {
             .join("");
         shared_strings.push(text);
     }
-    shared_strings
+    Ok(shared_strings)
 }
 
 #[cfg(test)]
@@ -63,7 +64,7 @@ mod tests {
         </r>
     </si>
 </sst>"#;
-        let shared_strings = read_shared_strings_from_string(xml_string.trim());
+        let shared_strings = read_shared_strings_from_string(xml_string.trim()).unwrap();
         assert_eq!(
             shared_strings,
             [
