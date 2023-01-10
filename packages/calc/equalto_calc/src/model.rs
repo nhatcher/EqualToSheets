@@ -27,6 +27,7 @@ use crate::{
     formatter,
     formatter::format::{format_number, Formatted},
     functions::util::compare_values,
+    implicit_intersection::implicit_intersection,
     language::{get_language, Language},
     locale::{get_locale, Locale},
     number_format::get_num_fmt,
@@ -607,8 +608,7 @@ impl Model {
                         left: *left,
                         right: *right,
                     };
-                    if let Some(intersection_cell) =
-                        self.implicit_intersection(&cell_reference, &range)
+                    if let Some(intersection_cell) = implicit_intersection(&cell_reference, &range)
                     {
                         let v = self.evaluate_cell(intersection_cell);
                         self.set_cell_value(cell_reference, &v);

@@ -1,6 +1,7 @@
 use crate::{
     calc_result::{CalcResult, CellReference, Range},
     expressions::{parser::Node, token::Error},
+    implicit_intersection::implicit_intersection,
     model::Model,
 };
 
@@ -39,7 +40,7 @@ impl Model {
             CalcResult::EmptyCell | CalcResult::EmptyArg => Ok(0.0),
             error @ CalcResult::Error { .. } => Err(error),
             CalcResult::Range { left, right } => {
-                match self.implicit_intersection(&cell, &Range { left, right }) {
+                match implicit_intersection(&cell, &Range { left, right }) {
                     Some(cell_reference) => {
                         let result = self.evaluate_cell(cell_reference);
                         self.cast_to_number(result, cell_reference)
@@ -81,7 +82,7 @@ impl Model {
             CalcResult::EmptyCell | CalcResult::EmptyArg => Ok("".to_string()),
             error @ CalcResult::Error { .. } => Err(error),
             CalcResult::Range { left, right } => {
-                match self.implicit_intersection(&cell, &Range { left, right }) {
+                match implicit_intersection(&cell, &Range { left, right }) {
                     Some(cell_reference) => {
                         let result = self.evaluate_cell(cell_reference);
                         self.cast_to_string(result, cell_reference)
@@ -133,7 +134,7 @@ impl Model {
             CalcResult::EmptyCell | CalcResult::EmptyArg => Ok(false),
             error @ CalcResult::Error { .. } => Err(error),
             CalcResult::Range { left, right } => {
-                match self.implicit_intersection(&cell, &Range { left, right }) {
+                match implicit_intersection(&cell, &Range { left, right }) {
                     Some(cell_reference) => {
                         let result = self.evaluate_cell(cell_reference);
                         self.cast_to_bool(result, cell_reference)
