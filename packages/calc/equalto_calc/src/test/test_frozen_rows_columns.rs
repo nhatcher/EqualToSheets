@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::expressions::utils::{LAST_COLUMN, LAST_ROW};
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::test::util::new_empty_model;
 
 #[test]

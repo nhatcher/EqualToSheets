@@ -1,10 +1,8 @@
 use super::types::*;
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 
 #[cfg(test)]
 mod test;
-
-pub const LAST_COLUMN: i32 = 16_384;
-pub const LAST_ROW: i32 = 1_048_576;
 
 pub fn column_to_number(column: &str) -> i32 {
     let bytes = column.as_bytes();

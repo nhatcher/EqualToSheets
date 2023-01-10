@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::model::{COLUMN_WIDTH_FACTOR, DEFAULT_COLUMN_WIDTH};
+use crate::constants::{COLUMN_WIDTH_FACTOR, DEFAULT_COLUMN_WIDTH};
 use crate::test::util::new_empty_model;
 use crate::types::Col;
 

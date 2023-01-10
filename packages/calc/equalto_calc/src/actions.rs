@@ -1,8 +1,9 @@
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::expressions::parser::stringify::to_string;
+use crate::expressions::parser::stringify::DisplaceData;
 use crate::expressions::parser::walk::swap_references;
 use crate::expressions::types::{CellReferenceIndex, CellReferenceRC};
-use crate::expressions::{parser::stringify::DisplaceData, utils::LAST_ROW};
-use crate::{expressions::utils::LAST_COLUMN, model::Model};
+use crate::model::Model;
 
 // NOTE: There is a difference with Excel behaviour when deleting cells/rows/columns
 // In Excel if the whole range is deleted then it will substitute for #REF!

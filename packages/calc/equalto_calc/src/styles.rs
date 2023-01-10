@@ -1,9 +1,6 @@
 use crate::{
-    expressions::utils::LAST_COLUMN,
-    model::{
-        Model, Style, COLUMN_WIDTH_FACTOR, DEFAULT_COLUMN_WIDTH, DEFAULT_ROW_HEIGHT,
-        ROW_HEIGHT_FACTOR,
-    },
+    constants,
+    model::{Model, Style},
     number_format::{get_new_num_fmt_index, get_num_fmt},
     types::{Border, CellStyles, CellXfs, Col, Fill, Font, NumFmt, Row},
 };
@@ -190,8 +187,8 @@ impl Model {
         let style_index = self.get_style_index_by_name(style_name)?;
         self.workbook.worksheets[sheet as usize].cols = vec![Col {
             min: 1,
-            max: LAST_COLUMN,
-            width: DEFAULT_COLUMN_WIDTH / COLUMN_WIDTH_FACTOR,
+            max: constants::LAST_COLUMN,
+            width: constants::DEFAULT_COLUMN_WIDTH / constants::COLUMN_WIDTH_FACTOR,
             custom_width: true,
             style: Some(style_index),
         }];
@@ -214,7 +211,7 @@ impl Model {
             }
         }
         rows.push(Row {
-            height: DEFAULT_ROW_HEIGHT / ROW_HEIGHT_FACTOR,
+            height: constants::DEFAULT_ROW_HEIGHT / constants::ROW_HEIGHT_FACTOR,
             r: row,
             custom_format: true,
             custom_height: true,
@@ -238,7 +235,7 @@ impl Model {
         let col = Col {
             min: column,
             max: column,
-            width: DEFAULT_COLUMN_WIDTH / COLUMN_WIDTH_FACTOR,
+            width: constants::DEFAULT_COLUMN_WIDTH / constants::COLUMN_WIDTH_FACTOR,
             custom_width: true,
             style: Some(style_index),
         };

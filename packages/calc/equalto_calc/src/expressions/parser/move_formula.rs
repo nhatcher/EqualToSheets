@@ -1,8 +1,8 @@
 use super::{
-    super::utils::{LAST_COLUMN, LAST_ROW},
     stringify::{stringify_reference, DisplaceData},
     Node, Reference,
 };
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::{
     expressions::types::{Area, CellReferenceRC},
     number_format::to_excel_precision_str,

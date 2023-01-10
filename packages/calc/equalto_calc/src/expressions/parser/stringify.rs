@@ -1,7 +1,5 @@
-use super::{
-    super::utils::{quote_name, LAST_COLUMN, LAST_ROW},
-    Node, Reference,
-};
+use super::{super::utils::quote_name, Node, Reference};
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::{expressions::types::CellReferenceRC, number_format::to_excel_precision_str};
 
 pub enum DisplaceData {

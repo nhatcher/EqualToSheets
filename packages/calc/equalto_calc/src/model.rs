@@ -8,6 +8,7 @@ use std::vec::Vec;
 use crate::{
     calc_result::{CalcResult, CellReference, Range},
     cell::{UICell, UIValue},
+    constants,
     expressions::parser::{
         stringify::{to_rc_format, to_string, to_string_displaced, DisplaceData},
         Node, Parser,
@@ -106,15 +107,6 @@ pub struct Style {
     pub border: Border,
     pub quote_prefix: bool,
 }
-
-/// Excel compatibility values
-/// COLUMN_WIDTH and ROW_HEIGHT are pixel values
-/// A column width of Excel value `w` will result in `w * COLUMN_WIDTH_FACTOR` pixels
-/// Note that these constants are inlined
-pub(crate) const DEFAULT_COLUMN_WIDTH: f64 = 100.0;
-pub(crate) const DEFAULT_ROW_HEIGHT: f64 = 21.0;
-pub(crate) const COLUMN_WIDTH_FACTOR: f64 = 12.0;
-pub(crate) const ROW_HEIGHT_FACTOR: f64 = 2.0;
 
 impl Model {
     fn get_string_index(&self, str: &str) -> Option<usize> {
@@ -681,7 +673,7 @@ impl Model {
         if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
             if frozen_rows < 0 {
                 return Err("Frozen rows cannot be negative".to_string());
-            } else if frozen_rows >= utils::LAST_ROW {
+            } else if frozen_rows >= constants::LAST_ROW {
                 return Err("Too many rows".to_string());
             }
             worksheet.frozen_rows = frozen_rows;
@@ -695,7 +687,7 @@ impl Model {
         if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
             if frozen_columns < 0 {
                 return Err("Frozen columns cannot be negative".to_string());
-            } else if frozen_columns >= utils::LAST_COLUMN {
+            } else if frozen_columns >= constants::LAST_COLUMN {
                 return Err("Too many columns".to_string());
             }
             worksheet.frozen_columns = frozen_columns;
@@ -910,14 +902,14 @@ impl Model {
             Ok(r) => r,
             Err(_) => return None,
         };
-        if !(1..=utils::LAST_ROW).contains(&row) {
+        if !(1..=constants::LAST_ROW).contains(&row) {
             return None;
         }
         if column.is_empty() {
             return None;
         }
         let column = utils::column_to_number(&column);
-        if !(1..=utils::LAST_COLUMN).contains(&column) {
+        if !(1..=constants::LAST_COLUMN).contains(&column) {
             return None;
         }
         Some(CellReference { sheet, row, column })
@@ -1642,13 +1634,13 @@ impl Model {
             let max = col.max;
             if column >= min && column <= max {
                 if col.custom_width {
-                    return col.width * COLUMN_WIDTH_FACTOR;
+                    return col.width * constants::COLUMN_WIDTH_FACTOR;
                 } else {
                     break;
                 }
             }
         }
-        DEFAULT_COLUMN_WIDTH
+        constants::DEFAULT_COLUMN_WIDTH
     }
 
     /// Returns the height of a row in pixels
@@ -1656,10 +1648,10 @@ impl Model {
         let rows = &self.workbook.worksheets[sheet as usize].rows;
         for r in rows {
             if r.r == row {
-                return r.height * ROW_HEIGHT_FACTOR;
+                return r.height * constants::ROW_HEIGHT_FACTOR;
             }
         }
-        DEFAULT_ROW_HEIGHT
+        constants::DEFAULT_ROW_HEIGHT
     }
 
     // FIXME: This should return an object
@@ -1719,13 +1711,13 @@ impl Model {
         let rows = &mut self.workbook.worksheets[sheet as usize].rows;
         for r in rows.iter_mut() {
             if r.r == row {
-                r.height = height / ROW_HEIGHT_FACTOR;
+                r.height = height / constants::ROW_HEIGHT_FACTOR;
                 r.custom_height = true;
                 return;
             }
         }
         rows.push(Row {
-            height: height / ROW_HEIGHT_FACTOR,
+            height: height / constants::ROW_HEIGHT_FACTOR,
             r: row,
             custom_format: false,
             custom_height: true,
@@ -1740,7 +1732,7 @@ impl Model {
         let mut col = Col {
             min: column,
             max: column,
-            width: width / COLUMN_WIDTH_FACTOR,
+            width: width / constants::COLUMN_WIDTH_FACTOR,
             custom_width: true,
             style: None,
         };
@@ -1751,7 +1743,7 @@ impl Model {
             let max = c.max;
             if min <= column && column <= max {
                 if min == column && max == column {
-                    c.width = width / COLUMN_WIDTH_FACTOR;
+                    c.width = width / constants::COLUMN_WIDTH_FACTOR;
                     return;
                 } else {
                     // We need to split the result
@@ -1811,7 +1803,7 @@ impl Model {
                     return false;
                 }
                 last_col = col.max;
-                if col.max == utils::LAST_COLUMN {
+                if col.max == constants::LAST_COLUMN {
                     return true;
                 }
             } else {

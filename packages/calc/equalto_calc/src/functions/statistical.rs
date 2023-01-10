@@ -1,10 +1,8 @@
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::{
     calc_result::{CalcResult, CellReference, Range},
     expressions::parser::Node,
-    expressions::{
-        token::Error,
-        utils::{LAST_COLUMN, LAST_ROW},
-    },
+    expressions::token::Error,
     model::Model,
 };
 

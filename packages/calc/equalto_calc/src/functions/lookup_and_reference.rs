@@ -1,10 +1,10 @@
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::{
     calc_result::{CalcResult, CellReference},
     expressions::parser::Node,
     expressions::{
         lexer::{Lexer, LexerMode},
         token::{Error, TokenType},
-        utils::{LAST_COLUMN, LAST_ROW},
     },
     language::get_language,
     model::Model,

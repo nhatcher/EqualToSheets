@@ -1,14 +1,11 @@
-use std::f64::consts::PI;
-
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::{
     calc_result::{CalcResult, CellReference},
     expressions::parser::Node,
-    expressions::{
-        token::Error,
-        utils::{LAST_COLUMN, LAST_ROW},
-    },
+    expressions::token::Error,
     model::Model,
 };
+use std::f64::consts::PI;
 
 impl Model {
     pub(crate) fn fn_min(&mut self, args: &[Node], cell: CellReference) -> CalcResult {

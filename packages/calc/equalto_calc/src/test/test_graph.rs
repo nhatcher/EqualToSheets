@@ -5,7 +5,7 @@ use crate::expressions::utils::number_to_column;
 use crate::graph_static::cell_is_in_range;
 use crate::{graph_static::StaticDependencies, model::Model};
 
-use crate::expressions::utils::LAST_ROW;
+use crate::constants::LAST_ROW;
 use crate::test::util::new_empty_model;
 
 impl Model {

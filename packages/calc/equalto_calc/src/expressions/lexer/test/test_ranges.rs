@@ -1,10 +1,10 @@
 #![allow(clippy::unwrap_used)]
 
+use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::expressions::{
     lexer::{Lexer, LexerMode},
     token::TokenType::*,
     types::ParsedReference,
-    utils::{LAST_COLUMN, LAST_ROW},
 };
 use crate::language::get_language;
 use crate::locale::get_locale;
