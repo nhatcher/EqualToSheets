@@ -30,6 +30,7 @@ use crate::{
     locale::{get_locale, Locale},
     number_format::get_num_fmt,
     types::*,
+    utils as common,
 };
 
 #[derive(Clone)]
@@ -114,35 +115,6 @@ pub(crate) const DEFAULT_COLUMN_WIDTH: f64 = 100.0;
 pub(crate) const DEFAULT_ROW_HEIGHT: f64 = 21.0;
 pub(crate) const COLUMN_WIDTH_FACTOR: f64 = 12.0;
 pub(crate) const ROW_HEIGHT_FACTOR: f64 = 2.0;
-
-/// Returns true if the string value could be interpreted as:
-///  * a formula
-///  * a number
-///  * a boolean
-///  * an error (i.e "#VALUE!")
-fn value_needs_quoting(value: &str, language: &Language) -> bool {
-    value.starts_with('=')
-        || value.parse::<f64>().is_ok()
-        || value.to_lowercase().parse::<bool>().is_ok()
-        || get_error_by_name(&value.to_uppercase(), language).is_some()
-}
-
-// valid hex colors are #FFAABB
-// #fff is not valid
-fn is_valid_hex_color(color: &str) -> bool {
-    if color.chars().count() != 7 {
-        return false;
-    }
-    if !color.starts_with('#') {
-        return false;
-    }
-    if let Ok(z) = i32::from_str_radix(&color[1..], 16) {
-        if (0..=0xffffff).contains(&z) {
-            return true;
-        }
-    }
-    false
-}
 
 impl Model {
     fn get_string_index(&self, str: &str) -> Option<usize> {
@@ -690,7 +662,7 @@ impl Model {
         if color.is_empty() {
             worksheet.color = Color::None;
             return Ok(());
-        } else if is_valid_hex_color(color) {
+        } else if common::is_valid_hex_color(color) {
             worksheet.color = Color::RGB(color.to_string());
             return Ok(());
         }
@@ -1272,7 +1244,7 @@ impl Model {
     pub fn update_cell_with_text(&mut self, sheet: u32, row: i32, column: i32, value: &str) {
         let style_index = self.get_cell_style_index(sheet, row, column);
         let new_style_index;
-        if value_needs_quoting(value, &self.language) {
+        if common::value_needs_quoting(value, &self.language) {
             new_style_index = self.get_style_with_quote_prefix(style_index);
         } else if self.style_is_quote_prefix(style_index) {
             new_style_index = self.get_style_without_quote_prefix(style_index);
@@ -1324,7 +1296,7 @@ impl Model {
         // We probably should have two separate methods (set_input and set_style)
         if let Some(new_value) = value.strip_prefix('\'') {
             // First check if it needs quoting
-            let new_style = if value_needs_quoting(new_value, &self.language) {
+            let new_style = if common::value_needs_quoting(new_value, &self.language) {
                 self.get_style_with_quote_prefix(style_index)
             } else {
                 style_index
@@ -1983,39 +1955,6 @@ impl Model {
 mod tests {
     use super::*;
     use crate::test::util::new_empty_model;
-
-    #[test]
-    fn test_value_needs_quoting() {
-        let en_language = get_language("en").expect("en language expected");
-
-        assert!(!value_needs_quoting("", en_language));
-        assert!(!value_needs_quoting("hello", en_language));
-
-        assert!(value_needs_quoting("12", en_language));
-        assert!(value_needs_quoting("true", en_language));
-        assert!(value_needs_quoting("False", en_language));
-
-        assert!(value_needs_quoting("=A1", en_language));
-
-        assert!(value_needs_quoting("#REF!", en_language));
-        assert!(value_needs_quoting("#NAME?", en_language));
-    }
-
-    #[test]
-    fn test_is_valid_hex_color() {
-        assert!(is_valid_hex_color("#000000"));
-        assert!(is_valid_hex_color("#ffffff"));
-
-        assert!(!is_valid_hex_color("000000"));
-        assert!(!is_valid_hex_color("ffffff"));
-
-        assert!(!is_valid_hex_color("#gggggg"));
-
-        // Not obvious cases unrecognized as colors
-        assert!(!is_valid_hex_color("#ffffff "));
-        assert!(!is_valid_hex_color("#fff")); // CSS shorthand
-        assert!(!is_valid_hex_color("#ffffff00")); // with alpha channel
-    }
 
     #[test]
     fn test_cell_reference_to_string() {

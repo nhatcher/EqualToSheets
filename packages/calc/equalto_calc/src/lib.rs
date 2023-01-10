@@ -22,6 +22,7 @@ mod styles;
 mod graph_static;
 mod implicit_intersection;
 
+mod utils;
 mod workbook;
 
 #[cfg(test)]
