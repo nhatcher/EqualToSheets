@@ -51,4 +51,4 @@ def test_delete_cell(empty_workbook: Workbook) -> None:
 
 @pytest.mark.parametrize("tz", [ZoneInfo("UTC"), ZoneInfo("Europe/Berlin")])
 def test_timezone_property(tz: ZoneInfo) -> None:
-    assert equalto.new("en-US", tz).timezone == tz
+    assert equalto.new(timezone=tz).timezone == tz

@@ -269,4 +269,4 @@ def test_set_naive_datetime(cell: Cell) -> None:
 
 
 def _get_tz_cell(tz: str) -> Cell:
-    return equalto.new("en-US", ZoneInfo(tz)).sheets[0]["A1"]
+    return equalto.new(timezone=ZoneInfo(tz)).sheets[0]["A1"]

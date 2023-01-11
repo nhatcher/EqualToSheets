@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import tzinfo
+from datetime import datetime, tzinfo
 
 from _pycalc import create, load_excel
 
@@ -10,9 +10,16 @@ from equalto.workbook import Workbook
 def load(workbook_path: str) -> Workbook:
     """Load a workbook from the file."""
     # TODO: Shouldn't rust recognize the locale and time zone?
-    return Workbook(load_excel(workbook_path, "en-US", "UTC"))
+    # TODO: If rust can't recognize the time zone, should we use local time zone or UTC by default?
+    return Workbook(load_excel(workbook_path, "en", "UTC"))
 
 
-def new(locale: str, tz: tzinfo) -> Workbook:
+def new(*, timezone: tzinfo | None = None) -> Workbook:
     """Create a new workbook."""
-    return Workbook(create("workbook", locale, str(tz)))
+    return Workbook(create("workbook", "en", str(timezone or _get_local_tz())))
+
+
+def _get_local_tz() -> tzinfo:
+    tz = datetime.now().astimezone().tzinfo
+    assert tz is not None
+    return tz

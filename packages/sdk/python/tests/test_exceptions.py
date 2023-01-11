@@ -1,12 +1,11 @@
 import traceback
-from datetime import timezone
 
-import equalto
+from equalto.workbook import Workbook
 
 
-def test_workbook_error_traceback() -> None:
+def test_workbook_error_traceback(empty_workbook: Workbook) -> None:
     try:
-        equalto.new("en-US", timezone.utc).sheets.add("Sheet1")
+        empty_workbook.sheets.add("Sheet1")
     except Exception as err:
         assert err.__module__ == "equalto.exceptions"
         last_traceback_line = traceback.format_exc().strip().split("\n")[-1]

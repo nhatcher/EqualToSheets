@@ -9,7 +9,7 @@ from equalto.workbook import Workbook
 
 @pytest.fixture
 def empty_workbook() -> Workbook:
-    return equalto.new("en-US", timezone.utc)
+    return equalto.new(timezone=timezone.utc)
 
 
 @pytest.fixture
