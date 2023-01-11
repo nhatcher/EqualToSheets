@@ -176,61 +176,32 @@ pub enum CellType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(untagged, deny_unknown_fields)]
+#[serde(tag = "t", deny_unknown_fields)]
 pub enum Cell {
-    EmptyCell {
-        t: String,
-        s: i32,
-    },
-    BooleanCell {
-        t: String,
-        v: bool,
-        s: i32,
-    },
-    NumberCell {
-        t: String,
-        v: f64,
-        s: i32,
-    },
+    #[serde(rename = "empty")]
+    EmptyCell { s: i32 },
+    #[serde(rename = "b")]
+    BooleanCell { v: bool, s: i32 },
+    #[serde(rename = "n")]
+    NumberCell { v: f64, s: i32 },
     // Maybe we should not have this type. In Excel this is just a string
-    ErrorCell {
-        t: String,
-        ei: Error,
-        s: i32,
-    },
+    #[serde(rename = "e")]
+    ErrorCell { ei: Error, s: i32 },
     // Always a shared string
-    SharedString {
-        t: String,
-        si: i32,
-        s: i32,
-    },
+    #[serde(rename = "s")]
+    SharedString { si: i32, s: i32 },
     // Non evaluated Formula
-    CellFormula {
-        t: String,
-        f: i32,
-        s: i32,
-    },
-    CellFormulaBoolean {
-        t: String,
-        f: i32,
-        v: bool,
-        s: i32,
-    },
-    CellFormulaNumber {
-        t: String,
-        f: i32,
-        v: f64,
-        s: i32,
-    },
+    #[serde(rename = "u")]
+    CellFormula { f: i32, s: i32 },
+    #[serde(rename = "fb")]
+    CellFormulaBoolean { f: i32, v: bool, s: i32 },
+    #[serde(rename = "fn")]
+    CellFormulaNumber { f: i32, v: f64, s: i32 },
     // always inline string
-    CellFormulaString {
-        t: String,
-        f: i32,
-        v: String,
-        s: i32,
-    },
+    #[serde(rename = "str")]
+    CellFormulaString { f: i32, v: String, s: i32 },
+    #[serde(rename = "fe")]
     CellFormulaError {
-        t: String,
         f: i32,
         ei: Error,
         s: i32,

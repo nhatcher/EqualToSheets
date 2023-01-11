@@ -18,8 +18,8 @@ pub struct Diff {
     pub sheet_name: String,
     pub row: i32,
     pub column: i32,
-    pub value1: String,
-    pub value2: String,
+    pub value1: Cell,
+    pub value2: Cell,
     pub reason: String,
 }
 
@@ -55,8 +55,8 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,
                         column,
-                        value1: cell1.to_json(),
-                        value2: cell2.to_json(),
+                        value1: cell1.clone(),
+                        value2: cell2.clone(),
                         reason: "Numbers are different".to_string(),
                     });
                 }
@@ -71,8 +71,8 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,
                         column,
-                        value1: cell1.to_json(),
-                        value2: cell2.to_json(),
+                        value1: cell1.clone(),
+                        value2: cell2.clone(),
                         reason: "Strings are different".to_string(),
                     });
                 }
@@ -87,8 +87,8 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,
                         column,
-                        value1: cell1.to_json(),
-                        value2: cell2.to_json(),
+                        value1: cell1.clone(),
+                        value2: cell2.clone(),
                         reason: "Booleans are different".to_string(),
                     });
                 }
@@ -103,8 +103,8 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,
                         column,
-                        value1: cell1.to_json(),
-                        value2: cell2.to_json(),
+                        value1: cell1.clone(),
+                        value2: cell2.clone(),
                         reason: "Errors are different".to_string(),
                     });
                 }
@@ -114,8 +114,8 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
                     sheet_name: ws1[cell.index as usize].clone(),
                     row,
                     column,
-                    value1: cell1.to_json(),
-                    value2: cell2.to_json(),
+                    value1: cell1.clone(),
+                    value2: cell2.clone(),
                     reason: "Types are different".to_string(),
                 });
             }
@@ -138,8 +138,8 @@ fn compare_models(m1: Model, m2: Model) -> Result<(), String> {
                         diff.sheet_name,
                         number_to_column(diff.column).unwrap(),
                         diff.row,
-                        diff.value1,
-                        diff.value2,
+                        serde_json::to_string(&diff.value1).unwrap(),
+                        serde_json::to_string(&diff.value2).unwrap(),
                         diff.reason
                     );
                 }

@@ -700,23 +700,19 @@ fn get_cell_from_excel(
     if formula_index == -1 {
         match cell_type {
             "b" => Cell::BooleanCell {
-                t: "b".to_string(),
                 v: cell_value == Some("1"),
                 s: cell_style,
             },
             "n" => Cell::NumberCell {
-                t: "n".to_string(),
                 v: cell_value.unwrap_or("0").parse::<f64>().unwrap_or(0.0),
                 s: cell_style,
             },
             "e" => Cell::ErrorCell {
-                t: "e".to_string(),
                 ei: get_error_by_english_name(cell_value.unwrap_or("#ERROR!"))
                     .unwrap_or(Error::ERROR),
                 s: cell_style,
             },
             "s" => Cell::SharedString {
-                t: "s".to_string(),
                 si: cell_value.unwrap_or("0").parse::<i32>().unwrap_or(0),
                 s: cell_style,
             },
@@ -725,7 +721,6 @@ fn get_cell_from_excel(
                 // Not implemented
                 println!("Invalid type (str) in {}!{}", sheet_name, cell_ref);
                 Cell::ErrorCell {
-                    t: "e".to_string(),
                     ei: Error::NIMPL,
                     s: cell_style,
                 }
@@ -734,7 +729,6 @@ fn get_cell_from_excel(
                 // Not implemented
                 println!("Invalid type (d) in {}!{}", sheet_name, cell_ref);
                 Cell::ErrorCell {
-                    t: "e".to_string(),
                     ei: Error::NIMPL,
                     s: cell_style,
                 }
@@ -743,15 +737,11 @@ fn get_cell_from_excel(
                 // Not implemented
                 println!("Invalid type (inlineStr) in {}!{}", sheet_name, cell_ref);
                 Cell::ErrorCell {
-                    t: "e".to_string(),
                     ei: Error::NIMPL,
                     s: cell_style,
                 }
             }
-            "empty" => Cell::EmptyCell {
-                t: "empty".to_string(),
-                s: cell_style,
-            },
+            "empty" => Cell::EmptyCell { s: cell_style },
             _ => {
                 // error
                 println!(
@@ -759,7 +749,6 @@ fn get_cell_from_excel(
                     cell_type, sheet_name, cell_ref
                 );
                 Cell::ErrorCell {
-                    t: "e".to_string(),
                     ei: Error::ERROR,
                     s: cell_style,
                 }
@@ -768,19 +757,16 @@ fn get_cell_from_excel(
     } else {
         match cell_type {
             "b" => Cell::CellFormulaBoolean {
-                t: "b".to_string(),
                 f: formula_index,
                 v: cell_value == Some("1"),
                 s: cell_style,
             },
             "n" => Cell::CellFormulaNumber {
-                t: "n".to_string(),
                 f: formula_index,
                 v: cell_value.unwrap_or("0").parse::<f64>().unwrap_or(0.0),
                 s: cell_style,
             },
             "e" => Cell::CellFormulaError {
-                t: "e".to_string(),
                 f: formula_index,
                 ei: get_error_by_english_name(cell_value.unwrap_or("#ERROR!"))
                     .unwrap_or(Error::ERROR),
@@ -794,7 +780,6 @@ fn get_cell_from_excel(
                 let m = Error::NIMPL.to_string();
                 println!("Invalid type (s) in {}!{}", sheet_name, cell_ref);
                 Cell::CellFormulaError {
-                    t: "e".to_string(),
                     f: formula_index,
                     ei: Error::NIMPL,
                     s: cell_style,
@@ -805,7 +790,6 @@ fn get_cell_from_excel(
             "str" => {
                 // In Excel and in EqualTo all strings in cells result of a formula are *not* shared strings.
                 Cell::CellFormulaString {
-                    t: "str".to_string(),
                     f: formula_index,
                     v: cell_value.unwrap_or("").to_string(),
                     s: cell_style,
@@ -817,7 +801,6 @@ fn get_cell_from_excel(
                 let o = format!("{}!{}", sheet_name, cell_ref);
                 let m = Error::NIMPL.to_string();
                 Cell::CellFormulaError {
-                    t: "e".to_string(),
                     f: formula_index,
                     ei: Error::NIMPL,
                     s: cell_style,
@@ -831,7 +814,6 @@ fn get_cell_from_excel(
                 let m = Error::NIMPL.to_string();
                 println!("Invalid type (inlineStr) in {}!{}", sheet_name, cell_ref);
                 Cell::CellFormulaError {
-                    t: "e".to_string(),
                     f: formula_index,
                     ei: Error::NIMPL,
                     s: cell_style,
@@ -848,7 +830,6 @@ fn get_cell_from_excel(
                 let o = format!("{}!{}", sheet_name, cell_ref);
                 let m = Error::ERROR.to_string();
                 Cell::CellFormulaError {
-                    t: "e".to_string(),
                     f: formula_index,
                     ei: Error::ERROR,
                     s: cell_style,

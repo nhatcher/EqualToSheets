@@ -576,12 +576,7 @@ impl Model {
                         .get_mut(&row)
                         .expect("expected a row")
                         .get_mut(&column)
-                        .expect("expected a column") = Cell::CellFormulaNumber {
-                        t: "n".to_string(),
-                        f,
-                        s,
-                        v: *value,
-                    };
+                        .expect("expected a column") = Cell::CellFormulaNumber { f, s, v: *value };
                 }
                 CalcResult::String(value) => {
                     *self.workbook.worksheets[sheet as usize]
@@ -590,7 +585,6 @@ impl Model {
                         .expect("expected a row")
                         .get_mut(&column)
                         .expect("expected a column") = Cell::CellFormulaString {
-                        t: "str".to_string(),
                         f,
                         s,
                         v: value.clone(),
@@ -602,12 +596,7 @@ impl Model {
                         .get_mut(&row)
                         .expect("expected a row")
                         .get_mut(&column)
-                        .expect("expected a column") = Cell::CellFormulaBoolean {
-                        t: "b".to_string(),
-                        f,
-                        s,
-                        v: *value,
-                    };
+                        .expect("expected a column") = Cell::CellFormulaBoolean { f, s, v: *value };
                 }
                 CalcResult::Error {
                     error,
@@ -624,7 +613,6 @@ impl Model {
                         .expect("expected a row")
                         .get_mut(&column)
                         .expect("expected a column") = Cell::CellFormulaError {
-                        t: "e".to_string(),
                         f,
                         s,
                         o,
@@ -652,7 +640,6 @@ impl Model {
                             .expect("expected a row")
                             .get_mut(&column)
                             .expect("expected a column") = Cell::CellFormulaError {
-                            t: "e".to_string(),
                             f,
                             s,
                             o,
@@ -667,12 +654,7 @@ impl Model {
                         .get_mut(&row)
                         .expect("expected a row")
                         .get_mut(&column)
-                        .expect("expected a column") = Cell::CellFormulaNumber {
-                        t: "n".to_string(),
-                        f,
-                        s,
-                        v: 0.0,
-                    };
+                        .expect("expected a column") = Cell::CellFormulaNumber { f, s, v: 0.0 };
                 }
             }
         }
@@ -1342,8 +1324,8 @@ impl Model {
 
         match cell {
             Cell::EmptyCell { .. } => ExcelValue::String("".to_string()),
-            Cell::BooleanCell { t: _, v, s: _ } => ExcelValue::Boolean(v),
-            Cell::NumberCell { t: _, v, s: _ } => ExcelValue::Number(v),
+            Cell::BooleanCell { v, s: _ } => ExcelValue::Boolean(v),
+            Cell::NumberCell { v, s: _ } => ExcelValue::Number(v),
             Cell::ErrorCell { ei, .. } => {
                 let v = ei.to_localized_error_string(&self.language);
                 ExcelValue::String(v)
@@ -1516,10 +1498,7 @@ impl Model {
             .cell(row, column);
         match cell {
             Some(cell) => cell.clone(),
-            None => Cell::EmptyCell {
-                t: "empty".to_string(),
-                s: 0,
-            },
+            None => Cell::EmptyCell { s: 0 },
         }
     }
 
@@ -1885,20 +1864,12 @@ mod tests {
 
         assert_eq!(
             worksheet.cell(1, 1),
-            Some(&Cell::NumberCell {
-                t: "n".to_string(),
-                v: 35.0,
-                s: 0
-            })
+            Some(&Cell::NumberCell { v: 35.0, s: 0 })
         );
 
         assert_eq!(
             worksheet.cell(2, 1),
-            Some(&Cell::SharedString {
-                t: "s".to_string(),
-                si: 0,
-                s: 0,
-            })
+            Some(&Cell::SharedString { si: 0, s: 0 })
         );
         assert_eq!(worksheet.cell(3, 1), None)
     }

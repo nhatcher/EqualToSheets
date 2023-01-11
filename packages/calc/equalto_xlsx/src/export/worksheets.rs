@@ -93,12 +93,12 @@ pub(crate) fn get_worksheet_xml(
             let column_name = number_to_column(*column_index).unwrap();
             let cell_name = format!("{column_name}{row_index}");
             match cell {
-                Cell::EmptyCell { t: _, s } => {
+                Cell::EmptyCell { s } => {
                     // they only hold the style
                     let style = get_cell_style_attribute(*s);
                     row_data_str.push(format!("<c r=\"{cell_name}\"{style}/>"));
                 }
-                Cell::BooleanCell { t: _, v, s } => {
+                Cell::BooleanCell { v, s } => {
                     // <c r="A8" t="b" s="1">
                     //     <v>1</v>
                     // </c>
@@ -108,7 +108,7 @@ pub(crate) fn get_worksheet_xml(
                         "<c r=\"{cell_name}\" t=\"b\"{style}><v>{b}</v></c>"
                     ));
                 }
-                Cell::NumberCell { t: _, v, s } => {
+                Cell::NumberCell { v, s } => {
                     // Normally the type number is left out. Example:
                     // <c r="C6" s="1">
                     //     <v>3</v>
@@ -116,13 +116,13 @@ pub(crate) fn get_worksheet_xml(
                     let style = get_cell_style_attribute(*s);
                     row_data_str.push(format!("<c r=\"{cell_name}\"{style}><v>{v}</v></c>"));
                 }
-                Cell::ErrorCell { t: _, ei, s } => {
+                Cell::ErrorCell { ei, s } => {
                     let style = get_cell_style_attribute(*s);
                     row_data_str.push(format!(
                         "<c r=\"{cell_name}\" t=\"e\"{style}><v>{ei}</v></c>"
                     ));
                 }
-                Cell::SharedString { t: _, si, s } => {
+                Cell::SharedString { si, s } => {
                     // Example:
                     // <c r="A1" s="1" t="s">
                     //    <v>5</v>
@@ -133,10 +133,10 @@ pub(crate) fn get_worksheet_xml(
                         "<c r=\"{cell_name}\" t=\"s\"{style}><v>{si}</v></c>"
                     ));
                 }
-                Cell::CellFormula { t: _, f: _, s: _ } => {
+                Cell::CellFormula { f: _, s: _ } => {
                     panic!("Model needs to be evaluated before saving!");
                 }
-                Cell::CellFormulaBoolean { t: _, f, v, s } => {
+                Cell::CellFormulaBoolean { f, v, s } => {
                     // <c r="A4" t="b" s="3">
                     //   <f>ISTEXT(A5)</f>
                     //   <v>1</v>
@@ -155,7 +155,7 @@ pub(crate) fn get_worksheet_xml(
                         "<c r=\"{cell_name}\" t=\"b\"{style}><f>{formula}</f><v>{b}</v></c>"
                     ));
                 }
-                Cell::CellFormulaNumber { t: _, f, v, s } => {
+                Cell::CellFormulaNumber { f, v, s } => {
                     // Note again type is skipped
                     // <c r="C4" s="3">
                     //   <f>A5+C3</f>
@@ -174,7 +174,7 @@ pub(crate) fn get_worksheet_xml(
                         "<c r=\"{cell_name}\"{style}><f>{formula}</f><v>{v}</v></c>"
                     ));
                 }
-                Cell::CellFormulaString { t: _, f, v, s } => {
+                Cell::CellFormulaString { f, v, s } => {
                     // <c r="C6" t="str" s="5">
                     //   <f>CONCATENATE(A1, A2)</f>
                     //   <v>Hello world!</v>
@@ -192,7 +192,6 @@ pub(crate) fn get_worksheet_xml(
                     ));
                 }
                 Cell::CellFormulaError {
-                    t: _,
                     f,
                     ei,
                     s,

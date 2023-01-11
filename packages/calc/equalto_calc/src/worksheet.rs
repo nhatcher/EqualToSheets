@@ -207,18 +207,12 @@ impl Worksheet {
 
     pub fn set_cell_empty(&mut self, row: i32, column: i32) {
         let s = self.get_style(row, column);
-        let cell = Cell::EmptyCell {
-            t: "empty".to_string(),
-            s,
-        };
+        let cell = Cell::EmptyCell { s };
         self.update_cell(row, column, cell);
     }
 
     pub fn set_cell_empty_with_style(&mut self, row: i32, column: i32, style: i32) {
-        let cell = Cell::EmptyCell {
-            t: "empty".to_string(),
-            s: style,
-        };
+        let cell = Cell::EmptyCell { s: style };
         self.update_cell(row, column, cell);
     }
 
