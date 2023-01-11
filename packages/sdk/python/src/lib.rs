@@ -106,8 +106,10 @@ impl PyModel {
         Ok(())
     }
 
-    pub fn evaluate(&mut self) {
-        self.model.evaluate()
+    pub fn evaluate(&mut self) -> PyResult<()> {
+        self.model
+            .evaluate_with_error_check()
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn get_column_width(&self, sheet: i32, column: i32) -> PyResult<f64> {

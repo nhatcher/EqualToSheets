@@ -186,6 +186,30 @@ def test_bool_value_error(cell: Cell, value: Any, error: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "cell_reference, formula, error",
+    [
+        ("Sheet1!A1", "=INVALID()", "Sheet1!A1 ('=INVALID()'): Invalid function: INVALID"),
+        ("Sheet1!A1", "=SIN(1, 2, 3)", "Sheet1!A1 ('=SIN(1,2,3)'): Wrong number of arguments"),
+        ("Sheet1!C1", "={{1}}", "Sheet1!C1 ('={{1}}'): Arrays not implemented"),
+        ("Sheet1!ABC42", "=2*ABC42", "Sheet1!ABC42 ('=2*ABC42'): Circular reference detected"),
+        ("Sheet1!H2", "=[1]", "Sheet1!H2 ('=[1]'): Error parsing [1]: Unexpected token: '['"),
+    ],
+)
+def test_formula_error_propagation(
+    empty_workbook: Workbook,
+    cell_reference: str,
+    formula: str,
+    error: str,
+) -> None:
+    cell = empty_workbook[cell_reference]
+
+    with pytest.raises(WorkbookError) as err:
+        cell.formula = formula
+
+    assert err.value.args[0] == error  # noqa: WPS441
+
+
+@pytest.mark.parametrize(
     "workbook_timezone, date_value, raw_value",
     [
         ("US/Central", date(1969, 7, 20), 25404),

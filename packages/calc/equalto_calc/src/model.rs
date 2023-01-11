@@ -1539,6 +1539,46 @@ impl Model {
         }
     }
 
+    /// Evaluates the model with a top-down recursive algorithm
+    /// Returns an error instead of using #N/IMPL!, #CIRC! or #ERROR! values.
+    pub fn evaluate_with_error_check(&mut self) -> Result<(), String> {
+        // clear all computation artifacts
+        self.cells.clear();
+
+        let cells = self.get_all_cells();
+
+        let mut result = Ok(());
+
+        for cell in cells {
+            let calc_result = self.evaluate_cell(CellReference {
+                sheet: cell.index,
+                row: cell.row,
+                column: cell.column,
+            });
+            if result.is_err() {
+                continue;
+            }
+            if let CalcResult::Error {
+                error: Error::CIRC | Error::NIMPL | Error::ERROR,
+                origin,
+                message,
+            } = calc_result
+            {
+                result = Err(match self.cell_reference_to_string(&origin) {
+                    Ok(cell_text_reference) => format!(
+                        "{} ('{}'): {}",
+                        cell_text_reference,
+                        self.get_formula_or_value(origin.sheet, origin.row, origin.column),
+                        message,
+                    ),
+                    Err(_) => message,
+                });
+            }
+        }
+
+        result
+    }
+
     /// Return the width of a column in pixels
     pub fn get_column_width(&self, sheet: u32, column: i32) -> f64 {
         let cols = &self.workbook.worksheets[sheet as usize].cols;
