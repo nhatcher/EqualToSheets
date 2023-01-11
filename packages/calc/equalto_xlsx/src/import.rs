@@ -465,11 +465,15 @@ fn load_workbook(archive: &mut ExcelArchive) -> Result<WorkbookXML, XlsxError> {
         )?
         .to_string();
         let state = match sheet.attribute("state") {
-            Some("visible") => SheetState::Visible,
+            Some("visible") | None => SheetState::Visible,
             Some("hidden") => SheetState::Hidden,
             Some("veryHidden") => SheetState::VeryHidden,
-            None => SheetState::Visible,
-            _ => panic!("Unknown sheet state"),
+            Some(state) => {
+                return Err(XlsxError::Workbook(format!(
+                    "Unknown sheet state: {}",
+                    state,
+                )))
+            }
         };
         sheets.push(Sheet {
             name,
@@ -1126,10 +1130,14 @@ fn load_sheet(
                         }
                     }
                     "array" => {
-                        panic!("Array formulas are not supported at the moment. Aborting");
+                        return Err(XlsxError::Workbook(
+                            "Array formulas are not supported.".to_string(),
+                        ));
                     }
                     "dataTable" => {
-                        panic!("Data table formulas are not supported. Aborting");
+                        return Err(XlsxError::Workbook(
+                            "Data table formulas are not supported.".to_string(),
+                        ));
                     }
                     "normal" => {
                         // Its a cell with a simple formula
@@ -1145,7 +1153,10 @@ fn load_sheet(
                         }
                     }
                     _ => {
-                        panic!("Invalid formula type {:?}. Aborting", formula_type);
+                        return Err(XlsxError::Workbook(format!(
+                            "Invalid formula type {:?}.",
+                            formula_type,
+                        )));
                     }
                 }
             }

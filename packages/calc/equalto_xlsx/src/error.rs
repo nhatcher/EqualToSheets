@@ -11,6 +11,8 @@ pub enum XlsxError {
     Zip(String),
     #[error("XML Error: {0}")]
     Xml(String),
+    #[error("{0}")]
+    Workbook(String),
 }
 
 impl From<io::Error> for XlsxError {

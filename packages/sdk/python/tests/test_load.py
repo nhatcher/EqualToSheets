@@ -22,6 +22,7 @@ def test_load_workbook() -> None:
         ("not_zip_file.xlsx", "Zip Error: invalid Zip archive"),
         ("corrupt.xlsx", 'XML Error: Missing "name" XML attribute'),
         ("circ.xlsx", r"Calculation!A1 \('=A1'\): Circular reference detected"),
+        ("array_formula.xlsx", "Array formulas are not supported"),
     ],
 )
 def test_load_workbook_error_handling(file_name: str, error: str) -> None:
