@@ -1,3 +1,4 @@
+use crate::constants;
 use crate::{expressions::token::Error, types::*};
 
 use std::collections::HashMap;
@@ -100,5 +101,25 @@ impl Worksheet {
             s: style,
         };
         self.update_cell(row, column, cell);
+    }
+
+    pub fn set_frozen_rows(&mut self, frozen_rows: i32) -> Result<(), String> {
+        if frozen_rows < 0 {
+            return Err("Frozen rows cannot be negative".to_string());
+        } else if frozen_rows >= constants::LAST_ROW {
+            return Err("Too many rows".to_string());
+        }
+        self.frozen_rows = frozen_rows;
+        Ok(())
+    }
+
+    pub fn set_frozen_columns(&mut self, frozen_columns: i32) -> Result<(), String> {
+        if frozen_columns < 0 {
+            return Err("Frozen columns cannot be negative".to_string());
+        } else if frozen_columns >= constants::LAST_COLUMN {
+            return Err("Too many columns".to_string());
+        }
+        self.frozen_columns = frozen_columns;
+        Ok(())
     }
 }

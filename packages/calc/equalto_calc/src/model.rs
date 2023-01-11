@@ -657,42 +657,6 @@ impl Model {
         Err(format!("Invalid color: {}", color))
     }
 
-    pub fn get_frozen_rows(&self, sheet: u32) -> Result<i32, String> {
-        Ok(self.workbook.worksheet(sheet)?.frozen_rows)
-    }
-
-    pub fn get_frozen_columns(&self, sheet: u32) -> Result<i32, String> {
-        Ok(self.workbook.worksheet(sheet)?.frozen_columns)
-    }
-
-    pub fn set_frozen_rows(&mut self, sheet: u32, frozen_rows: i32) -> Result<(), String> {
-        if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
-            if frozen_rows < 0 {
-                return Err("Frozen rows cannot be negative".to_string());
-            } else if frozen_rows >= constants::LAST_ROW {
-                return Err("Too many rows".to_string());
-            }
-            worksheet.frozen_rows = frozen_rows;
-            Ok(())
-        } else {
-            Err("Invalid sheet index".to_string())
-        }
-    }
-
-    pub fn set_frozen_columns(&mut self, sheet: u32, frozen_columns: i32) -> Result<(), String> {
-        if let Some(worksheet) = self.workbook.worksheets.get_mut(sheet as usize) {
-            if frozen_columns < 0 {
-                return Err("Frozen columns cannot be negative".to_string());
-            } else if frozen_columns >= constants::LAST_COLUMN {
-                return Err("Too many columns".to_string());
-            }
-            worksheet.frozen_columns = frozen_columns;
-            Ok(())
-        } else {
-            Err("Invalid sheet index".to_string())
-        }
-    }
-
     fn get_cell_value(&self, cell: &Cell, cell_reference: CellReference) -> CalcResult {
         use Cell::*;
         match cell {

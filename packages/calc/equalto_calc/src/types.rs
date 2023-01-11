@@ -72,6 +72,7 @@ pub struct DefinedName {
     pub sheet_id: Option<i32>,
 }
 
+// TODO: Move to worksheet.rs make frozen_rows/columns private and u32
 /// Internal representation of a worksheet Excel object
 /// * state:
 ///    18.18.68 ST_SheetState (Sheet Visibility Types)

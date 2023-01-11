@@ -6,69 +6,49 @@ use crate::test::util::new_empty_model;
 #[test]
 fn test_empty_model() {
     let mut model = new_empty_model();
-    assert_eq!(model.get_frozen_rows(0), Ok(0));
-    assert_eq!(model.get_frozen_columns(0), Ok(0));
+    let worksheet = model.workbook.worksheet_mut(0).unwrap();
+    assert_eq!(worksheet.frozen_rows, 0);
+    assert_eq!(worksheet.frozen_columns, 0);
 
-    let e = model.set_frozen_rows(0, 3);
+    let e = worksheet.set_frozen_rows(3);
     assert!(e.is_ok());
-    assert_eq!(model.get_frozen_rows(0), Ok(3));
-    assert_eq!(model.get_frozen_columns(0), Ok(0));
+    assert_eq!(worksheet.frozen_rows, 3);
+    assert_eq!(worksheet.frozen_columns, 0);
 
-    let e = model.set_frozen_columns(0, 53);
+    let e = worksheet.set_frozen_columns(53);
     assert!(e.is_ok());
-    assert_eq!(model.get_frozen_rows(0), Ok(3));
-    assert_eq!(model.get_frozen_columns(0), Ok(53));
+    assert_eq!(worksheet.frozen_rows, 3);
+    assert_eq!(worksheet.frozen_columns, 53);
 
     // Set them back to zero
-    let e = model.set_frozen_rows(0, 0);
+    let e = worksheet.set_frozen_rows(0);
     assert!(e.is_ok());
-    let e = model.set_frozen_columns(0, 0);
+    let e = worksheet.set_frozen_columns(0);
     assert!(e.is_ok());
-    assert_eq!(model.get_frozen_rows(0), Ok(0));
-    assert_eq!(model.get_frozen_columns(0), Ok(0));
-}
-
-#[test]
-fn test_invalid_sheet() {
-    let mut model = new_empty_model();
-    assert_eq!(
-        model.get_frozen_rows(1),
-        Err("Invalid sheet index".to_string())
-    );
-    assert_eq!(
-        model.get_frozen_columns(3),
-        Err("Invalid sheet index".to_string())
-    );
-
-    assert_eq!(
-        model.set_frozen_rows(3, 3),
-        Err("Invalid sheet index".to_string())
-    );
-    assert_eq!(
-        model.set_frozen_columns(3, 5),
-        Err("Invalid sheet index".to_string())
-    );
+    assert_eq!(worksheet.frozen_rows, 0);
+    assert_eq!(worksheet.frozen_columns, 0);
 }
 
 #[test]
 fn test_invalid_rows_columns() {
     let mut model = new_empty_model();
+    let worksheet = model.workbook.worksheet_mut(0).unwrap();
 
     assert_eq!(
-        model.set_frozen_rows(0, -3),
+        worksheet.set_frozen_rows(-3),
         Err("Frozen rows cannot be negative".to_string())
     );
     assert_eq!(
-        model.set_frozen_columns(0, -5),
+        worksheet.set_frozen_columns(-5),
         Err("Frozen columns cannot be negative".to_string())
     );
 
     assert_eq!(
-        model.set_frozen_rows(0, LAST_ROW),
+        worksheet.set_frozen_rows(LAST_ROW),
         Err("Too many rows".to_string())
     );
     assert_eq!(
-        model.set_frozen_columns(0, LAST_COLUMN),
+        worksheet.set_frozen_columns(LAST_COLUMN),
         Err("Too many columns".to_string())
     );
 }

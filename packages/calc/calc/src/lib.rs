@@ -27,35 +27,6 @@ pub struct Cell {
 }
 
 #[wasm_bindgen]
-pub struct IntegerResult {
-    pub success: bool,
-    pub value: i32,
-    message: String,
-}
-
-#[wasm_bindgen]
-impl IntegerResult {
-    #[wasm_bindgen(getter)]
-    pub fn message(&self) -> String {
-        self.message.clone()
-    }
-    fn get_success(value: i32) -> IntegerResult {
-        IntegerResult {
-            success: true,
-            value,
-            message: "".to_string(),
-        }
-    }
-    fn get_error(message: &str) -> IntegerResult {
-        IntegerResult {
-            success: false,
-            value: -1,
-            message: message.to_string(),
-        }
-    }
-}
-
-#[wasm_bindgen]
 pub struct IndexResult {
     pub success: bool,
     pub index: i32,
@@ -290,34 +261,6 @@ impl JSModel {
 
     pub fn set_row_height(&mut self, sheet: u32, row: i32, height: f64) {
         self.model.set_row_height(sheet, row, height);
-    }
-
-    pub fn get_frozen_rows(&self, sheet: u32) -> IntegerResult {
-        match self.model.get_frozen_rows(sheet) {
-            Ok(value) => IntegerResult::get_success(value),
-            Err(message) => IntegerResult::get_error(&message),
-        }
-    }
-
-    pub fn get_frozen_columns(&self, sheet: u32) -> IntegerResult {
-        match self.model.get_frozen_columns(sheet) {
-            Ok(value) => IntegerResult::get_success(value),
-            Err(message) => IntegerResult::get_error(&message),
-        }
-    }
-
-    pub fn set_frozen_columns(&mut self, sheet: u32, frozen_columns: i32) -> JsResult {
-        match self.model.set_frozen_columns(sheet, frozen_columns) {
-            Ok(()) => JsResult::get_success(),
-            Err(message) => JsResult::get_error(&message),
-        }
-    }
-
-    pub fn set_frozen_rows(&mut self, sheet: u32, frozen_rows: i32) -> JsResult {
-        match self.model.set_frozen_rows(sheet, frozen_rows) {
-            Ok(()) => JsResult::get_success(),
-            Err(message) => JsResult::get_error(&message),
-        }
     }
 
     pub fn get_merge_cells(&self, sheet: u32) -> String {
