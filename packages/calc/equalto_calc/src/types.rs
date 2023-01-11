@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::expressions::token::Error;
 
@@ -35,7 +35,7 @@ fn is_zero(num: &i32) -> bool {
 
 /// Information need to show a sheet tab in the UI
 /// The color is serialized only if it is not Color::None
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Tab {
     pub name: String,
     pub state: String,
@@ -74,10 +74,29 @@ pub struct DefinedName {
 
 // TODO: Move to worksheet.rs make frozen_rows/columns private and u32
 /// Internal representation of a worksheet Excel object
+
 /// * state:
 ///    18.18.68 ST_SheetState (Sheet Visibility Types)
 ///    hidden, veryHidden, visible
-// TODO: Maybe use an enum for the state values here?
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum SheetState {
+    Visible,
+    Hidden,
+    VeryHidden,
+}
+
+impl Display for SheetState {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            SheetState::Visible => write!(formatter, "visible"),
+            SheetState::Hidden => write!(formatter, "hidden"),
+            SheetState::VeryHidden => write!(formatter, "veryHidden"),
+        }
+    }
+}
+
+/// Internal representation of a worksheet Excel object
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Worksheet {
     pub dimension: String,
@@ -87,7 +106,7 @@ pub struct Worksheet {
     pub sheet_data: SheetData,
     pub shared_formulas: Vec<String>,
     pub sheet_id: i32,
-    pub state: String,
+    pub state: SheetState,
     #[serde(default = "Color::new")]
     #[serde(skip_serializing_if = "Color::is_none")]
     pub color: Color,
@@ -124,12 +143,10 @@ pub struct Col {
     pub style: Option<i32>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum Color {
     None,
     RGB(String),
-    Indexed(i32),
-    Theme { theme: i32, tint: f64 },
 }
 
 impl Color {
@@ -175,6 +192,7 @@ pub enum Cell {
         v: f64,
         s: i32,
     },
+    // Maybe we should not have this type. In Excel this is just a string
     ErrorCell {
         t: String,
         ei: Error,
@@ -231,7 +249,7 @@ pub struct Comment {
     pub author_id: Option<String>,
     pub cell_ref: String,
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Styles {
     pub num_fmts: Vec<NumFmt>,
     pub fonts: Vec<Font>,
@@ -270,7 +288,7 @@ impl Default for NumFmt {
         }
     }
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Font {
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
@@ -278,13 +296,15 @@ pub struct Font {
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
     pub u: bool,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
     pub b: bool,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
     pub i: bool,
     pub sz: i32,
     pub color: Color,
     pub name: String,
-    pub family: i32,
-    pub scheme: String,
 }
 
 impl Default for Font {
@@ -297,14 +317,12 @@ impl Default for Font {
             sz: 11,
             color: Color::RGB("#000000".to_string()),
             name: "Calibri".to_string(),
-            family: 2,
-            scheme: "minor".to_string(),
         }
     }
 }
 
 // TODO: Maybe use an enum for the pattern_type values here?
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Fill {
     pub pattern_type: String,
     #[serde(default = "Color::new")]
@@ -380,9 +398,6 @@ pub struct CellXfs {
     pub horizontal_alignment: String,
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
-    pub read_only: bool,
-    #[serde(default = "default_as_false")]
-    #[serde(skip_serializing_if = "is_false")]
     pub apply_number_format: bool,
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
@@ -413,7 +428,6 @@ impl Default for CellXfs {
             fill_id: 0,
             border_id: 0,
             horizontal_alignment: "default".to_string(),
-            read_only: false,
             apply_number_format: false,
             apply_border: false,
             apply_alignment: false,
@@ -442,25 +456,43 @@ impl Default for CellStyles {
     }
 }
 
-// TODO: Maybe use an enum for the values here?
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct BorderItem {
-    // think, thick, slantDashDot, none, mediumDashed, mediumDashDotDot, mediumDashDot,
-    // medium, double, dotted
-    pub style: String,
-    pub color: Color,
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum BorderStyle {
+    Thin,
+    Medium,
+    Thick,
+    Double,
+    Dotted,
+    SlantDashDot,
+    MediumDashed,
+    MediumDashDotDot,
+    MediumDashDot,
 }
 
-impl Default for BorderItem {
-    fn default() -> Self {
-        BorderItem {
-            style: "none".to_string(),
-            color: Color::None,
+impl Display for BorderStyle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            BorderStyle::Thin => write!(formatter, "thin"),
+            BorderStyle::Thick => write!(formatter, "thick"),
+            BorderStyle::SlantDashDot => write!(formatter, "slantdashdot"),
+            BorderStyle::MediumDashed => write!(formatter, "mediumdashed"),
+            BorderStyle::MediumDashDotDot => write!(formatter, "mediumdashdotdot"),
+            BorderStyle::MediumDashDot => write!(formatter, "mediumdashdot"),
+            BorderStyle::Medium => write!(formatter, "medium"),
+            BorderStyle::Double => write!(formatter, "double"),
+            BorderStyle::Dotted => write!(formatter, "dotted"),
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct BorderItem {
+    pub style: BorderStyle,
+    pub color: Color,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
 pub struct Border {
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
@@ -468,9 +500,14 @@ pub struct Border {
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
     pub diagonal_down: bool,
-    pub left: BorderItem,
-    pub right: BorderItem,
-    pub top: BorderItem,
-    pub bottom: BorderItem,
-    pub diagonal: BorderItem,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub left: Option<BorderItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub right: Option<BorderItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top: Option<BorderItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bottom: Option<BorderItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagonal: Option<BorderItem>,
 }

@@ -1,7 +1,7 @@
 use crate::{
     constants,
     model::{Model, Style},
-    number_format::{get_new_num_fmt_index, get_num_fmt},
+    number_format::{get_default_num_fmt_id, get_new_num_fmt_index, get_num_fmt},
     types::{Border, CellStyles, CellXfs, Col, Fill, Font, NumFmt, Row},
 };
 
@@ -34,10 +34,13 @@ impl Model {
         None
     }
     fn get_num_fmt_index(&self, format_code: &str) -> Option<i32> {
+        if let Some(index) = get_default_num_fmt_id(format_code) {
+            return Some(index);
+        }
         let num_fmts = &self.workbook.styles.num_fmts;
         for item in num_fmts.iter() {
             if item.format_code == format_code {
-                return Some(item.num_fmt_id as i32);
+                return Some(item.num_fmt_id);
             }
         }
         None
@@ -85,7 +88,6 @@ impl Model {
             fill_id,
             border_id,
             horizontal_alignment: style.horizontal_alignment.clone(),
-            read_only: style.read_only,
             apply_number_format: false,
             apply_border: false,
             apply_alignment: false,
@@ -105,13 +107,11 @@ impl Model {
             let fill_id = cell_xf.fill_id as usize;
             let font_id = cell_xf.font_id as usize;
             let num_fmt_id = cell_xf.num_fmt_id;
-            let read_only = cell_xf.read_only;
             let quote_prefix = cell_xf.quote_prefix;
             let horizontal_alignment = cell_xf.horizontal_alignment.clone();
             if style
                 == &(Style {
                     horizontal_alignment,
-                    read_only,
                     num_fmt: get_num_fmt(num_fmt_id, &styles.num_fmts),
                     fill: styles.fills[fill_id].clone(),
                     font: styles.fonts[font_id].clone(),

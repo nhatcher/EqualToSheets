@@ -1,14 +1,12 @@
-use crate::load_from_excel;
-use equalto_calc::model::Environment;
+use std::path::Path;
+
 use equalto_calc::types::*;
 use equalto_calc::{
     expressions::utils::number_to_column, model::Model, number_format::to_precision,
 };
 
-// Not used
-fn mock_get_milliseconds_since_epoch() -> i64 {
-    1
-}
+use crate::export::save_to_xlsx;
+use crate::import::load_model_from_xlsx;
 
 pub struct CompareError {
     message: String,
@@ -126,24 +124,7 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
     Ok(diffs)
 }
 
-/// Tests that file in file_path produces the same results in Excel than in EqualTo Calc.
-pub fn test_file(file_path: &str) -> Result<(), String> {
-    let env = Environment {
-        get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
-    };
-    let model = load_from_excel(file_path, "en", "UTC").map_err(|e| e.to_string())?;
-    let s1 = serde_json::to_string(&model).unwrap();
-    let m1 = match Model::from_json(&s1, env.clone()) {
-        Ok(model1) => model1,
-        Err(_) => return Err("Failed loading model".to_string()),
-    };
-    let s2 = serde_json::to_string(&model).unwrap();
-
-    let mut m2 = match Model::from_json(&s2, env) {
-        Ok(model2) => model2,
-        Err(_) => return Err("Failed loading model".to_string()),
-    };
-    m2.evaluate();
+fn compare_models(m1: Model, m2: Model) -> Result<(), String> {
     match compare(m1, m2) {
         Ok(diffs) => {
             if diffs.is_empty() {
@@ -170,4 +151,29 @@ pub fn test_file(file_path: &str) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// Tests that file in file_path produces the same results in Excel and in EqualTo Calc.
+pub fn test_file(file_path: &str) -> Result<(), String> {
+    let model1 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
+    let mut model2 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
+    model2.evaluate();
+    compare_models(model1, model2)
+}
+
+/// Tests that file in file_path can be converted to xlsx and read again
+pub fn test_load_and_saving(file_path: &str, temp_dir_name: &Path) -> Result<(), String> {
+    let model1 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
+
+    let base_name = Path::new(file_path).file_name().unwrap().to_str().unwrap();
+
+    let temp_path_buff = temp_dir_name.join(base_name);
+    let temp_file_name = temp_path_buff.to_str().unwrap();
+    let temp_file_path = &format!("{}.xlsx", &temp_file_name);
+    // test can save
+    save_to_xlsx(&model1, temp_file_name).unwrap();
+    // test can open
+    let mut model2 = load_model_from_xlsx(temp_file_path, "en", "UTC").unwrap();
+    model2.evaluate();
+    compare_models(model1, model2)
 }

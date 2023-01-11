@@ -52,6 +52,15 @@ const DEFAULT_NUM_FMTS: &[&str] = &[
     "t#?/?",
 ];
 
+pub fn get_default_num_fmt_id(num_fmt: &str) -> Option<i32> {
+    for (index, default_num_fmt) in DEFAULT_NUM_FMTS.iter().enumerate() {
+        if default_num_fmt == &num_fmt {
+            return Some(index as i32);
+        };
+    }
+    None
+}
+
 pub fn get_num_fmt(num_fmt_id: i32, num_fmts: &[NumFmt]) -> String {
     // Check if it defined
     for num_fmt in num_fmts {

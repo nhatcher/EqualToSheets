@@ -12,7 +12,7 @@ use crate::{
     language::get_language,
     locale::get_locale,
     model::{Environment, Model},
-    types::{Workbook, WorkbookSettings, Worksheet},
+    types::{SheetState, Workbook, WorkbookSettings, Worksheet},
 };
 
 /// You can use all alphanumeric characters but not the following special characters:
@@ -38,7 +38,7 @@ impl Model {
             shared_formulas: vec![],
             sheet_data: Default::default(),
             sheet_id,
-            state: "visible".to_string(),
+            state: SheetState::Visible,
             color: Default::default(),
             frozen_columns: 0,
             frozen_rows: 0,

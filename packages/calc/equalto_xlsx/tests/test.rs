@@ -1,8 +1,10 @@
-use std::{fs, io};
+use std::{env, fs, io};
+use uuid::Uuid;
 
 use equalto_calc::types::Workbook;
-use equalto_xlsx::compare::test_file;
-use equalto_xlsx::load_from_excel;
+use equalto_xlsx::compare::{test_file, test_load_and_saving};
+use equalto_xlsx::export::save_to_xlsx;
+use equalto_xlsx::import::{load_from_excel, load_model_from_xlsx};
 
 // This is a functional test.
 // We check that the output of example.xlsx is what we expect.
@@ -16,6 +18,20 @@ fn test_example() {
         fs::read_to_string("tests/example.json").expect("Something went wrong reading the file");
     let model2: Workbook = serde_json::from_str(&contents).unwrap();
     assert_eq!(model, model2);
+}
+
+#[test]
+fn test_save_to_xlsx() {
+    let mut model = load_model_from_xlsx("tests/example.xlsx", "en", "Europe/Berlin").unwrap();
+    model.evaluate();
+    let temp_file_name = "temp_file_example";
+    let temp_file_path = &format!("{}.xlsx", temp_file_name);
+    // test can safe
+    save_to_xlsx(&model, temp_file_name).unwrap();
+    // test can open
+    let _ = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin");
+    // TODO: can we show it is the 'same' model?
+    fs::remove_file(temp_file_path).unwrap();
 }
 
 #[test]
@@ -42,14 +58,20 @@ fn test_xlsx() {
         .collect::<Result<Vec<_>, io::Error>>()
         .unwrap();
     entries.sort();
+    let temp_folder = env::temp_dir();
+    let path = format!("{}", Uuid::new_v4());
+    let dir = temp_folder.join(path);
+    fs::create_dir(&dir).unwrap();
     for file_path in entries {
         let file_name_str = file_path.file_name().unwrap().to_str().unwrap();
         let file_path_str = file_path.to_str().unwrap();
-        println!("{}", file_path_str);
+        println!("Testing file: {}", file_path_str);
         if file_name_str.ends_with(".xlsx") && !file_name_str.starts_with('~') {
             assert!(test_file(file_path_str).is_ok());
+            assert!(test_load_and_saving(file_path_str, &dir).is_ok());
         } else {
             println!("skipping");
         }
     }
+    fs::remove_dir_all(&dir).unwrap();
 }

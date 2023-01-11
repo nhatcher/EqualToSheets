@@ -94,10 +94,9 @@ impl ExcelValue {
 /// sheet, row, column, value
 pub type InputData = HashMap<u32, HashMap<i32, HashMap<i32, ExcelValue>>>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Style {
     pub horizontal_alignment: String,
-    pub read_only: bool,
     pub num_fmt: String,
     pub fill: Fill,
     pub font: Font,
@@ -795,6 +794,10 @@ impl Model {
     pub fn from_json(s: &str, env: Environment) -> Result<Model, String> {
         let workbook: Workbook =
             serde_json::from_str(s).map_err(|_| "Error parsing workbook".to_string())?;
+        Model::from_workbook(workbook, env)
+    }
+
+    pub fn from_workbook(workbook: Workbook, env: Environment) -> Result<Model, String> {
         let parsed_formulas = Vec::new();
         let worksheets = &workbook.worksheets;
         let parser = Parser::new(worksheets.iter().map(|s| s.get_name()).collect());
@@ -1504,7 +1507,7 @@ impl Model {
         for (index, worksheet) in worksheets.iter().enumerate() {
             tabs.push(Tab {
                 name: worksheet.get_name(),
-                state: worksheet.state.clone(),
+                state: worksheet.state.to_string(),
                 color: worksheet.color.clone(),
                 index: index as i32,
                 sheet_id: worksheet.sheet_id,
@@ -1631,44 +1634,6 @@ impl Model {
         }
     }
 
-    /// A sheet is read only iff all columns are read only
-    fn is_sheet_read_only(&self, sheet: u32) -> bool {
-        let cols = &self.workbook.worksheets[sheet as usize].cols;
-        let mut last_col = 0;
-        for col in cols {
-            if col.min == last_col + 1 {
-                let is_read_only = match col.style {
-                    Some(style) => self.get_style(style).read_only,
-                    None => false,
-                };
-                if !is_read_only {
-                    return false;
-                }
-                last_col = col.max;
-                if col.max == constants::LAST_COLUMN {
-                    return true;
-                }
-            } else {
-                return false;
-            }
-        }
-        false
-    }
-
-    /// Returns true if the row is read only or if the whole sheet is read only
-    pub fn is_row_read_only(&self, sheet: u32, row: i32) -> bool {
-        let rows = &self.workbook.worksheets[sheet as usize].rows;
-        for r in rows {
-            if r.r == row {
-                if self.get_style(r.s).read_only {
-                    return true;
-                }
-                break;
-            }
-        }
-        self.is_sheet_read_only(sheet)
-    }
-
     pub fn get_cell_style_index(&self, sheet: u32, row: i32, column: i32) -> i32 {
         // First check the cell, then row, the column
         match self.get_cell(sheet, row, column).expect("Cell expected") {
@@ -1715,13 +1680,11 @@ impl Model {
         let fill_id = cell_xf.fill_id as usize;
         let font_id = cell_xf.font_id as usize;
         let num_fmt_id = cell_xf.num_fmt_id;
-        let read_only = cell_xf.read_only;
         let quote_prefix = cell_xf.quote_prefix;
         let horizontal_alignment = cell_xf.horizontal_alignment.clone();
 
         Style {
             horizontal_alignment,
-            read_only,
             num_fmt: get_num_fmt(num_fmt_id, &styles.num_fmts),
             fill: styles.fills[fill_id].clone(),
             font: styles.fonts[font_id].clone(),

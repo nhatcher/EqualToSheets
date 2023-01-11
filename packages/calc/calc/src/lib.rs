@@ -509,10 +509,6 @@ impl JSModel {
         }
     }
 
-    pub fn is_row_read_only(&self, sheet: u32, row: i32) -> bool {
-        self.model.is_row_read_only(sheet, row)
-    }
-
     pub fn get_row_undo_data(&self, sheet: u32, row: i32) -> String {
         match self.model.get_row_undo_data(sheet, row) {
             Ok(s) => s,

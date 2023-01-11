@@ -33,8 +33,17 @@ pub enum DisplaceData {
     None,
 }
 
+// Some functions in Excel like CONCAT are stringified as `_xlfn.CONCAT`.
+// NOTE: for now this is manual, but we should have a more automatic way of doing this.
+fn function_needs_prefix(name: &str) -> bool {
+    [
+        "CONCAT", "IFNA", "IFS", "MAXIFS", "MINIFS", "SWITCH", "XLOOKUP", "XOR",
+    ]
+    .contains(&name)
+}
+
 pub fn to_rc_format(node: &Node) -> String {
-    stringify(node, None, &DisplaceData::None)
+    stringify(node, None, &DisplaceData::None, false)
 }
 
 pub fn to_string_displaced(
@@ -42,11 +51,15 @@ pub fn to_string_displaced(
     context: &CellReferenceRC,
     displace_data: &DisplaceData,
 ) -> String {
-    stringify(node, Some(context), displace_data)
+    stringify(node, Some(context), displace_data, false)
 }
 
 pub fn to_string(node: &Node, context: &CellReferenceRC) -> String {
-    stringify(node, Some(context), &DisplaceData::None)
+    stringify(node, Some(context), &DisplaceData::None, false)
+}
+
+pub fn to_excel_string(node: &Node, context: &CellReferenceRC) -> String {
+    stringify(node, Some(context), &DisplaceData::None, true)
 }
 
 /// Converts a local reference to a string applying some displacement if needed.
@@ -229,6 +242,7 @@ fn stringify(
     node: &Node,
     context: Option<&CellReferenceRC>,
     displace_data: &DisplaceData,
+    use_original_name: bool,
 ) -> String {
     use self::Node::*;
     match node {
@@ -377,55 +391,77 @@ fn stringify(
         }
         OpRangeKind { left, right } => format!(
             "{}:{}",
-            stringify(left, context, displace_data),
-            stringify(right, context, displace_data)
+            stringify(left, context, displace_data, use_original_name),
+            stringify(right, context, displace_data, use_original_name)
         ),
         OpConcatenateKind { left, right } => format!(
             "{}&{}",
-            stringify(left, context, displace_data),
-            stringify(right, context, displace_data)
+            stringify(left, context, displace_data, use_original_name),
+            stringify(right, context, displace_data, use_original_name)
         ),
         CompareKind { kind, left, right } => format!(
             "{}{}{}",
-            stringify(left, context, displace_data),
+            stringify(left, context, displace_data, use_original_name),
             kind,
-            stringify(right, context, displace_data)
+            stringify(right, context, displace_data, use_original_name)
         ),
         OpSumKind { kind, left, right } => format!(
             "{}{}{}",
-            stringify(left, context, displace_data),
+            stringify(left, context, displace_data, use_original_name),
             kind,
-            stringify(right, context, displace_data)
+            stringify(right, context, displace_data, use_original_name)
         ),
         OpProductKind { kind, left, right } => {
             let x = match **left {
-                OpSumKind { .. } => format!("({})", stringify(left, context, displace_data)),
-                CompareKind { .. } => format!("({})", stringify(left, context, displace_data)),
-                _ => stringify(left, context, displace_data),
+                OpSumKind { .. } => format!(
+                    "({})",
+                    stringify(left, context, displace_data, use_original_name)
+                ),
+                CompareKind { .. } => format!(
+                    "({})",
+                    stringify(left, context, displace_data, use_original_name)
+                ),
+                _ => stringify(left, context, displace_data, use_original_name),
             };
             let y = match **right {
-                OpSumKind { .. } => format!("({})", stringify(right, context, displace_data)),
-                CompareKind { .. } => format!("({})", stringify(right, context, displace_data)),
-                OpProductKind { .. } => format!("({})", stringify(right, context, displace_data)),
-                _ => stringify(right, context, displace_data),
+                OpSumKind { .. } => format!(
+                    "({})",
+                    stringify(right, context, displace_data, use_original_name)
+                ),
+                CompareKind { .. } => format!(
+                    "({})",
+                    stringify(right, context, displace_data, use_original_name)
+                ),
+                OpProductKind { .. } => format!(
+                    "({})",
+                    stringify(right, context, displace_data, use_original_name)
+                ),
+                _ => stringify(right, context, displace_data, use_original_name),
             };
             format!("{}{}{}", x, kind, y)
         }
         OpPowerKind { left, right } => format!(
             "{}^{}",
-            stringify(left, context, displace_data),
-            stringify(right, context, displace_data)
+            stringify(left, context, displace_data, use_original_name),
+            stringify(right, context, displace_data, use_original_name)
         ),
         FunctionKind { name, args } => {
             let mut first = true;
             let mut arguments = "".to_string();
             for el in args {
                 if !first {
-                    arguments = format!("{},{}", arguments, stringify(el, context, displace_data));
+                    arguments = format!(
+                        "{},{}",
+                        arguments,
+                        stringify(el, context, displace_data, use_original_name)
+                    );
                 } else {
                     first = false;
-                    arguments = stringify(el, context, displace_data);
+                    arguments = stringify(el, context, displace_data, use_original_name);
                 }
+            }
+            if use_original_name && function_needs_prefix(name) {
+                return format!("_xlfn.{}({})", name, arguments);
             }
             format!("{}({})", name, arguments)
         }
@@ -434,17 +470,25 @@ fn stringify(
             let mut arguments = "".to_string();
             for el in args {
                 if !first {
-                    arguments = format!("{},{}", arguments, stringify(el, context, displace_data));
+                    arguments = format!(
+                        "{},{}",
+                        arguments,
+                        stringify(el, context, displace_data, use_original_name)
+                    );
                 } else {
                     first = false;
-                    arguments = stringify(el, context, displace_data);
+                    arguments = stringify(el, context, displace_data, use_original_name);
                 }
             }
             format!("{{{}}}", arguments)
         }
         VariableKind(value) => value.to_string(),
         UnaryKind { kind, right } => {
-            format!("{}{}", kind, stringify(right, context, displace_data))
+            format!(
+                "{}{}",
+                kind,
+                stringify(right, context, displace_data, use_original_name)
+            )
         }
         ErrorKind(kind) => format!("{}", kind),
         ParseErrorKind {

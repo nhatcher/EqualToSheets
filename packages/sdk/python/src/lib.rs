@@ -6,7 +6,8 @@ use equalto_calc::{
     model::{Environment, Model},
 };
 use equalto_xlsx::compare::compare;
-use equalto_xlsx::{error::XlsxError, load_from_excel};
+use equalto_xlsx::error::XlsxError;
+use equalto_xlsx::import::load_from_excel;
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
 
