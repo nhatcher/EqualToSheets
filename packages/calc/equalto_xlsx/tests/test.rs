@@ -1,6 +1,7 @@
 use std::{env, fs, io};
 use uuid::Uuid;
 
+use equalto_calc::model::{Environment, Model};
 use equalto_calc::types::Workbook;
 use equalto_xlsx::compare::{test_file, test_load_and_saving};
 use equalto_xlsx::export::save_to_xlsx;
@@ -48,6 +49,37 @@ fn test_split() {
     let model = load_from_excel("tests/split.xlsx", "en", "Europe/Berlin").unwrap();
     assert_eq!(model.worksheets[0].frozen_rows, 0);
     assert_eq!(model.worksheets[0].frozen_columns, 0);
+}
+
+#[test]
+fn test_defined_names_casing() {
+    let test_file_path = "tests/calc_tests/defined_names_for_unit_test.xlsx";
+    let loaded_workbook = load_from_excel(test_file_path, "en", "UTC").unwrap();
+    let mut model = Model::from_json(
+        &serde_json::to_string(&loaded_workbook).unwrap(),
+        Environment {
+            get_milliseconds_since_epoch: || 1,
+        },
+    )
+    .unwrap();
+
+    let (row, column) = (2, 13); // B13
+    let test_cases = [
+        ("=named1", "11"),
+        ("=NAMED1", "11"),
+        ("=NaMeD1", "11"),
+        ("=named2", "22"),
+        ("=NAMED2", "22"),
+        ("=NaMeD2", "22"),
+        ("=named3", "33"),
+        ("=NAMED3", "33"),
+        ("=NaMeD3", "33"),
+    ];
+    for (formula, expected_value) in test_cases {
+        model.set_input(0, row, column, formula.to_string(), 0);
+        model.evaluate();
+        assert_eq!(model.get_text_at(0, row, column), expected_value);
+    }
 }
 
 #[test]

@@ -2,12 +2,9 @@ use crate::constants::{LAST_COLUMN, LAST_ROW};
 use crate::{
     calc_result::{CalcResult, CellReference},
     expressions::parser::Node,
-    expressions::{
-        lexer::{Lexer, LexerMode},
-        token::{Error, TokenType},
-    },
-    language::get_language,
+    expressions::token::Error,
     model::Model,
+    utils::ParsedReference,
 };
 
 use super::util::{compare_values, from_wildcard_to_regex, result_matches_regex, values_are_equal};
@@ -699,88 +696,31 @@ impl Model {
                         message: "Not implemented".to_string(),
                     };
                 }
-                // TODO This is a bit of an overkill
-                let language = get_language("en").expect("");
-                let mut lx = Lexer::new(&s, LexerMode::A1, &self.locale, language);
-                let tk = lx.next_token();
-                let nt = lx.next_token();
-                if TokenType::EOF != nt {
-                    return CalcResult::Error {
-                        error: Error::REF,
-                        origin: cell,
-                        message: "Invalid reference".to_string(),
-                    };
-                }
-                match tk {
-                    TokenType::REFERENCE {
-                        sheet: sheet_name,
-                        column: column_id,
-                        row: row_id,
-                        ..
-                    } => {
-                        let sheet_index;
-                        if let Some(name) = sheet_name {
-                            match self.get_sheet_index_by_name(&name) {
-                                Some(i) => sheet_index = i,
-                                None => {
-                                    return CalcResult::Error {
-                                        error: Error::REF,
-                                        origin: cell,
-                                        message: "Invalid reference".to_string(),
-                                    };
-                                }
-                            }
-                        } else {
-                            sheet_index = cell.sheet;
-                        }
-                        let cell_reference = CellReference {
-                            sheet: sheet_index,
-                            row: row_id,
-                            column: column_id,
+
+                let parsed_reference = ParsedReference::parse_reference_formula(
+                    Some(cell.sheet),
+                    &s,
+                    &self.locale,
+                    |name| self.get_sheet_index_by_name(name),
+                );
+
+                let parsed_reference = match parsed_reference {
+                    Ok(reference) => reference,
+                    Err(message) => {
+                        return CalcResult::Error {
+                            error: Error::REF,
+                            origin: cell,
+                            message,
                         };
-                        CalcResult::Range {
-                            left: cell_reference,
-                            right: cell_reference,
-                        }
                     }
-                    TokenType::RANGE {
-                        sheet: sheet_name,
-                        left,
-                        right,
-                    } => {
-                        let sheet_index;
-                        if let Some(name) = sheet_name {
-                            match self.get_sheet_index_by_name(&name) {
-                                Some(i) => sheet_index = i,
-                                None => {
-                                    return CalcResult::Error {
-                                        error: Error::REF,
-                                        origin: cell,
-                                        message: "Invalid reference".to_string(),
-                                    };
-                                }
-                            }
-                        } else {
-                            sheet_index = cell.sheet;
-                        }
-                        CalcResult::Range {
-                            left: CellReference {
-                                sheet: sheet_index,
-                                row: left.row,
-                                column: left.column,
-                            },
-                            right: CellReference {
-                                sheet: sheet_index,
-                                row: right.row,
-                                column: right.column,
-                            },
-                        }
-                    }
-                    _ => CalcResult::Error {
-                        error: Error::REF,
-                        origin: cell,
-                        message: "Invalid reference".to_string(),
+                };
+
+                match parsed_reference {
+                    ParsedReference::CellReference(reference) => CalcResult::Range {
+                        left: reference,
+                        right: reference,
                     },
+                    ParsedReference::Range(left, right) => CalcResult::Range { left, right },
                 }
             }
             Err(v) => v,

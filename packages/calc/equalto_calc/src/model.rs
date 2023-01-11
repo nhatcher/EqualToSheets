@@ -36,6 +36,16 @@ pub struct Environment {
     pub get_milliseconds_since_epoch: fn() -> i64,
 }
 
+#[derive(Debug, Clone)]
+pub enum ParsedDefinedName {
+    CellReference(CellReference),
+    RangeReference(Range),
+    InvalidDefinedNameFormula,
+    // TODO: Support constants in defined names
+    // TODO: Support formulas in defined names
+    // TODO: Support tables in defined names
+}
+
 /// A model includes:
 ///     * A Workbook: An internal representation of and Excel workbook
 ///     * Parsed Formulas: All the formulas in the workbook are parsed here (runtime only)
@@ -44,6 +54,7 @@ pub struct Environment {
 pub struct Model {
     pub workbook: Workbook,
     pub parsed_formulas: Vec<Vec<Node>>,
+    pub parsed_defined_names: HashMap<(Option<u32>, String), ParsedDefinedName>,
     pub parser: Parser,
     pub cells: HashMap<String, char>,
     pub locale: Locale,
@@ -428,13 +439,37 @@ impl Model {
                 // TODO: NOT IMPLEMENTED
                 CalcResult::new_error(Error::NIMPL, cell, "Arrays not implemented".to_string())
             }
-            VariableKind(_) => {
-                // TODO: NOT IMPLEMENTED
-                CalcResult::new_error(
-                    Error::NIMPL,
-                    cell,
-                    "Defined names not implemented".to_string(),
-                )
+            VariableKind(defined_name) => {
+                let parsed_defined_name = self
+                    .parsed_defined_names
+                    .get(&(Some(cell.sheet), defined_name.to_lowercase())) // try getting local defined name
+                    .or_else(|| {
+                        self.parsed_defined_names
+                            .get(&(None, defined_name.to_lowercase()))
+                    }); // fallback to global
+
+                if let Some(parsed_defined_name) = parsed_defined_name {
+                    match parsed_defined_name {
+                        ParsedDefinedName::CellReference(reference) => {
+                            self.evaluate_cell(*reference)
+                        }
+                        ParsedDefinedName::RangeReference(range) => CalcResult::Range {
+                            left: range.left,
+                            right: range.right,
+                        },
+                        ParsedDefinedName::InvalidDefinedNameFormula => CalcResult::new_error(
+                            Error::NIMPL,
+                            cell,
+                            format!("Defined name \"{}\" is not a reference.", defined_name),
+                        ),
+                    }
+                } else {
+                    CalcResult::new_error(
+                        Error::NAME,
+                        cell,
+                        format!("Defined name \"{}\" not found.", defined_name),
+                    )
+                }
             }
             CompareKind { kind, left, right } => {
                 let l = self.evaluate_node_in_context(left, cell);
@@ -799,6 +834,7 @@ impl Model {
         let mut model = Model {
             workbook,
             parsed_formulas,
+            parsed_defined_names: HashMap::new(),
             parser,
             cells,
             language,
@@ -806,7 +842,10 @@ impl Model {
             env,
             tz,
         };
+
         model.parse_formulas();
+        model.parse_defined_names();
+
         Ok(model)
     }
 
@@ -1708,7 +1747,7 @@ impl Model {
         self.workbook.get_worksheet_names()
     }
 
-    pub fn get_worksheet_ids(&self) -> Vec<i32> {
+    pub fn get_worksheet_ids(&self) -> Vec<u32> {
         self.workbook.get_worksheet_ids()
     }
 

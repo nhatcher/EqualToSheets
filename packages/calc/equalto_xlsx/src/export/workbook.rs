@@ -38,7 +38,7 @@ pub(crate) fn get_workbook_xml(workbook: &Workbook) -> String {
     // sheets
     // <sheet name="Sheet1" sheetId="1" r:id="rId1"/>
     let mut sheets_str: Vec<String> = vec![];
-    let mut sheet_id_to_sheet_index: HashMap<i32, i32> = HashMap::new();
+    let mut sheet_id_to_sheet_index: HashMap<u32, u32> = HashMap::new();
     for (sheet_index, worksheet) in workbook.worksheets.iter().enumerate() {
         let name = &worksheet.name;
         let name = escape_xml(name);
@@ -53,7 +53,7 @@ pub(crate) fn get_workbook_xml(workbook: &Workbook) -> String {
             "<sheet name=\"{name}\" sheetId=\"{sheet_id}\" r:id=\"rId{}\"{state_str}/>",
             sheet_index + 1
         ));
-        sheet_id_to_sheet_index.insert(sheet_id, sheet_index as i32);
+        sheet_id_to_sheet_index.insert(sheet_id, sheet_index as u32);
     }
 
     // defined names

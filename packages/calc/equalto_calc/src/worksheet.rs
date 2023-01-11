@@ -8,7 +8,7 @@ impl Worksheet {
         self.name.clone()
     }
 
-    pub fn get_sheet_id(&self) -> i32 {
+    pub fn get_sheet_id(&self) -> u32 {
         self.sheet_id
     }
 

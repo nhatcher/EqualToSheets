@@ -214,17 +214,18 @@ impl PyModel {
         sheet_index: i32,
         sheet_id: Option<i32>,
     ) -> PyResult<()> {
-        match self
-            .model
-            .insert_sheet(sheet_name, sheet_index.try_into().unwrap(), sheet_id)
-        {
+        match self.model.insert_sheet(
+            sheet_name,
+            sheet_index.try_into().unwrap(),
+            sheet_id.map(|sheet_id| sheet_id.try_into().unwrap()),
+        ) {
             Ok(()) => Ok(()),
             Err(message) => Err(PyValueError::new_err(message)),
         }
     }
 
     pub fn get_new_sheet_id(&self) -> i32 {
-        self.model.get_new_sheet_id()
+        self.model.get_new_sheet_id().try_into().unwrap()
     }
 
     pub fn swap_cells_in_row(
@@ -427,7 +428,12 @@ impl PyModel {
     }
 
     pub fn get_worksheet_ids(&self) -> PyResult<Vec<i32>> {
-        Ok(self.model.get_worksheet_ids())
+        Ok(self
+            .model
+            .get_worksheet_ids()
+            .iter()
+            .map(|&id| id.try_into().unwrap())
+            .collect())
     }
 
     pub fn add_sheet(&mut self, name: &str) -> PyResult<()> {
@@ -447,7 +453,7 @@ impl PyModel {
 
     pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: i32) -> PyResult<()> {
         self.model
-            .delete_sheet_by_sheet_id(sheet_id)
+            .delete_sheet_by_sheet_id(sheet_id.try_into().unwrap())
             .map_err(WorkbookError::new_err)
     }
 

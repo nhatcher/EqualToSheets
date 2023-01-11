@@ -29,7 +29,7 @@ use crate::types::ExcelArchive;
 #[derive(Serialize, Deserialize, Debug)]
 struct Sheet {
     name: String,
-    sheet_id: i32,
+    sheet_id: u32,
     id: String,
     state: SheetState,
 }
@@ -455,7 +455,7 @@ fn load_workbook(archive: &mut ExcelArchive) -> Result<WorkbookXML, XlsxError> {
     for sheet in sheet_nodes {
         let name = get_attribute(&sheet, "name")?.to_string();
         let sheet_id = get_attribute(&sheet, "sheetId")?.to_string();
-        let sheet_id = sheet_id.parse::<i32>()?;
+        let sheet_id = sheet_id.parse::<u32>()?;
         let id = get_attribute(
             &sheet,
             (
@@ -876,7 +876,7 @@ fn load_sheet(
     archive: &mut ExcelArchive,
     path: &str,
     sheet_name: &str,
-    sheet_id: i32,
+    sheet_id: u32,
     state: &SheetState,
     worksheets: &[String],
 ) -> Result<Worksheet, XlsxError> {

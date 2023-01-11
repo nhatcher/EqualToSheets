@@ -40,7 +40,7 @@ pub struct Tab {
     pub name: String,
     pub state: String,
     pub index: i32,
-    pub sheet_id: i32,
+    pub sheet_id: u32,
     #[serde(default = "Color::new")]
     #[serde(skip_serializing_if = "Color::is_none")]
     pub color: Color,
@@ -69,7 +69,7 @@ pub struct DefinedName {
     pub name: String,
     pub formula: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sheet_id: Option<i32>,
+    pub sheet_id: Option<u32>,
 }
 
 // TODO: Move to worksheet.rs make frozen_rows/columns private and u32
@@ -105,7 +105,7 @@ pub struct Worksheet {
     pub name: String,
     pub sheet_data: SheetData,
     pub shared_formulas: Vec<String>,
-    pub sheet_id: i32,
+    pub sheet_id: u32,
     pub state: SheetState,
     #[serde(default = "Color::new")]
     #[serde(skip_serializing_if = "Color::is_none")]

@@ -3,6 +3,7 @@ use chrono_tz::Tz;
 use std::collections::HashMap;
 
 use crate::{
+    calc_result::Range,
     expressions::{
         lexer::LexerMode,
         parser::stringify::{rename_sheet_in_node, to_rc_format},
@@ -11,8 +12,9 @@ use crate::{
     },
     language::get_language,
     locale::get_locale,
-    model::{Environment, Model},
+    model::{Environment, Model, ParsedDefinedName},
     types::{SheetState, Workbook, WorkbookSettings, Worksheet},
+    utils::ParsedReference,
 };
 
 /// You can use all alphanumeric characters but not the following special characters:
@@ -27,7 +29,7 @@ fn is_valid_sheet_name(name: &str) -> bool {
 
 impl Model {
     /// Creates a new worksheet. Note that it does not check if the name or the sheet_id exists
-    fn new_empty_worksheet(name: &str, sheet_id: i32) -> Worksheet {
+    fn new_empty_worksheet(name: &str, sheet_id: u32) -> Worksheet {
         Worksheet {
             cols: vec![],
             rows: vec![],
@@ -45,7 +47,7 @@ impl Model {
         }
     }
 
-    pub fn get_new_sheet_id(&self) -> i32 {
+    pub fn get_new_sheet_id(&self) -> u32 {
         let mut index = 1;
         let worksheets = &self.workbook.worksheets;
         for worksheet in worksheets {
@@ -53,6 +55,7 @@ impl Model {
         }
         index + 1
     }
+
     pub(crate) fn parse_formulas(&mut self) {
         self.parser.set_lexer_mode(LexerMode::R1C1);
         let worksheets = &self.workbook.worksheets;
@@ -73,11 +76,55 @@ impl Model {
         self.parser.set_lexer_mode(LexerMode::A1);
     }
 
-    // Reparses all formulas
-    fn reset_formulas(&mut self) {
+    pub(crate) fn parse_defined_names(&mut self) {
+        let mut parsed_defined_names = HashMap::new();
+        for defined_name in &self.workbook.defined_names {
+            let parsed_defined_name_formula = if let Ok(reference) =
+                ParsedReference::parse_reference_formula(
+                    None,
+                    &defined_name.formula,
+                    &self.locale,
+                    |name| self.get_sheet_index_by_name(name),
+                ) {
+                match reference {
+                    ParsedReference::CellReference(cell_reference) => {
+                        ParsedDefinedName::CellReference(cell_reference)
+                    }
+                    ParsedReference::Range(left, right) => {
+                        ParsedDefinedName::RangeReference(Range { left, right })
+                    }
+                }
+            } else {
+                ParsedDefinedName::InvalidDefinedNameFormula
+            };
+
+            let local_sheet_index = if let Some(sheet_id) = defined_name.sheet_id {
+                if let Some(sheet_index) = self.get_sheet_index_by_sheet_id(sheet_id) {
+                    Some(sheet_index)
+                } else {
+                    // TODO: Error: Sheet with given sheet_id not found.
+                    continue;
+                }
+            } else {
+                None
+            };
+
+            parsed_defined_names.insert(
+                (local_sheet_index, defined_name.name.to_lowercase()),
+                parsed_defined_name_formula,
+            );
+        }
+
+        self.parsed_defined_names = parsed_defined_names;
+    }
+
+    // Reparses all formulas and defined names
+    fn reset_parsed_structures(&mut self) {
         self.parser.set_worksheets(self.get_worksheet_names());
         self.parsed_formulas = vec![];
         self.parse_formulas();
+        self.parsed_defined_names = HashMap::new();
+        self.parse_defined_names();
         self.evaluate();
     }
 
@@ -102,7 +149,7 @@ impl Model {
         let sheet_id = self.get_new_sheet_id();
         let worksheet = Model::new_empty_worksheet(&sheet_name, sheet_id);
         self.workbook.worksheets.push(worksheet);
-        self.reset_formulas();
+        self.reset_parsed_structures();
     }
 
     /// Inserts a sheet with a particular index
@@ -112,7 +159,7 @@ impl Model {
         &mut self,
         sheet_name: &str,
         sheet_index: u32,
-        sheet_id: Option<i32>,
+        sheet_id: Option<u32>,
     ) -> Result<(), String> {
         if !is_valid_sheet_name(sheet_name) {
             return Err(format!("Invalid name for a sheet: '{}'", sheet_name));
@@ -136,7 +183,7 @@ impl Model {
         self.workbook
             .worksheets
             .insert(sheet_index as usize, worksheet);
-        self.reset_formulas();
+        self.reset_parsed_structures();
         Ok(())
     }
 
@@ -203,7 +250,7 @@ impl Model {
         // Update the name of the worksheet
         let worksheets = &mut self.workbook.worksheets;
         worksheets[sheet_index as usize].set_name(new_name);
-        self.reset_formulas();
+        self.reset_parsed_structures();
         Ok(())
     }
 
@@ -220,7 +267,7 @@ impl Model {
             return Err("Sheet index too large".to_string());
         }
         self.workbook.worksheets.remove(sheet_index as usize);
-        self.reset_formulas();
+        self.reset_parsed_structures();
         Ok(())
     }
 
@@ -238,7 +285,7 @@ impl Model {
     /// Deletes a sheet by sheet_id. Fails if:
     ///   * The sheet by sheet_id does not exists
     ///   * It is the last sheet
-    pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: i32) -> Result<(), String> {
+    pub fn delete_sheet_by_sheet_id(&mut self, sheet_id: u32) -> Result<(), String> {
         if let Some(sheet_index) = self.get_sheet_index_by_sheet_id(sheet_id) {
             self.delete_sheet(sheet_index)
         } else {
@@ -246,7 +293,7 @@ impl Model {
         }
     }
 
-    pub(crate) fn get_sheet_index_by_sheet_id(&self, sheet_id: i32) -> Option<u32> {
+    pub(crate) fn get_sheet_index_by_sheet_id(&self, sheet_id: u32) -> Option<u32> {
         let worksheets = &self.workbook.worksheets;
         for (index, worksheet) in worksheets.iter().enumerate() {
             if worksheet.sheet_id == sheet_id {
@@ -294,6 +341,7 @@ impl Model {
         let mut model = Model {
             workbook,
             parsed_formulas,
+            parsed_defined_names: HashMap::new(),
             parser,
             cells,
             locale,

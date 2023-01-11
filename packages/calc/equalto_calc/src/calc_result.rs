@@ -2,14 +2,14 @@ use std::cmp::Ordering;
 
 use crate::expressions::token::Error;
 
-#[derive(Clone, PartialEq, Eq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct CellReference {
     pub sheet: u32,
     pub column: i32,
     pub row: i32,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Range {
     pub left: CellReference,
     pub right: CellReference,
