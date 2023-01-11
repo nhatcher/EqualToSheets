@@ -1,11 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::model::{
-    ExcelValue::{self, Number},
-    ExcelValueOrRange,
-};
+use crate::model::ExcelValue::{self};
 use serde_json::json;
-use std::collections::HashMap;
 
 use crate::{
     cell::{UICell, UIValue},
@@ -32,122 +28,6 @@ fn test_model_simple_evaluation() {
     assert_eq!(result, *"4");
     let result = model.get_formula_or_value(0, 1, 1);
     assert_eq!(result, *"=1+3");
-}
-
-#[test]
-fn test_model_simple_evaluation_with_input() {
-    let mut model = new_empty_model();
-    let names = model.get_worksheet_names();
-    assert_eq!(names.len(), 1);
-    assert_eq!(names[0], "Sheet1");
-
-    // Inputs
-    model._set("A1", "21");
-    model._set("A2", "2");
-
-    // Formula
-    model._set("B1", "=A1*A2");
-    model.evaluate();
-
-    let output_refs = vec!["Sheet1!A1", "Sheet1!A2", "Sheet1!B1", "Sheet1!A1:B2"];
-
-    let input = json!({}).to_string();
-    let output = model.evaluate_with_input(&input, &output_refs);
-
-    let range = vec![
-        vec![Number(21.0), Number(42.0)],
-        vec![Number(2.0), ExcelValue::String("".to_string())],
-    ];
-
-    let expected_output = HashMap::from([
-        (
-            "Sheet1!A1".to_string(),
-            ExcelValueOrRange::Value(Number(21.0)),
-        ),
-        (
-            "Sheet1!A2".to_string(),
-            ExcelValueOrRange::Value(Number(2.0)),
-        ),
-        (
-            "Sheet1!B1".to_string(),
-            ExcelValueOrRange::Value(Number(42.0)),
-        ),
-        ("Sheet1!A1:B2".to_string(), ExcelValueOrRange::Range(range)),
-    ]);
-    assert_eq!(output.unwrap(), expected_output);
-
-    // A1 -> 100, A2 -> 5
-    let input = json!({
-        "0": {
-            "1": {
-                "1": 100
-            },
-            "2": {
-                "1": 5
-            }
-        }
-    })
-    .to_string();
-    let output = model.evaluate_with_input(&input, &output_refs);
-
-    let range = vec![
-        vec![Number(100.0), Number(500.0)],
-        vec![Number(5.0), ExcelValue::String("".to_string())],
-    ];
-    let expected_output = HashMap::from([
-        (
-            "Sheet1!A1".to_string(),
-            ExcelValueOrRange::Value(Number(100.0)),
-        ),
-        (
-            "Sheet1!A2".to_string(),
-            ExcelValueOrRange::Value(Number(5.0)),
-        ),
-        (
-            "Sheet1!B1".to_string(),
-            ExcelValueOrRange::Value(Number(500.0)),
-        ),
-        ("Sheet1!A1:B2".to_string(), ExcelValueOrRange::Range(range)),
-    ]);
-    assert_eq!(output.unwrap(), expected_output);
-
-    // A1 -> 1, B1 -> 3
-    let input = json!({
-        "0" :{
-            "1": {
-                "1": 1,
-                "2": 3
-            }
-        }
-    })
-    .to_string();
-    let output = model.evaluate_with_input(&input, &output_refs);
-
-    let range = vec![
-        vec![Number(1.0), Number(3.0)],
-        vec![Number(2.0), ExcelValue::String("".to_string())],
-    ];
-    let expected_output = HashMap::from([
-        (
-            "Sheet1!A1".to_string(),
-            ExcelValueOrRange::Value(Number(1.0)),
-        ),
-        (
-            "Sheet1!A2".to_string(),
-            ExcelValueOrRange::Value(Number(2.0)),
-        ),
-        (
-            "Sheet1!B1".to_string(),
-            ExcelValueOrRange::Value(Number(3.0)),
-        ),
-        ("Sheet1!A1:B2".to_string(), ExcelValueOrRange::Range(range)),
-    ]);
-    assert_eq!(output.unwrap(), expected_output);
-
-    // Confirm that the model is not updated
-    assert_eq!(model.get_formula_or_value(0, 1, 1), *"21");
-    assert_eq!(model.get_formula_or_value(0, 2, 1), *"2");
-    assert_eq!(model.get_formula_or_value(0, 1, 2), *"=A1*A2");
 }
 
 #[test]

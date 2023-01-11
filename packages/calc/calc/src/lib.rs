@@ -219,18 +219,6 @@ impl JSModel {
         }
     }
 
-    pub fn get_range_data(&self, range: &str) -> String {
-        match self.model.get_range_data(range) {
-            Ok(result) => {
-                if let Ok(result_str) = serde_json::to_string(&result) {
-                    return json!({"success": true, "value": result_str}).to_string();
-                }
-                json!({"success": false, "message": "Failed processing data"}).to_string()
-            }
-            Err(s) => json!({"success": false, "message": s}).to_string(),
-        }
-    }
-
     pub fn format_number(&self, value: f64, format_code: String) -> String {
         self.model.format_number(value, format_code).text
     }

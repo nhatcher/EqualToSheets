@@ -126,25 +126,6 @@ impl PyModel {
         self.model.evaluate()
     }
 
-    pub fn evaluate_with_input(
-        &mut self,
-        input_json: &str,
-        output_refs: Vec<String>,
-    ) -> PyResult<String> {
-        let output: Vec<&str> = output_refs.iter().map(AsRef::as_ref).collect();
-        match self.model.evaluate_with_input(input_json, &output) {
-            Ok(o) => Ok(serde_json::to_string(&o).unwrap()),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
-    }
-
-    pub fn get_range_formatted_data(&self, range: &str) -> PyResult<String> {
-        match self.model.get_range_formatted_data(range) {
-            Ok(o) => Ok(serde_json::to_string(&o).unwrap()),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
-    }
-
     pub fn get_column_width(&self, sheet: i32, column: i32) -> PyResult<f64> {
         Ok(self
             .model

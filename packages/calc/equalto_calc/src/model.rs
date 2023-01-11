@@ -13,19 +13,15 @@ use crate::{
         stringify::{to_rc_format, to_string, to_string_displaced, DisplaceData},
         Node, Parser,
     },
+    expressions::token::{Error, OpCompare, OpProduct, OpSum, OpUnary},
     expressions::{
-        lexer::Lexer,
         parser::move_formula::{move_formula, MoveContext},
-        token::{self, get_error_by_name},
+        token::get_error_by_name,
         types::*,
         utils::{self, is_valid_row},
     },
-    expressions::{
-        lexer::LexerMode,
-        token::{Error, OpCompare, OpProduct, OpSum, OpUnary},
-    },
     formatter,
-    formatter::format::{format_number, Formatted},
+    formatter::format::Formatted,
     functions::util::compare_values,
     implicit_intersection::implicit_intersection,
     language::{get_language, Language},
@@ -1075,87 +1071,6 @@ impl Model {
         };
     }
 
-    /// Used by the dashboard project
-    pub fn get_range_data(&self, range: &str) -> Result<Vec<Vec<ExcelValue>>, String> {
-        let mut lx = Lexer::new(
-            range,
-            LexerMode::A1,
-            &self.locale,
-            get_language("en").expect(""),
-        );
-        match lx.next_token() {
-            token::TokenType::RANGE { sheet, left, right } => {
-                if lx.next_token() != token::TokenType::EOF {
-                    return Err("Invalid range".to_string());
-                }
-                if let Some(sheet_name) = sheet {
-                    if let Some(sheet_index) = self.get_sheet_index_by_name(&sheet_name) {
-                        let mut data = Vec::new();
-                        for row in left.row..=right.row {
-                            let mut row_data = Vec::new();
-                            for column in left.column..=right.column {
-                                let excel_value =
-                                    self.get_cell_value_by_index(sheet_index, row, column);
-                                row_data.push(excel_value);
-                            }
-                            data.push(row_data);
-                        }
-
-                        return Ok(data);
-                    }
-                    return Err("Invalid sheet name".to_string());
-                };
-                Err("Expected sheet name".to_string())
-            }
-            _ => Err("Invalid range".to_string()),
-        }
-    }
-
-    pub fn get_range_formatted_data(&self, range: &str) -> Result<Vec<Vec<String>>, String> {
-        let mut lx = Lexer::new(
-            range,
-            LexerMode::A1,
-            &self.locale,
-            get_language("en").expect(""),
-        );
-        match lx.next_token() {
-            token::TokenType::RANGE { sheet, left, right } => {
-                if lx.next_token() != token::TokenType::EOF {
-                    return Err("Invalid range".to_string());
-                }
-                if let Some(sheet_name) = sheet {
-                    if let Some(sheet_index) = self.get_sheet_index_by_name(&sheet_name) {
-                        let mut data = Vec::new();
-                        for row in left.row..=right.row {
-                            let mut row_data = Vec::new();
-                            for column in left.column..=right.column {
-                                let excel_value =
-                                    self.get_cell_value_by_index(sheet_index, row, column);
-
-                                let value = match excel_value {
-                                    ExcelValue::String(s) => s,
-                                    ExcelValue::Number(number) => {
-                                        let style =
-                                            self.get_style_for_cell(sheet_index, row, column);
-                                        format_number(number, &style.num_fmt, &self.locale).text
-                                    }
-                                    ExcelValue::Boolean(b) => format!("{}", b).to_uppercase(),
-                                };
-                                row_data.push(value);
-                            }
-                            data.push(row_data);
-                        }
-
-                        return Ok(data);
-                    }
-                    return Err("Invalid sheet name".to_string());
-                };
-                Err("Expected sheet name".to_string())
-            }
-            _ => Err("Invalid range".to_string()),
-        }
-    }
-
     pub fn format_number(&self, value: f64, format_code: String) -> Formatted {
         formatter::format::format_number(value, &format_code, &self.locale)
     }
@@ -1587,43 +1502,6 @@ impl Model {
                 column: cell.column,
             });
         }
-    }
-
-    /// Uses the present state of the model to evaluate the input without changing it's state
-    pub fn evaluate_with_input(
-        &mut self,
-        input_json: &str,
-        output_refs: &[&str],
-    ) -> Result<HashMap<String, ExcelValueOrRange>, String> {
-        let input_data: InputData = match serde_json::from_str(input_json) {
-            Ok(v) => v,
-            Err(_) => return Err("Cannot parse input".to_string()),
-        };
-
-        let mut model = self.clone();
-
-        model
-            .set_cells_with_parsed_references(&input_data)
-            .expect("Could not set input cells");
-        model.evaluate();
-
-        let mut output: HashMap<String, ExcelValueOrRange> = HashMap::new();
-        for output_ref in output_refs {
-            match model.get_cell_value_by_ref(output_ref) {
-                Ok(value) => {
-                    output.insert(output_ref.to_string(), ExcelValueOrRange::Value(value));
-                }
-                Err(message) => {
-                    if let Ok(result) = model.get_range_data(output_ref) {
-                        output.insert(output_ref.to_string(), ExcelValueOrRange::Range(result));
-                    } else {
-                        return Err(message);
-                    }
-                }
-            }
-        }
-
-        Ok(output)
     }
 
     /// Return the width of a column in pixels
