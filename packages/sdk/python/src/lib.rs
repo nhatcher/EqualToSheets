@@ -57,23 +57,6 @@ impl PyModel {
         Ok(self.model.format_number(value, format_code).text)
     }
 
-    pub fn extend_to(
-        &self,
-        sheet: i32,
-        row: i32,
-        column: i32,
-        target_row: i32,
-        target_column: i32,
-    ) -> PyResult<String> {
-        Ok(self.model.extend_to(
-            sheet.try_into().unwrap(),
-            row,
-            column,
-            target_row,
-            target_column,
-        ))
-    }
-
     pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<bool> {
         Ok(self
             .model
@@ -519,7 +502,12 @@ impl PyModel {
     }
 
     pub fn get_style_index_by_name(&self, style_name: &str) -> PyResult<i32> {
-        match self.model.get_style_index_by_name(style_name) {
+        match self
+            .model
+            .workbook
+            .styles
+            .get_style_index_by_name(style_name)
+        {
             Ok(i) => Ok(i),
             Err(_) => Ok(-1),
         }

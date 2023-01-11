@@ -1,14 +1,14 @@
 use crate::{
-    constants,
     model::{Model, Style},
     number_format::{get_default_num_fmt_id, get_new_num_fmt_index, get_num_fmt},
-    types::{Border, CellStyles, CellXfs, Col, Fill, Font, NumFmt, Row},
+    types::{Border, CellStyles, CellXfs, Fill, Font, NumFmt, Styles},
 };
 
-impl Model {
+// TODO: Move Styles and all related types from crate::types here
+// Not doing it right now to not have conflicts with exporter branch
+impl Styles {
     fn get_font_index(&self, font: &Font) -> Option<i32> {
-        let fonts = &self.workbook.styles.fonts;
-        for (font_index, item) in fonts.iter().enumerate() {
+        for (font_index, item) in self.fonts.iter().enumerate() {
             if item == font {
                 return Some(font_index as i32);
             }
@@ -16,8 +16,7 @@ impl Model {
         None
     }
     fn get_fill_index(&self, fill: &Fill) -> Option<i32> {
-        let fills = &self.workbook.styles.fills;
-        for (fill_index, item) in fills.iter().enumerate() {
+        for (fill_index, item) in self.fills.iter().enumerate() {
             if item == fill {
                 return Some(fill_index as i32);
             }
@@ -25,8 +24,7 @@ impl Model {
         None
     }
     fn get_border_index(&self, border: &Border) -> Option<i32> {
-        let borders = &self.workbook.styles.borders;
-        for (border_index, item) in borders.iter().enumerate() {
+        for (border_index, item) in self.borders.iter().enumerate() {
             if item == border {
                 return Some(border_index as i32);
             }
@@ -37,8 +35,7 @@ impl Model {
         if let Some(index) = get_default_num_fmt_id(format_code) {
             return Some(index);
         }
-        let num_fmts = &self.workbook.styles.num_fmts;
-        for item in num_fmts.iter() {
+        for item in self.num_fmts.iter() {
             if item.format_code == format_code {
                 return Some(item.num_fmt_id);
             }
@@ -51,37 +48,35 @@ impl Model {
         let font_id = if let Some(index) = self.get_font_index(font) {
             index
         } else {
-            self.workbook.styles.fonts.push(font.clone());
-            self.workbook.styles.fonts.len() as i32 - 1
+            self.fonts.push(font.clone());
+            self.fonts.len() as i32 - 1
         };
         let fill = &style.fill;
         let fill_id = if let Some(index) = self.get_fill_index(fill) {
             index
         } else {
-            self.workbook.styles.fills.push(fill.clone());
-            self.workbook.styles.fills.len() as i32 - 1
+            self.fills.push(fill.clone());
+            self.fills.len() as i32 - 1
         };
         let border = &style.border;
         let border_id = if let Some(index) = self.get_border_index(border) {
             index
         } else {
-            self.workbook.styles.borders.push(border.clone());
-            self.workbook.styles.borders.len() as i32 - 1
+            self.borders.push(border.clone());
+            self.borders.len() as i32 - 1
         };
         let num_fmt = &style.num_fmt;
         let num_fmt_id;
         if let Some(index) = self.get_num_fmt_index(num_fmt) {
             num_fmt_id = index;
         } else {
-            num_fmt_id = get_new_num_fmt_index(&self.workbook.styles.num_fmts);
-            self.workbook.styles.num_fmts.push(NumFmt {
+            num_fmt_id = get_new_num_fmt_index(&self.num_fmts);
+            self.num_fmts.push(NumFmt {
                 format_code: num_fmt.to_string(),
                 num_fmt_id,
             });
         }
-        let styles = &mut self.workbook.styles;
-
-        styles.cell_xfs.push(CellXfs {
+        self.cell_xfs.push(CellXfs {
             xf_id: 0,
             num_fmt_id,
             font_id,
@@ -96,13 +91,11 @@ impl Model {
             apply_fill: false,
             quote_prefix: style.quote_prefix,
         });
-
-        styles.cell_xfs.len() as i32 - 1
+        self.cell_xfs.len() as i32 - 1
     }
 
     pub fn get_style_index(&self, style: &Style) -> Option<i32> {
-        let styles = &self.workbook.styles;
-        for (index, cell_xf) in styles.cell_xfs.iter().enumerate() {
+        for (index, cell_xf) in self.cell_xfs.iter().enumerate() {
             let border_id = cell_xf.border_id as usize;
             let fill_id = cell_xf.fill_id as usize;
             let font_id = cell_xf.font_id as usize;
@@ -112,10 +105,10 @@ impl Model {
             if style
                 == &(Style {
                     horizontal_alignment,
-                    num_fmt: get_num_fmt(num_fmt_id, &styles.num_fmts),
-                    fill: styles.fills[fill_id].clone(),
-                    font: styles.fonts[font_id].clone(),
-                    border: styles.borders[border_id].clone(),
+                    num_fmt: get_num_fmt(num_fmt_id, &self.num_fmts),
+                    fill: self.fills[fill_id].clone(),
+                    font: self.fonts[font_id].clone(),
+                    border: self.borders[border_id].clone(),
                     quote_prefix,
                 })
             {
@@ -125,171 +118,13 @@ impl Model {
         None
     }
 
-    pub fn set_cell_style(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        style: &Style,
-    ) -> Result<(), String> {
+    pub(crate) fn get_style_index_or_create(&mut self, style: &Style) -> i32 {
         // Check if style exist. If so sets style cell number to that otherwise create a new style.
-        let style_index = if let Some(index) = self.get_style_index(style) {
+        if let Some(index) = self.get_style_index(style) {
             index
         } else {
             self.create_new_style(style)
-        };
-
-        match self.get_cell_mut(sheet, row, column) {
-            Some(cell) => {
-                cell.set_style(style_index);
-            }
-            None => {
-                // The cell does not exist
-                self.workbook.worksheets[sheet as usize].set_cell_empty_with_style(
-                    row,
-                    column,
-                    style_index,
-                );
-            }
-        };
-        Ok(())
-
-        // Cleanup: check if the old cell style is still in use
-        // TODO
-    }
-
-    /// Sets the style "style_name" in cell
-    pub fn set_cell_style_by_name(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        style_name: &str,
-    ) -> Result<(), String> {
-        let style_index = self.get_style_index_by_name(style_name)?;
-        match self.get_cell_mut(sheet, row, column) {
-            Some(cell) => {
-                cell.set_style(style_index);
-            }
-            None => {
-                // The cell does not exist
-                self.workbook.worksheets[sheet as usize].set_cell_empty_with_style(
-                    row,
-                    column,
-                    style_index,
-                );
-            }
         }
-        Ok(())
-    }
-
-    pub fn set_sheet_style(&mut self, sheet: u32, style_name: &str) -> Result<(), String> {
-        let style_index = self.get_style_index_by_name(style_name)?;
-        self.workbook.worksheets[sheet as usize].cols = vec![Col {
-            min: 1,
-            max: constants::LAST_COLUMN,
-            width: constants::DEFAULT_COLUMN_WIDTH / constants::COLUMN_WIDTH_FACTOR,
-            custom_width: true,
-            style: Some(style_index),
-        }];
-        Ok(())
-    }
-
-    pub fn set_sheet_row_style(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        style_name: &str,
-    ) -> Result<(), String> {
-        let style_index = self.get_style_index_by_name(style_name)?;
-        let rows = &mut self.workbook.worksheets[sheet as usize].rows;
-        for r in rows.iter_mut() {
-            if r.r == row {
-                r.s = style_index;
-                r.custom_format = true;
-                return Ok(());
-            }
-        }
-        rows.push(Row {
-            height: constants::DEFAULT_ROW_HEIGHT / constants::ROW_HEIGHT_FACTOR,
-            r: row,
-            custom_format: true,
-            custom_height: true,
-            s: style_index,
-        });
-        Ok(())
-    }
-
-    pub fn set_sheet_column_style(
-        &mut self,
-        sheet: u32,
-        column: i32,
-        style_name: &str,
-    ) -> Result<(), String> {
-        let style_index = self.get_style_index_by_name(style_name)?;
-        let worksheet = match self.workbook.worksheets.get_mut(sheet as usize) {
-            Some(s) => s,
-            None => return Err("Wrong sheet index".to_string()),
-        };
-        let cols = &mut worksheet.cols;
-        let col = Col {
-            min: column,
-            max: column,
-            width: constants::DEFAULT_COLUMN_WIDTH / constants::COLUMN_WIDTH_FACTOR,
-            custom_width: true,
-            style: Some(style_index),
-        };
-        let mut index = 0;
-        let mut split = false;
-        for c in cols.iter_mut() {
-            let min = c.min;
-            let max = c.max;
-            if min <= column && column <= max {
-                if min == column && max == column {
-                    c.style = Some(style_index);
-                    return Ok(());
-                } else {
-                    // We need to split the result
-                    split = true;
-                    break;
-                }
-            }
-            if column < min {
-                // We passed, we should insert at index
-                break;
-            }
-            index += 1;
-        }
-        if split {
-            let min = cols[index].min;
-            let max = cols[index].max;
-            let pre = Col {
-                min,
-                max: column - 1,
-                width: cols[index].width,
-                custom_width: cols[index].custom_width,
-                style: cols[index].style,
-            };
-            let post = Col {
-                min: column + 1,
-                max,
-                width: cols[index].width,
-                custom_width: cols[index].custom_width,
-                style: cols[index].style,
-            };
-            let index = index as usize;
-            cols.remove(index);
-            if column != max {
-                cols.insert(index, post);
-            }
-            cols.insert(index, col);
-            if column != min {
-                cols.insert(index, pre);
-            }
-        } else {
-            cols.insert(index, col);
-        }
-        Ok(())
     }
 
     /// Adds a named cell style from an existing index
@@ -302,7 +137,7 @@ impl Model {
         if self.get_style_index_by_name(style_name).is_ok() {
             return Err("A style with that name already exists".to_string());
         }
-        if self.workbook.styles.cell_xfs.len() < style_index as usize {
+        if self.cell_xfs.len() < style_index as usize {
             return Err("There is no style with that index".to_string());
         }
         let cell_style = CellStyles {
@@ -310,14 +145,14 @@ impl Model {
             xf_id: style_index,
             builtin_id: 0,
         };
-        self.workbook.styles.cell_styles.push(cell_style);
+        self.cell_styles.push(cell_style);
         Ok(())
     }
 
     // Returns the index of the style or fails.
     // NB: this method is case sensitive
     pub fn get_style_index_by_name(&self, style_name: &str) -> Result<i32, String> {
-        for cell_style in &self.workbook.styles.cell_styles {
+        for cell_style in &self.cell_styles {
             if cell_style.name == style_name {
                 return Ok(cell_style.xf_id);
             }
@@ -328,6 +163,107 @@ impl Model {
     pub fn create_named_style(&mut self, style_name: &str, style: &Style) -> Result<(), String> {
         let style_index = self.create_new_style(style);
         self.add_named_cell_style(style_name, style_index)?;
+        Ok(())
+    }
+
+    pub(crate) fn get_style_with_quote_prefix(&mut self, index: i32) -> i32 {
+        let mut style = self.get_style(index);
+        style.quote_prefix = true;
+        self.get_style_index_or_create(&style)
+    }
+
+    pub(crate) fn get_style_without_quote_prefix(&mut self, index: i32) -> i32 {
+        let mut style = self.get_style(index);
+        style.quote_prefix = false;
+        self.get_style_index_or_create(&style)
+    }
+
+    pub(crate) fn style_is_quote_prefix(&self, index: i32) -> bool {
+        let cell_xf = &self.cell_xfs[index as usize];
+        cell_xf.quote_prefix
+    }
+
+    pub(crate) fn get_style(&self, index: i32) -> Style {
+        let cell_xf = &self.cell_xfs[index as usize];
+
+        let border_id = cell_xf.border_id as usize;
+        let fill_id = cell_xf.fill_id as usize;
+        let font_id = cell_xf.font_id as usize;
+        let num_fmt_id = cell_xf.num_fmt_id;
+        let quote_prefix = cell_xf.quote_prefix;
+        let horizontal_alignment = cell_xf.horizontal_alignment.clone();
+
+        Style {
+            horizontal_alignment,
+            num_fmt: get_num_fmt(num_fmt_id, &self.num_fmts),
+            fill: self.fills[fill_id].clone(),
+            font: self.fonts[font_id].clone(),
+            border: self.borders[border_id].clone(),
+            quote_prefix,
+        }
+    }
+}
+
+// TODO: Try to find a better spot for styles setters
+impl Model {
+    pub fn set_cell_style(
+        &mut self,
+        sheet: u32,
+        row: i32,
+        column: i32,
+        style: &Style,
+    ) -> Result<(), String> {
+        let style_index = self.workbook.styles.get_style_index_or_create(style);
+        self.workbook
+            .worksheet_mut(sheet)?
+            .set_cell_style(row, column, style_index);
+        Ok(())
+    }
+
+    /// Sets the style "style_name" in cell
+    pub fn set_cell_style_by_name(
+        &mut self,
+        sheet: u32,
+        row: i32,
+        column: i32,
+        style_name: &str,
+    ) -> Result<(), String> {
+        let style_index = self.workbook.styles.get_style_index_by_name(style_name)?;
+        self.workbook
+            .worksheet_mut(sheet)?
+            .set_cell_style(row, column, style_index);
+        Ok(())
+    }
+
+    pub fn set_sheet_style(&mut self, sheet: u32, style_name: &str) -> Result<(), String> {
+        let style_index = self.workbook.styles.get_style_index_by_name(style_name)?;
+        self.workbook.worksheet_mut(sheet)?.set_style(style_index)?;
+        Ok(())
+    }
+
+    pub fn set_sheet_row_style(
+        &mut self,
+        sheet: u32,
+        row: i32,
+        style_name: &str,
+    ) -> Result<(), String> {
+        let style_index = self.workbook.styles.get_style_index_by_name(style_name)?;
+        self.workbook
+            .worksheet_mut(sheet)?
+            .set_row_style(row, style_index)?;
+        Ok(())
+    }
+
+    pub fn set_sheet_column_style(
+        &mut self,
+        sheet: u32,
+        column: i32,
+        style_name: &str,
+    ) -> Result<(), String> {
+        let style_index = self.workbook.styles.get_style_index_by_name(style_name)?;
+        self.workbook
+            .worksheet_mut(sheet)?
+            .set_column_style(column, style_index)?;
         Ok(())
     }
 }

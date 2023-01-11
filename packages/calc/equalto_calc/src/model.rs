@@ -26,7 +26,6 @@ use crate::{
     implicit_intersection::implicit_intersection,
     language::{get_language, Language},
     locale::{get_locale, Locale},
-    number_format::get_num_fmt,
     types::*,
     utils as common,
 };
@@ -696,23 +695,6 @@ impl Model {
         }
     }
 
-    pub fn get_cell(&self, sheet: u32, row: i32, column: i32) -> Result<Option<&Cell>, String> {
-        let worksheet = self.workbook.worksheet(sheet)?;
-        let sheet_data = &worksheet.sheet_data;
-
-        if let Some(data_row) = sheet_data.get(&row) {
-            Ok(data_row.get(&column))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub(crate) fn get_cell_mut(&mut self, sheet: u32, row: i32, column: i32) -> Option<&mut Cell> {
-        let worksheet = self.workbook.worksheets.get_mut(sheet as usize)?;
-        let data_row = worksheet.sheet_data.get_mut(&row)?;
-        data_row.get_mut(&column)
-    }
-
     /// Returns true if cell is completely empty.
     /// Cell with formula that evaluates to empty string is not considered empty.
     pub fn is_empty_cell(&self, sheet: u32, row: i32, column: i32) -> Result<bool, String> {
@@ -937,8 +919,9 @@ impl Model {
         column: i32,
         target_row: i32,
         target_column: i32,
-    ) -> String {
-        match self.get_cell(sheet, row, column).expect("Cell expected") {
+    ) -> Result<String, String> {
+        let cell = self.workbook.worksheet(sheet)?.cell(row, column);
+        let result = match cell {
             Some(cell) => match cell.get_formula() {
                 None => cell.get_text(&self.workbook.shared_strings, &self.language),
                 Some(i) => {
@@ -952,7 +935,8 @@ impl Model {
                 }
             },
             None => "".to_string(),
-        }
+        };
+        Ok(result)
     }
 
     /// 'Extends' value from cell [sheet, row, column] to [target_row, target_column]
@@ -991,9 +975,15 @@ impl Model {
         Ok(value.to_string())
     }
 
+    // FIXME: expect
     /// Returns a formula if the cell has one or the value of the cell
     pub fn get_formula_or_value(&self, sheet: u32, row: i32, column: i32) -> String {
-        match self.get_cell(sheet, row, column).expect("Cell expected") {
+        let cell = self
+            .workbook
+            .worksheet(sheet)
+            .expect("Invalid sheet")
+            .cell(row, column);
+        match cell {
             Some(cell) => match cell.get_formula() {
                 None => cell.get_text(&self.workbook.shared_strings, &self.language),
                 Some(i) => {
@@ -1010,32 +1000,50 @@ impl Model {
         }
     }
 
+    // FIXME: expect
     /// Checks if cell has formula
     pub fn has_formula(&self, sheet: u32, row: i32, column: i32) -> bool {
-        match self.get_cell(sheet, row, column).expect("Cell expected") {
+        let cell = self
+            .workbook
+            .worksheet(sheet)
+            .expect("Invalid sheet")
+            .cell(row, column);
+        match cell {
             Some(cell) => cell.get_formula().is_some(),
             None => false,
         }
     }
 
+    // FIXME: expect
     /// Returns a text representation of the value of the cell
     pub fn get_text_at(&self, sheet: u32, row: i32, column: i32) -> String {
-        match self.get_cell(sheet, row, column).expect("Cell expected") {
+        let cell = self
+            .workbook
+            .worksheet(sheet)
+            .expect("Invalid sheet")
+            .cell(row, column);
+        match cell {
             Some(cell) => cell.get_text(&self.workbook.shared_strings, &self.language),
             None => "".to_string(),
         }
     }
 
+    // FIXME: expect
     /// Returns the information needed to display a cell in the UI
     pub fn get_ui_cell(&self, sheet: u32, row: i32, column: i32) -> UICell {
-        return match self.get_cell(sheet, row, column).expect("Cell expected") {
+        let cell = self
+            .workbook
+            .worksheet(sheet)
+            .expect("Invalid sheet")
+            .cell(row, column);
+        match cell {
             Some(cell) => cell.get_ui_cell(&self.workbook.shared_strings, &self.language),
             None => UICell {
                 kind: "empty".to_string(),
                 value: UIValue::Text("".to_string()),
                 details: "".to_string(),
             },
-        };
+        }
     }
 
     pub fn format_number(&self, value: f64, format_code: String) -> Formatted {
@@ -1119,9 +1127,15 @@ impl Model {
         let style_index = self.get_cell_style_index(sheet, row, column);
         let new_style_index;
         if common::value_needs_quoting(value, &self.language) {
-            new_style_index = self.get_style_with_quote_prefix(style_index);
-        } else if self.style_is_quote_prefix(style_index) {
-            new_style_index = self.get_style_without_quote_prefix(style_index);
+            new_style_index = self
+                .workbook
+                .styles
+                .get_style_with_quote_prefix(style_index);
+        } else if self.workbook.styles.style_is_quote_prefix(style_index) {
+            new_style_index = self
+                .workbook
+                .styles
+                .get_style_without_quote_prefix(style_index);
         } else {
             new_style_index = style_index;
         }
@@ -1132,8 +1146,10 @@ impl Model {
     /// It does not change the style
     pub fn update_cell_with_bool(&mut self, sheet: u32, row: i32, column: i32, value: bool) {
         let style_index = self.get_cell_style_index(sheet, row, column);
-        let new_style_index = if self.style_is_quote_prefix(style_index) {
-            self.get_style_without_quote_prefix(style_index)
+        let new_style_index = if self.workbook.styles.style_is_quote_prefix(style_index) {
+            self.workbook
+                .styles
+                .get_style_without_quote_prefix(style_index)
         } else {
             style_index
         };
@@ -1145,8 +1161,10 @@ impl Model {
     /// It does not change the style
     pub fn update_cell_with_number(&mut self, sheet: u32, row: i32, column: i32, value: f64) {
         let style_index = self.get_cell_style_index(sheet, row, column);
-        let new_style_index = if self.style_is_quote_prefix(style_index) {
-            self.get_style_without_quote_prefix(style_index)
+        let new_style_index = if self.workbook.styles.style_is_quote_prefix(style_index) {
+            self.workbook
+                .styles
+                .get_style_without_quote_prefix(style_index)
         } else {
             style_index
         };
@@ -1171,15 +1189,20 @@ impl Model {
         if let Some(new_value) = value.strip_prefix('\'') {
             // First check if it needs quoting
             let new_style = if common::value_needs_quoting(new_value, &self.language) {
-                self.get_style_with_quote_prefix(style_index)
+                self.workbook
+                    .styles
+                    .get_style_with_quote_prefix(style_index)
             } else {
                 style_index
             };
             self.set_cell_with_string(sheet, row, column, new_value, new_style);
         } else {
             let mut new_style_index = style_index;
-            if self.style_is_quote_prefix(style_index) {
-                new_style_index = self.get_style_without_quote_prefix(style_index);
+            if self.workbook.styles.style_is_quote_prefix(style_index) {
+                new_style_index = self
+                    .workbook
+                    .styles
+                    .get_style_without_quote_prefix(style_index);
             }
             let worksheets = &mut self.workbook.worksheets;
             let worksheet = &mut worksheets[sheet as usize];
@@ -1444,9 +1467,15 @@ impl Model {
         (min_row, min_column, max_row, max_column)
     }
 
+    // FIXME: expect
     /// Returns the Cell. Used in tests
     pub fn get_cell_at(&self, sheet: u32, row: i32, column: i32) -> Cell {
-        match self.get_cell(sheet, row, column).expect("Cell expected") {
+        let cell = self
+            .workbook
+            .worksheet(sheet)
+            .expect("Invalid sheet")
+            .cell(row, column);
+        match cell {
             Some(cell) => cell.clone(),
             None => Cell::EmptyCell {
                 t: "empty".to_string(),
@@ -1634,9 +1663,15 @@ impl Model {
         }
     }
 
+    // FIXME: expect
     pub fn get_cell_style_index(&self, sheet: u32, row: i32, column: i32) -> i32 {
         // First check the cell, then row, the column
-        match self.get_cell(sheet, row, column).expect("Cell expected") {
+        let cell = self
+            .workbook
+            .worksheet(sheet)
+            .expect("Invalid sheet")
+            .cell(row, column);
+        match cell {
             Some(cell) => cell.get_style() as i32,
             None => {
                 let rows = &self.workbook.worksheets[sheet as usize].rows;
@@ -1663,56 +1698,9 @@ impl Model {
     }
 
     pub fn get_style_for_cell(&self, sheet: u32, row: i32, column: i32) -> Style {
-        self.get_style(self.get_cell_style_index(sheet, row, column))
-    }
-
-    fn style_is_quote_prefix(&self, index: i32) -> bool {
-        let styles = &self.workbook.styles;
-        let cell_xf = &styles.cell_xfs[index as usize];
-        cell_xf.quote_prefix
-    }
-
-    fn get_style(&self, index: i32) -> Style {
-        let styles = &self.workbook.styles;
-        let cell_xf = &styles.cell_xfs[index as usize];
-
-        let border_id = cell_xf.border_id as usize;
-        let fill_id = cell_xf.fill_id as usize;
-        let font_id = cell_xf.font_id as usize;
-        let num_fmt_id = cell_xf.num_fmt_id;
-        let quote_prefix = cell_xf.quote_prefix;
-        let horizontal_alignment = cell_xf.horizontal_alignment.clone();
-
-        Style {
-            horizontal_alignment,
-            num_fmt: get_num_fmt(num_fmt_id, &styles.num_fmts),
-            fill: styles.fills[fill_id].clone(),
-            font: styles.fonts[font_id].clone(),
-            border: styles.borders[border_id].clone(),
-            quote_prefix,
-        }
-    }
-
-    fn get_style_with_quote_prefix(&mut self, index: i32) -> i32 {
-        let mut style = self.get_style(index);
-        style.quote_prefix = true;
-        // Check if style exist. If so sets style cell number to that otherwise create a new style.
-        if let Some(index) = self.get_style_index(&style) {
-            index
-        } else {
-            self.create_new_style(&style)
-        }
-    }
-
-    fn get_style_without_quote_prefix(&mut self, index: i32) -> i32 {
-        let mut style = self.get_style(index);
-        style.quote_prefix = false;
-        // Check if style exist. If so sets style cell number to that otherwise create a new style.
-        if let Some(index) = self.get_style_index(&style) {
-            index
-        } else {
-            self.create_new_style(&style)
-        }
+        self.workbook
+            .styles
+            .get_style(self.get_cell_style_index(sheet, row, column))
     }
 
     /// Returns a list with all the names of the worksheets
@@ -1814,32 +1802,33 @@ mod tests {
         let mut model = new_empty_model();
         model._set("A1", "35");
         model._set("A2", "");
+        let worksheet = model.workbook.worksheet(0).expect("Invalid sheet");
 
         assert_eq!(
-            model.get_cell(0, 1, 1),
-            Ok(Some(&Cell::NumberCell {
+            worksheet.cell(1, 1),
+            Some(&Cell::NumberCell {
                 t: "n".to_string(),
                 v: 35.0,
                 s: 0
-            }))
+            })
         );
 
         assert_eq!(
-            model.get_cell(0, 2, 1),
-            Ok(Some(&Cell::SharedString {
+            worksheet.cell(2, 1),
+            Some(&Cell::SharedString {
                 t: "s".to_string(),
                 si: 0,
                 s: 0,
-            }))
+            })
         );
-        assert_eq!(model.get_cell(0, 2, 2), Ok(None))
+        assert_eq!(worksheet.cell(3, 1), None)
     }
 
     #[test]
     fn test_get_cell_invalid_sheet() {
         let model = new_empty_model();
         assert_eq!(
-            model.get_cell(5, 1, 1),
+            model.workbook.worksheet(5),
             Err("Invalid sheet index".to_string()),
         )
     }

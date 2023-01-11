@@ -194,18 +194,6 @@ impl JSModel {
         self.model.format_number(value, format_code).text
     }
 
-    pub fn extend_to(
-        &self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        target_row: i32,
-        target_column: i32,
-    ) -> String {
-        self.model
-            .extend_to(sheet, row, column, target_row, target_column)
-    }
-
     pub fn get_formula_or_value(&self, sheet: u32, row: i32, column: i32) -> String {
         self.model.get_formula_or_value(sheet, row, column)
     }
@@ -278,7 +266,12 @@ impl JSModel {
             Ok(s) => s,
             Err(error) => return JsResult::get_error(&error.to_string()),
         };
-        match self.model.create_named_style(style_name, &style) {
+        match self
+            .model
+            .workbook
+            .styles
+            .create_named_style(style_name, &style)
+        {
             Ok(()) => JsResult::get_success(),
             Err(message) => JsResult::get_error(&message),
         }
@@ -604,10 +597,10 @@ impl JSModel {
             Ok(v) => v,
             Err(message) => return IndexResult::get_error(&message.to_string()),
         };
-        if let Some(index) = self.model.get_style_index(&style) {
+        if let Some(index) = self.model.workbook.styles.get_style_index(&style) {
             IndexResult::get_success(index)
         } else {
-            IndexResult::get_success(self.model.create_new_style(&style))
+            IndexResult::get_success(self.model.workbook.styles.create_new_style(&style))
         }
     }
 

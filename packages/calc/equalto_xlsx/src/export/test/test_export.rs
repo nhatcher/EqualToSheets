@@ -112,7 +112,10 @@ fn test_named_styles() {
     style.font.i = true;
     assert!(model.set_cell_style(0, 1, 1, &style).is_ok());
     let bold_style_index = model.get_cell_style_index(0, 1, 1);
-    let e = model.add_named_cell_style("bold & italics", bold_style_index);
+    let e = model
+        .workbook
+        .styles
+        .add_named_cell_style("bold & italics", bold_style_index);
     assert!(e.is_ok());
 
     // noop
@@ -123,6 +126,10 @@ fn test_named_styles() {
     save_to_xlsx(&model, temp_file_name).unwrap();
 
     let model = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin").unwrap();
-    assert!(model.get_style_index_by_name("bold & italics").is_ok());
+    assert!(model
+        .workbook
+        .styles
+        .get_style_index_by_name("bold & italics")
+        .is_ok());
     fs::remove_file(temp_file_path).unwrap();
 }

@@ -10,9 +10,7 @@ fn test_simple_error_propagation() {
     model._set("A2", "=2+A1");
     model._set("A3", "=C2+A2");
     model.evaluate();
-    let c = model.get_cell(0, 3, 1).unwrap();
-    assert!(c.is_some());
-    match c.unwrap() {
+    match model._get_cell("Sheet1!A3") {
         Cell::CellFormulaError { o, .. } => {
             assert_eq!(o, "Sheet1!A1");
         }

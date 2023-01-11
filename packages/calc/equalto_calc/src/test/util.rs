@@ -48,10 +48,9 @@ impl Model {
     }
     pub fn _get_cell(&self, cell: &str) -> &Cell {
         let cell_reference = self._parse_reference(cell);
-        let column = cell_reference.column;
-        let row = cell_reference.row;
-        self.get_cell(cell_reference.sheet, row, column)
-            .unwrap()
+        let worksheet = self.workbook.worksheet(cell_reference.sheet).unwrap();
+        worksheet
+            .cell(cell_reference.row, cell_reference.column)
             .unwrap()
     }
 }

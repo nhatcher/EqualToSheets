@@ -31,7 +31,10 @@ fn test_named_styles() {
     style.font.b = true;
     assert!(model.set_cell_style(0, 1, 1, &style).is_ok());
     let bold_style_index = model.get_cell_style_index(0, 1, 1);
-    let e = model.add_named_cell_style("bold", bold_style_index);
+    let e = model
+        .workbook
+        .styles
+        .add_named_cell_style("bold", bold_style_index);
     assert!(e.is_ok());
     model._set("A2", "420");
     let a2_style_index = model.get_cell_style_index(0, 2, 1);
@@ -50,7 +53,7 @@ fn test_create_named_style() {
     assert!(!style.font.b);
 
     style.font.b = true;
-    let e = model.create_named_style("bold", &style);
+    let e = model.workbook.styles.create_named_style("bold", &style);
     assert!(e.is_ok());
 
     let e = model.set_cell_style_by_name(0, 1, 1, "bold");
