@@ -1,5 +1,8 @@
+from zoneinfo import ZoneInfo
+
 import pytest
 
+import equalto
 from equalto.exceptions import CellReferenceError
 from equalto.workbook import Workbook
 
@@ -44,3 +47,8 @@ def test_delete_cell(empty_workbook: Workbook) -> None:
     empty_workbook[reference].value = 42
     del empty_workbook[reference]
     assert not empty_workbook[reference].value
+
+
+@pytest.mark.parametrize("tz", [ZoneInfo("UTC"), ZoneInfo("Europe/Berlin")])
+def test_timezone_property(tz: ZoneInfo) -> None:
+    assert equalto.new("en-US", tz).timezone == tz

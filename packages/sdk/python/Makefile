@@ -5,7 +5,7 @@ PYTHON3_MINOR_VER = $(shell python3 --version | grep ^Python | sed -E 's/^Python
 RUST_MAJOR_VER = $(shell rustc --version | grep ^rustc | sed -E 's/^rustc ([0-9]+)\.([0-9]+)\.([0-9]+) \(.+\)$$/\1/g')
 RUST_MINOR_VER = $(shell rustc --version | grep ^rustc | sed -E 's/^rustc ([0-9]+)\.([0-9]+)\.([0-9]+) \(.+\)$$/\2/g')
 
-PYTHON3_MIN_MINOR_VER = 8  # >= 3.8
+PYTHON3_MIN_MINOR_VER = 9  # >= 3.9
 RUST_MIN_MINOR_VER = 65  # >= 1.65
 
 IS_SUPPORTED_PYTHON_VERSION = $(shell expr $(PYTHON3_MINOR_VER) ">=" $(PYTHON3_MIN_MINOR_VER))

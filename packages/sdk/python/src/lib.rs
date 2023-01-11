@@ -531,6 +531,10 @@ impl PyModel {
         }
     }
 
+    pub fn get_timezone(&self) -> PyResult<String> {
+        Ok(self.model.tz.to_string())
+    }
+
     pub fn test_panic(&self) -> PyResult<()> {
         panic!("This function panics for testing panic handling");
     }

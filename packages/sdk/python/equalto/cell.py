@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date, datetime, timedelta
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
@@ -10,6 +11,7 @@ from equalto.exceptions import WorkbookError, WorkbookValueError
 if TYPE_CHECKING:
     from equalto._pycalc import PyCalcModel
     from equalto.sheet import Sheet
+    from equalto.workbook import Workbook
 
 
 class CellType(Enum):
@@ -40,14 +42,14 @@ class Cell:
         return CellType(self._model.get_cell_type(*self._cell_ref))
 
     @property
-    def value(self) -> float | bool | str | None:
+    def value(self) -> float | bool | str | date | datetime | None:
         """Get raw value from the represented cell."""
         value = json.loads(self._model.get_cell_value_by_index(*self._cell_ref))
         assert value is None or isinstance(value, (float, bool, str))
         return value
 
     @value.setter
-    def value(self, value: float | bool | str | None) -> None:
+    def value(self, value: float | bool | str | date | datetime | None) -> None:
         if value is None:
             value = ""
 
@@ -59,6 +61,8 @@ class Cell:
             self._model.update_cell_with_bool(*self._cell_ref, value)
         elif isinstance(value, (float, int)):
             self._model.update_cell_with_number(*self._cell_ref, float(value))
+        elif isinstance(value, (date, datetime)):
+            self._model.update_cell_with_number(*self._cell_ref, self._get_excel_date(value))
         else:  # pragma: no cover
             raise ValueError(f"unrecognized value type ({value=})")
 
@@ -93,6 +97,21 @@ class Cell:
         return value
 
     @property
+    def date_value(self) -> date:
+        int_value = self.int_value
+        if int_value < 0:
+            raise WorkbookValueError(f"{int_value} does not represent a valid date")
+        return self._excel_base_dt.date() + timedelta(days=int_value)
+
+    @property
+    def datetime_value(self) -> datetime:
+        float_value = self.float_value
+        if float_value < 0:
+            raise WorkbookValueError(f"{float_value} does not represent a valid datetime")
+        naive_dt = self._excel_base_dt + timedelta(days=float_value)
+        return naive_dt.replace(tzinfo=self.workbook.timezone)
+
+    @property
     def formula(self) -> str | None:
         if not self._model.has_formula(*self._cell_ref):
             return None
@@ -112,9 +131,24 @@ class Cell:
         self._model.delete_cell(*self._cell_ref)
 
     @cached_property
+    def workbook(self) -> Workbook:
+        return self.sheet.workbook_sheets.workbook
+
+    @cached_property
     def _model(self) -> PyCalcModel:
-        return self.sheet.workbook_sheets.workbook._model  # noqa: WPS437
+        return self.workbook._model  # noqa: WPS437
 
     @property
     def _cell_ref(self) -> tuple[int, int, int]:
         return self.sheet.index, self.row, self.column
+
+    _excel_base_dt = datetime(1899, 12, 30)
+
+    def _get_excel_date(self, dt: date | datetime) -> float:
+        if isinstance(dt, datetime):
+            if dt.utcoffset() is None:
+                raise WorkbookValueError(f"Naive datetime encountered: {dt}")
+            naive_dt = dt.astimezone(self.workbook.timezone).replace(tzinfo=None)
+            time_delta = naive_dt - self._excel_base_dt
+            return float(time_delta.days) + (float(time_delta.seconds) / 86400)
+        return float((dt - self._excel_base_dt.date()).days)

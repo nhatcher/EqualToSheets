@@ -5,7 +5,7 @@ author = "EqualTo"
 author_email = "dev@equalto.com"
 packages = ["equalto"]
 description=  "EqualTo python SDK"
-python_requires = ">=3.8"
+python_requires = ">=3.9"
 zip_safe = false
 include_package_data = true
 
