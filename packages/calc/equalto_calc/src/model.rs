@@ -10,7 +10,7 @@ use crate::{
     cell::{UICell, UIValue},
     constants,
     expressions::parser::{
-        stringify::{to_rc_format, to_string, to_string_displaced, DisplaceData},
+        stringify::{to_rc_format, to_string},
         Node, Parser,
     },
     expressions::token::{Error, OpCompare, OpProduct, OpSum, OpUnary},
@@ -1083,32 +1083,6 @@ impl Model {
             }
         }
         Ok(None)
-    }
-
-    pub(crate) fn shift_cell_formula(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        displace_data: &DisplaceData,
-    ) {
-        if let Some(f) = self
-            .get_cell_formula_index(sheet, row, column)
-            .expect("Expected cell formula index")
-        {
-            let node = &self.parsed_formulas[sheet as usize][f as usize].clone();
-            let cell_reference = CellReferenceRC {
-                sheet: self.workbook.worksheets[sheet as usize].get_name(),
-                row,
-                column,
-            };
-            // FIXME: This is not a very performant way if the formula has changed :S.
-            let formula = to_string(node, &cell_reference);
-            let formula_displaced = to_string_displaced(node, &cell_reference, displace_data);
-            if formula != formula_displaced {
-                self.set_input_with_formula(sheet, row, column, &formula_displaced);
-            }
-        }
     }
 
     // This assumes the cell exists. Do not make public
