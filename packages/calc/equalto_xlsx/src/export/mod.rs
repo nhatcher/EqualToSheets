@@ -17,6 +17,8 @@ use equalto_calc::types::Workbook;
 
 use self::xml_constants::XML_DECLARATION;
 
+use crate::error::XlsxError;
+
 #[cfg(test)]
 mod test;
 
@@ -49,10 +51,12 @@ fn get_content_types_xml(workbook: &Workbook) -> String {
 }
 
 /// Exports a model to an xlsx file
-pub fn save_to_xlsx(model: &Model, output: &str) -> zip::result::ZipResult<()> {
+pub fn save_to_xlsx(model: &Model, file_name: &str) -> Result<(), XlsxError> {
     let workbook = &model.workbook;
-    let file_name = format!("{}.xlsx", output);
     let file_path = std::path::Path::new(&file_name);
+    if file_path.exists() {
+        return Err(XlsxError::IO(format!("file {} already exists", file_name)));
+    }
     let file = fs::File::create(file_path).unwrap();
     let writer = BufWriter::new(file);
     let mut zip = zip::ZipWriter::new(writer);

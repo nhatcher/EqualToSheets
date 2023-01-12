@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from functools import cached_property
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
@@ -39,3 +40,10 @@ class Workbook:
     def sheets(self) -> WorkbookSheets:
         """Get container with workbook sheets."""
         return WorkbookSheets(self)
+
+    def save(self, file: str) -> None:
+        _, ext = os.path.splitext(file)
+        if ext == ".xlsx":
+            self._model.save_to_xlsx(file)
+        else:
+            raise NotImplementedError(f"Exporting to {ext} files is not supported yet.")

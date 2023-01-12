@@ -1,3 +1,5 @@
+import os
+from tempfile import TemporaryDirectory
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -52,3 +54,14 @@ def test_delete_cell(empty_workbook: Workbook) -> None:
 @pytest.mark.parametrize("tz", [ZoneInfo("UTC"), ZoneInfo("Europe/Berlin")])
 def test_timezone_property(tz: ZoneInfo) -> None:
     assert equalto.new(timezone=tz).timezone == tz
+
+
+def test_save_xlsx(empty_workbook: Workbook) -> None:
+    empty_workbook["Sheet1!A1"].value = 42
+
+    with TemporaryDirectory() as dir_path:
+        file_path = os.path.join(dir_path, "output.xlsx")
+        empty_workbook.save(file_path)
+
+        # simple assert confirming that the exported file is valid
+        assert equalto.load(file_path)["Sheet1!A1"].value == 42

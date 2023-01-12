@@ -2,6 +2,7 @@ use std::fs;
 
 use equalto_calc::model::{Environment, Model};
 
+use crate::error::XlsxError;
 use crate::{export::save_to_xlsx, import::load_model_from_xlsx};
 
 // 8 November 2022 12:13 Berlin time
@@ -39,11 +40,10 @@ fn test_values() {
     // noop
     model.evaluate();
 
-    let temp_file_name = "temp_file_test_values";
-    let temp_file_path = &format!("{}.xlsx", temp_file_name);
+    let temp_file_name = "temp_file_test_values.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
     assert_eq!(model.get_text_at(0, 1, 1), "123.456");
     assert_eq!(model.get_text_at(0, 2, 1), "Hello world!");
     assert_eq!(model.get_text_at(0, 3, 1), "Hello world!");
@@ -52,7 +52,7 @@ fn test_values() {
     assert_eq!(model.get_text_at(0, 6, 1), "FALSE");
     assert_eq!(model.get_text_at(0, 7, 1), "#VALUE!");
 
-    fs::remove_file(temp_file_path).unwrap();
+    fs::remove_file(temp_file_name).unwrap();
 }
 
 #[test]
@@ -68,16 +68,15 @@ fn test_formulas() {
     model.set_input(0, 4, 2, "=SUM(A1:B3)".to_string(), 0);
 
     model.evaluate();
-    let temp_file_name = "temp_file_test_formulas";
-    let temp_file_path = &format!("{}.xlsx", temp_file_name);
+    let temp_file_name = "temp_file_test_formulas.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
     assert_eq!(model.get_text_at(0, 1, 2), "11");
     assert_eq!(model.get_text_at(0, 2, 2), "13");
     assert_eq!(model.get_text_at(0, 3, 2), "15");
     assert_eq!(model.get_text_at(0, 4, 2), "58.5");
-    fs::remove_file(temp_file_path).unwrap();
+    fs::remove_file(temp_file_name).unwrap();
 }
 
 #[test]
@@ -91,16 +90,15 @@ fn test_sheets() {
     // noop
     model.evaluate();
 
-    let temp_file_name = "temp_file_test_sheets";
-    let temp_file_path = &format!("{}.xlsx", temp_file_name);
+    let temp_file_name = "temp_file_test_sheets.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
     assert_eq!(
         model.get_worksheet_names(),
         vec!["Sheet1", "With space", "Tango & Cash", "你好世界"]
     );
-    fs::remove_file(temp_file_path).unwrap();
+    fs::remove_file(temp_file_name).unwrap();
 }
 
 #[test]
@@ -121,15 +119,29 @@ fn test_named_styles() {
     // noop
     model.evaluate();
 
-    let temp_file_name = "temp_file_test_named_styles";
-    let temp_file_path = &format!("{}.xlsx", temp_file_name);
+    let temp_file_name = "temp_file_test_named_styles.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
     assert!(model
         .workbook
         .styles
         .get_style_index_by_name("bold & italics")
         .is_ok());
-    fs::remove_file(temp_file_path).unwrap();
+    fs::remove_file(temp_file_name).unwrap();
+}
+
+#[test]
+fn test_existing_file() {
+    let file_name = "existing_file.xlsx";
+    fs::File::create(file_name).unwrap();
+
+    assert_eq!(
+        save_to_xlsx(&new_empty_model(), file_name),
+        Err(XlsxError::IO(
+            "file existing_file.xlsx already exists".to_string()
+        )),
+    );
+
+    fs::remove_file(file_name).unwrap();
 }

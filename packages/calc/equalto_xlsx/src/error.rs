@@ -3,7 +3,7 @@ use std::num::{ParseFloatError, ParseIntError};
 use thiserror::Error;
 use zip::result::ZipError;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum XlsxError {
     #[error("I/O Error: {0}")]
     IO(String),

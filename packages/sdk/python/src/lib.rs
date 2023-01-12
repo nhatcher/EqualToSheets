@@ -7,6 +7,7 @@ use equalto_calc::{
 };
 use equalto_xlsx::compare::compare;
 use equalto_xlsx::error::XlsxError;
+use equalto_xlsx::export::save_to_xlsx;
 use equalto_xlsx::import::load_from_excel;
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -530,6 +531,10 @@ impl PyModel {
 
     pub fn get_timezone(&self) -> PyResult<String> {
         Ok(self.model.tz.to_string())
+    }
+
+    pub fn save_to_xlsx(&self, file: &str) -> PyResult<()> {
+        save_to_xlsx(&self.model, file).map_err(|e| WorkbookError::new_err(e.to_string()))
     }
 
     pub fn test_panic(&self) -> PyResult<()> {

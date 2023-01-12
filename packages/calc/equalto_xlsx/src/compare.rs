@@ -168,10 +168,9 @@ pub fn test_load_and_saving(file_path: &str, temp_dir_name: &Path) -> Result<(),
     let base_name = Path::new(file_path).file_name().unwrap().to_str().unwrap();
 
     let temp_path_buff = temp_dir_name.join(base_name);
-    let temp_file_name = temp_path_buff.to_str().unwrap();
-    let temp_file_path = &format!("{}.xlsx", &temp_file_name);
+    let temp_file_path = &format!("{}.xlsx", temp_path_buff.to_str().unwrap());
     // test can save
-    save_to_xlsx(&model1, temp_file_name).unwrap();
+    save_to_xlsx(&model1, temp_file_path).unwrap();
     // test can open
     let mut model2 = load_model_from_xlsx(temp_file_path, "en", "UTC").unwrap();
     model2.evaluate();

@@ -25,14 +25,13 @@ fn test_example() {
 fn test_save_to_xlsx() {
     let mut model = load_model_from_xlsx("tests/example.xlsx", "en", "Europe/Berlin").unwrap();
     model.evaluate();
-    let temp_file_name = "temp_file_example";
-    let temp_file_path = &format!("{}.xlsx", temp_file_name);
+    let temp_file_name = "temp_file_example.xlsx";
     // test can safe
     save_to_xlsx(&model, temp_file_name).unwrap();
     // test can open
-    let _ = load_model_from_xlsx(temp_file_path, "en", "Europe/Berlin");
+    let _ = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin");
     // TODO: can we show it is the 'same' model?
-    fs::remove_file(temp_file_path).unwrap();
+    fs::remove_file(temp_file_name).unwrap();
 }
 
 #[test]
