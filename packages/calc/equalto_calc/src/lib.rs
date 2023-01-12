@@ -18,7 +18,6 @@ mod constants;
 mod navigation;
 mod styles;
 
-mod graph_static;
 mod implicit_intersection;
 
 mod utils;

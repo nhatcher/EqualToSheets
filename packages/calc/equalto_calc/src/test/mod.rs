@@ -16,7 +16,6 @@ mod test_fn_minifs;
 mod test_fn_sumifs;
 mod test_frozen_rows_columns;
 mod test_general;
-mod test_graph;
 mod test_model_delete_cell;
 mod test_model_is_empty_cell;
 mod test_model_remove_cell;

@@ -231,21 +231,6 @@ impl PyModel {
         self.model.get_new_sheet_id().try_into().unwrap()
     }
 
-    pub fn cell_independent_of_sheets_and_cells(
-        &self,
-        input_cell: &str,
-        sheets: Vec<&str>,
-        cells: Vec<&str>,
-    ) -> PyResult<bool> {
-        match self
-            .model
-            .cell_independent_of_sheets_and_cells(input_cell, &sheets, &cells)
-        {
-            Ok(value) => Ok(value),
-            Err(s) => Err(PyValueError::new_err(s)),
-        }
-    }
-
     pub fn set_cell_style_by_name(
         &mut self,
         sheet: i32,
