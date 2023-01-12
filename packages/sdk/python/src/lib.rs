@@ -150,44 +150,6 @@ impl PyModel {
         .unwrap())
     }
 
-    pub fn get_navigation_right_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self
-            .model
-            .get_navigation_right_edge(sheet.try_into().unwrap(), row, column)
-            .unwrap())
-    }
-
-    pub fn get_navigation_left_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self
-            .model
-            .get_navigation_left_edge(sheet.try_into().unwrap(), row, column)
-            .unwrap())
-    }
-
-    pub fn get_navigation_top_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self
-            .model
-            .get_navigation_top_edge(sheet.try_into().unwrap(), row, column)
-            .unwrap())
-    }
-
-    pub fn get_navigation_bottom_edge(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
-        Ok(self
-            .model
-            .get_navigation_bottom_edge(sheet.try_into().unwrap(), row, column)
-            .unwrap())
-    }
-
-    pub fn get_navigation_home(&self, sheet: i32) -> Cell {
-        let (row, column) = self.model.get_navigation_home(sheet.try_into().unwrap());
-        Cell { row, column }
-    }
-
-    pub fn get_navigation_end(&self, sheet: i32) -> PyResult<Cell> {
-        let (row, column) = self.model.get_navigation_end(sheet.try_into().unwrap());
-        Ok(Cell { row, column })
-    }
-
     pub fn set_cell_style(&mut self, sheet: i32, row: i32, column: i32, style: &str) {
         self.model
             .set_cell_style(

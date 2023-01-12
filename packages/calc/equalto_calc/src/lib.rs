@@ -15,7 +15,6 @@ mod functions;
 
 mod cast;
 mod constants;
-mod navigation;
 mod styles;
 
 mod implicit_intersection;

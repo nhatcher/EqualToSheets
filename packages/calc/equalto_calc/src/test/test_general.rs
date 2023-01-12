@@ -372,110 +372,12 @@ fn test_get_ui_cell() {
 }
 
 #[test]
-fn test_mode_to_right_edge() {
-    let mut model = new_empty_model();
-    // We have non empty cells in C3,D3,E3, H3, U3
-    model.set_input(0, 3, 3, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 4, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 20, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 30, "Hello World".to_string(), 0);
-
-    assert_eq!(model.get_navigation_right_edge(0, 3, 1).unwrap(), 3);
-
-    assert_eq!(model.get_navigation_right_edge(0, 3, 3).unwrap(), 5);
-
-    assert_eq!(model.get_navigation_right_edge(0, 3, 5).unwrap(), 20);
-
-    assert_eq!(model.get_navigation_right_edge(0, 3, 20).unwrap(), 30);
-
-    assert_eq!(model.get_navigation_right_edge(0, 3, 30).unwrap(), 16384);
-}
-
-#[test]
-fn test_mode_to_left_edge() {
-    let mut model = new_empty_model();
-
-    model.set_input(0, 3, 3, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 4, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 20, "Hello World".to_string(), 0);
-    model.set_input(0, 3, 30, "Hello World".to_string(), 0);
-
-    assert_eq!(model.get_navigation_left_edge(0, 3, 60).unwrap(), 30);
-
-    assert_eq!(model.get_navigation_left_edge(0, 3, 30).unwrap(), 20);
-
-    assert_eq!(model.get_navigation_left_edge(0, 3, 20).unwrap(), 5);
-
-    assert_eq!(model.get_navigation_left_edge(0, 3, 5).unwrap(), 3);
-
-    assert_eq!(model.get_navigation_left_edge(0, 3, 3).unwrap(), 1);
-
-    model.set_input(0, 3, 7, "Hello World".to_string(), 0);
-    assert_eq!(model.get_navigation_left_edge(0, 3, 7).unwrap(), 5);
-}
-
-#[test]
-fn test_mode_to_bottom_edge() {
-    let last_row = 1048576;
-    let mut model = new_empty_model();
-
-    model.set_input(0, 3, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 4, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 5, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 20, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 30, 5, "Hello World".to_string(), 0);
-
-    assert_eq!(model.get_navigation_bottom_edge(0, 1, 5).unwrap(), 3);
-
-    assert_eq!(model.get_navigation_bottom_edge(0, 3, 5).unwrap(), 5);
-
-    assert_eq!(model.get_navigation_bottom_edge(0, 5, 5).unwrap(), 20);
-
-    assert_eq!(model.get_navigation_bottom_edge(0, 20, 5).unwrap(), 30);
-
-    assert_eq!(
-        model.get_navigation_bottom_edge(0, 30, 5).unwrap(),
-        last_row
-    );
-}
-
-#[test]
-fn test_mode_to_top_edge() {
-    let mut model = new_empty_model();
-
-    model.set_input(0, 3, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 4, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 5, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 20, 5, "Hello World".to_string(), 0);
-    model.set_input(0, 30, 5, "Hello World".to_string(), 0);
-
-    assert_eq!(model.get_navigation_top_edge(0, 100, 5).unwrap(), 30);
-
-    assert_eq!(model.get_navigation_top_edge(0, 30, 5).unwrap(), 20);
-
-    assert_eq!(model.get_navigation_top_edge(0, 20, 5).unwrap(), 5);
-
-    assert_eq!(model.get_navigation_top_edge(0, 5, 5).unwrap(), 3);
-
-    assert_eq!(model.get_navigation_top_edge(0, 3, 5).unwrap(), 1);
-
-    model.set_input(0, 7, 5, "Hello World".to_string(), 0);
-    assert_eq!(model.get_navigation_top_edge(0, 7, 5).unwrap(), 5);
-}
-
-#[test]
 fn test_get_sheet_dimensions() {
     let mut model = new_empty_model();
     assert_eq!(model.get_sheet_dimension(0), (1, 1, 1, 1));
-    assert_eq!(model.get_navigation_home(0), (1, 1));
-    assert_eq!(model.get_navigation_end(0), (1, 1));
 
     model.set_input(0, 30, 50, "Hello World".to_string(), 0);
     assert_eq!(model.get_sheet_dimension(0), (30, 50, 30, 50));
-    assert_eq!(model.get_navigation_home(0), (30, 50));
-    assert_eq!(model.get_navigation_end(0), (30, 50));
 
     model.set_input(0, 10, 15, "Hello World".to_string(), 0);
     assert_eq!(model.get_sheet_dimension(0), (10, 15, 30, 50));
@@ -485,8 +387,6 @@ fn test_get_sheet_dimensions() {
 
     model.set_input(0, 10, 250, "Hello World".to_string(), 0);
     assert_eq!(model.get_sheet_dimension(0), (5, 15, 30, 250));
-    assert_eq!(model.get_navigation_home(0), (5, 15));
-    assert_eq!(model.get_navigation_end(0), (30, 250));
 }
 
 #[test]
