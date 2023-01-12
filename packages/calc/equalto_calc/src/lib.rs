@@ -15,7 +15,6 @@ mod functions;
 
 mod cast;
 mod constants;
-mod diffs;
 mod navigation;
 mod styles;
 

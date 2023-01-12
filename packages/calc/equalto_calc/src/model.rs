@@ -1071,51 +1071,6 @@ impl Model {
         formatter::format::format_number(value, &format_code, &self.locale)
     }
 
-    pub(crate) fn get_cell_formula_index(
-        &self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-    ) -> Result<Option<i32>, String> {
-        if let Some(full_row) = self.workbook.worksheet(sheet)?.sheet_data.get(&row) {
-            if let Some(cell) = full_row.get(&column) {
-                return Ok(cell.get_formula());
-            }
-        }
-        Ok(None)
-    }
-
-    // This assumes the cell exists. Do not make public
-    pub(crate) fn set_input_with_formula(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        formula: &str,
-    ) {
-        let style = self.get_cell_style_index(sheet, row, column);
-        let worksheets = &mut self.workbook.worksheets;
-        let worksheet = &mut worksheets[sheet as usize];
-        let cell_reference = CellReferenceRC {
-            sheet: worksheet.get_name(),
-            row,
-            column,
-        };
-        let shared_formulas = &mut worksheet.shared_formulas;
-        let node = self.parser.parse(formula, &Some(cell_reference));
-        let formula_rc = to_rc_format(&node);
-        let mut formula_index: i32 = -1;
-        if let Some(index) = shared_formulas.iter().position(|x| x == &formula_rc) {
-            formula_index = index as i32;
-        }
-        if formula_index == -1 {
-            shared_formulas.push(formula_rc);
-            self.parsed_formulas[sheet as usize].push(node);
-            formula_index = (shared_formulas.len() as i32) - 1;
-        }
-        worksheet.set_cell_with_formula(row, column, formula_index, style);
-    }
-
     /// Updates the value of a cell with some text
     /// It does not change the style unless needs to add "quoting"
     pub fn update_cell_with_text(&mut self, sheet: u32, row: i32, column: i32, value: &str) {
@@ -1854,35 +1809,6 @@ mod tests {
         assert_eq!(
             model.workbook.worksheet(5),
             Err("Invalid sheet index".to_string()),
-        )
-    }
-
-    #[test]
-    fn test_get_cell_formula_index_for_unset_cell() {
-        let model = new_empty_model();
-        assert_eq!(model.get_cell_formula_index(0, 1, 1), Ok(None))
-    }
-
-    #[test]
-    fn test_get_cell_formula_index_for_non_formula_value() {
-        let mut model = new_empty_model();
-        model._set("A1", "45");
-        assert_eq!(model.get_cell_formula_index(0, 1, 1), Ok(None))
-    }
-
-    #[test]
-    fn test_get_cell_formula_index_for_formula() {
-        let mut model = new_empty_model();
-        model._set("A1", "=1+1");
-        assert_eq!(model.get_cell_formula_index(0, 1, 1), Ok(Some(0)))
-    }
-
-    #[test]
-    fn test_get_cell_formula_index_for_invalid_worksheet() {
-        let model = new_empty_model();
-        assert_eq!(
-            model.get_cell_formula_index(3, 1, 1),
-            Err("Invalid sheet index".to_string())
         )
     }
 }

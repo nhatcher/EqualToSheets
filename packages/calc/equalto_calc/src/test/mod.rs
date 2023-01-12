@@ -14,7 +14,6 @@ mod test_fn_if;
 mod test_fn_maxifs;
 mod test_fn_minifs;
 mod test_fn_sumifs;
-mod test_forward_references;
 mod test_frozen_rows_columns;
 mod test_general;
 mod test_graph;

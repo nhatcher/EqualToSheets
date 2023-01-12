@@ -40,7 +40,6 @@ use token::TokenType::*;
 
 pub mod move_formula;
 pub mod stringify;
-pub mod walk;
 
 #[cfg(test)]
 mod test;
