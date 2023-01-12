@@ -1,41 +1,8 @@
 BUILD = cargo build --release --locked
 
-modules = equalto_calc equalto_xlsx calc
-
-all: web
-
-web:
-	cd calc && wasm-pack build --target bundler
-	cd calc && wasm-pack build --target nodejs --out-dir pkg_node
-	cd calc && for i in pkg/*.wasm; do \
-			output_file="pkg/$$(basename "$$i" .wasm).opt.wasm"; \
-			(/usr/bin/wasm-opt "$$i" -o "$$output_file" -O || wasm-opt "$$i" -o "$$output_file" -O); \
-			mv "$$output_file" "$$i"; \
-		done
-	cd calc && for i in pkg_node/*.wasm; do \
-			output_file="pkg_node/$$(basename "$$i" .wasm).opt.wasm"; \
-			(/usr/bin/wasm-opt "$$i" -o "$$output_file" -O || wasm-opt "$$i" -o "$$output_file" -O); \
-			mv "$$output_file" "$$i"; \
-		done
-	mkdir -p build/www/pkg
-	mkdir -p build/www/pkg_node/
-	cp -r calc/pkg/* build/www/pkg/
-	cp -r calc/pkg_node/* build/www/pkg_node/
-
-web_dev:
-	cd calc && wasm-pack build --dev --target bundler
-	cd calc && wasm-pack build --dev --target nodejs --out-dir pkg_node
-	mkdir -p build/www/pkg
-	mkdir -p build/www/pkg_node/
-	cp -r calc/pkg/* build/www/pkg/
-	cp -r calc/pkg_node/* build/www/pkg_node/
-
 clean:
 	cargo clean
-	rm -r -f build/
 	rm -r -f target
-	rm -r -f calc/pkg
-	rm -r -f calc/target
 	rm -r -f equalto_calc/target
 	rm -r -f equalto_xlsx/target
 
