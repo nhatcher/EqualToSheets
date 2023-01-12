@@ -60,7 +60,6 @@ pub mod error;
 pub mod export;
 pub mod import;
 mod shared_strings;
-mod types;
 
 #[cfg(test)]
 mod test;

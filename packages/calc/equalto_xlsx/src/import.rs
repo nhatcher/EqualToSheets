@@ -24,7 +24,6 @@ use std::{
 use crate::colors::{get_indexed_color, get_themed_color};
 use crate::error::XlsxError;
 use crate::shared_strings::read_shared_strings;
-use crate::types::ExcelArchive;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Sheet {
@@ -145,7 +144,9 @@ fn get_number(node: Node, s: &str) -> i32 {
     node.attribute(s).unwrap_or("0").parse::<i32>().unwrap_or(0)
 }
 
-fn load_styles(archive: &mut ExcelArchive) -> Result<Styles, XlsxError> {
+fn load_styles<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+) -> Result<Styles, XlsxError> {
     let mut file = archive.by_name("xl/styles.xml")?;
     let mut text = String::new();
     file.read_to_string(&mut text)?;
@@ -416,8 +417,8 @@ fn load_styles(archive: &mut ExcelArchive) -> Result<Styles, XlsxError> {
     })
 }
 
-fn load_relationships(
-    archive: &mut ExcelArchive,
+fn load_relationships<R: Read + std::io::Seek>(
+    archive: &mut zip::ZipArchive<R>,
 ) -> Result<HashMap<String, Relationship>, XlsxError> {
     let mut file = archive.by_name("xl/_rels/workbook.xml.rels")?;
     let mut text = String::new();
@@ -440,7 +441,9 @@ fn load_relationships(
     Ok(rels)
 }
 
-fn load_workbook(archive: &mut ExcelArchive) -> Result<WorkbookXML, XlsxError> {
+fn load_workbook<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+) -> Result<WorkbookXML, XlsxError> {
     let mut file = archive.by_name("xl/workbook.xml")?;
     let mut text = String::new();
     file.read_to_string(&mut text)?;
@@ -522,7 +525,10 @@ fn get_column_from_ref(s: &str) -> String {
     column.into_iter().collect()
 }
 
-fn load_comments(archive: &mut ExcelArchive, path: &str) -> Result<Vec<Comment>, XlsxError> {
+fn load_comments<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+    path: &str,
+) -> Result<Vec<Comment>, XlsxError> {
     let mut comments = Vec::new();
     let mut file = archive.by_name(path)?;
     let mut text = String::new();
@@ -559,7 +565,10 @@ fn load_comments(archive: &mut ExcelArchive, path: &str) -> Result<Vec<Comment>,
     Ok(comments)
 }
 
-fn load_sheet_rels(archive: &mut ExcelArchive, path: &str) -> Result<Vec<Comment>, XlsxError> {
+fn load_sheet_rels<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+    path: &str,
+) -> Result<Vec<Comment>, XlsxError> {
     // ...xl/worksheets/sheet6.xml -> xl/worksheets/_rels/sheet6.xml.rels
     let mut comments = Vec::new();
     let v: Vec<&str> = path.split("/worksheets/").collect();
@@ -857,8 +866,8 @@ fn load_dimension(ws: Node) -> String {
     }
 }
 
-fn load_sheet(
-    archive: &mut ExcelArchive,
+fn load_sheet<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
     path: &str,
     sheet_name: &str,
     sheet_id: u32,
@@ -1187,8 +1196,8 @@ fn load_sheet(
     })
 }
 
-fn load_sheets(
-    archive: &mut ExcelArchive,
+fn load_sheets<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
     rels: &HashMap<String, Relationship>,
     workbook: &WorkbookXML,
 ) -> Result<Vec<Worksheet>, XlsxError> {
@@ -1278,7 +1287,28 @@ pub fn load_from_excel(file_name: &str, locale: &str, tz: &str) -> Result<Workbo
         .ok_or_else(|| XlsxError::IO("Could not extract workbook name".to_string()))?
         .to_string_lossy()
         .to_string();
+    load_xlsx_from_reader(name, reader, locale, tz)
+}
 
+pub fn load_xlsx_from_memory(
+    name: &str,
+    data: &mut [u8],
+    locale: &str,
+    tz: &str,
+    environment: Environment,
+) -> Result<Model, XlsxError> {
+    let reader = std::io::Cursor::new(data);
+    let workbook = load_xlsx_from_reader(name.to_string(), reader, locale, tz)?;
+    Model::from_workbook(workbook, environment)
+        .map_err(|e| XlsxError::Workbook(format!("Could not load xlsx from memory: {}", e)))
+}
+
+fn load_xlsx_from_reader<R: Read + std::io::Seek>(
+    name: String,
+    reader: R,
+    locale: &str,
+    tz: &str,
+) -> Result<Workbook, XlsxError> {
     let mut archive = zip::ZipArchive::new(reader)?;
 
     let shared_strings = read_shared_strings(&mut archive)?;

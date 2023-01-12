@@ -1,12 +1,13 @@
 use crate::error::XlsxError;
-use crate::types::ExcelArchive;
 use roxmltree::Node;
 use std::io::Read;
 
 /// Reads the list of shared strings in an Excel workbook
 /// Note than in EqualTo we lose _internal_ styling of a string
 /// See Section 18.4
-pub(crate) fn read_shared_strings(archive: &mut ExcelArchive) -> Result<Vec<String>, XlsxError> {
+pub(crate) fn read_shared_strings<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+) -> Result<Vec<String>, XlsxError> {
     match archive.by_name("xl/sharedStrings.xml") {
         Ok(mut file) => {
             let mut text = String::new();
