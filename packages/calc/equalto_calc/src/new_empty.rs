@@ -120,7 +120,8 @@ impl Model {
 
     // Reparses all formulas and defined names
     fn reset_parsed_structures(&mut self) {
-        self.parser.set_worksheets(self.get_worksheet_names());
+        self.parser
+            .set_worksheets(self.workbook.get_worksheet_names());
         self.parsed_formulas = vec![];
         self.parse_formulas();
         self.parsed_defined_names = HashMap::new();
@@ -137,6 +138,7 @@ impl Model {
         let base_name_uppercase = base_name.to_uppercase();
         let mut index = 1;
         while self
+            .workbook
             .get_worksheet_names()
             .iter()
             .map(|s| s.to_uppercase())
@@ -165,6 +167,7 @@ impl Model {
             return Err(format!("Invalid name for a sheet: '{}'", sheet_name));
         }
         if self
+            .workbook
             .get_worksheet_names()
             .iter()
             .map(|s| s.to_uppercase())

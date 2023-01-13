@@ -1549,15 +1549,6 @@ impl Model {
             .get_style(self.get_cell_style_index(sheet, row, column))
     }
 
-    /// Returns a list with all the names of the worksheets
-    pub fn get_worksheet_names(&self) -> Vec<String> {
-        self.workbook.get_worksheet_names()
-    }
-
-    pub fn get_worksheet_ids(&self) -> Vec<u32> {
-        self.workbook.get_worksheet_ids()
-    }
-
     /// Returns a JSON string of the workbook
     pub fn to_json_str(&self) -> String {
         match serde_json::to_string(&self.workbook) {

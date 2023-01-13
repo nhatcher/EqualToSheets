@@ -95,7 +95,7 @@ fn test_sheets() {
 
     let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
     assert_eq!(
-        model.get_worksheet_names(),
+        model.workbook.get_worksheet_names(),
         vec!["Sheet1", "With space", "Tango & Cash", "你好世界"]
     );
     fs::remove_file(temp_file_name).unwrap();

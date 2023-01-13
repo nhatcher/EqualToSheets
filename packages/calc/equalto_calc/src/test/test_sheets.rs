@@ -8,12 +8,12 @@ fn test_add_remove_sheets() {
     model._set("A1", "7");
     model._set("A2", "=Sheet2!C3");
     model.evaluate();
-    assert_eq!(model.get_worksheet_names(), ["Sheet1"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet1"]);
     assert_eq!(model._get_text("A2"), "#REF!");
 
     // Add a sheet
     model.new_sheet();
-    assert_eq!(model.get_worksheet_names(), ["Sheet1", "Sheet2"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet1", "Sheet2"]);
     assert_eq!(model._get_text("A2"), "0");
     model._set("Sheet2!A1", "=Sheet1!A1");
     model.evaluate();
@@ -23,14 +23,14 @@ fn test_add_remove_sheets() {
     let r = model.rename_sheet("Sheet1", "Ricci");
     assert!(r.is_ok());
 
-    assert_eq!(model.get_worksheet_names(), ["Ricci", "Sheet2"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Ricci", "Sheet2"]);
     assert_eq!(model._get_text("Sheet2!A1"), "7");
     assert_eq!(model._get_formula("Sheet2!A1"), "=Ricci!A1");
 
     // Remove the first sheet
     let r = model.delete_sheet_by_name("Ricci");
     assert!(r.is_ok());
-    assert_eq!(model.get_worksheet_names(), ["Sheet2"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet2"]);
     assert_eq!(model._get_text("Sheet2!A1"), "#REF!");
 }
 
@@ -57,7 +57,7 @@ fn test_rename_one_sheet() {
     let r = model.rename_sheet("Sheet1", "Sheet2");
     assert!(r.is_ok());
     model.new_sheet();
-    assert_eq!(model.get_worksheet_names(), ["Sheet2", "Sheet1"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet2", "Sheet1"]);
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn test_rename_and_formula() {
     let r = model.rename_sheet("Sheet1", "Sheet2");
     assert!(r.is_ok());
     model.new_sheet();
-    assert_eq!(model.get_worksheet_names(), ["Sheet2", "Sheet1"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet2", "Sheet1"]);
     model._set("Sheet2!A3", "= A1 * 3");
     model.evaluate();
     assert_eq!(model._get_formula("Sheet2!A3"), "=A1*3");
@@ -150,7 +150,7 @@ fn test_insert_sheet() {
     assert_eq!(model._get_text("A1"), "42");
     assert_eq!(model._get_text("A2"), "111");
     assert_eq!(
-        model.get_worksheet_names(),
+        model.workbook.get_worksheet_names(),
         ["Sheet1", "Dionysus", "Bacchus"]
     );
 
@@ -158,7 +158,7 @@ fn test_insert_sheet() {
     assert!(model.insert_sheet("OutOfBounds", 4, None).is_err());
     model.evaluate();
     assert_eq!(
-        model.get_worksheet_names(),
+        model.workbook.get_worksheet_names(),
         ["Sheet1", "Dionysus", "Bacchus"]
     );
 
@@ -166,7 +166,7 @@ fn test_insert_sheet() {
     assert!(model.insert_sheet("FirstSheet", 0, None).is_ok());
     model.evaluate();
     assert_eq!(
-        model.get_worksheet_names(),
+        model.workbook.get_worksheet_names(),
         ["FirstSheet", "Sheet1", "Dionysus", "Bacchus"]
     );
 }
@@ -211,12 +211,12 @@ fn test_delete_sheet_by_index() {
     model._set("A1", "7");
     model._set("A2", "=Sheet2!C3");
     model.evaluate();
-    assert_eq!(model.get_worksheet_names(), ["Sheet1"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet1"]);
     assert_eq!(model._get_text("A2"), "#REF!");
 
     // Add a sheet
     model.new_sheet();
-    assert_eq!(model.get_worksheet_names(), ["Sheet1", "Sheet2"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet1", "Sheet2"]);
     assert_eq!(model._get_text("A2"), "0");
     model._set("Sheet2!A1", "=Sheet1!A1");
     model.evaluate();
@@ -226,13 +226,13 @@ fn test_delete_sheet_by_index() {
     let r = model.rename_sheet("Sheet1", "Ricci");
     assert!(r.is_ok());
 
-    assert_eq!(model.get_worksheet_names(), ["Ricci", "Sheet2"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Ricci", "Sheet2"]);
     assert_eq!(model._get_text("Sheet2!A1"), "7");
     assert_eq!(model._get_formula("Sheet2!A1"), "=Ricci!A1");
 
     // Remove the first sheet
     let r = model.delete_sheet_by_name("Ricci");
     assert!(r.is_ok());
-    assert_eq!(model.get_worksheet_names(), ["Sheet2"]);
+    assert_eq!(model.workbook.get_worksheet_names(), ["Sheet2"]);
     assert_eq!(model._get_text("Sheet2!A1"), "#REF!");
 }

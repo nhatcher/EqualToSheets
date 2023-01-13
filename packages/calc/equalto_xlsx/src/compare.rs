@@ -25,8 +25,8 @@ pub struct Diff {
 
 /// Compares two Models in the internal representation and returns a list of differences
 pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
-    let ws1 = m1.get_worksheet_names();
-    let ws2 = m2.get_worksheet_names();
+    let ws1 = m1.workbook.get_worksheet_names();
+    let ws2 = m2.workbook.get_worksheet_names();
     if ws1.len() != ws2.len() {
         return Err(CompareError {
             message: "Different number of sheets".to_string(),

@@ -9,7 +9,7 @@ use crate::test::util::new_empty_model;
 #[test]
 fn test_empty_model() {
     let model = new_empty_model();
-    let names = model.get_worksheet_names();
+    let names = model.workbook.get_worksheet_names();
     assert_eq!(names.len(), 1);
     assert_eq!(names[0], "Sheet1");
 }

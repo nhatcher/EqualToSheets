@@ -87,12 +87,13 @@ impl PyModel {
     }
 
     pub fn get_worksheet_names(&self) -> PyResult<Vec<String>> {
-        Ok(self.model.get_worksheet_names())
+        Ok(self.model.workbook.get_worksheet_names())
     }
 
     pub fn get_worksheet_ids(&self) -> PyResult<Vec<i32>> {
         Ok(self
             .model
+            .workbook
             .get_worksheet_ids()
             .iter()
             .map(|&id| id.try_into().unwrap())
