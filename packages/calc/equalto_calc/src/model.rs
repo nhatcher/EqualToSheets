@@ -68,12 +68,6 @@ pub struct CellIndex {
     pub column: i32,
 }
 
-pub struct CellRowInput {
-    pub style: i32,
-    pub text: String,
-    pub column: i32,
-}
-
 /// Used for the eval_workbook binary. A ExcelValue is the Excel representation of the cell content.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(untagged)]
@@ -81,13 +75,6 @@ pub enum ExcelValue {
     String(String),
     Number(f64),
     Boolean(bool),
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-#[serde(untagged)]
-pub enum ExcelValueOrRange {
-    Value(ExcelValue),
-    Range(Vec<Vec<ExcelValue>>),
 }
 
 impl ExcelValue {
@@ -99,9 +86,6 @@ impl ExcelValue {
         }
     }
 }
-
-/// sheet, row, column, value
-pub type InputData = HashMap<u32, HashMap<i32, HashMap<i32, ExcelValue>>>;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Style {
