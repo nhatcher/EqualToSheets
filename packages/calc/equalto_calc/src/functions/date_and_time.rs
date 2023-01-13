@@ -7,6 +7,7 @@ use chrono::TimeZone;
 
 use crate::{
     calc_result::{CalcResult, CellReference},
+    constants::EXCEL_DATE_BASE,
     expressions::parser::Node,
     expressions::token::Error,
     formatter::dates::from_excel_date,
@@ -110,9 +111,8 @@ impl Model {
             }
             Err(s) => return s,
         };
-        let time_delta = NaiveDate::from_ymd(1900, 1, 1).num_days_from_ce() - 2;
         let serial_number = match NaiveDate::from_ymd_opt(year, month, day) {
-            Some(native_date) => native_date.num_days_from_ce() - time_delta,
+            Some(native_date) => native_date.num_days_from_ce() - EXCEL_DATE_BASE,
             None => {
                 return CalcResult::Error {
                     error: Error::NUM,
@@ -156,12 +156,10 @@ impl Model {
         // milliseconds since January 1, 1970 00:00:00 UTC.
         let milliseconds = (self.env.get_milliseconds_since_epoch)();
         let seconds = milliseconds / 1000;
-        let dt = NaiveDateTime::from_timestamp(seconds, 0);
+        let dt = NaiveDateTime::from_timestamp_opt(seconds, 0)
+            .expect("problem with chrono::NaiveDateTime");
         let local_time = self.tz.from_utc_datetime(&dt);
-        // 693_594 is computed as:
-        // NaiveDate::from_ymd(1900, 1, 1).num_days_from_ce() - 2
-        // The 2 days offset is because of Excel 1900 bug
-        let days_from_1900 = local_time.num_days_from_ce() - 693_594;
+        let days_from_1900 = local_time.num_days_from_ce() - EXCEL_DATE_BASE;
 
         CalcResult::Number(days_from_1900 as f64)
     }
@@ -204,8 +202,7 @@ impl Model {
             from_excel_date(serial_number) - Months::new(months_abs)
         };
 
-        let time_delta = NaiveDate::from_ymd(1900, 1, 1).num_days_from_ce() - 2;
-        let serial_number = native_date.num_days_from_ce() - time_delta;
+        let serial_number = native_date.num_days_from_ce() - EXCEL_DATE_BASE;
         if serial_number < 0 {
             return CalcResult::Error {
                 error: Error::NUM,
