@@ -4,28 +4,36 @@ orbs:
 workflows:
   test-build-deploy:
     jobs:
-      - test-calc:
-          context:
-            - docker-hub-creds
+      - test-calc
       - build-and-test-python-sdk
+      - build-and-test-typescript-sdk
 
 jobs:
   test-calc:
     docker:
-      - image: equaltodev/rust:1.65.0-2
-        auth:
-          username: $DOCKER_HUB_ID
-          password: $DOCKER_HUB_PASSWORD
+      - image: rust:1.65.0-slim
     working_directory: ~/repo
     steps:
       - checkout
       - run:
-          name: Run packages/calc tests
+          name: Install dependencies
           command: |
-            cd packages/calc
-            make tests
+            apt update
+            apt -y --no-install-recommends upgrade
+            apt install --no-install-recommends -y make
+            rustup component add rustfmt clippy
+            cargo install cargo-llvm-cov --version 0.5.2 --locked
+      - run:
+          name: Run linters
+          command: make lint
+          working_directory: ./packages/calc
+      - run:
+          name: Run tests and collect coverage
+          command: make coverage
+          working_directory: ./packages/calc
       - store_artifacts:
           path: ~/repo/packages/calc/target/llvm-cov
+
   build-and-test-python-sdk:
     docker:
       - image: rust:1.65.0-slim
@@ -53,3 +61,31 @@ jobs:
           working_directory: ./packages/sdk/python
       - store_artifacts:
           path: ~/repo/packages/sdk/python/tests/htmlcov
+
+  build-and-test-typescript-sdk:
+    docker:
+      - image: rust:1.65.0-slim
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt -y --no-install-recommends upgrade
+            apt install --no-install-recommends -y curl make
+            rustup component add rustfmt clippy
+            ./util/install-wasm-pack.sh
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Build WASM packages
+          command: make all
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Run linters
+          command: make lint
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Run tests
+          command: cargo test
+          working_directory: ./packages/sdk/typescript

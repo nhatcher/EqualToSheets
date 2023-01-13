@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # DO NOT MODIFY! THIS WAS DOWNLOADED FROM:
 #    https://rustwasm.github.io/wasm-pack/installer/#
 # -DIARMUID

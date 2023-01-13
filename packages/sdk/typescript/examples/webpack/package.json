@@ -1,0 +1,20 @@
+{
+  "name": "equalto-webpack-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "npm run build && npx http-server dist",
+    "build": "webpack"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "@equalto/wasm": "file:../../pkg/bundler",
+    "html-webpack-plugin": "^5.5.0",
+    "http-server": "^14.1.1",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  }
+}

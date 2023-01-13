@@ -7,7 +7,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zip = "0.5"
+# bzip2 requires native environment and it won't compile to WebAssembly with it enabled
+zip = { version = "0.5", default-features = false, features = ["deflate"] }
 roxmltree = "0.13.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
