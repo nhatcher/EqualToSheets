@@ -15,11 +15,16 @@ fn test_column_width() {
         width: 8.7,
     }];
     model.workbook.worksheets[0].cols = cols;
-    model.set_column_width(0, 2, 30.0);
+    model
+        .workbook
+        .worksheet_mut(0)
+        .unwrap()
+        .set_column_width(2, 30.0);
     assert_eq!(model.workbook.worksheets[0].cols.len(), 3);
-    assert!((model.get_column_width(0, 1) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
-    assert!((model.get_column_width(0, 2) - 30.0).abs() < f64::EPSILON);
-    assert!((model.get_column_width(0, 3) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
+    let worksheet = model.workbook.worksheet(0).unwrap();
+    assert!((worksheet.get_column_width(1) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
+    assert!((worksheet.get_column_width(2) - 30.0).abs() < f64::EPSILON);
+    assert!((worksheet.get_column_width(3) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
     assert_eq!(model.get_cell_style_index(0, 23, 2), 6);
 }
 
@@ -34,11 +39,16 @@ fn test_column_width_lower_edge() {
         width: 10.0,
     }];
     model.workbook.worksheets[0].cols = cols;
-    model.set_column_width(0, 5, 30.0);
+    model
+        .workbook
+        .worksheet_mut(0)
+        .unwrap()
+        .set_column_width(5, 30.0);
     assert_eq!(model.workbook.worksheets[0].cols.len(), 2);
-    assert!((model.get_column_width(0, 4) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
-    assert!((model.get_column_width(0, 5) - 30.0).abs() < f64::EPSILON);
-    assert!((model.get_column_width(0, 6) - 10.0 * COLUMN_WIDTH_FACTOR).abs() < f64::EPSILON);
+    let worksheet = model.workbook.worksheet(0).unwrap();
+    assert!((worksheet.get_column_width(4) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
+    assert!((worksheet.get_column_width(5) - 30.0).abs() < f64::EPSILON);
+    assert!((worksheet.get_column_width(6) - 10.0 * COLUMN_WIDTH_FACTOR).abs() < f64::EPSILON);
     assert_eq!(model.get_cell_style_index(0, 23, 5), 1);
 }
 
@@ -53,10 +63,15 @@ fn test_column_width_higher_edge() {
         width: 10.0,
     }];
     model.workbook.worksheets[0].cols = cols;
-    model.set_column_width(0, 16, 30.0);
+    model
+        .workbook
+        .worksheet_mut(0)
+        .unwrap()
+        .set_column_width(16, 30.0);
     assert_eq!(model.workbook.worksheets[0].cols.len(), 2);
-    assert!((model.get_column_width(0, 15) - 10.0 * COLUMN_WIDTH_FACTOR).abs() < f64::EPSILON);
-    assert!((model.get_column_width(0, 16) - 30.0).abs() < f64::EPSILON);
-    assert!((model.get_column_width(0, 17) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
+    let worksheet = model.workbook.worksheet(0).unwrap();
+    assert!((worksheet.get_column_width(15) - 10.0 * COLUMN_WIDTH_FACTOR).abs() < f64::EPSILON);
+    assert!((worksheet.get_column_width(16) - 30.0).abs() < f64::EPSILON);
+    assert!((worksheet.get_column_width(17) - DEFAULT_COLUMN_WIDTH).abs() < f64::EPSILON);
     assert_eq!(model.get_cell_style_index(0, 23, 16), 1);
 }

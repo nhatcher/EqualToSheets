@@ -1377,34 +1377,6 @@ impl Model {
         result
     }
 
-    /// Return the width of a column in pixels
-    pub fn get_column_width(&self, sheet: u32, column: i32) -> f64 {
-        let cols = &self.workbook.worksheets[sheet as usize].cols;
-        for col in cols {
-            let min = col.min;
-            let max = col.max;
-            if column >= min && column <= max {
-                if col.custom_width {
-                    return col.width * constants::COLUMN_WIDTH_FACTOR;
-                } else {
-                    break;
-                }
-            }
-        }
-        constants::DEFAULT_COLUMN_WIDTH
-    }
-
-    /// Returns the height of a row in pixels
-    pub fn get_row_height(&self, sheet: u32, row: i32) -> f64 {
-        let rows = &self.workbook.worksheets[sheet as usize].rows;
-        for r in rows {
-            if r.r == row {
-                return r.height * constants::ROW_HEIGHT_FACTOR;
-            }
-        }
-        constants::DEFAULT_ROW_HEIGHT
-    }
-
     /// Deletes a cell by setting it empty.
     /// TODO: A better name would be set_cell_empty or remove_cell_contents
     pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
@@ -1423,90 +1395,6 @@ impl Model {
         }
 
         Ok(())
-    }
-
-    /// Changes the height of a row.
-    ///   * If the row does not a have a style we add it.
-    ///   * If it has we modify the height and make sure it is applied.
-    pub fn set_row_height(&mut self, sheet: u32, row: i32, height: f64) {
-        let rows = &mut self.workbook.worksheets[sheet as usize].rows;
-        for r in rows.iter_mut() {
-            if r.r == row {
-                r.height = height / constants::ROW_HEIGHT_FACTOR;
-                r.custom_height = true;
-                return;
-            }
-        }
-        rows.push(Row {
-            height: height / constants::ROW_HEIGHT_FACTOR,
-            r: row,
-            custom_format: false,
-            custom_height: true,
-            s: 0,
-        })
-    }
-    /// Changes the width of a column.
-    ///   * If the column does not a have a width we simply add it
-    ///   * If it has, it might be part of a range and we ned to split the range.
-    pub fn set_column_width(&mut self, sheet: u32, column: i32, width: f64) {
-        let cols = &mut self.workbook.worksheets[sheet as usize].cols;
-        let mut col = Col {
-            min: column,
-            max: column,
-            width: width / constants::COLUMN_WIDTH_FACTOR,
-            custom_width: true,
-            style: None,
-        };
-        let mut index = 0;
-        let mut split = false;
-        for c in cols.iter_mut() {
-            let min = c.min;
-            let max = c.max;
-            if min <= column && column <= max {
-                if min == column && max == column {
-                    c.width = width / constants::COLUMN_WIDTH_FACTOR;
-                    return;
-                } else {
-                    // We need to split the result
-                    split = true;
-                    break;
-                }
-            }
-            if column < min {
-                // We passed, we should insert at index
-                break;
-            }
-            index += 1;
-        }
-        if split {
-            let min = cols[index].min;
-            let max = cols[index].max;
-            let pre = Col {
-                min,
-                max: column - 1,
-                width: cols[index].width,
-                custom_width: cols[index].custom_width,
-                style: cols[index].style,
-            };
-            let post = Col {
-                min: column + 1,
-                max,
-                width: cols[index].width,
-                custom_width: cols[index].custom_width,
-                style: cols[index].style,
-            };
-            col.style = cols[index].style;
-            cols.remove(index);
-            if column != max {
-                cols.insert(index, post);
-            }
-            cols.insert(index, col);
-            if column != min {
-                cols.insert(index, pre);
-            }
-        } else {
-            cols.insert(index, col);
-        }
     }
 
     // FIXME: expect

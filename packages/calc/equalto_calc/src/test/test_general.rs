@@ -97,11 +97,15 @@ fn test_get_sheet_index_by_sheet_id() {
 #[test]
 fn test_set_row_height() {
     let mut model = new_empty_model();
-    model.set_row_height(0, 5, 25.0);
-    assert!((25.0 - model.get_row_height(0, 5)).abs() < f64::EPSILON);
+    let worksheet = model.workbook.worksheet_mut(0).unwrap();
+    worksheet.set_row_height(5, 25.0);
+    let worksheet = model.workbook.worksheet(0).unwrap();
+    assert!((25.0 - worksheet.get_row_height(5)).abs() < f64::EPSILON);
 
-    model.set_row_height(0, 5, 5.0);
-    assert!((5.0 - model.get_row_height(0, 5)).abs() < f64::EPSILON);
+    let worksheet = model.workbook.worksheet_mut(0).unwrap();
+    worksheet.set_row_height(5, 5.0);
+    let worksheet = model.workbook.worksheet(0).unwrap();
+    assert!((5.0 - worksheet.get_row_height(5)).abs() < f64::EPSILON);
 }
 
 #[test]
