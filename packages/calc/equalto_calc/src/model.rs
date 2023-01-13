@@ -1647,7 +1647,6 @@ impl Model {
                 style: cols[index].style,
             };
             col.style = cols[index].style;
-            let index = index as usize;
             cols.remove(index);
             if column != max {
                 cols.insert(index, post);
@@ -1670,7 +1669,7 @@ impl Model {
             .expect("Invalid sheet")
             .cell(row, column);
         match cell {
-            Some(cell) => cell.get_style() as i32,
+            Some(cell) => cell.get_style(),
             None => {
                 let rows = &self.workbook.worksheets[sheet as usize].rows;
                 for r in rows {

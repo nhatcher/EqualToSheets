@@ -103,7 +103,7 @@ pub fn save_to_xlsx(model: &Model, file_name: &str) -> Result<(), XlsxError> {
         zip.write_all(
             worksheets::get_worksheet_xml(
                 worksheet,
-                &model.parsed_formulas[sheet_index as usize],
+                &model.parsed_formulas[sheet_index],
                 sheet_dimension_str,
             )
             .as_bytes(),

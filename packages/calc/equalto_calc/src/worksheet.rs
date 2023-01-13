@@ -134,7 +134,6 @@ impl Worksheet {
                 custom_width: cols[index].custom_width,
                 style: cols[index].style,
             };
-            let index = index as usize;
             cols.remove(index);
             if column != max {
                 cols.insert(index, post);

@@ -1080,7 +1080,7 @@ fn load_sheet<R: Read + std::io::Seek>(
                                     Some(index) => {
                                         // The index for that formula already exists meaning we bumped into a daughter cell first
                                         // TODO: Worth assert the content is a placeholder?
-                                        formula_index = *index as i32;
+                                        formula_index = *index;
                                         shared_formulas.insert(formula_index as usize, formula);
                                     }
                                     None => {
@@ -1103,7 +1103,7 @@ fn load_sheet<R: Read + std::io::Seek>(
                                 // It's a daughter cell
                                 match index_map.get(&si) {
                                     Some(index) => {
-                                        formula_index = *index as i32;
+                                        formula_index = *index;
                                     }
                                     None => {
                                         // Haven't bumped into the mother cell yet. We insert a placeholder.
