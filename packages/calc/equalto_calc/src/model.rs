@@ -1274,6 +1274,17 @@ impl Model {
         }
     }
 
+    pub fn get_formatted_cell_value(&self, sheet_index: u32, row: i32, column: i32) -> String {
+        match self.get_cell_value_by_index(sheet_index, row, column) {
+            ExcelValue::String(value) => value,
+            ExcelValue::Boolean(value) => value.to_string().to_uppercase(),
+            ExcelValue::Number(value) => {
+                let format = self.get_style_for_cell(sheet_index, row, column).num_fmt;
+                self.format_number(value, format).text
+            }
+        }
+    }
+
     pub fn get_cell_type(&self, sheet_index: u32, row: i32, column: i32) -> CellType {
         self.get_cell_at(sheet_index, row, column).get_type()
     }

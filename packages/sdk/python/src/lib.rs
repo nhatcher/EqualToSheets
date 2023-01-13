@@ -58,6 +58,12 @@ impl PyModel {
         Ok(self.model.format_number(value, format_code).text)
     }
 
+    pub fn get_formatted_cell_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
+        Ok(self
+            .model
+            .get_formatted_cell_value(sheet.try_into().unwrap(), row, column))
+    }
+
     pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<bool> {
         Ok(self
             .model

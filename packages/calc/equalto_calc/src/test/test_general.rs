@@ -572,3 +572,26 @@ fn test_get_cell_value_by_ref() {
         Err("Error parsing reference: 'Sheet1!A1 '".to_string())
     );
 }
+
+#[test]
+fn test_get_formatted_cell_value() {
+    let mut model = new_empty_model();
+    model._set("A1", "foobar");
+    model._set("A2", "true");
+    model._set("A3", "");
+    model._set("A4", "123.456");
+    model._set("A5", "123.456");
+
+    // change A5 format
+    let mut style = model.get_style_for_cell(0, 5, 1);
+    style.num_fmt = "$#,##0.00".to_string();
+    model.set_cell_style(0, 5, 1, &style).unwrap();
+
+    model.evaluate();
+
+    assert_eq!(model.get_formatted_cell_value(0, 1, 1), "foobar");
+    assert_eq!(model.get_formatted_cell_value(0, 2, 1), "TRUE");
+    assert_eq!(model.get_formatted_cell_value(0, 3, 1), "");
+    assert_eq!(model.get_formatted_cell_value(0, 4, 1), "123.456");
+    assert_eq!(model.get_formatted_cell_value(0, 5, 1), "$123.46");
+}

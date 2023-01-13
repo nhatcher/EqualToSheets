@@ -10,26 +10,6 @@ from equalto.exceptions import WorkbookError, WorkbookValueError
 from equalto.workbook import Workbook
 
 
-@pytest.fixture(name="cell")
-def fixture_cell(empty_workbook: Workbook) -> Cell:
-    return empty_workbook["Sheet1!A1"]
-
-
-@pytest.mark.parametrize(
-    "value, text",
-    [
-        ("foo", "foo"),
-        (42, "42"),
-        (1.23, "1.23"),
-        (False, "FALSE"),
-        (None, ""),
-    ],
-)
-def test_cell_str(cell: Cell, value: Any, text: str) -> None:
-    cell.value = value
-    assert str(cell) == text
-
-
 def test_set_formula(empty_workbook: Workbook) -> None:
     sheet = empty_workbook.sheets[0]
 

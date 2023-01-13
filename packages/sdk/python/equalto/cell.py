@@ -7,6 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from equalto.exceptions import WorkbookError, WorkbookValueError
+from equalto.style import Style
 
 if TYPE_CHECKING:
     from equalto._pycalc import PyCalcModel
@@ -35,16 +36,16 @@ class Cell:
 
     def __str__(self) -> str:
         """Get formatted cell value."""
-        return self._model.get_text_at(*self._cell_ref)
+        return self._model.get_formatted_cell_value(*self.cell_ref)
 
     @property
     def type(self) -> CellType:
-        return CellType(self._model.get_cell_type(*self._cell_ref))
+        return CellType(self._model.get_cell_type(*self.cell_ref))
 
     @property
     def value(self) -> float | bool | str | date | datetime | None:
         """Get raw value from the represented cell."""
-        value = json.loads(self._model.get_cell_value_by_index(*self._cell_ref))
+        value = json.loads(self._model.get_cell_value_by_index(*self.cell_ref))
         assert value is None or isinstance(value, (float, bool, str))
         return value
 
@@ -56,13 +57,13 @@ class Cell:
         if isinstance(value, str):
             # NOTE: At the moment we can't manually set an error value, i.e. "#VALUE!" will be
             #       treated as string.
-            self._model.update_cell_with_text(*self._cell_ref, value)
+            self._model.update_cell_with_text(*self.cell_ref, value)
         elif isinstance(value, bool):
-            self._model.update_cell_with_bool(*self._cell_ref, value)
+            self._model.update_cell_with_bool(*self.cell_ref, value)
         elif isinstance(value, (float, int)):
-            self._model.update_cell_with_number(*self._cell_ref, float(value))
+            self._model.update_cell_with_number(*self.cell_ref, float(value))
         elif isinstance(value, (date, datetime)):
-            self._model.update_cell_with_number(*self._cell_ref, self._get_excel_date(value))
+            self._model.update_cell_with_number(*self.cell_ref, self._get_excel_date(value))
         else:  # pragma: no cover
             raise ValueError(f"unrecognized value type ({value=})")
 
@@ -113,9 +114,9 @@ class Cell:
 
     @property
     def formula(self) -> str | None:
-        if not self._model.has_formula(*self._cell_ref):
+        if not self._model.has_formula(*self.cell_ref):
             return None
-        formula = self._model.get_formula_or_value(*self._cell_ref)
+        formula = self._model.get_formula_or_value(*self.cell_ref)
         assert isinstance(formula, str)
         return formula
 
@@ -123,24 +124,28 @@ class Cell:
     def formula(self, formula: str) -> None:
         if not formula.startswith("="):
             raise WorkbookError(f'"{formula}" is not a valid formula')
-        self._model.set_input(*self._cell_ref, formula)
+        self._model.set_input(*self.cell_ref, formula)
         self._model.evaluate()
+
+    @cached_property
+    def style(self) -> Style:
+        return Style(self)
 
     def delete(self) -> None:
         """Delete the cell content and style."""
-        self._model.delete_cell(*self._cell_ref)
+        self._model.delete_cell(*self.cell_ref)
 
     @cached_property
     def workbook(self) -> Workbook:
         return self.sheet.workbook_sheets.workbook
 
+    @property
+    def cell_ref(self) -> tuple[int, int, int]:
+        return self.sheet.index, self.row, self.column
+
     @cached_property
     def _model(self) -> PyCalcModel:
         return self.workbook._model  # noqa: WPS437
-
-    @property
-    def _cell_ref(self) -> tuple[int, int, int]:
-        return self.sheet.index, self.row, self.column
 
     _excel_base_dt = datetime(1899, 12, 30)
 
