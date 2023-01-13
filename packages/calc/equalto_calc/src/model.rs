@@ -1507,16 +1507,6 @@ impl Model {
         constants::DEFAULT_ROW_HEIGHT
     }
 
-    // FIXME: This should return an object
-    /// Returns a JSON string with the set of merge cells
-    pub fn get_merge_cells(&self, sheet: u32) -> String {
-        let merge_cells = &self.workbook.worksheets[sheet as usize].merge_cells;
-        match serde_json::to_string(&merge_cells) {
-            Ok(s) => s,
-            Err(_) => json!([]).to_string(),
-        }
-    }
-
     /// Deletes a cell by setting it empty.
     /// TODO: A better name would be set_cell_empty or remove_cell_contents
     pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {

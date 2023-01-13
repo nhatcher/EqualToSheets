@@ -265,11 +265,6 @@ impl JSModel {
         self.model.set_row_height(sheet, row, height);
     }
 
-    pub fn get_merge_cells(&self, sheet: u32) -> String {
-        // FIXME: This should return an object not a string
-        self.model.get_merge_cells(sheet)
-    }
-
     pub fn create_named_style(&mut self, style_name: &str, style_js: &JsValue) -> JsResult {
         let style: Style = match JsValueSerdeExt::into_serde(style_js) {
             Ok(s) => s,
