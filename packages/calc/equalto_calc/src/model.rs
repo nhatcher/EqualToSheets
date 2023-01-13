@@ -114,10 +114,6 @@ pub struct Style {
 }
 
 impl Model {
-    fn get_string_index(&self, str: &str) -> Option<usize> {
-        self.workbook.shared_strings.iter().position(|r| r == str)
-    }
-
     fn get_range(&self, left: &Node, right: &Node, cell: CellReference) -> CalcResult {
         match (left, right) {
             (
@@ -1268,88 +1264,6 @@ impl Model {
 
     pub fn get_cell_type(&self, sheet_index: u32, row: i32, column: i32) -> CellType {
         self.get_cell_at(sheet_index, row, column).get_type()
-    }
-
-    pub fn set_cells_with_values_json(&mut self, input_json: &str) -> Result<(), String> {
-        let values: HashMap<String, ExcelValue> = match serde_json::from_str(input_json) {
-            Ok(v) => v,
-            Err(_) => return Err("Cannot parse input".to_string()),
-        };
-        self.set_cells_with_values(values)
-    }
-
-    fn set_cells_with_parsed_references(&mut self, input_data: &InputData) -> Result<(), String> {
-        for (&sheet_index, sheet_data) in input_data {
-            for (&row, row_data) in sheet_data {
-                for (&column, value) in row_data {
-                    let style_index = self.get_cell_style_index(sheet_index, row, column);
-                    match &value {
-                        ExcelValue::String(v) => {
-                            let upper = v.to_uppercase();
-                            match get_error_by_name(&upper, &self.language) {
-                                Some(index) => {
-                                    self.workbook.worksheets[sheet_index as usize]
-                                        .set_cell_with_error(row, column, index, style_index);
-                                }
-                                None => {
-                                    let si = match self.get_string_index(v) {
-                                        Some(i) => i as i32,
-                                        None => {
-                                            self.workbook.shared_strings.push(v.clone());
-                                            self.workbook.shared_strings.len() as i32 - 1
-                                        }
-                                    };
-                                    self.workbook.worksheets[sheet_index as usize]
-                                        .set_cell_with_string(row, column, si, style_index);
-                                }
-                            }
-                        }
-                        ExcelValue::Number(v) => {
-                            self.workbook.worksheets[sheet_index as usize].set_cell_with_number(
-                                row,
-                                column,
-                                *v,
-                                style_index,
-                            );
-                        }
-                        ExcelValue::Boolean(v) => {
-                            self.workbook.worksheets[sheet_index as usize].set_cell_with_boolean(
-                                row,
-                                column,
-                                *v,
-                                style_index,
-                            );
-                        }
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// Sets cells with the Excel Values (Used by eval_workbook and calc)
-    pub fn set_cells_with_values(
-        &mut self,
-        data: HashMap<String, ExcelValue>,
-    ) -> Result<(), String> {
-        let mut input_data: InputData = HashMap::new();
-        for (key, value) in data {
-            // TODO: If the reference is wrong this function should return an error
-            let cell_reference = match self.parse_reference(&key) {
-                Some(c) => c,
-                None => return Err("Invalid reference".to_string()),
-            };
-
-            // get the worksheet index
-            let sheet = cell_reference.sheet;
-
-            let column = cell_reference.column;
-            let row = cell_reference.row;
-            let sheet_data = input_data.entry(sheet).or_default();
-            let row_data = sheet_data.entry(row).or_default();
-            row_data.insert(column, value);
-        }
-        self.set_cells_with_parsed_references(&input_data)
     }
 
     /// Returns a list of all cells

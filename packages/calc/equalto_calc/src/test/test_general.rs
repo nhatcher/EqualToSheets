@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
 use crate::model::ExcelValue::{self};
-use serde_json::json;
 
 use crate::{number_format::to_excel_precision_str, types::Color};
 
@@ -71,57 +70,6 @@ fn test_model_dependencies() {
     model.evaluate();
     let result = model.get_text_at(0, 2, 1);
     assert_eq!(result, *"65");
-}
-
-#[test]
-fn test_model_set_cells_with_json() {
-    let mut model = new_empty_model();
-    let names = model.get_worksheet_names();
-    assert_eq!(names.len(), 1);
-    assert_eq!(names[0], "Sheet1");
-
-    // Inputs
-    model.set_input(0, 1, 1, "21".to_string(), 0); // A1
-    model.set_input(0, 2, 1, "2".to_string(), 0); // A2
-
-    // Formula
-    model.set_input(0, 1, 2, "= A1 * A2".to_string(), 0); // B1
-    model.evaluate();
-    let result = model.get_text_at(0, 1, 2);
-
-    assert_eq!(result, *"42"); // Sanity check
-
-    // Now use json to set the cells
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!A1": 21, "Sheet1!A2": 37}).to_string())
-        .is_ok());
-    model.evaluate();
-    let result = model.get_text_at(0, 1, 2);
-    assert_eq!(result, *"777");
-
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!A3": "text"}).to_string())
-        .is_ok());
-}
-
-#[test]
-fn test_model_set_cells_with_json_error() {
-    let mut model = new_empty_model();
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!2": 21}).to_string())
-        .is_err());
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!A0": 21}).to_string())
-        .is_err());
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet2!A2": 21}).to_string())
-        .is_err());
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!ZZZ3": 21}).to_string())
-        .is_err());
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!A2000000": 21}).to_string())
-        .is_err());
 }
 
 #[test]
@@ -311,9 +259,9 @@ fn test_model_set_cells_with_values_styles() {
     let style_index = model.get_cell_style_index(0, 2, 1);
     assert_eq!(style_index, 1);
 
-    assert!(model
-        .set_cells_with_values_json(&json!({"Sheet1!A1": 21, "Sheet1!A2": 37}).to_string())
-        .is_ok());
+    model.update_cell_with_number(0, 1, 2, 1.0);
+    model.update_cell_with_number(0, 2, 1, 2.0);
+
     model.evaluate();
 
     // Styles are not modified

@@ -233,10 +233,6 @@ impl JSModel {
         self.model.update_cell_with_bool(sheet, row, column, value)
     }
 
-    pub fn set_cells_with_values_json(&mut self, input_json: &str) {
-        self.model.set_cells_with_values_json(input_json).unwrap();
-    }
-
     pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) {
         self.model.delete_cell(sheet, row, column).unwrap();
     }
