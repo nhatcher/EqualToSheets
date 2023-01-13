@@ -1584,18 +1584,6 @@ impl Model {
             }
         }
     }
-
-    /// Removes all data on a sheet, including the cell styles
-    pub fn remove_sheet_data(&mut self, sheet: u32) -> Result<(), String> {
-        let worksheet = match self.workbook.worksheets.get_mut(sheet as usize) {
-            Some(s) => s,
-            None => return Err("Wrong worksheet index".to_string()),
-        };
-
-        // Remove all data
-        worksheet.sheet_data = HashMap::new();
-        Ok(())
-    }
 }
 
 #[cfg(test)]
