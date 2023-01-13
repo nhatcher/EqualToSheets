@@ -33,19 +33,6 @@ fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
-/// Information need to show a sheet tab in the UI
-/// The color is serialized only if it is not Color::None
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-pub struct Tab {
-    pub name: String,
-    pub state: String,
-    pub index: i32,
-    pub sheet_id: u32,
-    #[serde(default = "Color::new")]
-    #[serde(skip_serializing_if = "Color::is_none")]
-    pub color: Color,
-}
-
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct WorkbookSettings {
     pub tz: String,

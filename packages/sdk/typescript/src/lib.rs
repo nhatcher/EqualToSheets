@@ -270,11 +270,6 @@ impl JSModel {
         self.model.get_merge_cells(sheet)
     }
 
-    pub fn get_tabs(&self) -> String {
-        // FIXME: This should not return a string but an object
-        self.model.get_tabs()
-    }
-
     pub fn create_named_style(&mut self, style_name: &str, style_js: &JsValue) -> JsResult {
         let style: Style = match JsValueSerdeExt::into_serde(style_js) {
             Ok(s) => s,

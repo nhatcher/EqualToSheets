@@ -3,10 +3,7 @@
 use crate::model::ExcelValue::{self};
 use serde_json::json;
 
-use crate::{
-    number_format::to_excel_precision_str,
-    types::{Color, Tab},
-};
+use crate::{number_format::to_excel_precision_str, types::Color};
 
 use crate::test::util::new_empty_model;
 
@@ -137,16 +134,6 @@ fn test_model_strings() {
     assert_eq!(result, *"Hello World");
     let result = model.get_text_at(0, 1, 2);
     assert_eq!(result, *"Hello World");
-}
-
-#[test]
-fn test_model_get_tabs_empty_model() {
-    let model = new_empty_model();
-    let tabs = model.get_tabs();
-    assert_eq!(
-        tabs,
-        *"[{\"name\":\"Sheet1\",\"state\":\"visible\",\"index\":0,\"sheet_id\":1}]"
-    );
 }
 
 #[test]
@@ -360,18 +347,18 @@ fn test_style_fmt_id() {
 #[test]
 fn test_set_sheet_color() {
     let mut model = new_empty_model();
-    let tabs: Vec<Tab> = serde_json::from_str(&model.get_tabs()).unwrap();
-    assert_eq!(tabs[0].color, Color::None);
+    assert_eq!(model.workbook.worksheet(0).unwrap().color, Color::None);
     assert!(model.set_sheet_color(0, "#FFFAAA").is_ok());
 
     // Test new tab color is properly set
-    let tabs: Vec<Tab> = serde_json::from_str(&model.get_tabs()).unwrap();
-    assert_eq!(tabs[0].color, Color::RGB("#FFFAAA".to_string()));
+    assert_eq!(
+        model.workbook.worksheet(0).unwrap().color,
+        Color::RGB("#FFFAAA".to_string())
+    );
 
     // Test we can remove it
     assert!(model.set_sheet_color(0, "").is_ok());
-    let tabs: Vec<Tab> = serde_json::from_str(&model.get_tabs()).unwrap();
-    assert_eq!(tabs[0].color, Color::None);
+    assert_eq!(model.workbook.worksheet(0).unwrap().color, Color::None);
 }
 
 #[test]

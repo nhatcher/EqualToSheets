@@ -1508,26 +1508,6 @@ impl Model {
     }
 
     // FIXME: This should return an object
-    /// Returns a JSON string with (name, state and visibility) of each sheet
-    pub fn get_tabs(&self) -> String {
-        let mut tabs = Vec::new();
-        let worksheets = &self.workbook.worksheets;
-        for (index, worksheet) in worksheets.iter().enumerate() {
-            tabs.push(Tab {
-                name: worksheet.get_name(),
-                state: worksheet.state.to_string(),
-                color: worksheet.color.clone(),
-                index: index as i32,
-                sheet_id: worksheet.sheet_id,
-            });
-        }
-        match serde_json::to_string(&tabs) {
-            Ok(s) => s,
-            Err(_) => json!([]).to_string(),
-        }
-    }
-
-    // FIXME: This should return an object
     /// Returns a JSON string with the set of merge cells
     pub fn get_merge_cells(&self, sheet: u32) -> String {
         let merge_cells = &self.workbook.worksheets[sheet as usize].merge_cells;
