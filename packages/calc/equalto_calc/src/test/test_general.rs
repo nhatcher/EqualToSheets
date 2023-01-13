@@ -4,7 +4,6 @@ use crate::model::ExcelValue::{self};
 use serde_json::json;
 
 use crate::{
-    cell::{UICell, UIValue},
     number_format::to_excel_precision_str,
     types::{Color, Tab},
 };
@@ -251,123 +250,6 @@ fn test_booleans() {
     assert_eq!(
         model.get_formula_or_value(0, 1, 5),
         *"=IF(FALSE,TRUE,FALSE)"
-    );
-}
-
-#[test]
-fn test_get_ui_cell() {
-    let mut model = new_empty_model();
-    // A1 has a string
-    model.set_input(0, 1, 1, "Hello World".to_string(), 0);
-    // A2 has a number
-    model.set_input(0, 2, 1, "23".to_string(), 0);
-    // A3 has a bool
-    model.set_input(0, 3, 1, "true".to_string(), 0);
-    // A4 has an error
-    model.set_input(0, 4, 1, "#ERROR!".to_string(), 0);
-
-    // B1 has a formula string
-    model.set_input(0, 1, 2, "=\"Hello World\"".to_string(), 0);
-    // B2 has a formula number
-    model.set_input(0, 2, 2, "=23".to_string(), 0);
-    // B3 has a formula bool
-    model.set_input(0, 3, 2, "=true".to_string(), 0);
-    // B4 has a formula error
-    model.set_input(0, 4, 2, "=1/0".to_string(), 0);
-    model.evaluate();
-
-    // A1: string
-    let ui_cell = model.get_ui_cell(0, 1, 1);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "text".to_string(),
-            value: UIValue::Text("Hello World".to_string()),
-            details: "".to_string()
-        }
-    );
-    // A2: number
-    let ui_cell = model.get_ui_cell(0, 2, 1);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "number".to_string(),
-            value: UIValue::Number(23.0),
-            details: "".to_string()
-        }
-    );
-    // A3 boolean
-    let ui_cell = model.get_ui_cell(0, 3, 1);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "bool".to_string(),
-            value: UIValue::Text("TRUE".to_string()),
-            details: "".to_string()
-        }
-    );
-    // A4 error
-    let ui_cell = model.get_ui_cell(0, 4, 1);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "error".to_string(),
-            value: UIValue::Text("#ERROR!".to_string()),
-            details: "".to_string()
-        }
-    );
-
-    // Formulas
-    // B1: string
-    let ui_cell = model.get_ui_cell(0, 1, 2);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "text".to_string(),
-            value: UIValue::Text("Hello World".to_string()),
-            details: "".to_string()
-        }
-    );
-    // B2: number
-    let ui_cell = model.get_ui_cell(0, 2, 2);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "number".to_string(),
-            value: UIValue::Number(23.0),
-            details: "".to_string()
-        }
-    );
-    // B3 boolean
-    let ui_cell = model.get_ui_cell(0, 3, 2);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "bool".to_string(),
-            value: UIValue::Text("TRUE".to_string()),
-            details: "".to_string()
-        }
-    );
-    // B4 error
-    let ui_cell = model.get_ui_cell(0, 4, 2);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "error".to_string(),
-            value: UIValue::Text("#DIV/0!".to_string()),
-            details: "".to_string()
-        }
-    );
-
-    // Empty cell
-    let ui_cell = model.get_ui_cell(0, 43, 23);
-    assert_eq!(
-        ui_cell,
-        UICell {
-            kind: "empty".to_string(),
-            value: UIValue::Text("".to_string()),
-            details: "".to_string()
-        }
     );
 }
 

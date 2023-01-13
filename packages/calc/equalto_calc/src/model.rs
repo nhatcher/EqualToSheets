@@ -7,7 +7,6 @@ use std::vec::Vec;
 
 use crate::{
     calc_result::{CalcResult, CellReference, Range},
-    cell::{UICell, UIValue},
     constants,
     expressions::parser::{
         stringify::{to_rc_format, to_string},
@@ -1046,24 +1045,6 @@ impl Model {
         match cell {
             Some(cell) => cell.get_text(&self.workbook.shared_strings, &self.language),
             None => "".to_string(),
-        }
-    }
-
-    // FIXME: expect
-    /// Returns the information needed to display a cell in the UI
-    pub fn get_ui_cell(&self, sheet: u32, row: i32, column: i32) -> UICell {
-        let cell = self
-            .workbook
-            .worksheet(sheet)
-            .expect("Invalid sheet")
-            .cell(row, column);
-        match cell {
-            Some(cell) => cell.get_ui_cell(&self.workbook.shared_strings, &self.language),
-            None => UICell {
-                kind: "empty".to_string(),
-                value: UIValue::Text("".to_string()),
-                details: "".to_string(),
-            },
         }
     }
 

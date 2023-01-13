@@ -193,12 +193,6 @@ impl JSModel {
         self.model.get_text_at(sheet, row, column)
     }
 
-    pub fn get_ui_cell(&self, sheet: u32, row: i32, column: i32) -> String {
-        let c = self.model.get_ui_cell(sheet, row, column);
-        // FIXME: This should return an object not a string
-        json!({"kind": c.kind, "value": c.value, "details": c.details}).to_string()
-    }
-
     pub fn get_cell_value_by_ref(&self, cel_ref: &str) -> JsValue {
         match self.model.get_cell_value_by_ref(cel_ref) {
             Ok(result) => match result {

@@ -1,20 +1,6 @@
 use crate::{
     expressions::token::Error, language::Language, number_format::to_excel_precision_str, types::*,
 };
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum UIValue {
-    Text(String),
-    Number(f64),
-}
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct UICell {
-    pub kind: String,
-    pub value: UIValue,
-    pub details: String,
-}
 
 impl Cell {
     /// Creates a new Cell with a shared string (`si` is the string index)
@@ -116,71 +102,6 @@ impl Cell {
                 match s {
                     Some(str) => str.clone(),
                     None => "".to_string(),
-                }
-            }
-        }
-    }
-
-    pub fn get_ui_cell(&self, shared_strings: &[String], language: &Language) -> UICell {
-        match self {
-            Cell::CellFormula { f: _, .. } => UICell {
-                kind: "formula".to_string(),
-                value: UIValue::Text("".to_string()),
-                details: "".to_string(),
-            },
-            Cell::CellFormulaBoolean { v, .. } => UICell {
-                kind: "bool".to_string(),
-                value: UIValue::Text(v.to_string().to_uppercase()),
-                details: "".to_string(),
-            },
-            Cell::CellFormulaNumber { v, .. } => UICell {
-                kind: "number".to_string(),
-                value: UIValue::Number(*v),
-                details: "".to_string(),
-            },
-            Cell::CellFormulaString { v, .. } => UICell {
-                kind: "text".to_string(),
-                value: UIValue::Text(v.clone()),
-                details: "".to_string(),
-            },
-            Cell::CellFormulaError { ei, .. } => UICell {
-                kind: "error".to_string(),
-                value: UIValue::Text(ei.to_localized_error_string(language)),
-                details: "".to_string(),
-            },
-            Cell::EmptyCell { s: _ } => UICell {
-                kind: "empty".to_string(),
-                value: UIValue::Text("".to_string()),
-                details: "".to_string(),
-            },
-            Cell::BooleanCell { v, .. } => UICell {
-                kind: "bool".to_string(),
-                value: UIValue::Text(v.to_string().to_uppercase()),
-                details: "".to_string(),
-            },
-            Cell::NumberCell { v, .. } => UICell {
-                kind: "number".to_string(),
-                value: UIValue::Number(*v),
-                details: "".to_string(),
-            },
-            Cell::ErrorCell { ei, .. } => UICell {
-                kind: "error".to_string(),
-                value: UIValue::Text(ei.to_localized_error_string(language)),
-                details: "".to_string(),
-            },
-            Cell::SharedString { si, .. } => {
-                let s = shared_strings.get(*si as usize);
-                match s {
-                    Some(str) => UICell {
-                        kind: "text".to_string(),
-                        value: UIValue::Text(str.clone()),
-                        details: "".to_string(),
-                    },
-                    None => UICell {
-                        kind: "text".to_string(),
-                        value: UIValue::Text("".to_string()),
-                        details: "".to_string(),
-                    },
                 }
             }
         }
