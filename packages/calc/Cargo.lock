@@ -126,6 +126,7 @@ dependencies = [
 name = "equalto_xlsx"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "equalto_calc",
  "itertools",
  "roxmltree",

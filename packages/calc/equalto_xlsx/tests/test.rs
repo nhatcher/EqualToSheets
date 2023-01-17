@@ -29,7 +29,11 @@ fn test_save_to_xlsx() {
     // test can safe
     save_to_xlsx(&model, temp_file_name).unwrap();
     // test can open
-    let _ = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin");
+    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let metadata = &model.workbook.metadata;
+    assert_eq!(metadata.application, "EqualTo Sheets");
+    // FIXME: This will need to be updated once we fix versioning
+    assert_eq!(metadata.app_version, "10.0000");
     // TODO: can we show it is the 'same' model?
     fs::remove_file(temp_file_name).unwrap();
 }

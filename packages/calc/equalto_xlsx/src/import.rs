@@ -57,6 +57,18 @@ where
         .ok_or_else(|| XlsxError::Xml(format!("Missing \"{:?}\" XML attribute", attr_name)))
 }
 
+fn get_value_or_default(node: &Node, tag_name: &str, default: &str) -> String {
+    let application_nodes = node
+        .children()
+        .filter(|n| n.has_tag_name(tag_name))
+        .collect::<Vec<Node>>();
+    if application_nodes.len() == 1 {
+        application_nodes[0].text().unwrap_or(default).to_string()
+    } else {
+        default.to_string()
+    }
+}
+
 fn get_color(node: Node) -> Result<Color, XlsxError> {
     // 18.3.1.15 color (Data Bar Color)
     if node.has_attribute("rgb") {
@@ -138,6 +150,80 @@ fn get_bool(node: Node, s: &str) -> bool {
 fn get_bool_false(node: Node, s: &str) -> bool {
     // defaults to false
     matches!(node.attribute(s), Some("1"))
+}
+
+struct AppData {
+    application: String,
+    app_version: String,
+}
+
+struct CoreData {
+    creator: String,
+    last_modified_by: String,
+    created: String,
+    last_modified: String,
+}
+
+fn load_core<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+) -> Result<CoreData, XlsxError> {
+    let mut file = archive.by_name("docProps/core.xml")?;
+    let mut text = String::new();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
+    let core_data = doc
+        .root()
+        .first_child()
+        .ok_or_else(|| XlsxError::Xml("Corrupt XML structure".to_string()))?;
+    // Note the namespace should be "http://purl.org/dc/elements/1.1/"
+    let creator = get_value_or_default(&core_data, "creator", "Anonymous User");
+    // Note namespace is "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+    let last_modified_by = get_value_or_default(&core_data, "lastModifiedBy", "Anonymous User");
+    // In these two cases the namespace is "http://purl.org/dc/terms/"
+    let created = get_value_or_default(&core_data, "created", "");
+    let last_modified = get_value_or_default(&core_data, "modified", "");
+
+    Ok(CoreData {
+        creator,
+        last_modified_by,
+        created,
+        last_modified,
+    })
+}
+
+fn load_app<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+) -> Result<AppData, XlsxError> {
+    let mut file = archive.by_name("docProps/app.xml")?;
+    let mut text = String::new();
+    file.read_to_string(&mut text)?;
+    let doc = roxmltree::Document::parse(&text)?;
+    let app_data = doc
+        .root()
+        .first_child()
+        .ok_or_else(|| XlsxError::Xml("Corrupt XML structure".to_string()))?;
+
+    let application = get_value_or_default(&app_data, "Application", "Unknown application");
+    let app_version = get_value_or_default(&app_data, "AppVersion", "");
+    Ok(AppData {
+        application,
+        app_version,
+    })
+}
+
+fn load_metadata<R: Read + std::io::Seek>(
+    archive: &mut zip::read::ZipArchive<R>,
+) -> Result<Metadata, XlsxError> {
+    let app_data = load_app(archive)?;
+    let core_data = load_core(archive)?;
+    Ok(Metadata {
+        application: app_data.application,
+        app_version: app_data.app_version,
+        creator: core_data.creator,
+        last_modified_by: core_data.last_modified_by,
+        created: core_data.created,
+        last_modified: core_data.last_modified,
+    })
 }
 
 fn get_number(node: Node, s: &str) -> i32 {
@@ -852,12 +938,12 @@ fn get_cell_from_excel(
 
 fn load_dimension(ws: Node) -> String {
     // <dimension ref="A1:O18"/>
-    let dimension_nodes = ws
+    let application_nodes = ws
         .children()
         .filter(|n| n.has_tag_name("dimension"))
         .collect::<Vec<Node>>();
-    if dimension_nodes.len() == 1 {
-        dimension_nodes[0]
+    if application_nodes.len() == 1 {
+        application_nodes[0]
             .attribute("ref")
             .unwrap_or("A1")
             .to_string()
@@ -1317,6 +1403,7 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
 
     let worksheets = load_sheets(&mut archive, &rels, &workbook)?;
     let styles = load_styles(&mut archive)?;
+    let metadata = load_metadata(&mut archive)?;
     Ok(Workbook {
         shared_strings,
         defined_names: workbook.defined_names,
@@ -1327,6 +1414,7 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
             tz: tz.to_string(),
             locale: locale.to_string(),
         },
+        metadata,
     })
 }
 

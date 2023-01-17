@@ -1,17 +1,19 @@
-use equalto_calc::types::Workbook;
+use chrono::NaiveDateTime;
+use equalto_calc::{
+    new_empty::{APPLICATION, APP_VERSION, EQUALTO_USER},
+    types::Workbook,
+};
+
+use crate::error::XlsxError;
 
 // Application-Defined File Properties part
-pub(crate) fn get_app_xml(_model: &Workbook) -> String {
+pub(crate) fn get_app_xml(_: &Workbook) -> String {
     // contains application name and version
 
     // The next few are not needed:
     // security. It is password protected (not implemented)
     // Scale
     // Titles of parts
-
-    // Read those from somewhere else
-    let application = "Equalto Sheets";
-    let app_version = "1.0.0";
 
     format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
@@ -20,19 +22,31 @@ pub(crate) fn get_app_xml(_model: &Workbook) -> String {
   <Application>{}</Application>\
   <AppVersion>{}</AppVersion>\
 </Properties>",
-        application, app_version
+        APPLICATION, APP_VERSION
     )
 }
 
 // Core File Properties part
-pub(crate) fn get_core_xml(_model: &Workbook) -> String {
+pub(crate) fn get_core_xml(workbook: &Workbook, milliseconds: i64) -> Result<String, XlsxError> {
     // contains the name of the creator, last modified and date
-    let creator = "EqualTo User";
-    let last_modified_by = "EqualTo User";
-    let created = "2020-11-27T10:08:29Z";
+    let metadata = &workbook.metadata;
+    let creator = metadata.creator.to_string();
+    let last_modified_by = EQUALTO_USER.to_string();
+    let created = metadata.created.to_string();
     // FIXME add now
-    let last_modified = "2020-11-27T10:56:45Z";
-    format!(
+
+    let seconds = milliseconds / 1000;
+    let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
+        Some(s) => s,
+        None => {
+            return Err(XlsxError::Workbook(format!(
+                "Invalid timestamp: {}",
+                milliseconds
+            )))
+        }
+    };
+    let last_modified = dt.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    Ok(format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
 <cp:coreProperties \
  xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" \
@@ -51,5 +65,5 @@ pub(crate) fn get_core_xml(_model: &Workbook) -> String {
 <cp:contentStatus></cp:contentStatus>\
 </cp:coreProperties>",
         creator, last_modified_by, created, last_modified
-    )
+    ))
 }

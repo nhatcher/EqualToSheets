@@ -15,6 +15,7 @@ serde_json = "1.0"
 thiserror = "1.0"
 equalto_calc = { path = "../equalto_calc" }
 itertools = "0.10.5"
+chrono = "0.4"
 
 [dev-dependencies]
 uuid = { version = "1.2.2", features = ["serde", "v4"] }

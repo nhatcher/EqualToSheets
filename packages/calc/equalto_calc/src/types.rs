@@ -34,6 +34,16 @@ fn is_zero(num: &i32) -> bool {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct Metadata {
+    pub application: String,
+    pub app_version: String,
+    pub creator: String,
+    pub last_modified_by: String,
+    pub created: String,       // "2020-08-06T21:20:53Z",
+    pub last_modified: String, //"2020-11-20T16:24:35"
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct WorkbookSettings {
     pub tz: String,
     pub locale: String,
@@ -48,6 +58,7 @@ pub struct Workbook {
     pub styles: Styles,
     pub name: String,
     pub settings: WorkbookSettings,
+    pub metadata: Metadata,
 }
 
 /// A defined name. The `sheet_id` is the sheet index in case the name is local

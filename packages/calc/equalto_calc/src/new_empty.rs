@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use chrono_tz::Tz;
 
 use std::collections::HashMap;
@@ -13,9 +14,13 @@ use crate::{
     language::get_language,
     locale::get_locale,
     model::{Environment, Model, ParsedDefinedName},
-    types::{SheetState, Workbook, WorkbookSettings, Worksheet},
+    types::{Metadata, SheetState, Workbook, WorkbookSettings, Worksheet},
     utils::ParsedReference,
 };
+
+pub const APPLICATION: &str = "EqualTo Sheets";
+pub const APP_VERSION: &str = "10.0000";
+pub const EQUALTO_USER: &str = "EqualTo User";
 
 /// You can use all alphanumeric characters but not the following special characters:
 /// \ , / , * , ? , : , [ , ].
@@ -321,6 +326,16 @@ impl Model {
             Ok(l) => l.clone(),
             Err(_) => return Err(format!("Invalid locale: {}", locale_id)),
         };
+
+        let milliseconds = (env.get_milliseconds_since_epoch)();
+        let seconds = milliseconds / 1000;
+        let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
+            Some(s) => s,
+            None => return Err(format!("Invalid timestamp: {}", milliseconds)),
+        };
+        // "2020-08-06T21:20:53Z
+        let now = dt.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+
         // String versions of the locale are added here to simplify the serialize/deserialize logic
         let workbook = Workbook {
             shared_strings: vec![],
@@ -331,6 +346,14 @@ impl Model {
             settings: WorkbookSettings {
                 tz: timezone.to_string(),
                 locale: locale_id.to_string(),
+            },
+            metadata: Metadata {
+                application: APPLICATION.to_string(),
+                app_version: APP_VERSION.to_string(),
+                creator: EQUALTO_USER.to_string(),
+                last_modified_by: EQUALTO_USER.to_string(),
+                created: now.clone(),
+                last_modified: now,
             },
         };
         let parsed_formulas = Vec::new();

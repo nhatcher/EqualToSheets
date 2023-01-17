@@ -72,7 +72,8 @@ pub fn save_to_xlsx(model: &Model, file_name: &str) -> Result<(), XlsxError> {
     zip.start_file("docProps/app.xml", options)?;
     zip.write_all(doc_props::get_app_xml(workbook).as_bytes())?;
     zip.start_file("docProps/core.xml", options)?;
-    zip.write_all(doc_props::get_core_xml(workbook).as_bytes())?;
+    let milliseconds = (model.env.get_milliseconds_since_epoch)();
+    zip.write_all(doc_props::get_core_xml(workbook, milliseconds)?.as_bytes())?;
 
     // Package-relationship item
     zip.add_directory("_rels", options)?;

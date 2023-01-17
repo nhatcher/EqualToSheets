@@ -3,6 +3,14 @@
     "tz": "Europe/Berlin",
     "locale": "en"
   },
+  "metadata": {
+    "application": "Microsoft Excel",
+    "app_version": "16.0300",
+    "creator": "nicol",
+    "last_modified_by": "nicol",
+    "created": "2020-08-06T21:20:53Z",
+    "last_modified": "2020-11-20T16:24:35Z"
+  },
   "shared_strings": [
     "A string",
     "Long column",
