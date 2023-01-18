@@ -6,7 +6,7 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from equalto.exceptions import WorkbookError, WorkbookValueError
+from equalto.exceptions import WorkbookValueError
 from equalto.style import Style
 
 if TYPE_CHECKING:
@@ -122,9 +122,7 @@ class Cell:
 
     @formula.setter
     def formula(self, formula: str) -> None:
-        if not formula.startswith("="):
-            raise WorkbookError(f'"{formula}" is not a valid formula')
-        self._model.set_input(*self.cell_ref, formula)
+        self._model.update_cell_with_formula(*self.cell_ref, formula)
         self._model.evaluate()
 
     @cached_property

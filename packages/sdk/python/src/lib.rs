@@ -62,12 +62,6 @@ impl PyModel {
             .map_or(CellType::Number, |cell| cell.get_type()) as i32)
     }
 
-    pub fn set_input(&mut self, sheet: i32, row: i32, column: i32, value: String) {
-        let sheet: u32 = sheet.try_into().unwrap();
-        let style = self.model.get_cell_style_index(sheet, row, column);
-        self.model.set_input(sheet, row, column, value, style)
-    }
-
     pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> PyResult<()> {
         self.model
             .delete_cell(sheet.try_into().unwrap(), row, column)
@@ -149,6 +143,18 @@ impl PyModel {
     pub fn update_cell_with_bool(&mut self, sheet: i32, row: i32, column: i32, value: bool) {
         self.model
             .update_cell_with_bool(sheet.try_into().unwrap(), row, column, value);
+    }
+
+    pub fn update_cell_with_formula(
+        &mut self,
+        sheet: i32,
+        row: i32,
+        column: i32,
+        formula: String,
+    ) -> PyResult<()> {
+        self.model
+            .update_cell_with_formula(sheet.try_into().unwrap(), row, column, formula)
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn get_timezone(&self) -> PyResult<String> {

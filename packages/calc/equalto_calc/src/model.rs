@@ -1032,6 +1032,29 @@ impl Model {
         worksheet.set_cell_with_number(row, column, value, new_style_index);
     }
 
+    /// Updates the formula of given cell
+    /// It does not change the style unless needs to add "quoting"
+    /// Expects the formula to start with "="
+    pub fn update_cell_with_formula(
+        &mut self,
+        sheet: u32,
+        row: i32,
+        column: i32,
+        formula: String,
+    ) -> Result<(), String> {
+        let mut style_index = self.get_cell_style_index(sheet, row, column);
+        if self.workbook.styles.style_is_quote_prefix(style_index) {
+            style_index = self
+                .workbook
+                .styles
+                .get_style_without_quote_prefix(style_index);
+        }
+        let formula = formula
+            .strip_prefix('=')
+            .ok_or_else(|| format!("\"{formula}\" is not a valid formula"))?;
+        self.set_cell_with_formula(sheet, row, column, formula, style_index)
+    }
+
     /// Sets a cell parametrized by (`sheet`, `row`, `column`) with `value` and `style`
     /// The value is always a string, so we need to try to cast it into numbers/bools/errors
     pub fn set_input(
@@ -1064,39 +1087,9 @@ impl Model {
                     .styles
                     .get_style_without_quote_prefix(style_index);
             }
-            let worksheets = &mut self.workbook.worksheets;
-            let worksheet = &mut worksheets[sheet as usize];
             if let Some(formula) = value.strip_prefix('=') {
-                let cell_reference = CellReferenceRC {
-                    sheet: worksheet.get_name(),
-                    row,
-                    column,
-                };
-                let shared_formulas = &mut worksheet.shared_formulas;
-                let mut parsed_formula = self.parser.parse(formula, &Some(cell_reference.clone()));
-                // If the formula fails to parse try adding a parenthesis
-                // SUM(A1:A3  => SUM(A1:A3)
-                if let Node::ParseErrorKind { .. } = parsed_formula {
-                    let new_parsed_formula = self
-                        .parser
-                        .parse(&format!("{})", formula), &Some(cell_reference));
-                    match new_parsed_formula {
-                        Node::ParseErrorKind { .. } => {}
-                        _ => parsed_formula = new_parsed_formula,
-                    }
-                }
-
-                let s = to_rc_format(&parsed_formula);
-                let mut formula_index: i32 = -1;
-                if let Some(index) = shared_formulas.iter().position(|x| x == &s) {
-                    formula_index = index as i32;
-                }
-                if formula_index == -1 {
-                    shared_formulas.push(s);
-                    self.parsed_formulas[sheet as usize].push(parsed_formula);
-                    formula_index = (shared_formulas.len() as i32) - 1;
-                }
-                worksheet.set_cell_with_formula(row, column, formula_index, new_style_index);
+                self.set_cell_with_formula(sheet, row, column, formula, new_style_index)
+                    .expect("could not set the cell formula")
             } else {
                 let worksheets = &mut self.workbook.worksheets;
                 let worksheet = &mut worksheets[sheet as usize];
@@ -1122,6 +1115,48 @@ impl Model {
                 }
             }
         }
+    }
+
+    fn set_cell_with_formula(
+        &mut self,
+        sheet: u32,
+        row: i32,
+        column: i32,
+        formula: &str,
+        style: i32,
+    ) -> Result<(), String> {
+        let worksheet = self.workbook.worksheet_mut(sheet)?;
+        let cell_reference = CellReferenceRC {
+            sheet: worksheet.get_name(),
+            row,
+            column,
+        };
+        let shared_formulas = &mut worksheet.shared_formulas;
+        let mut parsed_formula = self.parser.parse(formula, &Some(cell_reference.clone()));
+        // If the formula fails to parse try adding a parenthesis
+        // SUM(A1:A3  => SUM(A1:A3)
+        if let Node::ParseErrorKind { .. } = parsed_formula {
+            let new_parsed_formula = self
+                .parser
+                .parse(&format!("{})", formula), &Some(cell_reference));
+            match new_parsed_formula {
+                Node::ParseErrorKind { .. } => {}
+                _ => parsed_formula = new_parsed_formula,
+            }
+        }
+
+        let s = to_rc_format(&parsed_formula);
+        let mut formula_index: i32 = -1;
+        if let Some(index) = shared_formulas.iter().position(|x| x == &s) {
+            formula_index = index as i32;
+        }
+        if formula_index == -1 {
+            shared_formulas.push(s);
+            self.parsed_formulas[sheet as usize].push(parsed_formula);
+            formula_index = (shared_formulas.len() as i32) - 1;
+        }
+        worksheet.set_cell_with_formula(row, column, formula_index, style);
+        Ok(())
     }
 
     fn set_cell_with_string(&mut self, sheet: u32, row: i32, column: i32, value: &str, style: i32) {
