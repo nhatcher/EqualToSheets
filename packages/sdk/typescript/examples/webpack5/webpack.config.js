@@ -12,10 +12,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: "Webpack Example",
+      title: "Webpack5 Example",
     }),
   ],
-  experiments: {
-    asyncWebAssembly: true,
-  },
 };

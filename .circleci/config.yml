@@ -74,18 +74,25 @@ jobs:
             apt update
             apt -y --no-install-recommends upgrade
             apt install --no-install-recommends -y curl make
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash - &&
+            apt-get install -y nodejs
+            npm update -g npm
             rustup component add rustfmt clippy
             ./util/install-wasm-pack.sh
           working_directory: ./packages/sdk/typescript
       - run:
-          name: Build WASM packages
-          command: make all
+          name: Install node_modules
+          command: npm install
           working_directory: ./packages/sdk/typescript
       - run:
-          name: Run linters
+          name: Build distribution
+          command: npm run build
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Run cargo linters
           command: make lint
-          working_directory: ./packages/sdk/typescript
+          working_directory: ./packages/sdk/typescript/crate
       - run:
-          name: Run tests
+          name: Run cargo tests
           command: cargo test
-          working_directory: ./packages/sdk/typescript
+          working_directory: ./packages/sdk/typescript/crate

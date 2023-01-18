@@ -1,0 +1,17 @@
+<body>
+  <script src="../../dist/browser/umd/index_browser.js"></script>
+  <script>
+    sheets.initialize().then(({ Workbook }) => {
+      const workbook = Workbook.new('en', 'Europe/Berlin');
+      workbook.setInput(0, 1, 1, '7');
+      workbook.setInput(0, 2, 1, '=2*A1');
+      workbook.evaluate();
+
+      const a2 = workbook.getFormattedCellValue(0, 2, 1);
+
+      const div = document.createElement("div");
+      div.innerHTML = `A2=${a2}`;
+      document.querySelector("body").appendChild(div);
+    });
+  </script>
+</body>

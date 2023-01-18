@@ -13,8 +13,8 @@ wasm-opt = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-equalto_calc = { path = "../../calc/equalto_calc" }
-equalto_xlsx = { path = "../../calc/equalto_xlsx", optional = true }
+equalto_calc = { path = "../../../calc/equalto_calc" }
+equalto_xlsx = { path = "../../../calc/equalto_xlsx", optional = true }
 gloo-utils = { version = "0.1.5", features = ["serde"] }
 js-sys = "0.3.60"
 serde = { version = "1.0", features = ["derive"] }

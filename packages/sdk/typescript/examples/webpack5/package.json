@@ -1,17 +1,17 @@
 {
-  "name": "equalto-webpack-example",
+  "name": "equalto-webpack5-example",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "npm run build && npx http-server dist",
+    "start": "npm run build && http-server dist",
     "build": "webpack"
   },
   "author": "",
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@equalto/wasm": "file:../../pkg/bundler",
+    "@equalto/sheets": "file:../..",
     "html-webpack-plugin": "^5.5.0",
     "http-server": "^14.1.1",
     "webpack": "^5.75.0",

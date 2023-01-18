@@ -8,21 +8,21 @@ use equalto_xlsx::import::load_xlsx_from_memory;
 
 use crate::error::WorkbookError;
 
-#[wasm_bindgen(js_name = "Workbook")]
-pub struct JsWorkbook {
+#[wasm_bindgen]
+pub struct WasmWorkbook {
     model: Model,
 }
 
-#[wasm_bindgen(js_class = "Workbook")]
-impl JsWorkbook {
+#[wasm_bindgen]
+impl WasmWorkbook {
     #[wasm_bindgen(constructor)]
-    pub fn new(locale: &str, timezone: &str) -> Result<JsWorkbook, JsError> {
+    pub fn new(locale: &str, timezone: &str) -> Result<WasmWorkbook, JsError> {
         let env = Environment {
             get_milliseconds_since_epoch,
         };
         let model =
             Model::new_empty("workbook", locale, timezone, env).map_err(WorkbookError::from)?;
-        Ok(JsWorkbook { model })
+        Ok(WasmWorkbook { model })
     }
 
     #[wasm_bindgen(js_name=loadFromMemory)]
@@ -31,13 +31,13 @@ impl JsWorkbook {
         data: &mut [u8],
         locale: &str,
         timezone: &str,
-    ) -> Result<JsWorkbook, JsError> {
+    ) -> Result<WasmWorkbook, JsError> {
         let env = Environment {
             get_milliseconds_since_epoch,
         };
         let model = load_xlsx_from_memory("workbook", data, locale, timezone, env)
             .map_err(WorkbookError::from)?;
-        Ok(JsWorkbook { model })
+        Ok(WasmWorkbook { model })
     }
 
     #[wasm_bindgen(js_name = "setInput")]

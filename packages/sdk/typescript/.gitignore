@@ -1,1 +1,2 @@
-pkg/
+src/__generated_pkg/
+crate/pkg

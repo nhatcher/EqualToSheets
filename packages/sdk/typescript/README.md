@@ -15,22 +15,43 @@ Can be enabled while compiling with `cargo`:
 
 ## 🛠️ Building
 
-Run `make` to build all possible targets.
+Install prerequisites:
+
+- Rust 1.66.1+
+- [`wasm-pack`](https://github.com/rustwasm/wasm-pack)
+- Node and `npm`
+
+Then run:
+
+1. `npm install`
+2. `npm run build`
+
+Distribution will be generated in `./dist/` directory.
 
 ## Examples
 
-Please note that examples do not use final API, there are used to test generated glue.
+Please note that examples still do not use final API.
+
+Please note that `npm install` in examples copies over the package, so if package changes
+`rm -rf node_modules` is required in each example directory (apart from pure HTML file).
+
+### html
+
+Package has a version that doesn't require bundler and can be imported directly.
+
+1. First build root package, see _Building_ section.
+2. Open `examples/html/index.html` in browser.
 
 ### nodejs
 
-1. First build `wasm` packages: run `make` in this directory.
+1. First build root package, see _Building_ section.
 2. `cd examples/node`
 3. `npm install`
 4. `npm start` - it should print some details from `examples/node/xlsx/test.xlsx`
 
-### webpack
+### webpack 4/5
 
-1. First build `wasm` packages: run `make` in this directory.
+1. First build root package, see _Building_ section.
 2. `cd examples/webpack`
 3. `npm install`
 4. `npm start`

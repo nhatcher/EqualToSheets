@@ -10,6 +10,6 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@equalto/wasm": "file:../../pkg/node-xlsx"
+    "@equalto/sheets": "file:../.."
   }
 }
