@@ -8,17 +8,17 @@ let file = readFileSync("./xlsx/test.xlsx");
 let model = Workbook.loadFromMemory(file, "en", "Europe/Berlin");
 
 model.evaluate();
-console.log(`B1=${model.getTextAt(0, 1, 2)}`);
-console.log(`B2=${model.getTextAt(0, 2, 2)}`);
-console.log(`B3=${model.getTextAt(0, 3, 2)}`);
+console.log(`B1=${model.getFormattedCellValue(0, 1, 2)}`);
+console.log(`B2=${model.getFormattedCellValue(0, 2, 2)}`);
+console.log(`B3=${model.getFormattedCellValue(0, 3, 2)}`);
 
 console.log("Change B1 to 6");
 model.setInput(0, 1, 2, "6");
 
 model.evaluate();
-console.log(`B1=${model.getTextAt(0, 1, 2)}`);
-console.log(`B2=${model.getTextAt(0, 2, 2)}`);
-console.log(`B3=${model.getTextAt(0, 3, 2)}`);
+console.log(`B1=${model.getFormattedCellValue(0, 1, 2)}`);
+console.log(`B2=${model.getFormattedCellValue(0, 2, 2)}`);
+console.log(`B3=${model.getFormattedCellValue(0, 3, 2)}`);
 
 // Exception demo
 console.log("");

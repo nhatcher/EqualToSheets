@@ -2,6 +2,7 @@ use crate::{
     calc_result::{CalcResult, CellReference},
     expressions::parser::Node,
     expressions::token::Error,
+    formatter::format::format_number,
     model::Model,
 };
 
@@ -125,7 +126,7 @@ impl Model {
                 Ok(s) => s,
                 Err(s) => return s,
             };
-            let d = self.format_number(value, format_code);
+            let d = format_number(value, &format_code, &self.locale);
             if let Some(_e) = d.error {
                 return CalcResult::Error {
                     error: Error::VALUE,

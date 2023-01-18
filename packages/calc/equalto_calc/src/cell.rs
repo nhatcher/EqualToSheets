@@ -1,6 +1,27 @@
 use crate::{
     expressions::token::Error, language::Language, number_format::to_excel_precision_str, types::*,
 };
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+/// A CellValue is the representation of the cell content.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
+pub enum CellValue {
+    String(String),
+    Number(f64),
+    Boolean(bool),
+}
+
+impl CellValue {
+    pub fn to_json_str(&self) -> String {
+        match &self {
+            CellValue::String(s) => json!(s).to_string(),
+            CellValue::Number(f) => json!(f).to_string(),
+            CellValue::Boolean(b) => json!(b).to_string(),
+        }
+    }
+}
 
 impl Cell {
     /// Creates a new Cell with a shared string (`si` is the string index)
@@ -38,6 +59,10 @@ impl Cell {
             Cell::CellFormulaError { f, .. } => Some(*f),
             _ => None,
         }
+    }
+
+    pub fn has_formula(&self) -> bool {
+        self.get_formula().is_some()
     }
 
     pub fn set_style(&mut self, style: i32) {
@@ -104,6 +129,50 @@ impl Cell {
                     None => "".to_string(),
                 }
             }
+        }
+    }
+
+    pub fn value(&self, shared_strings: &[String], language: &Language) -> CellValue {
+        match self {
+            Cell::EmptyCell { .. } => CellValue::String("".to_string()),
+            Cell::BooleanCell { v, s: _ } => CellValue::Boolean(*v),
+            Cell::NumberCell { v, s: _ } => CellValue::Number(*v),
+            Cell::ErrorCell { ei, .. } => {
+                let v = ei.to_localized_error_string(language);
+                CellValue::String(v)
+            }
+            Cell::SharedString { si, .. } => {
+                let s = shared_strings.get(*si as usize);
+                let v = match s {
+                    Some(str) => str.clone(),
+                    None => "".to_string(),
+                };
+                CellValue::String(v)
+            }
+            Cell::CellFormula { .. } => CellValue::String("#ERROR!".to_string()),
+            Cell::CellFormulaBoolean { v, .. } => CellValue::Boolean(*v),
+            Cell::CellFormulaNumber { v, .. } => CellValue::Number(*v),
+            Cell::CellFormulaString { v, .. } => CellValue::String(v.clone()),
+            Cell::CellFormulaError { ei, .. } => {
+                let v = ei.to_localized_error_string(language);
+                CellValue::String(v)
+            }
+        }
+    }
+
+    pub fn formatted_value<F>(
+        &self,
+        shared_strings: &[String],
+        language: &Language,
+        format_number: F,
+    ) -> String
+    where
+        F: Fn(f64) -> String,
+    {
+        match self.value(shared_strings, language) {
+            CellValue::String(value) => value,
+            CellValue::Boolean(value) => value.to_string().to_uppercase(),
+            CellValue::Number(value) => format_number(value),
         }
     }
 }

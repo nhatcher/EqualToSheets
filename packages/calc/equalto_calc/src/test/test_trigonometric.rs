@@ -80,5 +80,5 @@ fn test_fn_tan_pi2() {
     model.evaluate();
 
     // This is consistent with IEEE 754 but inconsistent with Excel
-    assert_eq!(model._get_text("A1"), *"1.63312393531954e16");
+    assert_eq!(model._get_text("A1"), *"1.63312E+16");
 }

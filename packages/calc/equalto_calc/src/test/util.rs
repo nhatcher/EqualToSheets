@@ -40,11 +40,12 @@ impl Model {
         let row = cell_reference.row;
         self.get_formula_or_value(cell_reference.sheet, row, column)
     }
+    pub fn _get_text_at(&self, sheet: u32, row: i32, column: i32) -> String {
+        self.formatted_cell_value(sheet, row, column).unwrap()
+    }
     pub fn _get_text(&self, cell: &str) -> String {
-        let cell_reference = self._parse_reference(cell);
-        let column = cell_reference.column;
-        let row = cell_reference.row;
-        self.get_text_at(cell_reference.sheet, row, column)
+        let CellReference { sheet, row, column } = self._parse_reference(cell);
+        self._get_text_at(sheet, row, column)
     }
     pub fn _get_cell(&self, cell: &str) -> &Cell {
         let cell_reference = self._parse_reference(cell);

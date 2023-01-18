@@ -38,8 +38,20 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
         let sheet = cell.index;
         let row = cell.row;
         let column = cell.column;
-        let cell1 = &m1.get_cell_at(sheet, row, column);
-        let cell2 = &m2.get_cell_at(sheet, row, column);
+        let cell1 = &m1
+            .workbook
+            .worksheet(sheet)
+            .unwrap()
+            .cell(row, column)
+            .cloned()
+            .unwrap_or_default();
+        let cell2 = &m2
+            .workbook
+            .worksheet(sheet)
+            .unwrap()
+            .cell(row, column)
+            .cloned()
+            .unwrap_or_default();
         match (cell1, cell2) {
             (Cell::EmptyCell { .. }, Cell::EmptyCell { .. }) => {}
             (Cell::NumberCell { .. }, Cell::NumberCell { .. }) => {}

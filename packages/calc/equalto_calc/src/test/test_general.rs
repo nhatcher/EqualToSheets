@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::model::ExcelValue::{self};
+use crate::cell::CellValue;
 
 use crate::{number_format::to_excel_precision_str, types::Color};
 
@@ -19,7 +19,7 @@ fn test_model_simple_evaluation() {
     let mut model = new_empty_model();
     model.set_input(0, 1, 1, "= 1 + 3".to_string(), 0);
     model.evaluate();
-    let result = model.get_text_at(0, 1, 1);
+    let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"4");
     let result = model.get_formula_or_value(0, 1, 1);
     assert_eq!(result, *"=1+3");
@@ -32,8 +32,8 @@ fn test_model_simple_evaluation_order() {
     model._set("A2", "=(1/2)/3");
     model._set("A3", "=1/(2/3)");
     model.evaluate();
-    assert_eq!(model._get_text("A1"), *"0.166666666666667");
-    assert_eq!(model._get_text("A2"), *"0.166666666666667");
+    assert_eq!(model._get_text("A1"), *"0.166666667");
+    assert_eq!(model._get_text("A2"), *"0.166666667");
     assert_eq!(model._get_text("A3"), *"1.5");
     // Unnecessary parenthesis are lost
     assert_eq!(model._get_formula("A2"), *"=1/2/3");
@@ -45,7 +45,7 @@ fn test_model_invalid_formula() {
     let mut model = new_empty_model();
     model.set_input(0, 1, 1, "= 1 +".to_string(), 0);
     model.evaluate();
-    let result = model.get_text_at(0, 1, 1);
+    let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"#ERROR!");
     let result = model.get_formula_or_value(0, 1, 1);
     assert_eq!(result, *"= 1 +");
@@ -57,18 +57,18 @@ fn test_model_dependencies() {
     model.set_input(0, 1, 1, "23".to_string(), 0); // A1
     model.set_input(0, 1, 2, "= A1* 2-4".to_string(), 0); // B1
     model.evaluate();
-    let result = model.get_text_at(0, 1, 1);
+    let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"23");
     let result = model.get_formula_or_value(0, 1, 1);
     assert_eq!(result, *"23");
-    let result = model.get_text_at(0, 1, 2);
+    let result = model._get_text_at(0, 1, 2);
     assert_eq!(result, *"42");
     let result = model.get_formula_or_value(0, 1, 2);
     assert_eq!(result, *"=A1*2-4");
 
     model.set_input(0, 2, 1, "=SUM(A1, B1)".to_string(), 0); // A2
     model.evaluate();
-    let result = model.get_text_at(0, 2, 1);
+    let result = model._get_text_at(0, 2, 1);
     assert_eq!(result, *"65");
 }
 
@@ -78,9 +78,9 @@ fn test_model_strings() {
     model.set_input(0, 1, 1, "Hello World".to_string(), 0);
     model.set_input(0, 1, 2, "=A1".to_string(), 0);
     model.evaluate();
-    let result = model.get_text_at(0, 1, 1);
+    let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"Hello World");
-    let result = model.get_text_at(0, 1, 2);
+    let result = model._get_text_at(0, 1, 2);
     assert_eq!(result, *"Hello World");
 }
 
@@ -171,20 +171,20 @@ fn test_booleans() {
 
     model.evaluate();
 
-    assert_eq!(model.get_text_at(0, 1, 1), *"TRUE");
-    assert_eq!(model.get_text_at(0, 2, 1), *"TRUE");
-    assert_eq!(model.get_text_at(0, 3, 1), *"TRUE");
+    assert_eq!(model._get_text_at(0, 1, 1), *"TRUE");
+    assert_eq!(model._get_text_at(0, 2, 1), *"TRUE");
+    assert_eq!(model._get_text_at(0, 3, 1), *"TRUE");
 
-    assert_eq!(model.get_text_at(0, 4, 1), *"FALSE");
-    assert_eq!(model.get_text_at(0, 5, 1), *"FALSE");
-    assert_eq!(model.get_text_at(0, 6, 1), *"FALSE");
+    assert_eq!(model._get_text_at(0, 4, 1), *"FALSE");
+    assert_eq!(model._get_text_at(0, 5, 1), *"FALSE");
+    assert_eq!(model._get_text_at(0, 6, 1), *"FALSE");
 
-    assert_eq!(model.get_text_at(0, 1, 2), *"TRUE");
-    assert_eq!(model.get_text_at(0, 2, 2), *"TRUE");
-    assert_eq!(model.get_text_at(0, 3, 2), *"TRUE");
-    assert_eq!(model.get_text_at(0, 4, 2), *"TRUE");
-    assert_eq!(model.get_text_at(0, 5, 2), *"TRUE");
-    assert_eq!(model.get_text_at(0, 6, 2), *"TRUE");
+    assert_eq!(model._get_text_at(0, 1, 2), *"TRUE");
+    assert_eq!(model._get_text_at(0, 2, 2), *"TRUE");
+    assert_eq!(model._get_text_at(0, 3, 2), *"TRUE");
+    assert_eq!(model._get_text_at(0, 4, 2), *"TRUE");
+    assert_eq!(model._get_text_at(0, 5, 2), *"TRUE");
+    assert_eq!(model._get_text_at(0, 6, 2), *"TRUE");
 
     assert_eq!(
         model.get_formula_or_value(0, 1, 5),
@@ -378,7 +378,7 @@ fn test_get_cell_value_by_ref() {
     // Correct
     assert_eq!(
         model.get_cell_value_by_ref("Sheet1!A1"),
-        Ok(ExcelValue::Number(1.0))
+        Ok(CellValue::Number(1.0))
     );
 
     // You need to specify full reference
@@ -410,9 +410,9 @@ fn test_get_formatted_cell_value() {
 
     model.evaluate();
 
-    assert_eq!(model.get_formatted_cell_value(0, 1, 1), "foobar");
-    assert_eq!(model.get_formatted_cell_value(0, 2, 1), "TRUE");
-    assert_eq!(model.get_formatted_cell_value(0, 3, 1), "");
-    assert_eq!(model.get_formatted_cell_value(0, 4, 1), "123.456");
-    assert_eq!(model.get_formatted_cell_value(0, 5, 1), "$123.46");
+    assert_eq!(model.formatted_cell_value(0, 1, 1).unwrap(), "foobar");
+    assert_eq!(model.formatted_cell_value(0, 2, 1).unwrap(), "TRUE");
+    assert_eq!(model.formatted_cell_value(0, 3, 1).unwrap(), "");
+    assert_eq!(model.formatted_cell_value(0, 4, 1).unwrap(), "123.456");
+    assert_eq!(model.formatted_cell_value(0, 5, 1).unwrap(), "$123.46");
 }

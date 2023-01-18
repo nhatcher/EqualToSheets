@@ -53,9 +53,17 @@ impl JsWorkbook {
         Ok(())
     }
 
-    #[wasm_bindgen(js_name = "getTextAt")]
-    pub fn get_text_at(&self, sheet: u32, row: i32, column: i32) -> Result<String, JsError> {
-        Ok(self.model.get_text_at(sheet, row, column))
+    #[wasm_bindgen(js_name=getFormattedCellValue)]
+    pub fn formatted_cell_value(
+        &self,
+        sheet: u32,
+        row: i32,
+        column: i32,
+    ) -> Result<String, JsError> {
+        Ok(self
+            .model
+            .formatted_cell_value(sheet, row, column)
+            .map_err(WorkbookError::from)?)
     }
 
     pub fn evaluate(&mut self) -> Result<(), JsError> {

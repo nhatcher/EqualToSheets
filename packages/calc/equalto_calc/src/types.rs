@@ -211,6 +211,12 @@ pub enum Cell {
     // TODO: Array formulas
 }
 
+impl Default for Cell {
+    fn default() -> Self {
+        Cell::EmptyCell { s: 0 }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Comment {
     pub text: String,

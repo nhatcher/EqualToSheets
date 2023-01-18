@@ -81,7 +81,10 @@ fn test_defined_names_casing() {
     for (formula, expected_value) in test_cases {
         model.set_input(0, row, column, formula.to_string(), 0);
         model.evaluate();
-        assert_eq!(model.get_text_at(0, row, column), expected_value);
+        assert_eq!(
+            model.formatted_cell_value(0, row, column).unwrap(),
+            expected_value
+        );
     }
 }
 

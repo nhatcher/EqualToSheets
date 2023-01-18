@@ -7,6 +7,7 @@ use std::vec::Vec;
 
 use crate::{
     calc_result::{CalcResult, CellReference, Range},
+    cell::CellValue,
     constants,
     expressions::parser::{
         stringify::{to_rc_format, to_string},
@@ -19,8 +20,7 @@ use crate::{
         types::*,
         utils::{self, is_valid_row},
     },
-    formatter,
-    formatter::format::Formatted,
+    formatter::format::format_number,
     functions::util::compare_values,
     implicit_intersection::implicit_intersection,
     language::{get_language, Language},
@@ -66,25 +66,6 @@ pub struct CellIndex {
     pub index: u32,
     pub row: i32,
     pub column: i32,
-}
-
-/// Used for the eval_workbook binary. A ExcelValue is the Excel representation of the cell content.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-#[serde(untagged)]
-pub enum ExcelValue {
-    String(String),
-    Number(f64),
-    Boolean(bool),
-}
-
-impl ExcelValue {
-    pub fn to_json_str(&self) -> String {
-        match &self {
-            ExcelValue::String(s) => json!(s).to_string(),
-            ExcelValue::Number(f) => json!(f).to_string(),
-            ExcelValue::Boolean(b) => json!(b).to_string(),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
@@ -1000,38 +981,6 @@ impl Model {
         }
     }
 
-    // FIXME: expect
-    /// Checks if cell has formula
-    pub fn has_formula(&self, sheet: u32, row: i32, column: i32) -> bool {
-        let cell = self
-            .workbook
-            .worksheet(sheet)
-            .expect("Invalid sheet")
-            .cell(row, column);
-        match cell {
-            Some(cell) => cell.get_formula().is_some(),
-            None => false,
-        }
-    }
-
-    // FIXME: expect
-    /// Returns a text representation of the value of the cell
-    pub fn get_text_at(&self, sheet: u32, row: i32, column: i32) -> String {
-        let cell = self
-            .workbook
-            .worksheet(sheet)
-            .expect("Invalid sheet")
-            .cell(row, column);
-        match cell {
-            Some(cell) => cell.get_text(&self.workbook.shared_strings, &self.language),
-            None => "".to_string(),
-        }
-    }
-
-    pub fn format_number(&self, value: f64, format_code: String) -> Formatted {
-        formatter::format::format_number(value, &format_code, &self.locale)
-    }
-
     /// Updates the value of a cell with some text
     /// It does not change the style unless needs to add "quoting"
     pub fn update_cell_with_text(&mut self, sheet: u32, row: i32, column: i32, value: &str) {
@@ -1195,59 +1144,56 @@ impl Model {
         }
     }
 
+    // FIXME: Can't put it in Workbook, because language is outside of workbook, sic!
     /// Gets the Excel Value (Bool, Number, String) of a cell
-    pub fn get_cell_value_by_ref(&self, cell_ref: &str) -> Result<ExcelValue, String> {
+    pub fn get_cell_value_by_ref(&self, cell_ref: &str) -> Result<CellValue, String> {
         let cell_reference = match self.parse_reference(cell_ref) {
             Some(c) => c,
             None => return Err(format!("Error parsing reference: '{cell_ref}'")),
         };
-        // get the worksheet
         let sheet_index = cell_reference.sheet;
-
         let column = cell_reference.column;
         let row = cell_reference.row;
-        Ok(self.get_cell_value_by_index(sheet_index, row, column))
+
+        self.get_cell_value_by_index(sheet_index, row, column)
     }
 
-    pub fn get_cell_value_by_index(&self, sheet_index: u32, row: i32, column: i32) -> ExcelValue {
-        let cell = self.get_cell_at(sheet_index, row, column);
-
-        match cell {
-            Cell::EmptyCell { .. } => ExcelValue::String("".to_string()),
-            Cell::BooleanCell { v, s: _ } => ExcelValue::Boolean(v),
-            Cell::NumberCell { v, s: _ } => ExcelValue::Number(v),
-            Cell::ErrorCell { ei, .. } => {
-                let v = ei.to_localized_error_string(&self.language);
-                ExcelValue::String(v)
-            }
-            Cell::SharedString { si, .. } => {
-                let v = self.workbook.shared_strings[si as usize].clone();
-                ExcelValue::String(v)
-            }
-            Cell::CellFormula { .. } => ExcelValue::String("#ERROR!".to_string()),
-            Cell::CellFormulaBoolean { v, .. } => ExcelValue::Boolean(v),
-            Cell::CellFormulaNumber { v, .. } => ExcelValue::Number(v),
-            Cell::CellFormulaString { v, .. } => ExcelValue::String(v),
-            Cell::CellFormulaError { ei, .. } => {
-                let v = ei.to_localized_error_string(&self.language);
-                ExcelValue::String(v)
-            }
-        }
+    // FIXME: Can't put it in Workbook, because language is outside of workbook, sic!
+    pub fn get_cell_value_by_index(
+        &self,
+        sheet_index: u32,
+        row: i32,
+        column: i32,
+    ) -> Result<CellValue, String> {
+        let cell = self
+            .workbook
+            .worksheet(sheet_index)?
+            .cell(row, column)
+            .cloned()
+            .unwrap_or_default();
+        let cell_value = cell.value(&self.workbook.shared_strings, &self.language);
+        Ok(cell_value)
     }
 
-    pub fn get_formatted_cell_value(&self, sheet_index: u32, row: i32, column: i32) -> String {
-        match self.get_cell_value_by_index(sheet_index, row, column) {
-            ExcelValue::String(value) => value,
-            ExcelValue::Boolean(value) => value.to_string().to_uppercase(),
-            ExcelValue::Number(value) => {
-                let format = self.get_style_for_cell(sheet_index, row, column).num_fmt;
-                self.format_number(value, format).text
-            }
-        }
-    }
-
-    pub fn get_cell_type(&self, sheet_index: u32, row: i32, column: i32) -> CellType {
-        self.get_cell_at(sheet_index, row, column).get_type()
+    // FIXME: Can't put it in Workbook, because locale and language are outside of workbook, sic!
+    pub fn formatted_cell_value(
+        &self,
+        sheet_index: u32,
+        row: i32,
+        column: i32,
+    ) -> Result<String, String> {
+        let format = self.get_style_for_cell(sheet_index, row, column).num_fmt;
+        let cell = self
+            .workbook
+            .worksheet(sheet_index)?
+            .cell(row, column)
+            .cloned()
+            .unwrap_or_default();
+        let formatted_value =
+            cell.formatted_value(&self.workbook.shared_strings, &self.language, |value| {
+                format_number(value, &format, &self.locale).text
+            });
+        Ok(formatted_value)
     }
 
     /// Returns a list of all cells
@@ -1305,20 +1251,6 @@ impl Model {
             return (1, 1, 1, 1);
         }
         (min_row, min_column, max_row, max_column)
-    }
-
-    // FIXME: expect
-    /// Returns the Cell. Used in tests
-    pub fn get_cell_at(&self, sheet: u32, row: i32, column: i32) -> Cell {
-        let cell = self
-            .workbook
-            .worksheet(sheet)
-            .expect("Invalid sheet")
-            .cell(row, column);
-        match cell {
-            Some(cell) => cell.clone(),
-            None => Cell::EmptyCell { s: 0 },
-        }
     }
 
     /// Evaluates the model with a top-down recursive algorithm

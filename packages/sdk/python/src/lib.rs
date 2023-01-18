@@ -2,6 +2,8 @@ use pyo3::exceptions::PyException;
 use pyo3::{create_exception, prelude::*, wrap_pyfunction};
 
 use equalto_calc::model::{Environment, Model};
+use equalto_calc::types::CellType;
+use equalto_calc::types::Worksheet;
 use equalto_xlsx::error::XlsxError;
 use equalto_xlsx::export::save_to_xlsx;
 use equalto_xlsx::import::load_from_excel;
@@ -14,18 +16,29 @@ pub struct PyModel {
     model: Model,
 }
 
+impl PyModel {
+    #[inline]
+    fn worksheet(&self, sheet: i32) -> Result<&Worksheet, PyErr> {
+        self.model
+            .workbook
+            .worksheet(sheet.try_into().unwrap())
+            .map_err(WorkbookError::new_err)
+    }
+}
+
 #[pymethods]
 impl PyModel {
     pub fn get_formatted_cell_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
-        Ok(self
-            .model
-            .get_formatted_cell_value(sheet.try_into().unwrap(), row, column))
+        self.model
+            .formatted_cell_value(sheet.try_into().unwrap(), row, column)
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<bool> {
         Ok(self
-            .model
-            .has_formula(sheet.try_into().unwrap(), row, column))
+            .worksheet(sheet)?
+            .cell(row, column)
+            .map_or(false, |cell| cell.has_formula()))
     }
 
     pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
@@ -38,13 +51,15 @@ impl PyModel {
         Ok(self
             .model
             .get_cell_value_by_index(sheet.try_into().unwrap(), row, column)
+            .map_err(WorkbookError::new_err)?
             .to_json_str())
     }
 
     pub fn get_cell_type(&self, sheet: i32, row: i32, column: i32) -> PyResult<i32> {
         Ok(self
-            .model
-            .get_cell_type(sheet.try_into().unwrap(), row, column) as i32)
+            .worksheet(sheet)?
+            .cell(row, column)
+            .map_or(CellType::Number, |cell| cell.get_type()) as i32)
     }
 
     pub fn set_input(&mut self, sheet: i32, row: i32, column: i32, value: String) {
