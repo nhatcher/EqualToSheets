@@ -6,6 +6,7 @@ export interface ICell {
   get column(): number;
   get value(): string | number | boolean | Date | null;
   set value(value: string | number | boolean | Date | null);
+  get formattedValue(): string;
   get formula(): string | null;
   set formula(formula: string | null);
 }
@@ -71,6 +72,14 @@ export class Cell implements ICell {
     }
 
     this._wasmWorkbook.evaluate();
+  }
+
+  get formattedValue(): string {
+    return this._wasmWorkbook.getFormattedCellValue(
+      this._sheet.index,
+      this._row,
+      this._column
+    );
   }
 
   get formula(): string | null {

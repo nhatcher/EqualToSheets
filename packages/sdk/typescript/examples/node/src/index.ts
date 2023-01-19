@@ -7,15 +7,15 @@ function calculateForInput(workbook: IWorkbook, inputValue: number) {
   console.log(`Results for ${inputValue}`);
   console.log(
     workbook.cell("Sheet1!A2").value,
-    workbook.cell("Sheet1!B2").value // TODO: formattedValue
+    workbook.cell("Sheet1!B2").formattedValue
   );
   console.log(
     workbook.cell("Sheet1!A3").value,
-    workbook.cell("Sheet1!B3").value
+    workbook.cell("Sheet1!B3").formattedValue
   );
   console.log(
     workbook.cell("Sheet1!A4").value,
-    workbook.cell("Sheet1!B4").value
+    workbook.cell("Sheet1!B4").formattedValue
   );
 }
 
