@@ -8,7 +8,7 @@ fn test_quote_prefix_formula() {
     model._set("A1", "'= 1 + 3");
     model.evaluate();
     assert_eq!(model._get_text("A1"), *"= 1 + 3");
-    assert_eq!(model._get_formula("A1"), *"= 1 + 3");
+    assert!(!model._has_formula("A1"));
 }
 
 #[test]
@@ -20,7 +20,7 @@ fn test_quote_prefix_number() {
     model._set("A4", "=ISNUMBER(A3)");
     model.evaluate();
     assert_eq!(model._get_text("A1"), *"13");
-    assert_eq!(model._get_formula("A1"), *"13");
+    assert!(!model._has_formula("A1"));
 
     assert_eq!(model._get_text("A2"), *"FALSE");
     assert_eq!(model._get_text("A3"), *"14");
@@ -88,7 +88,7 @@ fn test_update_cell_quote() {
     model.update_cell_with_text(0, 1, 1, "= 1 + 3");
     model.evaluate();
     assert_eq!(model._get_text("A1"), *"= 1 + 3");
-    assert_eq!(model._get_formula("A1"), *"= 1 + 3");
+    assert!(!model._has_formula("A1"));
 }
 
 #[test]

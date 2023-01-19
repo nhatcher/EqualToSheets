@@ -112,23 +112,10 @@ impl Cell {
     }
 
     pub fn get_text(&self, shared_strings: &[String], language: &Language) -> String {
-        match self {
-            Cell::CellFormula { f: _, .. } => "".to_string(),
-            Cell::CellFormulaBoolean { v, .. } => v.to_string().to_uppercase(),
-            Cell::CellFormulaNumber { v, .. } => to_excel_precision_str(*v),
-            Cell::CellFormulaString { v, .. } => v.clone(),
-            Cell::CellFormulaError { ei, .. } => ei.to_localized_error_string(language),
-            Cell::EmptyCell { s: _ } => "".to_string(),
-            Cell::BooleanCell { v, .. } => v.to_string().to_uppercase(),
-            Cell::NumberCell { v, .. } => to_excel_precision_str(*v),
-            Cell::ErrorCell { ei, .. } => ei.to_localized_error_string(language),
-            Cell::SharedString { si, .. } => {
-                let s = shared_strings.get(*si as usize);
-                match s {
-                    Some(str) => str.clone(),
-                    None => "".to_string(),
-                }
-            }
+        match self.value(shared_strings, language) {
+            CellValue::String(v) => v,
+            CellValue::Boolean(v) => v.to_string().to_uppercase(),
+            CellValue::Number(v) => to_excel_precision_str(v),
         }
     }
 

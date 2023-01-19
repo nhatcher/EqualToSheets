@@ -34,17 +34,10 @@ impl PyModel {
             .map_err(WorkbookError::new_err)
     }
 
-    pub fn has_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<bool> {
-        Ok(self
-            .worksheet(sheet)?
-            .cell(row, column)
-            .map_or(false, |cell| cell.has_formula()))
-    }
-
-    pub fn get_formula_or_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
-        Ok(self
-            .model
-            .get_formula_or_value(sheet.try_into().unwrap(), row, column))
+    pub fn get_cell_formula(&self, sheet: i32, row: i32, column: i32) -> PyResult<Option<String>> {
+        self.model
+            .cell_formula(sheet.try_into().unwrap(), row, column)
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn get_cell_value_by_index(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {

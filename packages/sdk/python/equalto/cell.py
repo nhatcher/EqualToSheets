@@ -114,10 +114,8 @@ class Cell:
 
     @property
     def formula(self) -> str | None:
-        if not self._model.has_formula(*self.cell_ref):
-            return None
-        formula = self._model.get_formula_or_value(*self.cell_ref)
-        assert isinstance(formula, str)
+        formula = self._model.get_cell_formula(*self.cell_ref)
+        assert formula is None or isinstance(formula, str)
         return formula
 
     @formula.setter

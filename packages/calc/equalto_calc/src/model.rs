@@ -956,29 +956,24 @@ impl Model {
         Ok(value.to_string())
     }
 
-    // FIXME: expect
-    /// Returns a formula if the cell has one or the value of the cell
-    pub fn get_formula_or_value(&self, sheet: u32, row: i32, column: i32) -> String {
-        let cell = self
-            .workbook
-            .worksheet(sheet)
-            .expect("Invalid sheet")
-            .cell(row, column);
-        match cell {
-            Some(cell) => match cell.get_formula() {
-                None => cell.get_text(&self.workbook.shared_strings, &self.language),
-                Some(i) => {
-                    let formula = &self.parsed_formulas[sheet as usize][i as usize];
-                    let cell_ref = CellReferenceRC {
-                        sheet: self.workbook.worksheets[sheet as usize].get_name(),
-                        row,
-                        column,
-                    };
-                    format!("={}", to_string(formula, &cell_ref))
-                }
-            },
-            None => "".to_string(),
-        }
+    pub fn cell_formula(
+        &self,
+        sheet: u32,
+        row: i32,
+        column: i32,
+    ) -> Result<Option<String>, String> {
+        let worksheet = self.workbook.worksheet(sheet)?;
+        Ok(worksheet.cell(row, column).and_then(|cell| {
+            cell.get_formula().map(|formula_index| {
+                let formula = &self.parsed_formulas[sheet as usize][formula_index as usize];
+                let cell_ref = CellReferenceRC {
+                    sheet: worksheet.get_name(),
+                    row,
+                    column,
+                };
+                format!("={}", to_string(formula, &cell_ref))
+            })
+        }))
     }
 
     /// Updates the value of a cell with some text
@@ -1329,15 +1324,17 @@ impl Model {
                 message,
             } = calc_result
             {
-                result = Err(match self.cell_reference_to_string(&origin) {
-                    Ok(cell_text_reference) => format!(
-                        "{} ('{}'): {}",
-                        cell_text_reference,
-                        self.get_formula_or_value(origin.sheet, origin.row, origin.column),
-                        message,
-                    ),
-                    Err(_) => message,
-                });
+                // if the error origin formula is None then it's a cell with an explicitly set
+                // error value (i.e. "#ERROR!"), in that case we don't want to break the evaluation
+                if let Some(formula) = self
+                    .cell_formula(origin.sheet, origin.row, origin.column)
+                    .expect("expected a valid error origin cell")
+                {
+                    let cell_text_reference = self
+                        .cell_reference_to_string(&origin)
+                        .expect("expected a valid error origin cell");
+                    result = Err(format!("{cell_text_reference} ('{formula}'): {message}"));
+                }
             }
         }
 

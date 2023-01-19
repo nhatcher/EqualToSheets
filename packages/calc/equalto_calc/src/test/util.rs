@@ -34,11 +34,18 @@ impl Model {
         let row = cell_reference.row;
         self.set_input(cell_reference.sheet, row, column, value.to_string(), 0);
     }
+    pub fn _has_formula(&self, cell: &str) -> bool {
+        self._get_formula_opt(cell).is_some()
+    }
     pub fn _get_formula(&self, cell: &str) -> String {
+        self._get_formula_opt(cell).unwrap()
+    }
+    fn _get_formula_opt(&self, cell: &str) -> Option<String> {
         let cell_reference = self._parse_reference(cell);
         let column = cell_reference.column;
         let row = cell_reference.row;
-        self.get_formula_or_value(cell_reference.sheet, row, column)
+        self.cell_formula(cell_reference.sheet, row, column)
+            .unwrap()
     }
     pub fn _get_text_at(&self, sheet: u32, row: i32, column: i32) -> String {
         self.formatted_cell_value(sheet, row, column).unwrap()

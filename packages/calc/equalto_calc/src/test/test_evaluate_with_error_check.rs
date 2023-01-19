@@ -23,6 +23,13 @@ fn test_nimpl() {
 }
 
 #[test]
+fn test_explicit_error_input() {
+    let mut model = new_empty_model();
+    model._set("B2", "#ERROR!");
+    assert!(model.evaluate_with_error_check().is_ok())
+}
+
+#[test]
 fn test_error() {
     let mut model = new_empty_model();
     model._set("C3", "=INVALID()");

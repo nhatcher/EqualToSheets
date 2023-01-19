@@ -21,7 +21,7 @@ fn test_model_simple_evaluation() {
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"4");
-    let result = model.get_formula_or_value(0, 1, 1);
+    let result = model._get_formula("A1");
     assert_eq!(result, *"=1+3");
 }
 
@@ -47,7 +47,7 @@ fn test_model_invalid_formula() {
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"#ERROR!");
-    let result = model.get_formula_or_value(0, 1, 1);
+    let result = model._get_formula("A1");
     assert_eq!(result, *"= 1 +");
 }
 
@@ -59,11 +59,10 @@ fn test_model_dependencies() {
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"23");
-    let result = model.get_formula_or_value(0, 1, 1);
-    assert_eq!(result, *"23");
+    assert!(!model._has_formula("A1"));
     let result = model._get_text_at(0, 1, 2);
     assert_eq!(result, *"42");
-    let result = model.get_formula_or_value(0, 1, 2);
+    let result = model._get_formula("B1");
     assert_eq!(result, *"=A1*2-4");
 
     model.set_input(0, 2, 1, "=SUM(A1, B1)".to_string(), 0); // A2
@@ -186,10 +185,7 @@ fn test_booleans() {
     assert_eq!(model._get_text_at(0, 5, 2), *"TRUE");
     assert_eq!(model._get_text_at(0, 6, 2), *"TRUE");
 
-    assert_eq!(
-        model.get_formula_or_value(0, 1, 5),
-        *"=IF(FALSE,TRUE,FALSE)"
-    );
+    assert_eq!(model._get_formula("E1"), *"=IF(FALSE,TRUE,FALSE)");
 }
 
 #[test]
@@ -415,4 +411,30 @@ fn test_get_formatted_cell_value() {
     assert_eq!(model.formatted_cell_value(0, 3, 1).unwrap(), "");
     assert_eq!(model.formatted_cell_value(0, 4, 1).unwrap(), "123.456");
     assert_eq!(model.formatted_cell_value(0, 5, 1).unwrap(), "$123.46");
+}
+
+#[test]
+fn test_cell_formula() {
+    let mut model = new_empty_model();
+    model._set("A1", "=1+2+3");
+    model._set("A2", "foobar");
+    model.evaluate();
+
+    assert_eq!(
+        model.cell_formula(0, 1, 1), // A1
+        Ok(Some("=1+2+3".to_string())),
+    );
+    assert_eq!(
+        model.cell_formula(0, 2, 1), // A2
+        Ok(None),
+    );
+    assert_eq!(
+        model.cell_formula(0, 3, 1), // A3 - empty cell
+        Ok(None),
+    );
+
+    assert_eq!(
+        model.cell_formula(42, 1, 1),
+        Err("Invalid sheet index".to_string()),
+    );
 }
