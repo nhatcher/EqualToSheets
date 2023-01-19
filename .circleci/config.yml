@@ -89,6 +89,16 @@ jobs:
           command: npm run build
           working_directory: ./packages/sdk/typescript
       - run:
+          name: Run unit tests
+          command: npm test
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Run e2e API tests
+          command: |
+            npm install
+            npm test
+          working_directory: ./packages/sdk/typescript/e2e
+      - run:
           name: Run cargo linters
           command: make lint
           working_directory: ./packages/sdk/typescript/crate

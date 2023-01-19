@@ -1,0 +1,12 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "moduleDirectories": [
+    "node_modules",
+    "<rootDir>"
+  ],
+  "testPathIgnorePatterns": [
+    "/dist/",
+    "/e2e/"
+  ]
+}
