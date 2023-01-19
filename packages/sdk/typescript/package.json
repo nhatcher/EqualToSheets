@@ -5,32 +5,37 @@
   "author": "EqualTo <dev@equalto.com>",
   "scripts": {
     "clean-crate": "cd crate && cargo clean",
-    "clean": "rm -rf dist/ src/__generated_pkg && npm run clean-crate",
+    "clean": "rm -rf dist/ src/__generated_pkg",
     "build-crate": "wasm-pack build --target web --out-dir ../src/__generated_pkg crate -- --features xlsx",
     "rollup": "rollup --config",
-    "build": "npm run clean && npm run build-crate && npm run rollup"
+    "build": "npm run clean && npm run build-crate && npm run rollup && npm run dts",
+    "dts": "npm run dts-copy-bindgen-types && npm run dts-bundle-browser && npm run dts-bundle-node",
+    "dts-copy-bindgen-types": "mkdir -p dist/types-raw/__generated_pkg && cp src/__generated_pkg/*.d.ts dist/types-raw/__generated_pkg/",
+    "dts-bundle-browser": "api-extractor run --config api-extractor.browser.json",
+    "dts-bundle-node": "api-extractor run --config api-extractor.node.json"
   },
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
-  "main": "./dist/browser/umd/index_browser.js",
-  "module": "./dist/browser/es/index_browser.js",
-  "types": "./dist/types/index_browser.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index_browser.d.ts",
       "node": {
         "types": "./dist/types/index_node.d.ts",
         "default": "./dist/node/index_node.cjs"
       },
+      "types": "./dist/types/index_browser.d.ts",
       "import": "./dist/browser/es/index_browser.js",
       "default": "./dist/browser/cjs/index_browser.js"
     }
   },
+  "types": "./dist/types/index_browser.d.ts",
+  "module": "./dist/browser/es/index_browser.js",
+  "main": "./dist/browser/umd/index_browser.js",
   "files": [
     "dist"
   ],
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.33.7",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-terser": "^0.3.0",
     "@rollup/plugin-typescript": "^11.0.0",

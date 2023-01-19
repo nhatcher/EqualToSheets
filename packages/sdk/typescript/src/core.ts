@@ -1,50 +1,31 @@
-import init, { InitInput, WasmWorkbook } from "./__generated_pkg/equalto_wasm";
+import init from "./__generated_pkg/equalto_wasm";
+import { IWorkbook, newWorkbook, loadWorkbookFromMemory } from "./api/workbook";
+
+export type { IWorkbook } from "./api/workbook";
+export type { IWorkbookSheets } from "./api/workbookSheets";
+export type { ISheet } from "./api/sheet";
+export type { ICell } from "./api/cell";
+
+// Copying type over here directly yields better type generation
+export type InitInput =
+  | RequestInfo
+  | URL
+  | Response
+  | BufferSource
+  | WebAssembly.Module;
 
 let defaultWasmInit: (() => InitInput) | null = null;
 export const setDefaultWasmInit = (newDefault: typeof defaultWasmInit) => {
   defaultWasmInit = newDefault;
 };
 
-export class Workbook {
-  private _wasmWorkbook: WasmWorkbook;
-
-  private constructor(wasmWorkbook: WasmWorkbook) {
-    this._wasmWorkbook = wasmWorkbook;
-  }
-
-  static new(locale: string, timezone: string): Workbook {
-    return new Workbook(new WasmWorkbook(locale, timezone));
-  }
-
-  static loadFromMemory(
+type SheetsApi = {
+  newWorkbook(locale: string, timezone: string): IWorkbook;
+  loadWorkbookFromMemory(
     data: Uint8Array,
     locale: string,
     timezone: string
-  ): Workbook {
-    return new Workbook(WasmWorkbook.loadFromMemory(data, locale, timezone));
-  }
-
-  evaluate() {
-    this._wasmWorkbook.evaluate();
-  }
-
-  setInput(
-    sheet: number,
-    row: number,
-    column: number,
-    value: string,
-    style: number
-  ) {
-    this._wasmWorkbook.setInput(sheet, row, column, value, style);
-  }
-
-  getFormattedCellValue(sheet: number, row: number, column: number): string {
-    return this._wasmWorkbook.getFormattedCellValue(sheet, row, column);
-  }
-}
-
-type SheetsApi = {
-  Workbook: typeof Workbook;
+  ): IWorkbook;
 };
 
 async function initializeWasm() {
@@ -60,7 +41,8 @@ export async function initialize(): Promise<SheetsApi> {
   initializationPromise = initializeWasm();
   await initializationPromise;
   return {
-    Workbook,
+    newWorkbook,
+    loadWorkbookFromMemory,
   };
 }
 
@@ -76,6 +58,7 @@ export async function getApi(): Promise<SheetsApi> {
   }
   await initializationPromise;
   return {
-    Workbook,
+    newWorkbook,
+    loadWorkbookFromMemory,
   };
 }

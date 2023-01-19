@@ -2,13 +2,13 @@
   "include": ["src"],
   "exclude": ["node_modules"],
   "compilerOptions": {
-    "target": "es2016",
+    "target": "ESNext",
+    "module": "commonjs",
+    "rootDir": "./",
     "moduleResolution": "node",
-    "noEmit": true,
-    "noEmitOnError": true,
-    "declaration": true,
-    "declarationDir": "dist/types-raw",
+    "outDir": "./dist",
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": true
   }
 }
