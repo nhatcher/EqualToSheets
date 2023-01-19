@@ -54,6 +54,61 @@ fn test_split() {
     assert_eq!(model.worksheets[0].frozen_columns, 0);
 }
 
+fn test_model_has_correct_styles(model: &Model) {
+    // A1 is bold
+    let style_a1 = model.get_style_for_cell(0, 1, 1);
+    assert!(style_a1.font.b);
+    assert!(!style_a1.font.i);
+    assert!(!style_a1.font.u);
+
+    // B1 is Italics
+    let style_b1 = model.get_style_for_cell(0, 1, 2);
+    assert!(style_b1.font.i);
+    assert!(!style_b1.font.b);
+    assert!(!style_b1.font.u);
+
+    // C1 Underlined
+    let style_c1 = model.get_style_for_cell(0, 1, 3);
+    assert!(style_c1.font.u);
+    assert!(!style_c1.font.b);
+    assert!(!style_c1.font.i);
+
+    // D1 Bold and Italics
+    let style_d1 = model.get_style_for_cell(0, 1, 4);
+    assert!(style_d1.font.b);
+    assert!(style_d1.font.i);
+    assert!(!style_d1.font.u);
+
+    // E1 Bold, italics and underlined
+    let style_e1 = model.get_style_for_cell(0, 1, 5);
+    assert!(style_e1.font.b);
+    assert!(style_e1.font.i);
+    assert!(style_e1.font.u);
+    assert!(!style_e1.font.strike);
+
+    // F1 strikethrough
+    let style_f1 = model.get_style_for_cell(0, 1, 6);
+    assert!(style_f1.font.strike);
+
+    // G1 Double underlined just get simple underlined
+    let style_g1 = model.get_style_for_cell(0, 1, 7);
+    assert!(style_g1.font.u);
+}
+
+#[test]
+fn test_simple_text() {
+    let model = load_model_from_xlsx("tests/basic_text.xlsx", "en", "Europe/Berlin").unwrap();
+
+    test_model_has_correct_styles(&model);
+
+    let temp_file_name = "temp_file_test_named_styles.xlsx";
+    save_to_xlsx(&model, temp_file_name).unwrap();
+
+    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    fs::remove_file(temp_file_name).unwrap();
+    test_model_has_correct_styles(&model);
+}
+
 #[test]
 fn test_defined_names_casing() {
     let test_file_path = "tests/calc_tests/defined_names_for_unit_test.xlsx";

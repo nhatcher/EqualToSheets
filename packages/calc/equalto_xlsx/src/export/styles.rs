@@ -15,7 +15,7 @@ fn get_fonts_xml(styles: &Styles) -> String {
         let name = format!("<name val=\"{}\"/>", font.name);
         let bold = if font.b { "<b/>" } else { "" };
         let italic = if font.i { "<i/>" } else { "" };
-        let underline = if font.u { "<i/>" } else { "" };
+        let underline = if font.u { "<u/>" } else { "" };
         let strike = if font.strike { "<strike/>" } else { "" };
         fonts_str.push(format!(
             "<font>{size}{color}{name}{bold}{italic}{underline}{strike}<family val=\"2\"/><scheme val=\"major\"/></font>"
