@@ -46,19 +46,6 @@ impl WasmWorkbook {
         Ok(WasmWorkbook { model })
     }
 
-    #[wasm_bindgen(js_name = "setInput")]
-    pub fn set_input(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        value: String,
-        style: i32,
-    ) -> Result<(), JsError> {
-        self.model.set_input(sheet, row, column, value, style);
-        Ok(())
-    }
-
     pub fn evaluate(&mut self) -> Result<(), JsError> {
         self.model.evaluate();
         Ok(())
