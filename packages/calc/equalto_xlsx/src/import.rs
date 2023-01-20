@@ -1052,18 +1052,28 @@ fn load_sheet<R: Read + std::io::Seek>(
         // `spans` is not used in EqualTo at the moment (it's an optimization)
         // let spans = row.attribute("spans");
         // This is the height of the row
+        let has_height_attribute;
         let height = match row.attribute("ht") {
-            Some(s) => s.parse::<f64>().unwrap_or(default_row_height),
-            None => default_row_height,
+            Some(s) => {
+                has_height_attribute = true;
+                s.parse::<f64>().unwrap_or(default_row_height)
+            }
+            None => {
+                has_height_attribute = false;
+                default_row_height
+            }
         };
         let custom_height = matches!(row.attribute("customHeight"), Some("1"));
+        // The height of the row is always the visible height of the row
+        // If custom_height is false that means the height was calculated automatically:
+        // for example because a cell has many lines or a larger font
 
         let row_style = match row.attribute("s") {
             Some(s) => s.parse::<i32>().unwrap_or(0),
             None => 0,
         };
         let custom_format = matches!(row.attribute("customFormat"), Some("1"));
-        if custom_height || custom_format {
+        if custom_height || custom_format || row_style != 0 || has_height_attribute {
             rows.push(Row {
                 r: row_index,
                 height,

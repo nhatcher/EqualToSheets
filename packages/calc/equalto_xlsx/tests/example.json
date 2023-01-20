@@ -125,6 +125,48 @@
           "custom_format": false,
           "custom_height": true,
           "s": 0
+        },
+        {
+          "height": 21.0,
+          "r": 15,
+          "custom_format": false,
+          "custom_height": false,
+          "s": 0
+        },
+        {
+          "height": 15.0,
+          "r": 17,
+          "custom_format": false,
+          "custom_height": false,
+          "s": 0
+        },
+        {
+          "height": 15.0,
+          "r": 20,
+          "custom_format": false,
+          "custom_height": false,
+          "s": 0
+        },
+        {
+          "height": 15.0,
+          "r": 22,
+          "custom_format": false,
+          "custom_height": false,
+          "s": 0
+        },
+        {
+          "height": 15.5,
+          "r": 23,
+          "custom_format": false,
+          "custom_height": false,
+          "s": 0
+        },
+        {
+          "height": 15.0,
+          "r": 24,
+          "custom_format": false,
+          "custom_height": false,
+          "s": 0
         }
       ],
       "name": "Sheet1",

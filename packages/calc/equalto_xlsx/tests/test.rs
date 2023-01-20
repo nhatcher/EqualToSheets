@@ -93,6 +93,12 @@ fn test_model_has_correct_styles(model: &Model) {
     // G1 Double underlined just get simple underlined
     let style_g1 = model.get_style_for_cell(0, 1, 7);
     assert!(style_g1.font.u);
+
+    let height_row_3 = model.workbook.worksheet(0).unwrap().get_row_height(3);
+    assert_eq!(height_row_3, 136.0);
+
+    let height_row_5 = model.workbook.worksheet(0).unwrap().get_row_height(5);
+    assert_eq!(height_row_5, 62.0);
 }
 
 #[test]
