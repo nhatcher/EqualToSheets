@@ -2259,7 +2259,9 @@
         "font_id": 0,
         "fill_id": 0,
         "border_id": 0,
-        "horizontal_alignment": "left",
+        "alignment": {
+          "horizontal": "left"
+        },
         "apply_alignment": true
       },
       {
@@ -2276,7 +2278,9 @@
         "font_id": 0,
         "fill_id": 0,
         "border_id": 0,
-        "horizontal_alignment": "left",
+        "alignment": {
+          "horizontal": "left"
+        },
         "apply_alignment": true
       },
       {
@@ -2285,7 +2289,9 @@
         "font_id": 0,
         "fill_id": 0,
         "border_id": 0,
-        "horizontal_alignment": "left",
+        "alignment": {
+          "horizontal": "left"
+        },
         "apply_alignment": true
       },
       {
@@ -2334,7 +2340,9 @@
         "font_id": 0,
         "fill_id": 0,
         "border_id": 0,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_alignment": true
       },
       {
@@ -2343,7 +2351,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 6,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2353,7 +2363,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 7,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2363,7 +2375,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 8,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2373,7 +2387,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 9,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2383,7 +2399,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 0,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2393,7 +2411,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 10,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2403,7 +2423,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 11,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2413,7 +2435,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 12,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },
@@ -2423,7 +2447,9 @@
         "font_id": 11,
         "fill_id": 7,
         "border_id": 13,
-        "horizontal_alignment": "center",
+        "alignment": {
+          "horizontal": "center"
+        },
         "apply_border": true,
         "apply_alignment": true
       },

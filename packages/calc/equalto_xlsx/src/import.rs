@@ -394,6 +394,7 @@ fn load_styles<R: Read + std::io::Seek>(
         let apply_protection = get_bool(xfs, "applyProtection");
         let apply_font = get_bool(xfs, "applyFont");
         let apply_fill = get_bool(xfs, "applyFill");
+
         cell_style_xfs.push(CellStyleXfs {
             num_fmt_id,
             font_id,
@@ -447,17 +448,48 @@ fn load_styles<R: Read + std::io::Seek>(
 
         // TODO: Pivot Tables
         // let pivotButton = get_bool(xfs, "pivotButton");
-        let mut horizontal_alignment = "default".to_string();
-        let alignment_node = xfs
+
+        let alignment_nodes = xfs
             .children()
             .filter(|n| n.has_tag_name("alignment"))
             .collect::<Vec<Node>>();
-        if alignment_node.len() == 1 {
-            horizontal_alignment = alignment_node[0]
-                .attribute("horizontal")
-                .unwrap_or("default")
-                .to_string();
-        }
+        let alignment = if alignment_nodes.len() == 1 {
+            let alignment_node = alignment_nodes[0];
+            let wrap_text = get_bool_false(alignment_node, "wrapText");
+
+            let horizontal = match alignment_node.attribute("horizontal") {
+                Some("center") => HorizontalAlignment::Center,
+                Some("centerContinuous") => HorizontalAlignment::CenterContinuous,
+                Some("distributed") => HorizontalAlignment::Distributed,
+                Some("fill") => HorizontalAlignment::Fill,
+                Some("general") => HorizontalAlignment::General,
+                Some("justify") => HorizontalAlignment::Justify,
+                Some("left") => HorizontalAlignment::Left,
+                Some("right") => HorizontalAlignment::Right,
+                // TODO: Should we fail in this case or set the alignment to default?
+                Some(_) => HorizontalAlignment::default(),
+                None => HorizontalAlignment::default(),
+            };
+
+            let vertical = match alignment_node.attribute("vertical") {
+                Some("bottom") => VerticalAlignment::Bottom,
+                Some("center") => VerticalAlignment::Center,
+                Some("distributed") => VerticalAlignment::Distributed,
+                Some("justify") => VerticalAlignment::Justify,
+                Some("top") => VerticalAlignment::Top,
+                // TODO: Should we fail in this case or set the alignment to default?
+                Some(_) => VerticalAlignment::default(),
+                None => VerticalAlignment::default(),
+            };
+
+            Some(Alignment {
+                horizontal,
+                vertical,
+                wrap_text,
+            })
+        } else {
+            None
+        };
 
         cell_xfs.push(CellXfs {
             xf_id,
@@ -465,7 +497,6 @@ fn load_styles<R: Read + std::io::Seek>(
             font_id,
             fill_id,
             border_id,
-            horizontal_alignment,
             apply_number_format,
             apply_border,
             apply_alignment,
@@ -473,6 +504,7 @@ fn load_styles<R: Read + std::io::Seek>(
             apply_font,
             apply_fill,
             quote_prefix,
+            alignment,
         });
     }
 

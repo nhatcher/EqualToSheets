@@ -1,4 +1,6 @@
-use equalto_calc::types::{BorderItem, Color, Styles, Workbook};
+use equalto_calc::types::{
+    Alignment, BorderItem, Color, HorizontalAlignment, Styles, VerticalAlignment, Workbook,
+};
 
 use super::{escape::escape_xml, xml_constants::XML_DECLARATION};
 
@@ -108,6 +110,25 @@ fn get_cell_number_formats_xml(styles: &Styles) -> String {
     )
 }
 
+fn get_alignment(alignment: &Alignment) -> String {
+    let wrap_text = if alignment.wrap_text {
+        " wrapText=\"1\""
+    } else {
+        ""
+    };
+    let horizontal = if alignment.horizontal != HorizontalAlignment::default() {
+        format!(" horizontal=\"{}\"", alignment.horizontal)
+    } else {
+        "".to_string()
+    };
+    let vertical = if alignment.vertical != VerticalAlignment::default() {
+        format!(" vertical=\"{}\"", alignment.vertical)
+    } else {
+        "".to_string()
+    };
+    format!("<alignment{wrap_text}{horizontal}{vertical}/>")
+}
+
 fn get_cell_style_xfs_xml(styles: &Styles) -> String {
     let cell_style_xfs = &styles.cell_style_xfs;
     let mut cell_style_str: Vec<String> = vec![];
@@ -178,20 +199,23 @@ fn get_cell_xfs_xml(styles: &Styles) -> String {
         } else {
             ""
         };
-        // FIXME: add alignment
-        let _horizontal_alignment = &cell_xf.horizontal_alignment;
-        cell_xfs_str.push(format!(
-            "<xf \
-              xfId=\"{xf_id}\" \
-              borderId=\"{border_id}\" \
-              fillId=\"{fill_id}\" \
-              fontId=\"{font_id}\" \
-              numFmtId=\"{num_fmt_id}\"\
-              {quote_prefix_str}\
-              {apply_alignment_str}\
-              {apply_font_str}\
-              {apply_fill_str}/>"
-        ));
+        let properties = format!(
+            "xfId=\"{xf_id}\" \
+                borderId=\"{border_id}\" \
+                fillId=\"{fill_id}\" \
+                fontId=\"{font_id}\" \
+                numFmtId=\"{num_fmt_id}\"\
+                {quote_prefix_str}\
+                {apply_alignment_str}\
+                {apply_font_str}\
+                {apply_fill_str}"
+        );
+        if let Some(alignment) = &cell_xf.alignment {
+            let alignment = get_alignment(alignment);
+            cell_xfs_str.push(format!("<xf {properties}>{alignment}</xf>"));
+        } else {
+            cell_xfs_str.push(format!("<xf {properties}/>"));
+        }
     }
     let style_count = cell_xfs.len();
     format!(

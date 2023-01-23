@@ -82,7 +82,6 @@ impl Styles {
             font_id,
             fill_id,
             border_id,
-            horizontal_alignment: style.horizontal_alignment.clone(),
             apply_number_format: false,
             apply_border: false,
             apply_alignment: false,
@@ -90,6 +89,7 @@ impl Styles {
             apply_font: false,
             apply_fill: false,
             quote_prefix: style.quote_prefix,
+            alignment: style.alignment.clone(),
         });
         self.cell_xfs.len() as i32 - 1
     }
@@ -101,10 +101,9 @@ impl Styles {
             let font_id = cell_xf.font_id as usize;
             let num_fmt_id = cell_xf.num_fmt_id;
             let quote_prefix = cell_xf.quote_prefix;
-            let horizontal_alignment = cell_xf.horizontal_alignment.clone();
             if style
                 == &(Style {
-                    horizontal_alignment,
+                    alignment: cell_xf.alignment.clone(),
                     num_fmt: get_num_fmt(num_fmt_id, &self.num_fmts),
                     fill: self.fills[fill_id].clone(),
                     font: self.fonts[font_id].clone(),
@@ -191,10 +190,10 @@ impl Styles {
         let font_id = cell_xf.font_id as usize;
         let num_fmt_id = cell_xf.num_fmt_id;
         let quote_prefix = cell_xf.quote_prefix;
-        let horizontal_alignment = cell_xf.horizontal_alignment.clone();
+        let alignment = cell_xf.alignment.clone();
 
         Style {
-            horizontal_alignment,
+            alignment,
             num_fmt: get_num_fmt(num_fmt_id, &self.num_fmts),
             fill: self.fills[fill_id].clone(),
             font: self.fonts[font_id].clone(),

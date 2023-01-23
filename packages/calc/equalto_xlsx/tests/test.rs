@@ -2,7 +2,7 @@ use std::{env, fs, io};
 use uuid::Uuid;
 
 use equalto_calc::model::{Environment, Model};
-use equalto_calc::types::Workbook;
+use equalto_calc::types::{HorizontalAlignment, VerticalAlignment, Workbook};
 use equalto_xlsx::compare::{test_file, test_load_and_saving};
 use equalto_xlsx::export::save_to_xlsx;
 use equalto_xlsx::import::{load_from_excel, load_model_from_xlsx};
@@ -99,6 +99,48 @@ fn test_model_has_correct_styles(model: &Model) {
 
     let height_row_5 = model.workbook.worksheet(0).unwrap().get_row_height(5);
     assert_eq!(height_row_5, 62.0);
+
+    // Second sheet has alignment
+    // Horizontal
+    let alignment = model.get_style_for_cell(1, 2, 1).alignment;
+    assert_eq!(alignment, None);
+
+    let alignment = model.get_style_for_cell(1, 3, 1).alignment.unwrap();
+    assert_eq!(alignment.horizontal, HorizontalAlignment::Left);
+
+    let alignment = model.get_style_for_cell(1, 4, 1).alignment.unwrap();
+    assert_eq!(alignment.horizontal, HorizontalAlignment::Distributed);
+
+    let alignment = model.get_style_for_cell(1, 5, 1).alignment.unwrap();
+    assert_eq!(alignment.horizontal, HorizontalAlignment::Right);
+
+    let alignment = model.get_style_for_cell(1, 6, 1).alignment.unwrap();
+    assert_eq!(alignment.horizontal, HorizontalAlignment::Center);
+
+    let alignment = model.get_style_for_cell(1, 7, 1).alignment.unwrap();
+    assert_eq!(alignment.horizontal, HorizontalAlignment::Fill);
+
+    let alignment = model.get_style_for_cell(1, 8, 1).alignment.unwrap();
+    assert_eq!(alignment.horizontal, HorizontalAlignment::Justify);
+
+    // Vertical
+    let alignment = model.get_style_for_cell(1, 2, 2).alignment;
+    assert_eq!(alignment, None);
+
+    let alignment = model.get_style_for_cell(1, 3, 2).alignment;
+    assert_eq!(alignment, None);
+
+    let alignment = model.get_style_for_cell(1, 4, 2).alignment.unwrap();
+    assert_eq!(alignment.vertical, VerticalAlignment::Top);
+
+    let alignment = model.get_style_for_cell(1, 5, 2).alignment.unwrap();
+    assert_eq!(alignment.vertical, VerticalAlignment::Center);
+
+    let alignment = model.get_style_for_cell(1, 6, 2).alignment.unwrap();
+    assert_eq!(alignment.vertical, VerticalAlignment::Justify);
+
+    let alignment = model.get_style_for_cell(1, 7, 2).alignment.unwrap();
+    assert_eq!(alignment.vertical, VerticalAlignment::Distributed);
 }
 
 #[test]

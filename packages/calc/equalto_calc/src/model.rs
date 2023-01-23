@@ -92,7 +92,7 @@ pub struct CellIndex {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Style {
-    pub horizontal_alignment: String,
+    pub alignment: Option<Alignment>,
     pub num_fmt: String,
     pub fill: Fill,
     pub font: Font,

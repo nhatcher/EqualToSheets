@@ -12,10 +12,6 @@ fn default_as_false() -> bool {
     false
 }
 
-fn default_as_default() -> String {
-    "default".to_string()
-}
-
 // Useful for `#[serde(skip_serializing_if = "is_true")]`
 fn is_true(b: &bool) -> bool {
     *b
@@ -25,12 +21,12 @@ fn is_false(b: &bool) -> bool {
     !*b
 }
 
-fn is_default(s: &str) -> bool {
-    s == "default"
-}
-
 fn is_zero(num: &i32) -> bool {
     *num == 0
+}
+
+fn is_default_alignment(o: &Option<Alignment>) -> bool {
+    o.is_none() || *o == Some(Alignment::default())
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
@@ -319,6 +315,96 @@ impl Default for Fill {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum HorizontalAlignment {
+    Center,
+    CenterContinuous,
+    Distributed,
+    Fill,
+    General,
+    Justify,
+    Left,
+    Right,
+}
+
+// Note that alignment in "General" depends on type
+impl Default for HorizontalAlignment {
+    fn default() -> Self {
+        Self::General
+    }
+}
+
+impl HorizontalAlignment {
+    fn is_default(&self) -> bool {
+        self == &HorizontalAlignment::default()
+    }
+}
+
+// FIXME: Is there a way to generate this automatically?
+impl Display for HorizontalAlignment {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            HorizontalAlignment::Center => write!(formatter, "center"),
+            HorizontalAlignment::CenterContinuous => write!(formatter, "centerContinuous"),
+            HorizontalAlignment::Distributed => write!(formatter, "distributed"),
+            HorizontalAlignment::Fill => write!(formatter, "fill"),
+            HorizontalAlignment::General => write!(formatter, "general"),
+            HorizontalAlignment::Justify => write!(formatter, "justify"),
+            HorizontalAlignment::Left => write!(formatter, "left"),
+            HorizontalAlignment::Right => write!(formatter, "right"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum VerticalAlignment {
+    Bottom,
+    Center,
+    Distributed,
+    Justify,
+    Top,
+}
+
+impl VerticalAlignment {
+    fn is_default(&self) -> bool {
+        self == &VerticalAlignment::default()
+    }
+}
+
+impl Default for VerticalAlignment {
+    fn default() -> Self {
+        Self::Bottom
+    }
+}
+
+impl Display for VerticalAlignment {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            VerticalAlignment::Bottom => write!(formatter, "bottom"),
+            VerticalAlignment::Center => write!(formatter, "center"),
+            VerticalAlignment::Distributed => write!(formatter, "distributed"),
+            VerticalAlignment::Justify => write!(formatter, "justify"),
+            VerticalAlignment::Top => write!(formatter, "top"),
+        }
+    }
+}
+
+// 1762
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
+pub struct Alignment {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "HorizontalAlignment::is_default")]
+    pub horizontal: HorizontalAlignment,
+    #[serde(skip_serializing_if = "VerticalAlignment::is_default")]
+    #[serde(default)]
+    pub vertical: VerticalAlignment,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub wrap_text: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct CellStyleXfs {
     pub num_fmt_id: i32,
     pub font_id: i32,
@@ -361,16 +447,13 @@ impl Default for CellStyleXfs {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
 pub struct CellXfs {
     pub xf_id: i32,
     pub num_fmt_id: i32,
     pub font_id: i32,
     pub fill_id: i32,
     pub border_id: i32,
-    #[serde(default = "default_as_default")]
-    #[serde(skip_serializing_if = "is_default")]
-    pub horizontal_alignment: String,
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
     pub apply_number_format: bool,
@@ -392,26 +475,8 @@ pub struct CellXfs {
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
     pub quote_prefix: bool,
-}
-
-impl Default for CellXfs {
-    fn default() -> Self {
-        CellXfs {
-            xf_id: 0,
-            num_fmt_id: 0,
-            font_id: 0,
-            fill_id: 0,
-            border_id: 0,
-            horizontal_alignment: "default".to_string(),
-            apply_number_format: false,
-            apply_border: false,
-            apply_alignment: false,
-            apply_protection: false,
-            apply_font: false,
-            apply_fill: false,
-            quote_prefix: false,
-        }
-    }
+    #[serde(skip_serializing_if = "is_default_alignment")]
+    pub alignment: Option<Alignment>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
