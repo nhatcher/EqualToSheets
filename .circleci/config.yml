@@ -5,8 +5,9 @@ workflows:
   test-build-deploy:
     jobs:
       - test-calc
-      - build-and-test-python-sdk
-      - build-and-test-typescript-sdk
+      - test-python-sdk
+      - test-rust-sdk
+      - test-typescript-sdk
 
 jobs:
   test-calc:
@@ -34,7 +35,7 @@ jobs:
       - store_artifacts:
           path: ~/repo/packages/calc/target/llvm-cov
 
-  build-and-test-python-sdk:
+  test-python-sdk:
     docker:
       - image: rust:1.66.1-slim
     working_directory: ~/repo
@@ -62,7 +63,32 @@ jobs:
       - store_artifacts:
           path: ~/repo/packages/sdk/python/tests/htmlcov
 
-  build-and-test-typescript-sdk:
+  test-rust-sdk:
+    docker:
+      - image: rust:1.66.1-slim
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt -y --no-install-recommends upgrade
+            apt install --no-install-recommends -y make
+            rustup component add rustfmt clippy
+            cargo install cargo-llvm-cov --version 0.5.2 --locked
+      - run:
+          name: Run linters
+          command: make lint
+          working_directory: ./packages/sdk/rust
+      - run:
+          name: Run tests
+          command: make coverage
+          working_directory: ./packages/sdk/rust
+      - store_artifacts:
+          path: ~/repo/packages/sdk/rust/target/llvm-cov
+
+  test-typescript-sdk:
     docker:
       - image: rust:1.66.1-slim
     working_directory: ~/repo

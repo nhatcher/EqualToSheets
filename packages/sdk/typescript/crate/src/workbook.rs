@@ -1,4 +1,3 @@
-use js_sys::Date;
 use wasm_bindgen::{
     prelude::{wasm_bindgen, JsError},
     JsValue,
@@ -23,9 +22,7 @@ pub struct WasmWorkbook {
 impl WasmWorkbook {
     #[wasm_bindgen(constructor)]
     pub fn new(locale: &str, timezone: &str) -> Result<WasmWorkbook, JsError> {
-        let env = Environment {
-            get_milliseconds_since_epoch,
-        };
+        let env = Environment::default();
         let model =
             Model::new_empty("workbook", locale, timezone, env).map_err(WorkbookError::from)?;
         Ok(WasmWorkbook { model })
@@ -38,9 +35,7 @@ impl WasmWorkbook {
         locale: &str,
         timezone: &str,
     ) -> Result<WasmWorkbook, JsError> {
-        let env = Environment {
-            get_milliseconds_since_epoch,
-        };
+        let env = Environment::default();
         let model = load_xlsx_from_memory("workbook", data, locale, timezone, env)
             .map_err(WorkbookError::from)?;
         Ok(WasmWorkbook { model })
@@ -206,8 +201,4 @@ impl WasmWorkbook {
             .map_err(WorkbookError::from)
             .map_err(JsError::from)
     }
-}
-
-fn get_milliseconds_since_epoch() -> i64 {
-    Date::now() as i64
 }

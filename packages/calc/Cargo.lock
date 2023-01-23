@@ -114,6 +114,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "chrono-tz",
+ "js-sys",
  "once_cell",
  "regex",
  "ryu",

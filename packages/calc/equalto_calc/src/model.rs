@@ -28,11 +28,33 @@ use crate::{
     types::*,
     utils as common,
 };
+#[cfg(feature = "wasm-build")]
+use js_sys::Date;
+#[cfg(not(feature = "wasm-build"))]
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Clone)]
 pub struct Environment {
     /// Returns the number of milliseconds January 1, 1970 00:00:00 UTC.
     pub get_milliseconds_since_epoch: fn() -> i64,
+}
+
+fn get_milliseconds_since_epoch() -> i64 {
+    #[cfg(not(feature = "wasm-build"))]
+    return SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("problem with system time")
+        .as_millis() as i64;
+    #[cfg(feature = "wasm-build")]
+    return Date::now() as i64;
+}
+
+impl Default for Environment {
+    fn default() -> Self {
+        Self {
+            get_milliseconds_since_epoch,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -792,7 +814,7 @@ impl Model {
     }
 
     /// Parses a reference like "Sheet1!B4" into {0, 2, 4}
-    pub(crate) fn parse_reference(&self, s: &str) -> Option<CellReference> {
+    pub fn parse_reference(&self, s: &str) -> Option<CellReference> {
         let bytes = s.as_bytes();
         let mut sheet_name = "".to_string();
         let mut column = "".to_string();

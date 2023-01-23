@@ -12,13 +12,10 @@ use roxmltree::{ExpandedName, Node};
 use serde::{Deserialize, Serialize};
 use std::num::ParseIntError;
 
+use std::fs;
 use std::{
     collections::HashMap,
     io::{BufReader, Read},
-};
-use std::{
-    fs,
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use crate::colors::{get_indexed_color, get_themed_color};
@@ -1428,16 +1425,8 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
     })
 }
 
-// This is equivalent to the JavaScript Date.now()
-fn get_milliseconds_since_epoch() -> i64 {
-    let start = SystemTime::now();
-    start.duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
-}
-
 pub fn load_model_from_xlsx(file_name: &str, locale: &str, tz: &str) -> Result<Model, XlsxError> {
     let workbook = load_from_excel(file_name, locale, tz)?;
-    let env = Environment {
-        get_milliseconds_since_epoch,
-    };
+    let env = Environment::default();
     Ok(Model::from_workbook(workbook, env).unwrap())
 }

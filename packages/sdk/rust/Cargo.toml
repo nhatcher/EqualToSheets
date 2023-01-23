@@ -1,0 +1,13 @@
+[package]
+name = "equalto"
+version = "0.1.0"
+authors = ["EqualTo <dev@equalto.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+equalto_calc = { path = "../../calc/equalto_calc" }
+equalto_xlsx = { path = "../../calc/equalto_xlsx" }
+thiserror = "1.0"
+serde_json = "1.0"

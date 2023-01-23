@@ -7,7 +7,6 @@ use equalto_calc::types::Worksheet;
 use equalto_xlsx::error::XlsxError;
 use equalto_xlsx::export::save_to_xlsx;
 use equalto_xlsx::import::load_from_excel;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 create_exception!(_pycalc, WorkbookError, PyException);
 
@@ -165,17 +164,9 @@ impl WorkbookError {
     }
 }
 
-// This is equivalent to the JavaScript Date.now()
-fn get_milliseconds_since_epoch() -> i64 {
-    let start = SystemTime::now();
-    start.duration_since(UNIX_EPOCH).unwrap().as_millis() as i64
-}
-
 #[pyfunction]
 pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
-    let env = Environment {
-        get_milliseconds_since_epoch,
-    };
+    let env = Environment::default();
     let model = load_from_excel(file_path, locale, tz).map_err(WorkbookError::from_xlsx_error)?;
     let s = serde_json::to_string(&model).map_err(|e| WorkbookError::new_err(e.to_string()))?;
     let model = Model::from_json(&s, env).map_err(WorkbookError::new_err)?;
@@ -184,9 +175,7 @@ pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> 
 
 #[pyfunction]
 pub fn create(name: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
-    let env = Environment {
-        get_milliseconds_since_epoch,
-    };
+    let env = Environment::default();
     let model = Model::new_empty(name, locale, tz, env).map_err(WorkbookError::new_err)?;
     Ok(PyModel { model })
 }
