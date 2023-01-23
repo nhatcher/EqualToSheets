@@ -271,6 +271,8 @@ fn load_styles<R: Read + std::io::Seek>(
         let mut i = false;
         let mut strike = false;
         let mut color = Color::RGB("FFFFFF00".to_string());
+        let mut family = 2;
+        let mut scheme = FontScheme::default();
         for feature in font.children() {
             match feature.tag_name().name() {
                 "sz" => {
@@ -297,9 +299,23 @@ fn load_styles<R: Read + std::io::Seek>(
                 }
                 "name" => name = feature.attribute("val").unwrap_or("Calibri").to_string(),
                 // If there is a theme the font scheme and family overrides other properties like the name
-                // This doesn't work at the moment in EqualTo.
-                "family" => {}
-                "scheme" => {}
+                "family" => {
+                    family = feature
+                        .attribute("val")
+                        .unwrap_or("2")
+                        .parse::<i32>()
+                        .unwrap_or(2);
+                }
+                "scheme" => {
+                    scheme = match feature.attribute("val") {
+                        None => FontScheme::default(),
+                        Some("minor") => FontScheme::Minor,
+                        Some("major") => FontScheme::Major,
+                        Some("none") => FontScheme::None,
+                        // TODO: Should we fail?
+                        Some(_) => FontScheme::default(),
+                    }
+                }
                 "charset" => {}
                 _ => {
                     println!("Unexpected feature {:?}", feature);
@@ -314,6 +330,8 @@ fn load_styles<R: Read + std::io::Seek>(
             sz,
             color,
             name,
+            family,
+            scheme,
         });
     }
 

@@ -259,6 +259,34 @@ impl Default for NumFmt {
         }
     }
 }
+
+// ST_FontScheme simple type (§18.18.33).
+// Usually major fonts are used for styles like headings,
+// and minor fonts are used for body and paragraph text.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum FontScheme {
+    Minor,
+    Major,
+    None,
+}
+
+impl Default for FontScheme {
+    fn default() -> Self {
+        FontScheme::Minor
+    }
+}
+
+impl Display for FontScheme {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            FontScheme::Minor => write!(formatter, "minor"),
+            FontScheme::Major => write!(formatter, "major"),
+            FontScheme::None => write!(formatter, "none"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Font {
     #[serde(default = "default_as_false")]
@@ -276,6 +304,13 @@ pub struct Font {
     pub sz: i32,
     pub color: Color,
     pub name: String,
+    // This is the font family fallback
+    // 1 -> serif
+    // 2 -> sans serif
+    // 3 -> monospaced
+    // ...
+    pub family: i32,
+    pub scheme: FontScheme,
 }
 
 impl Default for Font {
@@ -288,6 +323,8 @@ impl Default for Font {
             sz: 11,
             color: Color::RGB("#000000".to_string()),
             name: "Calibri".to_string(),
+            family: 2,
+            scheme: FontScheme::Minor,
         }
     }
 }

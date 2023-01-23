@@ -19,8 +19,20 @@ fn get_fonts_xml(styles: &Styles) -> String {
         let italic = if font.i { "<i/>" } else { "" };
         let underline = if font.u { "<u/>" } else { "" };
         let strike = if font.strike { "<strike/>" } else { "" };
+        let family = format!("<family val=\"{}\"/>", font.family);
+        let scheme = format!("<scheme val=\"{}\"/>", font.scheme);
         fonts_str.push(format!(
-            "<font>{size}{color}{name}{bold}{italic}{underline}{strike}<family val=\"2\"/><scheme val=\"major\"/></font>"
+            "<font>\
+                {size}\
+                {color}\
+                {name}\
+                {bold}\
+                {italic}\
+                {underline}\
+                {strike}\
+                {family}\
+                {scheme}\
+             </font>"
         ));
     }
     let font_count = fonts.len();
@@ -232,9 +244,9 @@ fn get_cell_styles_xml(styles: &Styles) -> String {
         let xf_id = cell_style.xf_id;
         let name = &cell_style.name;
         let name = escape_xml(name);
-        let buildin_id = cell_style.builtin_id;
+        let builtin_id = cell_style.builtin_id;
         cell_styles_str.push(format!(
-            "<cellStyle xfId=\"{xf_id}\" name=\"{name}\" buildinId=\"{buildin_id}\"/>"
+            "<cellStyle xfId=\"{xf_id}\" name=\"{name}\" builtinId=\"{builtin_id}\"/>"
         ));
     }
     let style_count = cell_styles.len();
