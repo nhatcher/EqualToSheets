@@ -120,6 +120,21 @@ Cell can be accessed either using global reference or local one in context of sp
 > cell.value = new Date('2022-01-31'); // assigns number corresponding to date, see "Working with dates" section
 ```
 
+### Reading cell value
+
+Cell can be read either by using general `value` getter or typed variant (`stringValue`,
+`numberValue`, `booleanValue`, `dateValue`). Typed variants throw `SheetError` when mismatching type
+is found in cell (no implicit cast is done).
+
+```javascript
+> cell.value
+3
+> cell.numberValue
+3
+> cell.stringValue // throws!
+// Uncaught: [SheetsError]: Type of cell's value is not string, cell value: 3
+```
+
 #### Setting cell formula
 
 ```javascript

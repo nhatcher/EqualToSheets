@@ -2,6 +2,7 @@ export enum ErrorKind {
   XlsxError = "XlsxError",
   ReferenceError = "ReferenceError",
   WebAssemblyError = "WebAssemblyError",
+  TypeError = "TypeError",
   OtherError = "OtherError",
 }
 

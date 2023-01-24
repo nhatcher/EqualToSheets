@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { SheetsError, wrapWebAssemblyError } from "src/errors";
+import { ErrorKind, SheetsError, wrapWebAssemblyError } from "src/errors";
 import {
   convertDayjsUTCToSpreadsheetDate,
   convertSpreadsheetDateToDayjsUTC,
@@ -13,6 +13,9 @@ export interface ICell {
   get value(): string | number | boolean | Date | null;
   set value(value: string | number | boolean | Date | null);
   get dateValue(): Date;
+  get stringValue(): string;
+  get numberValue(): number;
+  get booleanValue(): boolean;
   get formattedValue(): string;
   get formula(): string | null;
   set formula(formula: string | null);
@@ -107,14 +110,54 @@ export class Cell implements ICell {
   get dateValue(): Date {
     const value = this.value;
     if (typeof value !== "number") {
-      throw new Error(
-        "Cell value is not a number. Underlying number value is required for dates."
+      throw new SheetsError(
+        "Cell value is not a number. Underlying number value is required for dates.",
+        ErrorKind.TypeError
       );
     }
     if (value < 0) {
-      throw new Error(`Number "${value}" cannot be converted to date.`);
+      throw new SheetsError(`Number "${value}" cannot be converted to date.`);
     }
     return convertSpreadsheetDateToDayjsUTC(value).toDate();
+  }
+
+  get stringValue(): string {
+    const value = this.value;
+    if (typeof value !== "string") {
+      throw new SheetsError(
+        `Type of cell's value is not string, cell value: ${JSON.stringify(
+          value
+        )}`,
+        ErrorKind.TypeError
+      );
+    }
+    return value;
+  }
+
+  get numberValue(): number {
+    const value = this.value;
+    if (typeof value !== "number") {
+      throw new SheetsError(
+        `Type of cell's value is not number, cell value: ${JSON.stringify(
+          value
+        )}`,
+        ErrorKind.TypeError
+      );
+    }
+    return value;
+  }
+
+  get booleanValue(): boolean {
+    const value = this.value;
+    if (typeof value !== "boolean") {
+      throw new SheetsError(
+        `Type of cell's value is not boolean, cell value: ${JSON.stringify(
+          value
+        )}`,
+        ErrorKind.TypeError
+      );
+    }
+    return value;
   }
 
   get formattedValue(): string {

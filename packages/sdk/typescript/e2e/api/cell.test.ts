@@ -61,6 +61,111 @@ describe("Workbook - Cell operations", () => {
     expect(workbook.cell("Sheet1!E2").formattedValue).toEqual("-12%");
   });
 
+  test("can read typed number value from cell", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+
+    cell.value = 3;
+    expect(cell.value).toEqual(3);
+    expect(cell.numberValue).toEqual(3);
+
+    cell.formula = "=2+2";
+    expect(cell.value).toEqual(4);
+    expect(cell.numberValue).toEqual(4);
+  });
+
+  test("can read date using typed number getter", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+    cell.value = new Date("2020-01-01");
+    expect(cell.numberValue).toEqual(43_831);
+  });
+
+  test("throws when non-number is read using typed number value getter", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+
+    cell.value = true;
+    expect(cell.value).toEqual(true);
+    expect(() => cell.numberValue).toThrow(
+      `Type of cell's value is not number, cell value: true`
+    );
+
+    cell.value = "3";
+    expect(cell.value).toEqual("3");
+    expect(() => cell.numberValue).toThrow(
+      `Type of cell's value is not number, cell value: "3"`
+    );
+  });
+
+  test("can read typed string value from cell", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+    expect(cell.stringValue).toEqual("");
+
+    cell.value = "hello world";
+    expect(cell.stringValue).toEqual("hello world");
+  });
+
+  test("throws when non-string is read using typed string value getter", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+
+    cell.value = true;
+    expect(cell.value).toEqual(true);
+    expect(() => cell.stringValue).toThrow(
+      `Type of cell's value is not string, cell value: true`
+    );
+
+    cell.value = 3;
+    expect(cell.value).toEqual(3);
+    expect(() => cell.stringValue).toThrow(
+      `Type of cell's value is not string, cell value: 3`
+    );
+  });
+
+  test("can read typed boolean value from cell", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+
+    cell.value = true;
+    expect(cell.booleanValue).toEqual(true);
+
+    cell.formula = "=3<4";
+    expect(cell.booleanValue).toEqual(true);
+  });
+
+  test("throws when non-boolean is read using typed boolean value getter", async () => {
+    const { newWorkbook } = await getApi();
+    let workbook = newWorkbook("en", "Europe/Berlin");
+
+    let cell = workbook.cell("Sheet1!A1");
+
+    cell.value = "true";
+    expect(cell.value).toEqual("true");
+    expect(() => cell.booleanValue).toThrow(
+      `Type of cell's value is not boolean, cell value: "true"`
+    );
+
+    cell.value = 3;
+    expect(cell.value).toEqual(3);
+    expect(() => cell.booleanValue).toThrow(
+      `Type of cell's value is not boolean, cell value: 3`
+    );
+  });
+
   test("supports setting dates", async () => {
     const { newWorkbook } = await getApi();
     const workbook = newWorkbook("en", "Europe/Berlin");
