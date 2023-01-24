@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, tzinfo
 
-from _pycalc import create, load_excel
-
+from equalto._equalto import create, load_excel
 from equalto.workbook import Workbook
 
 

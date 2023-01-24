@@ -10,7 +10,7 @@ from equalto.exceptions import WorkbookValueError
 from equalto.style import Style
 
 if TYPE_CHECKING:
-    from equalto._pycalc import PyCalcModel
+    from equalto._equalto import PyCalcModel
     from equalto.sheet import Sheet
     from equalto.workbook import Workbook
 

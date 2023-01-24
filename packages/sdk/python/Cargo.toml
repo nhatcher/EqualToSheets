@@ -1,13 +1,17 @@
 [package]
-name = "_pycalc"
+name = "equalto"
 version = "0.1.0"
 authors = ["EqualTo <dev@equalto.com>"]
 edition = "2021"
 
 
 [lib]
-name = "_pycalc"
+name = "equalto"
 crate-type = ["cdylib"]
+
+
+[package.metadata.maturin]
+name = "equalto._equalto"
 
 
 [dependencies]

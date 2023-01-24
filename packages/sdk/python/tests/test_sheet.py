@@ -105,7 +105,7 @@ def test_delete_only_sheet(empty_workbook: Workbook) -> None:
         del empty_workbook.sheets[0]
 
 
-def test_delete_non_existent_sheet(example_workbook: WorkbookError) -> None:
+def test_delete_non_existent_sheet(example_workbook: Workbook) -> None:
     sheet = example_workbook.sheets[0]
     sheet.delete()
 

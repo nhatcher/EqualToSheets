@@ -8,7 +8,7 @@ use equalto_xlsx::error::XlsxError;
 use equalto_xlsx::export::save_to_xlsx;
 use equalto_xlsx::import::load_from_excel;
 
-create_exception!(_pycalc, WorkbookError, PyException);
+create_exception!(_equalto, WorkbookError, PyException);
 
 #[pyclass]
 pub struct PyModel {
@@ -182,7 +182,7 @@ pub fn create(name: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn _pycalc(py: Python, m: &PyModule) -> PyResult<()> {
+fn _equalto(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(create, m)?).unwrap();
     m.add_function(wrap_pyfunction!(load_excel, m)?).unwrap();

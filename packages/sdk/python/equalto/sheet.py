@@ -8,7 +8,7 @@ from equalto.exceptions import CellReferenceError, WorkbookError
 from equalto.reference import parse_cell_reference
 
 if TYPE_CHECKING:
-    from equalto._pycalc import PyCalcModel
+    from equalto._equalto import PyCalcModel
     from equalto.workbook import Workbook
 
 

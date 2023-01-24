@@ -10,7 +10,7 @@ from equalto.reference import parse_cell_reference
 from equalto.sheet import WorkbookSheets
 
 if TYPE_CHECKING:
-    from equalto._pycalc import PyCalcModel
+    from equalto._equalto import PyCalcModel
     from equalto.cell import Cell
 
 

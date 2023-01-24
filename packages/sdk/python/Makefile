@@ -53,6 +53,6 @@ fmt: $(VENV_NAME)/bin/activate
 	cargo fmt
 
 clean:
-	@rm -rf $(VENV_NAME) target/
+	@rm -rf $(VENV_NAME) target/ dist/
 
 .PHONY: venv tests coverage lint fmt clean
