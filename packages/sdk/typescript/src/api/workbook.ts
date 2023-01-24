@@ -4,16 +4,12 @@ import { ICell } from "./cell";
 import { parseCellReference } from "../utils";
 import { ErrorKind, SheetsError } from "src/errors";
 
-export function newWorkbook(locale: string, timezone: string): IWorkbook {
-  return new Workbook(new WasmWorkbook(locale, "UTC"));
+export function newWorkbook(): IWorkbook {
+  return new Workbook(new WasmWorkbook("en", "UTC"));
 }
 
-export function loadWorkbookFromMemory(
-  data: Uint8Array,
-  locale: string,
-  timezone: string
-): IWorkbook {
-  return new Workbook(WasmWorkbook.loadFromMemory(data, locale, "UTC"));
+export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
+  return new Workbook(WasmWorkbook.loadFromMemory(data, "en", "UTC"));
 }
 
 export interface IWorkbook {

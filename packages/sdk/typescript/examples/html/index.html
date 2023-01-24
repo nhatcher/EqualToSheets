@@ -2,7 +2,7 @@
   <script src="../../dist/browser/umd/index_browser.js"></script>
   <script>
     sheets.initialize().then(({ newWorkbook }) => {
-      const workbook = newWorkbook('en', 'Europe/Berlin');
+      const workbook = newWorkbook();
       workbook.cell("Sheet1!A1").value = 7;
       workbook.cell("Sheet1!A2").formula = "=A1*2";
 

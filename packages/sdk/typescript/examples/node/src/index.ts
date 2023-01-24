@@ -23,7 +23,7 @@ async function run() {
   const { loadWorkbookFromMemory } = await initialize();
 
   let xlsxFile = readFileSync("./xlsx/test.xlsx");
-  let workbook = loadWorkbookFromMemory(xlsxFile, "en", "Europe/Berlin");
+  let workbook = loadWorkbookFromMemory(xlsxFile);
 
   calculateForInput(workbook, 3);
   calculateForInput(workbook, 7);

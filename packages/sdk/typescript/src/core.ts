@@ -21,12 +21,8 @@ export const setDefaultWasmInit = (newDefault: typeof defaultWasmInit) => {
 };
 
 type SheetsApi = {
-  newWorkbook(locale: string, timezone: string): IWorkbook;
-  loadWorkbookFromMemory(
-    data: Uint8Array,
-    locale: string,
-    timezone: string
-  ): IWorkbook;
+  newWorkbook(): IWorkbook;
+  loadWorkbookFromMemory(data: Uint8Array): IWorkbook;
 };
 
 async function initializeWasm() {

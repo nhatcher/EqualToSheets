@@ -16,7 +16,7 @@ describe("Workbook", () => {
 
   test("can list sheets in new workbook", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
       { id: 1, index: 0, name: "Sheet1" },
     ]);
@@ -24,7 +24,7 @@ describe("Workbook", () => {
 
   test("can create sheet with default name in new workbook", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const newSheet = workbook.sheets.add();
 
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
@@ -39,7 +39,7 @@ describe("Workbook", () => {
 
   test("can create sheet with given name in new workbook", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const newSheet = workbook.sheets.add("MyName");
 
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
@@ -54,7 +54,7 @@ describe("Workbook", () => {
 
   test("can use emojis in workbook name ", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add("🙈");
 
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
@@ -65,7 +65,7 @@ describe("Workbook", () => {
 
   test("can use only spaces in workbook name", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add(" ");
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
       { id: 1, index: 0, name: "Sheet1" },
@@ -75,7 +75,7 @@ describe("Workbook", () => {
 
   test("throws when new sheet name is blank", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
 
     const failCase = () => {
       workbook.sheets.add("");
@@ -87,7 +87,7 @@ describe("Workbook", () => {
 
   test("throws when new sheet name is longer than 31 characters", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
 
     let name31 = "AAAAAAAAAA" + "BBBBBBBBBB" + "CCCCCCCCCC" + "D"; // len 3*10+1
     workbook.sheets.add(name31);
@@ -104,7 +104,7 @@ describe("Workbook", () => {
 
   test("throws when name of new sheet is a duplicate", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add("MyName");
 
     const failCase = () => {
@@ -117,7 +117,7 @@ describe("Workbook", () => {
 
   test("can get sheet by index", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add();
     workbook.sheets.add();
     workbook.sheets.add();
@@ -136,7 +136,7 @@ describe("Workbook", () => {
 
   test("can get sheet by index (case: after sheet deletion)", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add(); // Sheet2
     workbook.sheets.add(); // Sheet3
     const sheetToDelete = workbook.sheets.add(); // Sheet4
@@ -155,7 +155,7 @@ describe("Workbook", () => {
     "throws when getting sheet by invalid index (%i)",
     async (index) => {
       const { newWorkbook } = await getApi();
-      const workbook = newWorkbook("en", "Europe/Berlin");
+      const workbook = newWorkbook();
       const failCase = () => {
         workbook.sheets.get(index);
       };
@@ -166,7 +166,7 @@ describe("Workbook", () => {
 
   test("can get sheet by name", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add();
     workbook.sheets.add();
     workbook.sheets.add("Calculation");
@@ -180,7 +180,7 @@ describe("Workbook", () => {
 
   test("throws when getting sheet by invalid name", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const failCase = () => {
       workbook.sheets.get("DoesNotExist");
     };
@@ -190,7 +190,7 @@ describe("Workbook", () => {
 
   test("can rename sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const newSheet = workbook.sheets.add("OldName");
 
     newSheet.name = "NewName";
@@ -207,7 +207,7 @@ describe("Workbook", () => {
 
   test("throws when deleted sheet is renamed", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add();
     const sheet = workbook.sheets.get(0);
 
@@ -227,7 +227,7 @@ describe("Workbook", () => {
 
   test("can delete sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add();
     workbook.sheets.get(0).delete();
 
@@ -238,7 +238,7 @@ describe("Workbook", () => {
 
   test("throws when sheet is deleted multiple times", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add();
     const sheet = workbook.sheets.get(0);
 
@@ -258,7 +258,7 @@ describe("Workbook", () => {
 
   test("renaming sheets does not break existing references", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const newSheet = workbook.sheets.add("OldName");
 
     const cell = workbook.cell("OldName!A1");
@@ -275,7 +275,7 @@ describe("Workbook", () => {
 
   test("deleting sheets does not break existing cell references for other sheets", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     workbook.sheets.add(); // Sheet2
     workbook.sheets.add(); // Sheet3
     const cellInSheet1 = workbook.cell("Sheet1!A1");
@@ -301,7 +301,7 @@ describe("Workbook", () => {
 
   test("can access cells through specific sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get("Sheet1");
 
     sheet.cell("A3").value = 13;
@@ -310,7 +310,7 @@ describe("Workbook", () => {
 
   test("throws when cells reference is invalid", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get("Sheet1");
 
     const failCase = () => {
@@ -325,7 +325,7 @@ describe("Workbook", () => {
 
   test("throws when accessing cells through specific sheet with sheet specifier (Sheet!...)", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get("Sheet1");
 
     const failCase = () => {
@@ -340,7 +340,7 @@ describe("Workbook", () => {
 
   test("throws when cell is accessed through workbook without sheet name in reference", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const failCase = () => {
       workbook.cell("A1");
     };
@@ -352,7 +352,7 @@ describe("Workbook", () => {
 
   test("throws when cell is accessed by invalid sheet name in reference", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const failCase = () => {
       workbook.cell("DoesNotExist!A1");
     };

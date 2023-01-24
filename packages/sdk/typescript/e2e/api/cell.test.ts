@@ -8,14 +8,14 @@ describe("Workbook - Cell operations", () => {
 
   test("can read formula on empty cell - returns null", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get(0);
     expect(sheet.cell("A1").formula).toBe(null);
   });
 
   test("can read formula on cell with value - returns null", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get(0);
     sheet.cell("A1").value = "Hello world";
     expect(sheet.cell("A1").formula).toBe(null);
@@ -23,7 +23,7 @@ describe("Workbook - Cell operations", () => {
 
   test("can evaluate formulas in cells", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get("Sheet1");
 
     sheet.cell("A1").value = 13;
@@ -34,7 +34,7 @@ describe("Workbook - Cell operations", () => {
 
   test("cannot assign formula by value", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.get("Sheet1");
 
     sheet.cell("A1").value = 13;
@@ -46,7 +46,7 @@ describe("Workbook - Cell operations", () => {
   test("can read formatted value from cell", async () => {
     const { loadWorkbookFromMemory } = await getApi();
     let xlsxFile = readFileSync("./api/xlsx/formats.xlsx");
-    let workbook = loadWorkbookFromMemory(xlsxFile, "en", "Europe/Berlin");
+    let workbook = loadWorkbookFromMemory(xlsxFile);
 
     expect(workbook.cell("Sheet1!B2").value).toEqual(0);
     expect(workbook.cell("Sheet1!B2").formattedValue).toEqual("0%");
@@ -63,7 +63,7 @@ describe("Workbook - Cell operations", () => {
 
   test("can read typed number value from cell", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
 
@@ -78,7 +78,7 @@ describe("Workbook - Cell operations", () => {
 
   test("can read date using typed number getter", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
     cell.value = new Date("2020-01-01");
@@ -87,7 +87,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when non-number is read using typed number value getter", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
 
@@ -106,7 +106,7 @@ describe("Workbook - Cell operations", () => {
 
   test("can read typed string value from cell", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
     expect(cell.stringValue).toEqual("");
@@ -117,7 +117,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when non-string is read using typed string value getter", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
 
@@ -136,7 +136,7 @@ describe("Workbook - Cell operations", () => {
 
   test("can read typed boolean value from cell", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
 
@@ -149,7 +149,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when non-boolean is read using typed boolean value getter", async () => {
     const { newWorkbook } = await getApi();
-    let workbook = newWorkbook("en", "Europe/Berlin");
+    let workbook = newWorkbook();
 
     let cell = workbook.cell("Sheet1!A1");
 
@@ -168,7 +168,7 @@ describe("Workbook - Cell operations", () => {
 
   test("supports setting dates", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const cell = workbook.cell("Sheet1!A1");
     cell.value = new Date("2015-02-14");
     expect(cell.value).toEqual(42049);
@@ -178,7 +178,7 @@ describe("Workbook - Cell operations", () => {
 
   test("supports setting date-times", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const cell = workbook.cell("Sheet1!A1");
     cell.value = new Date("2015-02-14T13:30:00.000Z");
     expect(cell.value).toEqual(42049.5625);
@@ -188,7 +188,7 @@ describe("Workbook - Cell operations", () => {
 
   test("cannot assign dates far in the past", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const cell = workbook.cell("Sheet1!A1");
     expect(() => {
       cell.value = new Date("1815-02-14");
@@ -199,7 +199,7 @@ describe("Workbook - Cell operations", () => {
 
   test("cannot read invalid dates - negative numbers", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const cell = workbook.cell("Sheet1!A1");
     cell.value = -1;
     expect(() => cell.dateValue).toThrow(
@@ -209,7 +209,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when values are read on cell from deleted sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     const cell = sheet.cell("A1");
     cell.value = 7;
@@ -226,7 +226,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when values are set on cell from deleted sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     const cell = sheet.cell("A1");
 
@@ -242,7 +242,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when formula is read on cell from deleted sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     sheet.cell("A1").value = 7;
     const cell = sheet.cell("A2");
@@ -261,7 +261,7 @@ describe("Workbook - Cell operations", () => {
 
   test("throws when formula is set on cell from deleted sheet", async () => {
     const { newWorkbook } = await getApi();
-    const workbook = newWorkbook("en", "Europe/Berlin");
+    const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     sheet.cell("A1").value = 7;
     const cell = sheet.cell("A2");
