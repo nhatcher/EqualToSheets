@@ -14,7 +14,19 @@ export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
 
 export interface IWorkbook {
   get sheets(): IWorkbookSheets;
+  /**
+   * @param textReference - global cell reference, example: `Sheet1!A1`. It must include a sheet name.
+   * @returns cell corresponding to provided reference.
+   * @throws {@link SheetsError} thrown if reference isn't valid.
+   */
   cell(textReference: string): ICell;
+  /**
+   * @param sheet - sheet index (count starts from 0).
+   * @param row - row index (count starts from 1)
+   * @param column - column index (count starts from 1: A=1, B=2 ...)
+   * @returns cell corresponding to provided coordinates.
+   * @throws {@link SheetsError} thrown if reference isn't valid.
+   */
   cell(sheet: number, row: number, column: number): ICell;
 }
 

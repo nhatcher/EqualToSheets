@@ -8,16 +8,58 @@ import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Sheet } from "./sheet";
 
 export interface ICell {
+  /**
+   * @returns Row index, count starts from 1.
+   */
   get row(): number;
+  /**
+   * @returns Column index, count starts from 1. Column A is 1, column B is 2, ... .
+   */
   get column(): number;
+  /**
+   * General purpose getter for cell value.
+   *
+   * Note: `Date` cannot be ever returned in practice due to way spreadsheets operate on dates.
+   * Use `dateValue` for that purpose.
+   */
   get value(): string | number | boolean | Date | null;
+  /**
+   * General purpose setter for cell value.
+   *
+   * Note: Dates are converted to numbers automatically. Date then can be read using `dateValue`
+   * getter.
+   */
   set value(value: string | number | boolean | Date | null);
+  /**
+   * @throws {@link SheetsError} will throw if value is not valid number, or that number doesn't
+   * correspond to valid date
+   */
   get dateValue(): Date;
+  /**
+   * @throws {@link SheetsError} will throw if value is not of string type
+   */
   get stringValue(): string;
+  /**
+   * @throws {@link SheetsError} will throw if value is not of number type
+   */
   get numberValue(): number;
+  /**
+   * @throws {@link SheetsError} will throw if value is not of boolean type
+   */
   get booleanValue(): boolean;
+  /**
+   * Returns formatted cell value. Text is consistent with text displayed in cell
+   * in graphical user interface.
+   */
   get formattedValue(): string;
+  /**
+   * Returns formula if cell contains it, `null` otherwise.
+   */
   get formula(): string | null;
+  /**
+   * Sets formula in cell, eg.: `=A2*3`
+   * @throws {@link SheetsError} will throw if formula is not valid
+   */
   set formula(formula: string | null);
 }
 

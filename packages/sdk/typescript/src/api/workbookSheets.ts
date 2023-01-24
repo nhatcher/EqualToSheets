@@ -8,10 +8,30 @@ import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Sheet, ISheet } from "./sheet";
 
 export interface IWorkbookSheets {
+  /**
+   * Creates new worksheet.
+   *
+   * @param sheetName - optional sheet name. If name is not provided name is automatically generated
+   * using `Sheet<number>` format, where number is autoincremented.
+   * @throws {@link SheetsError} will throw if sheet name is not valid or sheet name is already in use
+   */
   add(sheetName?: string): ISheet;
+  /**
+   * Retrieves worksheet by name.
+   * @param sheetName - sheet name
+   * @throws {@link SheetsError} will throw if sheet with given name doesn't exist
+   */
   get(sheetName: string): ISheet;
+  /**
+   * Retrieves worksheet by index.
+   * @param sheetName - sheet index
+   * @throws {@link SheetsError} will throw if sheet with given index doesn't exist
+   */
   get(sheetIndex: number): ISheet;
   get(sheetRef: string | number): ISheet;
+  /**
+   * Retrieves all worksheets in a workbook.
+   */
   all(): ISheet[];
 }
 

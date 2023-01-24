@@ -5,15 +5,47 @@ import { Cell, ICell } from "./cell";
 import { WorkbookSheets } from "./workbookSheets";
 
 export interface ISheet {
+  /**
+   * Retrieves internal ID of the worksheet. This ID is immutable.
+   */
   get id(): number;
+
+  /**
+   * Retrieves position index of the worksheet. This index determines the order of tabs in graphical
+   * interface. Index should be considered mutable.
+   */
   get index(): number;
 
+  /**
+   * Returns worksheet name.
+   */
   get name(): string;
+
+  /**
+   * Sets worksheet name. Name cannot be blank, must be at most 31 characters long and
+   * cannot contain the following characters: \\ / * ? : [ ]
+   * @throws {@link SheetsError} will throw if name isn't valid or sheet with given name already
+   * exists
+   */
   set name(name: string);
 
+  /**
+   * Deletes worksheet.
+   */
   delete(): void;
 
+  /**
+   * @param textReference - local cell reference, example: `A1`. It cannot include a sheet name.
+   * @returns cell corresponding to provided reference.
+   * @throws {@link SheetsError} thrown if reference isn't valid.
+   */
   cell(textReference: string): ICell;
+  /**
+   * @param row - row index (count starts from 1)
+   * @param column - column index (count starts from 1: A=1, B=2 ...)
+   * @returns cell corresponding to provided coordinates.
+   * @throws {@link SheetsError} thrown if reference isn't valid.
+   */
   cell(row: number, column: number): ICell;
 }
 
