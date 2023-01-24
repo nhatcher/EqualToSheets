@@ -1,4 +1,9 @@
-import { wrapWebAssemblyError } from "src/errors";
+import dayjs from "dayjs";
+import { SheetsError, wrapWebAssemblyError } from "src/errors";
+import {
+  convertDayjsUTCToSpreadsheetDate,
+  convertSpreadsheetDateToDayjsUTC,
+} from "src/utils";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Sheet } from "./sheet";
 
@@ -7,6 +12,7 @@ export interface ICell {
   get column(): number;
   get value(): string | number | boolean | Date | null;
   set value(value: string | number | boolean | Date | null);
+  get dateValue(): Date;
   get formattedValue(): string;
   get formula(): string | null;
   set formula(formula: string | null);
@@ -38,6 +44,9 @@ export class Cell implements ICell {
     return this._column;
   }
 
+  /**
+   * Note: Cannot be `Date`, since XLSX stores dates as numbers. See `dateValue` for dates instead.
+   */
   get value(): string | number | boolean | Date | null {
     try {
       return this._wasmWorkbook.getCellValueByIndex(
@@ -74,13 +83,38 @@ export class Cell implements ICell {
           value
         );
       } else if (value instanceof Date) {
-        // TODO: Support Date.
+        const date = dayjs.utc(value);
+        const excelDate = convertDayjsUTCToSpreadsheetDate(date);
+        if (excelDate < 0) {
+          throw new SheetsError(
+            `Date "${date.toISOString()}" is not representable in workbook.`
+          );
+        }
+        this._wasmWorkbook.updateCellWithNumber(
+          this._sheet.index,
+          this._row,
+          this._column,
+          excelDate
+        );
       }
 
       this._wasmWorkbook.evaluate();
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }
+  }
+
+  get dateValue(): Date {
+    const value = this.value;
+    if (typeof value !== "number") {
+      throw new Error(
+        "Cell value is not a number. Underlying number value is required for dates."
+      );
+    }
+    if (value < 0) {
+      throw new Error(`Number "${value}" cannot be converted to date.`);
+    }
+    return convertSpreadsheetDateToDayjsUTC(value).toDate();
   }
 
   get formattedValue(): string {

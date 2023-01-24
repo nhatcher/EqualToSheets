@@ -5,7 +5,7 @@ import { parseCellReference } from "../utils";
 import { ErrorKind, SheetsError } from "src/errors";
 
 export function newWorkbook(locale: string, timezone: string): IWorkbook {
-  return new Workbook(new WasmWorkbook(locale, timezone));
+  return new Workbook(new WasmWorkbook(locale, "UTC"));
 }
 
 export function loadWorkbookFromMemory(
@@ -13,7 +13,7 @@ export function loadWorkbookFromMemory(
   locale: string,
   timezone: string
 ): IWorkbook {
-  return new Workbook(WasmWorkbook.loadFromMemory(data, locale, timezone));
+  return new Workbook(WasmWorkbook.loadFromMemory(data, locale, "UTC"));
 }
 
 export interface IWorkbook {

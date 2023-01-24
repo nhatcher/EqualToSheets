@@ -61,6 +61,47 @@ describe("Workbook - Cell operations", () => {
     expect(workbook.cell("Sheet1!E2").formattedValue).toEqual("-12%");
   });
 
+  test("supports setting dates", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const cell = workbook.cell("Sheet1!A1");
+    cell.value = new Date("2015-02-14");
+    expect(cell.value).toEqual(42049);
+    expect(cell.dateValue).toBeInstanceOf(Date);
+    expect(cell.dateValue).toEqual(new Date("2015-02-14T00:00:00.000Z"));
+  });
+
+  test("supports setting date-times", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const cell = workbook.cell("Sheet1!A1");
+    cell.value = new Date("2015-02-14T13:30:00.000Z");
+    expect(cell.value).toEqual(42049.5625);
+    expect(cell.dateValue).toBeInstanceOf(Date);
+    expect(cell.dateValue).toEqual(new Date("2015-02-14T13:30:00.000Z"));
+  });
+
+  test("cannot assign dates far in the past", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const cell = workbook.cell("Sheet1!A1");
+    expect(() => {
+      cell.value = new Date("1815-02-14");
+    }).toThrow(
+      'Date "1815-02-14T00:00:00.000Z" is not representable in workbook.'
+    );
+  });
+
+  test("cannot read invalid dates - negative numbers", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const cell = workbook.cell("Sheet1!A1");
+    cell.value = -1;
+    expect(() => cell.dateValue).toThrow(
+      'Number "-1" cannot be converted to date.'
+    );
+  });
+
   test("throws when values are read on cell from deleted sheet", async () => {
     const { newWorkbook } = await getApi();
     const workbook = newWorkbook("en", "Europe/Berlin");

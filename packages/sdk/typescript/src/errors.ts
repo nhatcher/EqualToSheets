@@ -45,6 +45,10 @@ export function wrapWebAssemblyCall(wasmCall: () => void) {
  * Transforms WASM layer error into `SheetsError`.
  */
 export function wrapWebAssemblyError(error: unknown) {
+  if (error instanceof SheetsError) {
+    throw error;
+  }
+
   if (error instanceof Error) {
     let kind: string;
     let description: string;

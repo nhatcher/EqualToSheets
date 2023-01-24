@@ -1,3 +1,5 @@
+import nodeResolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
 import terser from "@rollup/plugin-terser";
 import typescript from "@rollup/plugin-typescript";
 import wasm from "@rollup/plugin-wasm";
@@ -44,6 +46,8 @@ const roll = (format, environment) => {
     external: [...(environment === "node" ? ["fs"] : [])],
     plugins: [
       typescript(),
+      nodeResolve(),
+      commonjs(),
       wasmPlugin,
       {
         name: "remove-import-meta-url",

@@ -2,6 +2,29 @@ import { ErrorKind, SheetsError, wrapWebAssemblyCall } from "src/errors";
 
 describe("Errors", () => {
   describe("WebAssembly error wrapping", () => {
+    test("errors that are already SheetsError are forwarded without change", (done) => {
+      const internalError = new Error("internal");
+      const thrownError = new SheetsError(
+        "",
+        ErrorKind.ReferenceError,
+        internalError
+      );
+      try {
+        wrapWebAssemblyCall(() => {
+          throw thrownError;
+        });
+        done.fail("Call was expected to throw.");
+      } catch (error) {
+        expect(error).toBeInstanceOf(SheetsError);
+        expect(error).toBe(thrownError);
+        expect((error as Error).name).toEqual("SheetsError");
+        expect((error as Error).message).toEqual("");
+        expect((error as SheetsError).kind).toEqual(ErrorKind.ReferenceError);
+        expect((error as SheetsError).wrappedError).toBe(internalError);
+        done();
+      }
+    });
+
     test("wraps JsError JSON error - PlainString", (done) => {
       try {
         wrapWebAssemblyCall(() => {

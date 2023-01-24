@@ -8,5 +8,8 @@
   "testPathIgnorePatterns": [
     "/dist/",
     "/e2e/"
+  ],
+  "setupFiles": [
+    "<rootDir>/src/setupTests.ts"
   ]
 }

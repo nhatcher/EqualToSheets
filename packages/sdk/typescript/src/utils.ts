@@ -1,3 +1,5 @@
+import dayjs, { Dayjs } from "dayjs";
+
 export function columnNumberFromName(columnName: string): number {
   let column = 0;
   for (const character of columnName) {
@@ -37,4 +39,30 @@ export function parseCellReference(
   }
 
   return reference;
+}
+/**
+ * This function is incompatible with Excel for dates before March 1900.
+ * GSheets seem to behave consistently.
+ */
+export function convertSpreadsheetDateToDayjsUTC(excelDate: number): Dayjs {
+  const baseDate = dayjs.utc("1899-12-30");
+
+  const fullDays = Math.floor(excelDate);
+  const seconds = 24 * 60 * 60 * (excelDate - fullDays);
+
+  return baseDate.add(fullDays, "day").add(seconds, "second");
+}
+
+/**
+ * This function is incompatible with Excel for dates before March 1900.
+ * GSheets seem to behave consistently.
+ */
+export function convertDayjsUTCToSpreadsheetDate(date: Dayjs): number {
+  const baseDate = dayjs.utc("1899-12-30");
+  const fullDays = date.diff(baseDate, "day");
+
+  const baseForDayFraction = baseDate.add(fullDays, "day");
+  const dayFraction = date.diff(baseForDayFraction, "second") / (24 * 60 * 60);
+
+  return fullDays + dayFraction;
 }

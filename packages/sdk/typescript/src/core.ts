@@ -1,5 +1,6 @@
 import init from "./__generated_pkg/equalto_wasm";
 import { IWorkbook, newWorkbook, loadWorkbookFromMemory } from "./api/workbook";
+import "./dayjsConfig";
 
 export type { IWorkbook } from "./api/workbook";
 export type { IWorkbookSheets } from "./api/workbookSheets";
