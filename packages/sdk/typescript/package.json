@@ -1,6 +1,6 @@
 {
   "name": "@equalto/sheets",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "https://www.equalto.com/",
   "author": "EqualTo <dev@equalto.com>",
   "scripts": {
@@ -13,6 +13,7 @@
     "dts-copy-bindgen-types": "mkdir -p dist/types-raw/__generated_pkg && cp src/__generated_pkg/*.d.ts dist/types-raw/__generated_pkg/",
     "dts-bundle-browser": "api-extractor run --config api-extractor.browser.json",
     "dts-bundle-node": "api-extractor run --config api-extractor.node.json",
+    "publish:zip": "rm -f equalto-sheets-*.tgz equalto-sheets.zip && npm pack && zip equalto-sheets.zip equalto-sheets-0.1.0.tgz README.md",
     "test": "jest",
     "test:e2e": "npm run build && rm -rf e2e/node_modules && cd e2e && npm install && npm test"
   },
@@ -21,11 +22,10 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./dist/types/index_browser.d.ts",
       "node": {
-        "types": "./dist/types/index_node.d.ts",
         "default": "./dist/node/index_node.cjs"
       },
-      "types": "./dist/types/index_browser.d.ts",
       "import": "./dist/browser/es/index_browser.js",
       "default": "./dist/browser/cjs/index_browser.js"
     }
@@ -34,7 +34,21 @@
   "module": "./dist/browser/es/index_browser.js",
   "main": "./dist/browser/umd/index_browser.js",
   "files": [
-    "dist"
+    "dist/equalto_wasm_bg.wasm",
+    "dist/browser",
+    "dist/node",
+    "dist/types",
+    "examples/html",
+    "examples/node/package.json",
+    "examples/node/tsconfig.json",
+    "examples/node/src",
+    "examples/node/xlsx",
+    "examples/webpack4/package.json",
+    "examples/webpack4/tsconfig.json",
+    "examples/webpack4/src",
+    "examples/webpack5/package.json",
+    "examples/webpack5/tsconfig.json",
+    "examples/webpack5/src"
   ],
   "devDependencies": {
     "@microsoft/api-extractor": "^7.33.7",

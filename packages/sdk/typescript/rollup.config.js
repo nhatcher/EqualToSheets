@@ -53,7 +53,7 @@ const roll = (format, environment) => {
         name: "remove-import-meta-url",
         resolveImportMeta: () => `""`,
       },
-      // terser(),
+      terser(),
     ],
   };
 };

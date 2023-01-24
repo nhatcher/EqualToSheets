@@ -99,7 +99,7 @@ jobs:
           command: |
             apt update
             apt -y --no-install-recommends upgrade
-            apt install --no-install-recommends -y curl make
+            apt install --no-install-recommends -y curl make zip
             curl -fsSL https://deb.nodesource.com/setup_18.x | bash - &&
             apt-get install -y nodejs
             npm update -g npm
@@ -132,3 +132,10 @@ jobs:
           name: Run cargo tests
           command: cargo test
           working_directory: ./packages/sdk/typescript/crate
+      - run:
+          name: Make distribution zip
+          command: npm run publish:zip
+          working_directory: ./packages/sdk/typescript
+      - store_artifacts:
+          path: ./packages/sdk/typescript/equalto-sheets.zip
+          destination: equalto-sheets-typescript-sdk.zip
