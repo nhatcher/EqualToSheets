@@ -22,14 +22,12 @@ pub const APPLICATION: &str = "EqualTo Sheets";
 pub const APP_VERSION: &str = "10.0000";
 pub const EQUALTO_USER: &str = "EqualTo User";
 
+/// Name cannot be blank, must be shorter than 31 characters.
 /// You can use all alphanumeric characters but not the following special characters:
 /// \ , / , * , ? , : , [ , ].
 fn is_valid_sheet_name(name: &str) -> bool {
     let invalid = ['\\', '/', '*', '?', ':', '[', ']'];
-    if name.contains(&invalid[..]) {
-        return false;
-    }
-    true
+    return !name.is_empty() && name.chars().count() <= 31 && !name.contains(&invalid[..]);
 }
 
 impl Model {
@@ -377,5 +375,24 @@ impl Model {
         };
         model.parse_formulas();
         Ok(model)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_valid_sheet_name() {
+        assert!(is_valid_sheet_name("Sheet1"));
+        assert!(is_valid_sheet_name("Zażółć gęślą jaźń"));
+
+        assert!(is_valid_sheet_name(" "));
+        assert!(!is_valid_sheet_name(""));
+
+        assert!(is_valid_sheet_name("🙈"));
+
+        assert!(is_valid_sheet_name("AAAAAAAAAABBBBBBBBBBCCCCCCCCCCD")); // 31
+        assert!(!is_valid_sheet_name("AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDE")); // 32
     }
 }

@@ -1,4 +1,4 @@
-import { initialize, getApi } from "@equalto/sheets";
+import { initialize, getApi, SheetsError } from "@equalto/sheets";
 import type { ISheet } from "@equalto/sheets";
 
 const mapSheetToObject = (sheet: ISheet) => {
@@ -52,6 +52,69 @@ describe("Workbook", () => {
     expect(newSheet.name).toEqual("MyName");
   });
 
+  test("can use emojis in workbook name ", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    workbook.sheets.add("🙈");
+
+    expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
+      { id: 1, index: 0, name: "Sheet1" },
+      { id: 2, index: 1, name: "🙈" },
+    ]);
+  });
+
+  test("can use only spaces in workbook name", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    workbook.sheets.add(" ");
+    expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
+      { id: 1, index: 0, name: "Sheet1" },
+      { id: 2, index: 1, name: " " },
+    ]);
+  });
+
+  test("throws when new sheet name is blank", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+
+    const failCase = () => {
+      workbook.sheets.add("");
+    };
+
+    expect(failCase).toThrow("Invalid name for a sheet: ''");
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when new sheet name is longer than 31 characters", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+
+    let name31 = "AAAAAAAAAA" + "BBBBBBBBBB" + "CCCCCCCCCC" + "D"; // len 3*10+1
+    workbook.sheets.add(name31);
+
+    const failCase = () => {
+      workbook.sheets.add(name31 + "E");
+    };
+
+    expect(failCase).toThrow(
+      "Invalid name for a sheet: 'AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDE'"
+    );
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when name of new sheet is a duplicate", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    workbook.sheets.add("MyName");
+
+    const failCase = () => {
+      workbook.sheets.add("MyName");
+    };
+
+    expect(failCase).toThrow("A worksheet already exists with that name");
+    expect(failCase).toThrow(SheetsError);
+  });
+
   test("can get sheet by index", async () => {
     const { newWorkbook } = await getApi();
     const workbook = newWorkbook("en", "Europe/Berlin");
@@ -88,6 +151,43 @@ describe("Workbook", () => {
     expect(sheet5.name).toEqual("Sheet5");
   });
 
+  test.each<number>([-1, 10])(
+    "throws when getting sheet by invalid index (%i)",
+    async (index) => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook("en", "Europe/Berlin");
+      const failCase = () => {
+        workbook.sheets.get(index);
+      };
+      expect(failCase).toThrow(`Could not find sheet at index=${index}`);
+      expect(failCase).toThrow(SheetsError);
+    }
+  );
+
+  test("can get sheet by name", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    workbook.sheets.add();
+    workbook.sheets.add();
+    workbook.sheets.add("Calculation");
+    workbook.sheets.add();
+
+    const calculationSheet = workbook.sheets.get("Calculation");
+    expect(calculationSheet.id).toEqual(4);
+    expect(calculationSheet.index).toEqual(3);
+    expect(calculationSheet.name).toEqual("Calculation");
+  });
+
+  test("throws when getting sheet by invalid name", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const failCase = () => {
+      workbook.sheets.get("DoesNotExist");
+    };
+    expect(failCase).toThrow('Could not find sheet with name="DoesNotExist"');
+    expect(failCase).toThrow(SheetsError);
+  });
+
   test("can rename sheet", async () => {
     const { newWorkbook } = await getApi();
     const workbook = newWorkbook("en", "Europe/Berlin");
@@ -105,11 +205,51 @@ describe("Workbook", () => {
     expect(newSheet.name).toEqual("NewName");
   });
 
+  test("throws when deleted sheet is renamed", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    workbook.sheets.add();
+    const sheet = workbook.sheets.get(0);
+
+    sheet.delete();
+
+    const failCase = () => {
+      sheet.name = "hello";
+    };
+
+    expect(failCase).toThrow("Could not find sheet with sheetId=1");
+    expect(failCase).toThrow(SheetsError);
+
+    expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
+      { id: 2, index: 0, name: "Sheet2" },
+    ]);
+  });
+
   test("can delete sheet", async () => {
     const { newWorkbook } = await getApi();
     const workbook = newWorkbook("en", "Europe/Berlin");
     workbook.sheets.add();
     workbook.sheets.get(0).delete();
+
+    expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
+      { id: 2, index: 0, name: "Sheet2" },
+    ]);
+  });
+
+  test("throws when sheet is deleted multiple times", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    workbook.sheets.add();
+    const sheet = workbook.sheets.get(0);
+
+    sheet.delete();
+
+    const failCase = () => {
+      sheet.delete();
+    };
+
+    expect(failCase).toThrow("Sheet not found");
+    expect(failCase).toThrow(SheetsError);
 
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
       { id: 2, index: 0, name: "Sheet2" },
@@ -152,7 +292,11 @@ describe("Workbook", () => {
 
     expect(() => {
       cellInSheet2.value;
-    }).toThrow();
+    }).toThrow("Could not find sheet with sheetId=2");
+
+    expect(() => {
+      cellInSheet2.value;
+    }).toThrow(SheetsError);
   });
 
   test("can access cells through specific sheet", async () => {
@@ -162,5 +306,57 @@ describe("Workbook", () => {
 
     sheet.cell("A3").value = 13;
     expect(workbook.cell("Sheet1!A3").value).toEqual(13);
+  });
+
+  test("throws when cells reference is invalid", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const sheet = workbook.sheets.get("Sheet1");
+
+    const failCase = () => {
+      sheet.cell("3D");
+    };
+
+    expect(failCase).toThrow(
+      'Cell reference error. "3D" is not valid reference.'
+    );
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when accessing cells through specific sheet with sheet specifier (Sheet!...)", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const sheet = workbook.sheets.get("Sheet1");
+
+    const failCase = () => {
+      sheet.cell("Sheet2!A3");
+    };
+
+    expect(failCase).toThrow(
+      "Cell reference error. Sheet name cannot be specified in sheet cell getter."
+    );
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when cell is accessed through workbook without sheet name in reference", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const failCase = () => {
+      workbook.cell("A1");
+    };
+    expect(failCase).toThrow(
+      "Cell reference error. Sheet name is required in top-level workbook cell getter."
+    );
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when cell is accessed by invalid sheet name in reference", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const failCase = () => {
+      workbook.cell("DoesNotExist!A1");
+    };
+    expect(failCase).toThrow('Could not find sheet with name="DoesNotExist"');
+    expect(failCase).toThrow(SheetsError);
   });
 });

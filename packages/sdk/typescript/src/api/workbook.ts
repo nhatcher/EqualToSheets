@@ -2,6 +2,7 @@ import { IWorkbookSheets, WorkbookSheets } from "./workbookSheets";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { ICell } from "./cell";
 import { parseCellReference } from "../utils";
+import { ErrorKind, SheetsError } from "src/errors";
 
 export function newWorkbook(locale: string, timezone: string): IWorkbook {
   return new Workbook(new WasmWorkbook(locale, timezone));
@@ -45,13 +46,15 @@ export class Workbook implements IWorkbook {
       const textReference = textReferenceOrSheet;
       const reference = parseCellReference(textReference);
       if (reference === null) {
-        throw new Error(
-          `Cell reference error. "${textReference}" is not valid reference.`
+        throw new SheetsError(
+          `Cell reference error. "${textReference}" is not valid reference.`,
+          ErrorKind.ReferenceError
         );
       }
       if (reference.sheetName === undefined) {
-        throw new Error(
-          `Cell reference error. Sheet name is required in top-level workbook cell getter.`
+        throw new SheetsError(
+          `Cell reference error. Sheet name is required in top-level workbook cell getter.`,
+          ErrorKind.ReferenceError
         );
       }
       return this.sheets
@@ -66,6 +69,8 @@ export class Workbook implements IWorkbook {
       return this.sheets.get(sheet).cell(row, column);
     }
 
-    throw new Error("Function Workbook.cell received unexpected parameters.");
+    throw new SheetsError(
+      "Function Workbook.cell received unexpected parameters."
+    );
   }
 }

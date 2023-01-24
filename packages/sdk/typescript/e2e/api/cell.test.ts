@@ -1,4 +1,4 @@
-import { initialize, getApi } from "@equalto/sheets";
+import { initialize, getApi, SheetsError } from "@equalto/sheets";
 import { readFileSync } from "fs";
 
 describe("Workbook - Cell operations", () => {
@@ -59,5 +59,73 @@ describe("Workbook - Cell operations", () => {
 
     expect(workbook.cell("Sheet1!E2").value).toEqual(-0.12);
     expect(workbook.cell("Sheet1!E2").formattedValue).toEqual("-12%");
+  });
+
+  test("throws when values are read on cell from deleted sheet", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const sheet = workbook.sheets.add();
+    const cell = sheet.cell("A1");
+    cell.value = 7;
+
+    sheet.delete();
+
+    const failCase = () => {
+      cell.value;
+    };
+
+    expect(failCase).toThrow("Could not find sheet with sheetId=2");
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when values are set on cell from deleted sheet", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const sheet = workbook.sheets.add();
+    const cell = sheet.cell("A1");
+
+    sheet.delete();
+
+    const failCase = () => {
+      cell.value = 8;
+    };
+
+    expect(failCase).toThrow("Could not find sheet with sheetId=2");
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when formula is read on cell from deleted sheet", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const sheet = workbook.sheets.add();
+    sheet.cell("A1").value = 7;
+    const cell = sheet.cell("A2");
+    cell.formula = "=A1+3";
+    expect(cell.value).toEqual(10);
+
+    sheet.delete();
+
+    const failCase = () => {
+      cell.formula;
+    };
+
+    expect(failCase).toThrow("Could not find sheet with sheetId=2");
+    expect(failCase).toThrow(SheetsError);
+  });
+
+  test("throws when formula is set on cell from deleted sheet", async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook("en", "Europe/Berlin");
+    const sheet = workbook.sheets.add();
+    sheet.cell("A1").value = 7;
+    const cell = sheet.cell("A2");
+    sheet.delete();
+
+    const failCase = () => {
+      cell.formula = "=A1+3";
+    };
+
+    expect(failCase).toThrow("Could not find sheet with sheetId=2");
+    expect(failCase).toThrow(SheetsError);
   });
 });

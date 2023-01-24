@@ -1,3 +1,4 @@
+import { ErrorKind, SheetsError, wrapWebAssemblyCall } from "src/errors";
 import { parseCellReference } from "../utils";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Cell, ICell } from "./cell";
@@ -44,13 +45,17 @@ export class Sheet implements ISheet {
   }
 
   set name(name: string) {
-    // TODO: Should be renamed by sheetId
-    this._wasmWorkbook.renameSheetBySheetIndex(this.index, name);
+    wrapWebAssemblyCall(() => {
+      // TODO: Should be renamed by sheetId
+      this._wasmWorkbook.renameSheetBySheetIndex(this.index, name);
+    });
     this._workbookSheets._refreshSheetLookups();
   }
 
   delete(): void {
-    this._wasmWorkbook.deleteSheetBySheetId(this._sheetId);
+    wrapWebAssemblyCall(() => {
+      this._wasmWorkbook.deleteSheetBySheetId(this._sheetId);
+    });
     this._workbookSheets._refreshSheetLookups();
   }
 
@@ -61,13 +66,15 @@ export class Sheet implements ISheet {
       const textReference = textReferenceOrRow;
       const reference = parseCellReference(textReference);
       if (reference === null) {
-        throw new Error(
-          `Cell reference error. "${textReference}" is not valid reference.`
+        throw new SheetsError(
+          `Cell reference error. "${textReference}" is not valid reference.`,
+          ErrorKind.ReferenceError
         );
       }
       if (reference.sheetName !== undefined) {
-        throw new Error(
-          `Cell reference error. Sheet name cannot be specified in sheet cell getter.`
+        throw new SheetsError(
+          `Cell reference error. Sheet name cannot be specified in sheet cell getter.`,
+          ErrorKind.ReferenceError
         );
       }
       return this.cell(reference.row, reference.column);
@@ -78,6 +85,8 @@ export class Sheet implements ISheet {
       return new Cell(this._wasmWorkbook, this, row, column);
     }
 
-    throw new Error("Function Sheet.cell received unexpected parameters.");
+    throw new SheetsError(
+      "Function Sheet.cell received unexpected parameters."
+    );
   }
 }
