@@ -4,19 +4,25 @@ Python SDK providing a high-level interface for EqualTo Calc.
 
 ## Requirements
 
-Make sure you have [Python 3.9+](https://docs.python.org/3.9/), [pip](https://pypi.org/project/pip/) and [rust 1.65+](https://www.rust-lang.org/tools/install) installed.
+Make sure you have [Python 3.9+](https://docs.python.org/3.9/) and [pip](https://pypi.org/project/pip/) installed.
 
 ## Installation
 
-Build the package locally:
+Optionally create and activate a python virtual environment:
 
 ```bash
-make venv
+pip3 install --upgrade pip virtualenv
+python3 -m virtualenv --clear venv
+source venv/bin/activate
 ```
 
-This compiles the rust code and creates a python3 virtual environment with `equalto` package installed.
+Install the package (it's important that the find-links parameter points to the directory with *.whl files).
 
-Launch a python3 shell with the equalto package available:
+```bash
+pip install equalto --no-index --find-links equalto
+```
+
+Launch a python shell with the equalto package available:
 
 ```
 $ venv/bin/python
@@ -275,28 +281,3 @@ Reading/setting a cell formatting:
 >>> cell.delete()
 ```
 
-## Contributing
-
-Run tests:
-
-```
-make tests
-```
-
-Run tests with coverage report:
-
-```
-make coverage
-```
-
-Run linter checks:
-
-```
-make lint
-```
-
-Run auto-formatters:
-
-```
-make fmt
-```

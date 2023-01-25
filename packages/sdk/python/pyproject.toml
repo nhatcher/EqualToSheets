@@ -1,6 +1,6 @@
 [project]
 name = "equalto"
-version = "0.0.1"
+version = "0.1.0"
 author = "EqualTo"
 author_email = "dev@equalto.com"
 packages = ["equalto"]

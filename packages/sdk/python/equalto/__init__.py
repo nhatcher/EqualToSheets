@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, tzinfo
+from importlib.metadata import version
 
 from equalto._equalto import create, load_excel
 from equalto.workbook import Workbook
+
+__version__ = version("equalto")
 
 
 def load(workbook_path: str) -> Workbook:
