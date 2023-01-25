@@ -28,7 +28,6 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ## Quickstart
 
-
 ### Opening an existing .xlsx file
 
 ```python
@@ -114,7 +113,7 @@ Sheets can be accessed by their index:
 
 ```python
 >>> a1_cell = wb['Sheet1!A1']
->>> a2_cell = wb.cell(sheet_index=0, row=2, col=1)
+>>> a2_cell = wb.cell(sheet_index=0, row=2, column=1)
 ```
 
 #### Cells can be accessed at the sheet level via `Sheet` instance
@@ -122,7 +121,7 @@ Sheets can be accessed by their index:
 ```python
 >>> sheet = wb.sheets['Sheet1']
 >>> a1_cell = sheet['A1']
->>> a2_cell = sheet.cell(row=2, col=1)
+>>> a2_cell = sheet.cell(row=2, column=1)
 ```
 
 #### `value` property
@@ -172,6 +171,7 @@ Value setter:
 Value setter automatically handles type conversions:
 
 ```python
+>>> from datetime import date
 >>> date_cell.value = date(2022, 12, 1)
 # `date_cell.value` returns the float value 44896.0, since Excel stores dates as
 # the ~number of days since 1900.
@@ -180,6 +180,8 @@ Value setter automatically handles type conversions:
 ```
 
 ```python
+>>> from datetime import datetime
+>>> from zoneinfo import ZoneInfo
 >>> timestamp_cell.value = datetime(2023, 1, 10, 10, tzinfo=ZoneInfo('Europe/Berlin'))
 # `timestamp_cell.value` returns the float value 44936.375, since Excel stores timestamps as
 # the ~number of days since 1900, with time represented as a fraction of a day.
@@ -190,7 +192,8 @@ Value setter automatically handles type conversions:
 #### `Cell.__str__` implementation respects the cell formatting
 
 ```python
->>> cell = wb.sheets['Sheet1']['A1']  # cell with $#,##0.00 format
+>>> cell = wb.sheets['Sheet1']['A1']
+>>> cell.style.format = "$#,##0.00"
 >>> cell.value = 12345.67
 >>> str(cell)
 '$12,345.67'
