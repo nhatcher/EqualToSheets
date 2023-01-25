@@ -29,6 +29,43 @@ If that works, you should be good to go using that in your `node` or bundler - t
 
 ## Tutorial
 
+### Initializing Sheets module
+
+TypeScript binding is based on WebAssembly, so it needs to be asynchronously initialized.
+Package exports two top-level asynchronous functions:
+
+- `initialize` - initializes the module and returns the factory methods for creating the workbook. Multiple initializations are disallowed.
+- `getApi` - returns factory methods for creating the workbook, however `initialize` is required to be called earlier (but it's not required to finish initializing)
+
+Split of these methods is caused by plans for support of alternative methods of loading WebAssembly.
+
+```javascript
+let { initialize } = require("@equalto/sheets");
+
+// Can be initialized and used immediately.
+let { newWorkbook } = await initialize();
+```
+
+Or, alternatively, if Sheets are used in multiple places:
+
+```javascript
+let { initialize, getApi } = require("@equalto/sheets");
+let { readFileSync } = require("fs");
+
+// Initialize sheets with your app ignoring returned API
+await initialize();
+
+// Then use preinitialized Sheets in your functions
+async function calculateOutputs(input) {
+  const { loadWorkbookFromMemory } = await getApi();
+  const workbook = loadWorkbookFromMemory(readFileSync("./model.xlsx"));
+  workbook.cell("Sheet1!B1").value = input;
+  return workbook.cell("Sheet1!B2").numberValue;
+}
+
+await calculateOutputs(7);
+```
+
 ### Creating new workbook with default sheet
 
 `newWorkbook` creates new workbook implementing `IWorkbook` interface:
