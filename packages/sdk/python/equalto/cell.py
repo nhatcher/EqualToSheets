@@ -123,7 +123,7 @@ class Cell:
         self._model.update_cell_with_formula(*self.cell_ref, formula)
         self._model.evaluate()
 
-    @cached_property
+    @property
     def style(self) -> Style:
         return Style(self)
 

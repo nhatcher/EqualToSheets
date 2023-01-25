@@ -19,7 +19,7 @@ mod test_general;
 mod test_metadata;
 mod test_model_delete_cell;
 mod test_model_is_empty_cell;
-mod test_model_remove_cell;
+mod test_model_set_cell_empty;
 mod test_move_formula;
 mod test_quote_prefix;
 mod test_sheets;

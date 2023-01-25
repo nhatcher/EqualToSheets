@@ -13,10 +13,7 @@ fn test_delete_cell_non_existing_sheet() {
 #[test]
 fn test_delete_cell_unset_cell() {
     let mut model = new_empty_model();
-    model.delete_cell(0, 1, 1).unwrap();
-    assert_eq!(model.is_empty_cell(0, 1, 1), Ok(true));
-    model.evaluate();
-    assert_eq!(model._get_text_at(0, 1, 1), "");
+    assert!(model.delete_cell(0, 1, 1).is_ok());
 }
 
 #[test]

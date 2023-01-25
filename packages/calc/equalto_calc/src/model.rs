@@ -1363,16 +1363,15 @@ impl Model {
         result
     }
 
-    /// Deletes a cell by setting it empty.
-    /// TODO: A better name would be set_cell_empty or remove_cell_contents
-    pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
+    /// Sets cell to empty. Can be used to delete value without affecting style.
+    pub fn set_cell_empty(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
         let worksheet = self.workbook.worksheet_mut(sheet)?;
         worksheet.set_cell_empty(row, column);
         Ok(())
     }
 
     /// Deletes a cell by removing it from worksheet data.
-    pub fn remove_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
+    pub fn delete_cell(&mut self, sheet: u32, row: i32, column: i32) -> Result<(), String> {
         let worksheet = self.workbook.worksheet_mut(sheet)?;
 
         let sheet_data = &mut worksheet.sheet_data;

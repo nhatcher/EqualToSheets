@@ -26,6 +26,9 @@ export interface ICell {
   /**
    * General purpose setter for cell value.
    *
+   * Assigning `null` will set the cell empty without clearing it's properties like style.
+   * For complete deletion see `ICell.delete()`
+   *
    * Note: Dates are converted to numbers automatically. Date then can be read using `dateValue`
    * getter.
    */
@@ -61,6 +64,10 @@ export interface ICell {
    * @throws {@link SheetsError} will throw if formula is not valid
    */
   set formula(formula: string | null);
+  /**
+   * Deletes cell content along with it's properties (including style).
+   */
+  delete(): void;
 }
 
 export class Cell implements ICell {
@@ -246,6 +253,14 @@ export class Cell implements ICell {
         );
       }
       this._wasmWorkbook.evaluate();
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  delete(): void {
+    try {
+      this._wasmWorkbook.deleteCell(this._sheet.index, this._row, this._column);
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

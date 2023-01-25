@@ -54,11 +54,16 @@ impl PyModel {
             .map_or(CellType::Number, |cell| cell.get_type()) as i32)
     }
 
+    pub fn set_cell_empty(&mut self, sheet: i32, row: i32, column: i32) -> PyResult<()> {
+        self.model
+            .set_cell_empty(sheet.try_into().unwrap(), row, column)
+            .map_err(WorkbookError::new_err)
+    }
+
     pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> PyResult<()> {
         self.model
             .delete_cell(sheet.try_into().unwrap(), row, column)
-            .unwrap();
-        Ok(())
+            .map_err(WorkbookError::new_err)
     }
 
     pub fn evaluate(&mut self) -> PyResult<()> {

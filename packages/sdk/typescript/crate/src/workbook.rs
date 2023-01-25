@@ -201,4 +201,20 @@ impl WasmWorkbook {
             .map_err(WorkbookError::from)
             .map_err(JsError::from)
     }
+
+    #[wasm_bindgen(js_name = "setCellEmpty")]
+    pub fn set_cell_empty(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), JsError> {
+        self.model
+            .set_cell_empty(sheet.try_into().unwrap(), row, column)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
+
+    #[wasm_bindgen(js_name = "deleteCell")]
+    pub fn delete_cell(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), JsError> {
+        self.model
+            .delete_cell(sheet.try_into().unwrap(), row, column)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
 }

@@ -76,10 +76,12 @@ def test_formula_cell_type(cell: Cell, formula: str, cell_type: CellType) -> Non
 
 
 def test_delete_cell(cell: Cell) -> None:
-    cell.value = 42
+    cell.style.format = "#.###"
+    cell.value = 9.87654
+    assert str(cell) == "9.877"
     cell.delete()
     assert not cell.value
-    # TODO: Once styles are introduced, confirm that the cell style is deleted as well.
+    assert cell.style.format == "general"
 
 
 def test_int_value(cell: Cell) -> None:

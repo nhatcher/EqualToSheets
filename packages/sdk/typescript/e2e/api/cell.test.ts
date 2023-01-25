@@ -61,6 +61,26 @@ describe("Workbook - Cell operations", () => {
     expect(workbook.cell("Sheet1!E2").formattedValue).toEqual("-12%");
   });
 
+  test("can delete cell with formatting", async () => {
+    const { loadWorkbookFromMemory } = await getApi();
+    const xlsxFile = readFileSync("./api/xlsx/formats.xlsx");
+    const workbook = loadWorkbookFromMemory(xlsxFile);
+    const cell = workbook.cell("Sheet1!C2");
+    expect(cell.value).toEqual(1);
+    expect(cell.formattedValue).toEqual("100%");
+
+    cell.value = 2;
+    expect(cell.formattedValue).toEqual("200%");
+
+    cell.delete();
+    expect(cell.value).toEqual("");
+    expect(cell.formattedValue).toEqual("");
+
+    cell.value = 2;
+    expect(cell.value).toEqual(2);
+    expect(cell.formattedValue).toEqual("2");
+  });
+
   test("can read typed number value from cell", async () => {
     const { newWorkbook } = await getApi();
     let workbook = newWorkbook();
