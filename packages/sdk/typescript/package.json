@@ -13,12 +13,12 @@
     "dts-copy-bindgen-types": "mkdir -p dist/types-raw/__generated_pkg && cp src/__generated_pkg/*.d.ts dist/types-raw/__generated_pkg/",
     "dts-bundle-browser": "api-extractor run --config api-extractor.browser.json",
     "dts-bundle-node": "api-extractor run --config api-extractor.node.json",
-    "publish:zip": "rm -f equalto-sheets-*.tgz equalto-sheets.zip && npm pack && zip equalto-sheets.zip equalto-sheets-0.1.0.tgz README.md",
+    "publish:zip": "rm -f equalto-sheets-*.tgz equalto-sheets.zip && npm pack && zip equalto-sheets.zip equalto-sheets-0.1.0.tgz README.md LICENSE",
     "test": "jest",
     "test:e2e": "npm run build && rm -rf e2e/node_modules && cd e2e && npm install && npm test"
   },
   "private": true,
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE FILE",
   "type": "module",
   "exports": {
     ".": {
