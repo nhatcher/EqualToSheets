@@ -1,6 +1,8 @@
-use crate::error::XlsxError;
-use roxmltree::Node;
 use std::io::Read;
+
+use roxmltree::Node;
+
+use crate::error::XlsxError;
 
 /// Reads the list of shared strings in an Excel workbook
 /// Note than in EqualTo we lose _internal_ styling of a string

@@ -54,12 +54,7 @@
 //!
 //! [`Model`]: ../equalto_xlsx/struct.Model.html
 
-mod colors;
 pub mod compare;
 pub mod error;
 pub mod export;
 pub mod import;
-mod shared_strings;
-
-#[cfg(test)]
-mod test;
