@@ -1,4 +1,4 @@
-import { ErrorKind, SheetsError, wrapWebAssemblyCall } from "src/errors";
+import { ErrorKind, SheetsError, wrapWebAssemblyError } from "src/errors";
 import { parseCellReference } from "../utils";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Cell, ICell } from "./cell";
@@ -77,17 +77,21 @@ export class Sheet implements ISheet {
   }
 
   set name(name: string) {
-    wrapWebAssemblyCall(() => {
+    try {
       // TODO: Should be renamed by sheetId
       this._wasmWorkbook.renameSheetBySheetIndex(this.index, name);
-    });
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
     this._workbookSheets._refreshSheetLookups();
   }
 
   delete(): void {
-    wrapWebAssemblyCall(() => {
+    try {
       this._wasmWorkbook.deleteSheetBySheetId(this._sheetId);
-    });
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
     this._workbookSheets._refreshSheetLookups();
   }
 

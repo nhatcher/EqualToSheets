@@ -32,22 +32,11 @@ export class SheetsError extends Error {
 }
 
 /**
- * Wraps a WebAssembly call with try/catch that transforms WASM layer error into `SheetsError`.
- */
-export function wrapWebAssemblyCall(wasmCall: () => void) {
-  try {
-    wasmCall();
-  } catch (e) {
-    throw wrapWebAssemblyError(e);
-  }
-}
-
-/**
  * Transforms WASM layer error into `SheetsError`.
  */
 export function wrapWebAssemblyError(error: unknown) {
   if (error instanceof SheetsError) {
-    throw error;
+    return error;
   }
 
   if (error instanceof Error) {

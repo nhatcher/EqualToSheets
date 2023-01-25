@@ -1,9 +1,4 @@
-import {
-  ErrorKind,
-  SheetsError,
-  wrapWebAssemblyCall,
-  wrapWebAssemblyError,
-} from "src/errors";
+import { ErrorKind, SheetsError, wrapWebAssemblyError } from "src/errors";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Sheet, ISheet } from "./sheet";
 
@@ -46,13 +41,17 @@ export class WorkbookSheets implements IWorkbookSheets {
 
   add(sheetName?: string): ISheet {
     if (sheetName !== undefined) {
-      wrapWebAssemblyCall(() => {
+      try {
         this._wasmWorkbook.addSheet(sheetName);
-      });
+      } catch (error) {
+        throw wrapWebAssemblyError(error);
+      }
     } else {
-      wrapWebAssemblyCall(() => {
+      try {
         this._wasmWorkbook.newSheet();
-      });
+      } catch (error) {
+        throw wrapWebAssemblyError(error);
+      }
     }
     this._refreshSheetLookups();
     return this.get(this._sheetLookups.numSheets - 1);
