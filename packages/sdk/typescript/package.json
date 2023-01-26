@@ -44,11 +44,11 @@
     "examples/node/src",
     "examples/node/xlsx",
     "examples/webpack4/package.json",
-    "examples/webpack4/tsconfig.json",
+    "examples/webpack4/webpack.config.js",
     "examples/webpack4/src",
     "examples/webpack5/package.json",
-    "examples/webpack5/tsconfig.json",
-    "examples/webpack5/src"
+    "examples/webpack5/src",
+    "examples/webpack5/webpack.config.js"
   ],
   "devDependencies": {
     "@microsoft/api-extractor": "^7.33.7",

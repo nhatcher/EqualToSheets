@@ -172,12 +172,14 @@ is found in cell (no implicit cast is done).
 // Uncaught: [CalcError]: Type of cell's value is not string, cell value: 3
 ```
 
-#### Setting cell formula
+#### Working with cell formulas
 
 ```javascript
 > cell.formula = "=B3*4"
 > cell.value
 12
+> cell.formula
+"=B3*4"
 > // Note that using value will assign a string
 > cell.value = "=B3*4"
 > cell.value
@@ -203,7 +205,7 @@ Operations can throw `CalcError` on failure. `CalcError` extends standard `Error
 For example:
 
 ```javascript
-import { CalcError } from "@equalto-software/calc";
+let { CalcError } = require("@equalto-software/calc");
 
 // ...
 
