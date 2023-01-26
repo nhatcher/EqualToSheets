@@ -32,7 +32,7 @@ const roll = (format, environment) => {
     output: {
       dir: "dist",
       format: format,
-      name: "sheets",
+      name: "EqualToCalc",
       entryFileNames: `${getDistributionDirectory(
         format,
         environment

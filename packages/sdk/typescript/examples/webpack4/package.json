@@ -11,7 +11,7 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "@equalto/sheets": "file:../..",
+    "@equalto-software/calc": "file:../..",
     "clean-webpack-plugin": "^4.0.0",
     "html-webpack-plugin": "^4.5.2",
     "http-server": "^14.1.1",

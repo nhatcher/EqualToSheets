@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { initialize, IWorkbook } from "@equalto/sheets";
+import { initialize, IWorkbook } from "@equalto-software/calc";
 
 function calculateForInput(workbook: IWorkbook, inputValue: number) {
   workbook.cell("Sheet1!B1").value = inputValue;

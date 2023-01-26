@@ -137,5 +137,5 @@ jobs:
           command: npm run publish:zip
           working_directory: ./packages/sdk/typescript
       - store_artifacts:
-          path: ./packages/sdk/typescript/equalto-sheets.zip
-          destination: equalto-sheets-typescript-sdk.zip
+          path: ./packages/sdk/typescript/equalto-calc.zip
+          destination: equalto-calc-typescript-sdk.zip

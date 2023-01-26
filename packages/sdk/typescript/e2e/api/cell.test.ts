@@ -1,4 +1,4 @@
-import { initialize, getApi, SheetsError } from "@equalto/sheets";
+import { initialize, getApi, CalcError } from "@equalto-software/calc";
 import { readFileSync } from "fs";
 
 describe("Workbook - Cell operations", () => {
@@ -241,7 +241,7 @@ describe("Workbook - Cell operations", () => {
     };
 
     expect(failCase).toThrow("Could not find sheet with sheetId=2");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when values are set on cell from deleted sheet", async () => {
@@ -257,7 +257,7 @@ describe("Workbook - Cell operations", () => {
     };
 
     expect(failCase).toThrow("Could not find sheet with sheetId=2");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when formula is read on cell from deleted sheet", async () => {
@@ -276,7 +276,7 @@ describe("Workbook - Cell operations", () => {
     };
 
     expect(failCase).toThrow("Could not find sheet with sheetId=2");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when formula is set on cell from deleted sheet", async () => {
@@ -292,6 +292,6 @@ describe("Workbook - Cell operations", () => {
     };
 
     expect(failCase).toThrow("Could not find sheet with sheetId=2");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 });

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { ErrorKind, SheetsError, wrapWebAssemblyError } from "src/errors";
+import { ErrorKind, CalcError, wrapWebAssemblyError } from "src/errors";
 import {
   convertDayjsUTCToSpreadsheetDate,
   convertSpreadsheetDateToDayjsUTC,
@@ -34,20 +34,20 @@ export interface ICell {
    */
   set value(value: string | number | boolean | Date | null);
   /**
-   * @throws {@link SheetsError} will throw if value is not valid number, or that number doesn't
+   * @throws {@link CalcError} will throw if value is not valid number, or that number doesn't
    * correspond to valid date
    */
   get dateValue(): Date;
   /**
-   * @throws {@link SheetsError} will throw if value is not of string type
+   * @throws {@link CalcError} will throw if value is not of string type
    */
   get stringValue(): string;
   /**
-   * @throws {@link SheetsError} will throw if value is not of number type
+   * @throws {@link CalcError} will throw if value is not of number type
    */
   get numberValue(): number;
   /**
-   * @throws {@link SheetsError} will throw if value is not of boolean type
+   * @throws {@link CalcError} will throw if value is not of boolean type
    */
   get booleanValue(): boolean;
   /**
@@ -61,7 +61,7 @@ export interface ICell {
   get formula(): string | null;
   /**
    * Sets formula in cell, eg.: `=A2*3`
-   * @throws {@link SheetsError} will throw if formula is not valid
+   * @throws {@link CalcError} will throw if formula is not valid
    */
   set formula(formula: string | null);
   /**
@@ -138,7 +138,7 @@ export class Cell implements ICell {
         const date = dayjs.utc(value);
         const excelDate = convertDayjsUTCToSpreadsheetDate(date);
         if (excelDate < 0) {
-          throw new SheetsError(
+          throw new CalcError(
             `Date "${date.toISOString()}" is not representable in workbook.`
           );
         }
@@ -159,13 +159,13 @@ export class Cell implements ICell {
   get dateValue(): Date {
     const value = this.value;
     if (typeof value !== "number") {
-      throw new SheetsError(
+      throw new CalcError(
         "Cell value is not a number. Underlying number value is required for dates.",
         ErrorKind.TypeError
       );
     }
     if (value < 0) {
-      throw new SheetsError(`Number "${value}" cannot be converted to date.`);
+      throw new CalcError(`Number "${value}" cannot be converted to date.`);
     }
     return convertSpreadsheetDateToDayjsUTC(value).toDate();
   }
@@ -173,7 +173,7 @@ export class Cell implements ICell {
   get stringValue(): string {
     const value = this.value;
     if (typeof value !== "string") {
-      throw new SheetsError(
+      throw new CalcError(
         `Type of cell's value is not string, cell value: ${JSON.stringify(
           value
         )}`,
@@ -186,7 +186,7 @@ export class Cell implements ICell {
   get numberValue(): number {
     const value = this.value;
     if (typeof value !== "number") {
-      throw new SheetsError(
+      throw new CalcError(
         `Type of cell's value is not number, cell value: ${JSON.stringify(
           value
         )}`,
@@ -199,7 +199,7 @@ export class Cell implements ICell {
   get booleanValue(): boolean {
     const value = this.value;
     if (typeof value !== "boolean") {
-      throw new SheetsError(
+      throw new CalcError(
         `Type of cell's value is not boolean, cell value: ${JSON.stringify(
           value
         )}`,

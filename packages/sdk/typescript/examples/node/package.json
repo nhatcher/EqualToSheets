@@ -12,7 +12,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@equalto/sheets": "file:../.."
+    "@equalto-software/calc": "file:../.."
   },
   "devDependencies": {
     "typescript": "^4.9.4"

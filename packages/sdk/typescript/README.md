@@ -3,21 +3,21 @@
   For development purposes, see .github/README.md
 -->
 
-# EqualTo Sheets TypeScript SDK
+# EqualTo Calc (TypeScript SDK)
 
 ## 📚 Quick-start guide
 
 This package is provided as pre-built library exported as a tarball using
 [`npm pack`](https://docs.npmjs.com/cli/v9/commands/npm-pack).
 
-You can use `npm install equalto-sheets-0.1.0.tgz` to install the package in your target project.
+You can use `npm install equalto-calc-0.1.0.tgz` to install the package in your target project.
 
 If you use Node, you can test it with `node` REPL:
 
 ```javascript
 > // in node
-> let sheets = require('@equalto/sheets');
-> let { newWorkbook } = await sheets.initialize();
+> let calc = require('@equalto-software/calc');
+> let { newWorkbook } = await calc.initialize();
 > let workbook = newWorkbook();
 > workbook.cell('Sheet1!A1').value = 7;
 > workbook.cell('Sheet1!A2').formula = '=A1*2';
@@ -29,7 +29,7 @@ If that works, you should be good to go using that in your `node` or bundler - t
 
 ## Tutorial
 
-### Initializing Sheets module
+### Initializing Calc module
 
 TypeScript binding is based on WebAssembly, so it needs to be asynchronously initialized.
 Package exports two top-level asynchronous functions:
@@ -40,22 +40,22 @@ Package exports two top-level asynchronous functions:
 Split of these methods is caused by plans for support of alternative methods of loading WebAssembly.
 
 ```javascript
-let { initialize } = require("@equalto/sheets");
+let { initialize } = require("@equalto-software/calc");
 
 // Can be initialized and used immediately.
 let { newWorkbook } = await initialize();
 ```
 
-Or, alternatively, if Sheets are used in multiple places:
+Or, alternatively, if Calc is used in multiple places:
 
 ```javascript
-let { initialize, getApi } = require("@equalto/sheets");
+let { initialize, getApi } = require("@equalto-software/calc");
 let { readFileSync } = require("fs");
 
-// Initialize sheets with your app ignoring returned API
+// Initialize calc, with your app ignoring returned API
 await initialize();
 
-// Then use preinitialized Sheets in your functions
+// Then use preinitialized Calc in your functions
 async function calculateOutputs(input) {
   const { loadWorkbookFromMemory } = await getApi();
   const workbook = loadWorkbookFromMemory(readFileSync("./model.xlsx"));
@@ -71,7 +71,7 @@ await calculateOutputs(7);
 `newWorkbook` creates new workbook implementing `IWorkbook` interface:
 
 ```javascript
-> let { newWorkbook } = await require('@equalto/sheets').initialize();
+> let { newWorkbook } = await require('@equalto-software/calc').initialize();
 > let workbook = newWorkbook();
 ```
 
@@ -81,7 +81,7 @@ To load XLSX file first, you need to create a stream of file data and pass it to
 `loadWorkbookFromMemory`, which will return loaded workbook object which implements `IWorkbook`:
 
 ```javascript
-> let { loadWorkbookFromMemory } = await require('@equalto/sheets').initialize();
+> let { loadWorkbookFromMemory } = await require('@equalto-software/calc').initialize();
 > let { readFileSync } = require("fs");
 > let workbook = loadWorkbookFromMemory(readFileSync('./Workbook.xlsx'));
 > // example assumes that A1 contains 1 and B1 contains formula `=A1*2`
@@ -157,7 +157,7 @@ Cell can be accessed either using global reference or local one in context of sp
 > cell.value = new Date('2022-01-31'); // assigns number corresponding to date, see "Working with dates" section
 ```
 
-### Reading cell value
+#### Reading cell value
 
 Cell can be read either by using general `value` getter or typed variant (`stringValue`,
 `numberValue`, `booleanValue`, `dateValue`). Typed variants throw `SheetError` when mismatching type
@@ -169,7 +169,7 @@ is found in cell (no implicit cast is done).
 > cell.numberValue
 3
 > cell.stringValue // throws!
-// Uncaught: [SheetsError]: Type of cell's value is not string, cell value: 3
+// Uncaught: [CalcError]: Type of cell's value is not string, cell value: 3
 ```
 
 #### Setting cell formula
@@ -196,14 +196,14 @@ true
 2020-01-13T00:00:00.000Z
 ```
 
-#### Handling errors
+### Handling errors
 
-Operations can throw `SheetsError` on failure. `SheetsError` extends standard `Error`.
+Operations can throw `CalcError` on failure. `CalcError` extends standard `Error`.
 
 For example:
 
 ```javascript
-import { SheetsError } from "@equalto/sheets";
+import { CalcError } from "@equalto-software/calc";
 
 // ...
 
@@ -211,8 +211,8 @@ try {
   workbook.sheets.add("Calculation1");
   workbook.sheets.add("Calculation1"); // <- duplicated sheet name
 } catch (error) {
-  if (error instanceof SheetsError) {
-    console.log(`Sheets error occurred! ${error.name}: ${error.message}`);
+  if (error instanceof CalcError) {
+    console.log(`Calc error occurred! ${error.name}: ${error.message}`);
   }
 }
 ```
@@ -220,7 +220,7 @@ try {
 will print:
 
 ```
-Sheets error occurred! SheetsError: A worksheet already exists with that name
+Calc error occurred! CalcError: A worksheet already exists with that name
 ```
 
 ## Examples

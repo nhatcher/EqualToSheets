@@ -1,4 +1,4 @@
-import { initialize } from "@equalto/sheets";
+import { initialize } from "@equalto-software/calc";
 
 async function run() {
   const { newWorkbook } = await initialize();

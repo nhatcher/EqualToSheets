@@ -22,7 +22,7 @@ Then run:
 Distribution will be generated in `./dist/` directory. At the moment, package is packed and
 published privately. To create a shareable bundle run
 (`npm pack`)[https://docs.npmjs.com/cli/v9/commands/npm-pack?v=true] -
-it will generate `equalto-sheets-<version>.tgz` file that can be easily installed.
+it will generate `equalto-calc-<version>.tgz` file that can be easily installed.
 
 ## Examples
 

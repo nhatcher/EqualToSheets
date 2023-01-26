@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@equalto/sheets": "file:..",
+    "@equalto-software/calc": "file:..",
     "@types/jest": "^29.2.6",
     "jest": "^29.3.1",
     "ts-jest": "^29.0.5",

@@ -1,4 +1,4 @@
-import { ErrorKind, SheetsError, wrapWebAssemblyError } from "src/errors";
+import { ErrorKind, CalcError, wrapWebAssemblyError } from "src/errors";
 import { parseCellReference } from "../utils";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Cell, ICell } from "./cell";
@@ -24,7 +24,7 @@ export interface ISheet {
   /**
    * Sets worksheet name. Name cannot be blank, must be at most 31 characters long and
    * cannot contain the following characters: \\ / * ? : [ ]
-   * @throws {@link SheetsError} will throw if name isn't valid or sheet with given name already
+   * @throws {@link CalcError} will throw if name isn't valid or sheet with given name already
    * exists
    */
   set name(name: string);
@@ -37,14 +37,14 @@ export interface ISheet {
   /**
    * @param textReference - local cell reference, example: `A1`. It cannot include a sheet name.
    * @returns cell corresponding to provided reference.
-   * @throws {@link SheetsError} thrown if reference isn't valid.
+   * @throws {@link CalcError} thrown if reference isn't valid.
    */
   cell(textReference: string): ICell;
   /**
    * @param row - row index (count starts from 1)
    * @param column - column index (count starts from 1: A=1, B=2 ...)
    * @returns cell corresponding to provided coordinates.
-   * @throws {@link SheetsError} thrown if reference isn't valid.
+   * @throws {@link CalcError} thrown if reference isn't valid.
    */
   cell(row: number, column: number): ICell;
 }
@@ -102,13 +102,13 @@ export class Sheet implements ISheet {
       const textReference = textReferenceOrRow;
       const reference = parseCellReference(textReference);
       if (reference === null) {
-        throw new SheetsError(
+        throw new CalcError(
           `Cell reference error. "${textReference}" is not valid reference.`,
           ErrorKind.ReferenceError
         );
       }
       if (reference.sheetName !== undefined) {
-        throw new SheetsError(
+        throw new CalcError(
           `Cell reference error. Sheet name cannot be specified in sheet cell getter.`,
           ErrorKind.ReferenceError
         );
@@ -121,8 +121,6 @@ export class Sheet implements ISheet {
       return new Cell(this._wasmWorkbook, this, row, column);
     }
 
-    throw new SheetsError(
-      "Function Sheet.cell received unexpected parameters."
-    );
+    throw new CalcError("Function Sheet.cell received unexpected parameters.");
   }
 }

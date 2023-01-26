@@ -3,7 +3,7 @@ import { setDefaultWasmInit } from "./core";
 
 export { initialize, getApi } from "./core";
 export type { IWorkbook, IWorkbookSheets, ISheet, ICell } from "./core";
-export { SheetsError, ErrorKind } from "./errors";
+export { CalcError, ErrorKind } from "./errors";
 
 // @ts-ignore
 setDefaultWasmInit(() => wasm());

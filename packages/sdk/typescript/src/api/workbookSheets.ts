@@ -1,4 +1,4 @@
-import { ErrorKind, SheetsError, wrapWebAssemblyError } from "src/errors";
+import { ErrorKind, CalcError, wrapWebAssemblyError } from "src/errors";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { Sheet, ISheet } from "./sheet";
 
@@ -8,19 +8,19 @@ export interface IWorkbookSheets {
    *
    * @param sheetName - optional sheet name. If name is not provided name is automatically generated
    * using `Sheet<number>` format, where number is autoincremented.
-   * @throws {@link SheetsError} will throw if sheet name is not valid or sheet name is already in use
+   * @throws {@link CalcError} will throw if sheet name is not valid or sheet name is already in use
    */
   add(sheetName?: string): ISheet;
   /**
    * Retrieves worksheet by name.
    * @param sheetName - sheet name
-   * @throws {@link SheetsError} will throw if sheet with given name doesn't exist
+   * @throws {@link CalcError} will throw if sheet with given name doesn't exist
    */
   get(sheetName: string): ISheet;
   /**
    * Retrieves worksheet by index.
    * @param sheetName - sheet index
-   * @throws {@link SheetsError} will throw if sheet with given index doesn't exist
+   * @throws {@link CalcError} will throw if sheet with given index doesn't exist
    */
   get(sheetIndex: number): ISheet;
   get(sheetRef: string | number): ISheet;
@@ -66,7 +66,7 @@ export class WorkbookSheets implements IWorkbookSheets {
     } else if (typeof sheetRef === "number") {
       sheetId = this._getSheetIdBySheetIndex(sheetRef);
     } else {
-      throw new SheetsError(
+      throw new CalcError(
         "Sheet reference must be either string or number.",
         ErrorKind.ReferenceError
       );
@@ -91,7 +91,7 @@ export class WorkbookSheets implements IWorkbookSheets {
     if (sheetId in this._sheetLookups.sheetIdToSheetIndex) {
       return this._sheetLookups.sheetIdToSheetIndex[sheetId];
     }
-    throw new SheetsError(
+    throw new CalcError(
       `Could not find sheet with sheetId=${sheetId}`,
       ErrorKind.ReferenceError
     );
@@ -101,7 +101,7 @@ export class WorkbookSheets implements IWorkbookSheets {
     if (sheetId in this._sheetLookups.sheetIdToSheetName) {
       return this._sheetLookups.sheetIdToSheetName[sheetId];
     }
-    throw new SheetsError(
+    throw new CalcError(
       `Could not find sheet with sheetId=${sheetId}`,
       ErrorKind.ReferenceError
     );
@@ -111,7 +111,7 @@ export class WorkbookSheets implements IWorkbookSheets {
     if (sheetName in this._sheetLookups.sheetNameToSheetId) {
       return this._sheetLookups.sheetNameToSheetId[sheetName];
     }
-    throw new SheetsError(
+    throw new CalcError(
       `Could not find sheet with name="${sheetName}"`,
       ErrorKind.ReferenceError
     );
@@ -121,7 +121,7 @@ export class WorkbookSheets implements IWorkbookSheets {
     if (sheetIndex in this._sheetLookups.sheetIndexToSheetId) {
       return this._sheetLookups.sheetIndexToSheetId[sheetIndex];
     }
-    throw new SheetsError(
+    throw new CalcError(
       `Could not find sheet at index=${sheetIndex}`,
       ErrorKind.ReferenceError
     );
@@ -146,7 +146,7 @@ function loadSheetLookups(wasmWorkbook: WasmWorkbook): SheetLookup {
   }
 
   if (worksheetIds.length !== worksheetNames.length) {
-    throw new SheetsError(
+    throw new CalcError(
       "Internal error. Number of worksheet names does not match number of worksheet IDs"
     );
   }

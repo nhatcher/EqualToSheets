@@ -2,7 +2,7 @@ import { IWorkbookSheets, WorkbookSheets } from "./workbookSheets";
 import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
 import { ICell } from "./cell";
 import { parseCellReference } from "../utils";
-import { ErrorKind, SheetsError } from "src/errors";
+import { ErrorKind, CalcError } from "src/errors";
 
 export function newWorkbook(): IWorkbook {
   return new Workbook(new WasmWorkbook("en", "UTC"));
@@ -17,7 +17,7 @@ export interface IWorkbook {
   /**
    * @param textReference - global cell reference, example: `Sheet1!A1`. It must include a sheet name.
    * @returns cell corresponding to provided reference.
-   * @throws {@link SheetsError} thrown if reference isn't valid.
+   * @throws {@link CalcError} thrown if reference isn't valid.
    */
   cell(textReference: string): ICell;
   /**
@@ -25,7 +25,7 @@ export interface IWorkbook {
    * @param row - row index (count starts from 1)
    * @param column - column index (count starts from 1: A=1, B=2 ...)
    * @returns cell corresponding to provided coordinates.
-   * @throws {@link SheetsError} thrown if reference isn't valid.
+   * @throws {@link CalcError} thrown if reference isn't valid.
    */
   cell(sheet: number, row: number, column: number): ICell;
 }
@@ -54,13 +54,13 @@ export class Workbook implements IWorkbook {
       const textReference = textReferenceOrSheet;
       const reference = parseCellReference(textReference);
       if (reference === null) {
-        throw new SheetsError(
+        throw new CalcError(
           `Cell reference error. "${textReference}" is not valid reference.`,
           ErrorKind.ReferenceError
         );
       }
       if (reference.sheetName === undefined) {
-        throw new SheetsError(
+        throw new CalcError(
           `Cell reference error. Sheet name is required in top-level workbook cell getter.`,
           ErrorKind.ReferenceError
         );
@@ -77,7 +77,7 @@ export class Workbook implements IWorkbook {
       return this.sheets.get(sheet).cell(row, column);
     }
 
-    throw new SheetsError(
+    throw new CalcError(
       "Function Workbook.cell received unexpected parameters."
     );
   }

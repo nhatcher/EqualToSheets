@@ -1,5 +1,5 @@
-import { initialize, getApi, SheetsError } from "@equalto/sheets";
-import type { ISheet } from "@equalto/sheets";
+import { initialize, getApi, CalcError } from "@equalto-software/calc";
+import type { ISheet } from "@equalto-software/calc";
 
 const mapSheetToObject = (sheet: ISheet) => {
   return {
@@ -82,7 +82,7 @@ describe("Workbook", () => {
     };
 
     expect(failCase).toThrow("Invalid name for a sheet: ''");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when new sheet name is longer than 31 characters", async () => {
@@ -99,7 +99,7 @@ describe("Workbook", () => {
     expect(failCase).toThrow(
       "Invalid name for a sheet: 'AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDE'"
     );
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when name of new sheet is a duplicate", async () => {
@@ -112,7 +112,7 @@ describe("Workbook", () => {
     };
 
     expect(failCase).toThrow("A worksheet already exists with that name");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("can get sheet by index", async () => {
@@ -160,7 +160,7 @@ describe("Workbook", () => {
         workbook.sheets.get(index);
       };
       expect(failCase).toThrow(`Could not find sheet at index=${index}`);
-      expect(failCase).toThrow(SheetsError);
+      expect(failCase).toThrow(CalcError);
     }
   );
 
@@ -185,7 +185,7 @@ describe("Workbook", () => {
       workbook.sheets.get("DoesNotExist");
     };
     expect(failCase).toThrow('Could not find sheet with name="DoesNotExist"');
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("can rename sheet", async () => {
@@ -218,7 +218,7 @@ describe("Workbook", () => {
     };
 
     expect(failCase).toThrow("Could not find sheet with sheetId=1");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
 
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
       { id: 2, index: 0, name: "Sheet2" },
@@ -249,7 +249,7 @@ describe("Workbook", () => {
     };
 
     expect(failCase).toThrow("Sheet not found");
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
 
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
       { id: 2, index: 0, name: "Sheet2" },
@@ -296,7 +296,7 @@ describe("Workbook", () => {
 
     expect(() => {
       cellInSheet2.value;
-    }).toThrow(SheetsError);
+    }).toThrow(CalcError);
   });
 
   test("can access cells through specific sheet", async () => {
@@ -320,7 +320,7 @@ describe("Workbook", () => {
     expect(failCase).toThrow(
       'Cell reference error. "3D" is not valid reference.'
     );
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when accessing cells through specific sheet with sheet specifier (Sheet!...)", async () => {
@@ -335,7 +335,7 @@ describe("Workbook", () => {
     expect(failCase).toThrow(
       "Cell reference error. Sheet name cannot be specified in sheet cell getter."
     );
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when cell is accessed through workbook without sheet name in reference", async () => {
@@ -347,7 +347,7 @@ describe("Workbook", () => {
     expect(failCase).toThrow(
       "Cell reference error. Sheet name is required in top-level workbook cell getter."
     );
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 
   test("throws when cell is accessed by invalid sheet name in reference", async () => {
@@ -357,6 +357,6 @@ describe("Workbook", () => {
       workbook.cell("DoesNotExist!A1");
     };
     expect(failCase).toThrow('Could not find sheet with name="DoesNotExist"');
-    expect(failCase).toThrow(SheetsError);
+    expect(failCase).toThrow(CalcError);
   });
 });

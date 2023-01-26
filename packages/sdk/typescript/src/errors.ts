@@ -6,7 +6,7 @@ export enum ErrorKind {
   OtherError = "OtherError",
 }
 
-export class SheetsError extends Error {
+export class CalcError extends Error {
   private _kind: ErrorKind;
   private _wrappedError: Error | null;
 
@@ -16,10 +16,10 @@ export class SheetsError extends Error {
     wrappedError?: Error
   ) {
     super(message);
-    this.name = "SheetsError";
+    this.name = "CalcError";
     this._kind = kind;
     this._wrappedError = wrappedError ?? null;
-    Object.setPrototypeOf(this, SheetsError.prototype);
+    Object.setPrototypeOf(this, CalcError.prototype);
   }
 
   get kind(): ErrorKind {
@@ -32,10 +32,10 @@ export class SheetsError extends Error {
 }
 
 /**
- * Transforms WASM layer error into `SheetsError`.
+ * Transforms WASM layer error into `CalcError`.
  */
 export function wrapWebAssemblyError(error: unknown) {
-  if (error instanceof SheetsError) {
+  if (error instanceof CalcError) {
     return error;
   }
 
@@ -51,7 +51,7 @@ export function wrapWebAssemblyError(error: unknown) {
         throw new Error("Could not parse JSON error."); // this error will be immediately consumed
       }
     } catch (parseError) {
-      return new SheetsError(error.message, ErrorKind.OtherError, error);
+      return new CalcError(error.message, ErrorKind.OtherError, error);
     }
 
     let errorKind: ErrorKind;
@@ -63,8 +63,8 @@ export function wrapWebAssemblyError(error: unknown) {
       errorKind = ErrorKind.OtherError;
     }
 
-    return new SheetsError(description, errorKind, error);
+    return new CalcError(description, errorKind, error);
   } else {
-    return new SheetsError(`Unexpected error occurred: ${error}`);
+    return new CalcError(`Unexpected error occurred: ${error}`);
   }
 }
