@@ -10,7 +10,7 @@
 This package is provided as pre-built library exported as a tarball using
 [`npm pack`](https://docs.npmjs.com/cli/v9/commands/npm-pack).
 
-You can use `npm install equalto-calc-0.1.0.tgz` to install the package in your target project.
+You can use `npm install equalto-software-calc-0.1.0.tgz` to install the package in your target project.
 
 If you use Node, you can test it with `node` REPL:
 
