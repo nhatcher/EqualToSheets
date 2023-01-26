@@ -8,6 +8,7 @@ workflows:
       - test-python-sdk
       - test-rust-sdk
       - test-typescript-sdk
+      - test-widget
 
 jobs:
   test-calc:
@@ -139,3 +140,38 @@ jobs:
       - store_artifacts:
           path: ./packages/sdk/typescript/equalto-software-calc.zip
           destination: equalto-calc-typescript-sdk.zip
+
+  test-widget:
+    docker:
+      - image: rust:1.66.1-slim
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt -y --no-install-recommends upgrade
+            apt install --no-install-recommends -y curl make zip
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash - &&
+            apt-get install -y nodejs
+            npm update -g npm
+            rustup component add rustfmt clippy
+            ./util/install-wasm-pack.sh
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Install node_modules for Typescript SDK
+          command: npm install
+          working_directory: ./packages/sdk/typescript
+      - run:
+          name: Install node_modules for widget
+          command: npm install
+          working_directory: ./packages/widget
+      - run:
+          name: Run linter
+          command: npm run lint
+          working_directory: ./packages/widget
+      - run:
+          name: Build distribution
+          command: npm run build-full
+          working_directory: ./packages/widget
