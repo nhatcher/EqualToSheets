@@ -13,6 +13,8 @@ pub enum XlsxError {
     Xml(String),
     #[error("{0}")]
     Workbook(String),
+    #[error("Not Implemented Error: {0}")]
+    NotImplemented(String),
 }
 
 impl From<io::Error> for XlsxError {
@@ -42,5 +44,27 @@ impl From<ParseFloatError> for XlsxError {
 impl From<roxmltree::Error> for XlsxError {
     fn from(error: roxmltree::Error) -> Self {
         XlsxError::Xml(error.to_string())
+    }
+}
+
+impl XlsxError {
+    pub fn user_message(&self) -> String {
+        match &self {
+            XlsxError::IO(_) | XlsxError::Workbook(_) => self.to_string(),
+            XlsxError::Zip(_) | XlsxError::Xml(_) => {
+                "EqualTo can only open workbooks created by Microsoft Excel. \
+                Can you open this file with Excel, save it to a new file, \
+                and then open that new file with EqualTo? If you've already tried this, \
+                then send this workbook to support@equalto.com and our engineering team \
+                will work with you to fix the issue."
+                    .to_string()
+            }
+            XlsxError::NotImplemented(error) => format!(
+                "EqualTo cannot open this workbook due to the following unsupported features: \
+                {error}. You can either re-implement these parts of your workbook using features \
+                supported by EqualTo, or you can send this workbook to support@equalto.com \
+                and our engineering team will work with you to fix the issue.",
+            ),
+        }
     }
 }

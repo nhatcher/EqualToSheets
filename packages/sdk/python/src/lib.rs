@@ -165,7 +165,7 @@ impl PyModel {
 
 impl WorkbookError {
     fn from_xlsx_error(error: XlsxError) -> PyErr {
-        WorkbookError::new_err(error.to_string())
+        WorkbookError::new_err(error.user_message())
     }
 }
 

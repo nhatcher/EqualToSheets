@@ -39,7 +39,7 @@ pub(crate) fn get_core_xml(workbook: &Workbook, milliseconds: i64) -> Result<Str
     let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
         Some(s) => s,
         None => {
-            return Err(XlsxError::Workbook(format!(
+            return Err(XlsxError::Xml(format!(
                 "Invalid timestamp: {}",
                 milliseconds
             )))

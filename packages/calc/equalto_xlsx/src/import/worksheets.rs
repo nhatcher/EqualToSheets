@@ -702,14 +702,10 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
                         }
                     }
                     "array" => {
-                        return Err(XlsxError::Workbook(
-                            "Array formulas are not supported.".to_string(),
-                        ));
+                        return Err(XlsxError::NotImplemented("array formulas".to_string()));
                     }
                     "dataTable" => {
-                        return Err(XlsxError::Workbook(
-                            "Data table formulas are not supported.".to_string(),
-                        ));
+                        return Err(XlsxError::NotImplemented("data table formulas".to_string()));
                     }
                     "normal" => {
                         // Its a cell with a simple formula
@@ -725,7 +721,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
                         }
                     }
                     _ => {
-                        return Err(XlsxError::Workbook(format!(
+                        return Err(XlsxError::Xml(format!(
                             "Invalid formula type {:?}.",
                             formula_type,
                         )));

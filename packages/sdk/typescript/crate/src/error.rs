@@ -19,7 +19,7 @@ impl From<String> for WorkbookError {
 #[cfg(feature = "xlsx")]
 impl From<XlsxError> for WorkbookError {
     fn from(error: XlsxError) -> WorkbookError {
-        WorkbookError::XlsxError(error.to_string())
+        WorkbookError::XlsxError(error.user_message())
     }
 }
 

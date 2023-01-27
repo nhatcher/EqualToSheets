@@ -19,10 +19,14 @@ def test_load_workbook() -> None:
     "file_name, error",
     [
         ("non_existent.xlsx", "I/O Error: No such file or directory"),
-        ("not_zip_file.xlsx", "Zip Error: invalid Zip archive"),
-        ("corrupt.xlsx", 'XML Error: Missing "name" XML attribute'),
+        ("not_zip_file.xlsx", "EqualTo can only open workbooks created by Microsoft Excel"),
+        ("corrupt.xlsx", "EqualTo can only open workbooks created by Microsoft Excel"),
         ("circ.xlsx", r"Calculation!A1 \('=A1'\): Circular reference detected"),
-        ("array_formula.xlsx", "Array formulas are not supported"),
+        (
+            "array_formula.xlsx",
+            "EqualTo cannot open this workbook due to the following unsupported features: array formulas. ",
+        ),
+        ("google_sheets.xlsx", "EqualTo can only open workbooks created by Microsoft Excel"),
     ],
 )
 def test_load_workbook_error_handling(file_name: str, error: str) -> None:
