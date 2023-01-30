@@ -1,6 +1,5 @@
 import React, { FunctionComponent } from 'react';
 import styled from 'styled-components';
-import StylelessButton from 'src/components/uiKit/button/styleless';
 import { PlusIcon, MenuIcon } from 'src/components/uiKit/icons';
 import { palette } from 'src/theme';
 import * as Menu from 'src/components/uiKit/menu';
@@ -52,13 +51,11 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
             <SheetListMenuContent tabs={tabs} onSheetSelected={onSheetSelected} />
           </Menu.Root>
           <Menu.Root>
-            <Menu.Trigger>
-              <NavigationButton
-                disabled={properties.disabled}
-                title="workbook.navigation.add_sheet_button_title"
-              >
-                <PlusIcon />
-              </NavigationButton>
+            <Menu.Trigger
+              disabled={properties.disabled}
+              title="workbook.navigation.add_sheet_button_title"
+            >
+              <PlusIcon />
             </Menu.Trigger>
             <Menu.Content>
               <Menu.Item onClick={onAddBlankSheet} disabled>
@@ -115,35 +112,6 @@ const SheetTabsContainer = styled.div`
   margin-left: 10px;
   &:first-child {
     margin-left: 0px;
-  }
-`;
-
-const NavigationButton = styled(StylelessButton)`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 2px;
-  transition-duration: 0.2s;
-  transition-property: background-color, color;
-
-  color: ${({ disabled }): string => (!disabled ? palette.text.primary : palette.grays.gray2)};
-
-  ${({ disabled }): string =>
-    !disabled
-      ? `
-    &:hover {
-      background: ${palette.grays.gray2};
-    }
-    &:active {
-      background: ${palette.grays.gray3};
-    }
-    `
-      : ``}
-
-  & ~ & {
-    margin-left: 5px;
   }
 `;
 

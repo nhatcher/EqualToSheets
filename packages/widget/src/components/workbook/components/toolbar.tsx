@@ -7,6 +7,7 @@ import * as Menu from 'src/components/uiKit/menu';
 import { decreaseDecimalPlaces, increaseDecimalPlaces, NumberFormats } from './formatUtil';
 import ColorPicker from './colorPicker';
 import FormatMenuContent from './formatMenu';
+import FormatPicker from './formatPicker';
 import { Area } from '../util';
 
 const toolbarHeight = 40;
@@ -46,6 +47,7 @@ const Toolbar: FunctionComponent<ToolbarProps> = (properties) => {
   const [fillColor, setFillColor] = useState<string>(properties.fillColor);
   const [fontColorPickerOpen, setFontColorPickerOpen] = useState(false);
   const [fillColorPickerOpen, setFillColorPickerOpen] = useState(false);
+  const [isPickerOpen, setPickerOpen] = useState(false);
 
   const fontColorButton = useRef(null);
   const fillColorButton = useRef(null);
@@ -132,6 +134,16 @@ const Toolbar: FunctionComponent<ToolbarProps> = (properties) => {
           onChange={(numberFmt): void => {
             properties.onNumberFormatPicked(numberFmt);
           }}
+          onExited={(): void => properties.focusWorkbook()}
+          setPickerOpen={setPickerOpen}
+        />
+        <FormatPicker
+          numFmt={properties.numFmt}
+          onChange={(numberFmt): void => {
+            properties.onNumberFormatPicked(numberFmt);
+          }}
+          open={isPickerOpen}
+          onClose={(): void => setPickerOpen(false)}
           onExited={(): void => properties.focusWorkbook()}
         />
       </Menu.Root>

@@ -38,15 +38,16 @@ const PromptDialog: FunctionComponent<PromptDialogProps> = ({
 
   const { open, onClose, label, title, onSubmit, required } = properties;
 
-  const placeholder = properties.placeholder ?? 'common.prompt_dialog.placeholder';
-  const submit = properties.submit ?? 'common.prompt_dialog.submit';
-  const submitting = properties.submitting ?? 'common.prompt_dialog.submitting';
-  const cancel = properties.cancel ?? 'common.prompt_dialog.cancel';
-  const requiredErrorMessage = properties.requiredErrorMessage ?? 'common.prompt_dialog.required';
+  const placeholder = properties.placeholder ?? '';
+  const submit = properties.submit ?? 'Save';
+  const submitting = properties.submitting ?? 'Saving';
+  const cancel = properties.cancel ?? 'Cancel';
+  const requiredErrorMessage = properties.requiredErrorMessage ?? 'Required';
   const maxLength = properties.maxLength ?? Constants.CHAR_MAX_LEN;
 
   return (
-    <StyledDialog
+    <Dialog
+      $width="350px"
       title={title}
       open={open}
       onClose={onClose}
@@ -77,7 +78,7 @@ const PromptDialog: FunctionComponent<PromptDialogProps> = ({
           } else {
             setErrorMessage({
               message: result.errorMessage,
-              userFriendlyMessage: result.userFriendlyErrorMessage ?? 'error.unexpected',
+              userFriendlyMessage: result.userFriendlyErrorMessage ?? 'Error',
             });
           }
         }}
@@ -103,13 +104,9 @@ const PromptDialog: FunctionComponent<PromptDialogProps> = ({
           </StyledButton>
         </ButtonsContainer>
       </form>
-    </StyledDialog>
+    </Dialog>
   );
 };
-
-const StyledDialog = styled(Dialog)`
-  min-width: 600px;
-`;
 
 const ButtonsContainer = styled.div`
   display: flex;

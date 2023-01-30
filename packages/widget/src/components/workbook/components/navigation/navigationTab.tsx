@@ -59,11 +59,11 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
                     setRenameDialogOpen(true);
                   }}
                 >
-                  {'workbook.navigation.rename_sheet'}
+                  {'Rename'}
                 </Menu.Item>
               )}
               <Menu.Item onClick={() => setDisplayPicker(true)}>
-                <span>{'workbook.navigation.change_sheet_color'}</span>
+                <span>{'Change color'}</span>
               </Menu.Item>
               {!hideDelete && (
                 <Menu.Item
@@ -71,7 +71,7 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
                     properties.onSheetDeleted();
                   }}
                 >
-                  {'workbook.navigation.delete_sheet'}
+                  {'Delete'}
                 </Menu.Item>
               )}
             </Menu.Content>
@@ -88,8 +88,8 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
           properties.onSheetRenamed(newName);
           return Promise.resolve({ success: true });
         }}
-        title="workbook.navigation.menu_rename_sheet"
-        label="workbook.navigation.menu_new_name"
+        title="Rename sheet"
+        label="New name"
         defaultValue={name}
       />
       <ColorContainer

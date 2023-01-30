@@ -48,7 +48,8 @@ const ColorPicker: FunctionComponent<ColorPickerProps> = (properties) => {
 
   return (
     <Dialog
-      title="Select the color"
+      $width="fit-content"
+      title="Select color"
       open={properties.open}
       onClose={(): void => closePicker(color)}
     >

@@ -23,21 +23,21 @@ const FormatPicker: FunctionComponent<FormatPickerProps> = (properties) => {
   return (
     <Dialog
       $width="380px"
-      title="workbook.num_fmt.title"
+      title="Custom number format"
       open={properties.open}
       onClose={properties.onClose}
       onExited={properties.onExited}
-      closeTitle="dialog.cancel"
+      closeTitle="Cancel"
     >
       <Body onSubmit={onSubmit}>
         <FormatInput
           defaultValue={properties.numFmt}
-          label="workbook.num_fmt.input_label"
+          label="Number format"
           name="formatCodeInput"
         />
         <Footer>
           <Button variant="primary" type="submit" width="100%">
-            {'workbook.num_fmt.accept_button'}
+            {'Save'}
           </Button>
         </Footer>
       </Body>

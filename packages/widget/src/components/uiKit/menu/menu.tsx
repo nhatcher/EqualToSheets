@@ -34,25 +34,29 @@ export const Content: FunctionComponent<{
 );
 
 export const Item = styled(DropdownMenu.Item)`
-  &:hover {
-    background-color: #ffffff;
-    color: ${palette.text.secondary};
+  font-size: 14px;
+  &:hover,
+  &:focus {
+    background-color: ${palette.grays.gray1};
+  }
+  &:active {
+    background-color: ${palette.grays.gray2};
   }
   transition: all;
   transition-duration: 200ms;
-  padding: '10px 20px 10px 20px';
+  padding: 10px;
+  cursor: pointer;
+  user-select: none;
 `;
 
 const StyledContent = styled(DropdownMenu.Content)`
-  box-shadow: 0px 11px 15px -7px rgba(54, 62, 125, 0.2), 0px 24px 38px 3px rgba(54, 62, 125, 0.14),
-    0px 9px 46px 8px rgba(54, 62, 125, 0.12);
-  border-radius: 10px 10px 10px 10px;
-  padding: 10px 0px;
-  background: #fff;
+  background: ${palette.background.default};
+  box-shadow: 0px 4px 10px rgba(34, 42, 100, 0.1);
+  border-radius: 10px;
+  padding: 10px;
 `;
 
 export const Divider = styled(DropdownMenu.Separator)`
-  margin: 0 10px;
   color: ${palette.grays.gray1};
   background-color: ${palette.grays.gray1};
 `;
