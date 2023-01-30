@@ -1,15 +1,29 @@
-import { IWorkbookSheets, WorkbookSheets } from "./workbookSheets";
-import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
-import { ICell } from "./cell";
-import { parseCellReference } from "../utils";
-import { ErrorKind, CalcError } from "src/errors";
+import { IWorkbookSheets, WorkbookSheets } from './workbookSheets';
+import { WasmWorkbook } from '../__generated_pkg/equalto_wasm';
+import { ICell } from './cell';
+import { parseCellReference } from '../utils';
+import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
 
 export function newWorkbook(): IWorkbook {
-  return new Workbook(new WasmWorkbook("en", "UTC"));
+  let wasmWorkbook;
+  try {
+    wasmWorkbook = new WasmWorkbook("en", "UTC");
+  } catch (error) {
+    throw wrapWebAssemblyError(error);
+  }
+
+  return new Workbook(wasmWorkbook);
 }
 
 export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
-  return new Workbook(WasmWorkbook.loadFromMemory(data, "en", "UTC"));
+  let wasmWorkbook;
+  try {
+    wasmWorkbook = WasmWorkbook.loadFromMemory(data, "en", "UTC");
+  } catch (error) {
+    throw wrapWebAssemblyError(error);
+  }
+
+  return new Workbook(wasmWorkbook);
 }
 
 export interface IWorkbook {

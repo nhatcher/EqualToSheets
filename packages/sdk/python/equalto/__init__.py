@@ -14,7 +14,6 @@ def load(workbook_path: str) -> Workbook:
     # TODO: Shouldn't rust recognize the locale and time zone?
     # TODO: If rust can't recognize the time zone, should we use local time zone or UTC by default?
     model = _equalto.load_excel(workbook_path, "en", "UTC")
-    model.evaluate()
     return Workbook(model)
 
 

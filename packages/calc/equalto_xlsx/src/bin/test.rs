@@ -18,7 +18,10 @@ fn main() {
     // first test the file
     let file_name = &args[1];
     println!("Testing file: {file_name}");
-    assert!(test_file(file_name).is_ok());
+    if let Err(message) = test_file(file_name) {
+        println!("{}", message);
+        panic!("Model was evaluated inconsistently with XLSX data.")
+    }
 
     // save a copy my_xlsx_file.xlsx => my_xlsx_file.output.xlsx
     let file_path = path::Path::new(file_name);

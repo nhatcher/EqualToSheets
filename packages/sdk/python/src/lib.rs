@@ -6,7 +6,7 @@ use equalto_calc::types::CellType;
 use equalto_calc::types::Worksheet;
 use equalto_xlsx::error::XlsxError;
 use equalto_xlsx::export::save_to_xlsx;
-use equalto_xlsx::import::load_from_excel;
+use equalto_xlsx::import::load_model_from_xlsx;
 
 create_exception!(_equalto, WorkbookError, PyException);
 
@@ -171,11 +171,10 @@ impl WorkbookError {
 
 #[pyfunction]
 pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
-    let env = Environment::default();
-    let model = load_from_excel(file_path, locale, tz).map_err(WorkbookError::from_xlsx_error)?;
-    let s = serde_json::to_string(&model).map_err(|e| WorkbookError::new_err(e.to_string()))?;
-    let model = Model::from_json(&s, env).map_err(WorkbookError::new_err)?;
-    Ok(PyModel { model })
+    Ok(PyModel {
+        model: load_model_from_xlsx(file_path, locale, tz)
+            .map_err(WorkbookError::from_xlsx_error)?,
+    })
 }
 
 #[pyfunction]

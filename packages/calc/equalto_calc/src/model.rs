@@ -412,7 +412,6 @@ impl Model {
                 "MONTH" => self.fn_month(args, cell),
                 "DATE" => self.fn_date(args, cell),
                 "EDATE" => self.fn_edate(args, cell),
-                "TODAY" => self.fn_today(args, cell),
                 _ => {
                     CalcResult::new_error(Error::ERROR, cell, format!("Invalid function: {}", name))
                 }

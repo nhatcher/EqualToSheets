@@ -27,6 +27,8 @@ def test_load_workbook() -> None:
             "EqualTo cannot open this workbook due to the following unsupported features: array formulas. ",
         ),
         ("google_sheets.xlsx", "EqualTo can only open workbooks created by Microsoft Excel"),
+        ("XLOOKUP_with_errors.xlsx", "Models are different"),
+        ("UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx", "Invalid function: DAYS"),
     ],
 )
 def test_load_workbook_error_handling(file_name: str, error: str) -> None:

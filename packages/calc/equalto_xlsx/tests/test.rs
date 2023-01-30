@@ -4,6 +4,7 @@ use uuid::Uuid;
 use equalto_calc::model::{Environment, Model};
 use equalto_calc::types::{HorizontalAlignment, VerticalAlignment, Workbook};
 use equalto_xlsx::compare::{test_file, test_load_and_saving};
+use equalto_xlsx::error::XlsxError;
 use equalto_xlsx::export::save_to_xlsx;
 use equalto_xlsx::import::{load_from_excel, load_model_from_xlsx};
 
@@ -208,11 +209,59 @@ fn test_xlsx() {
         let file_path_str = file_path.to_str().unwrap();
         println!("Testing file: {}", file_path_str);
         if file_name_str.ends_with(".xlsx") && !file_name_str.starts_with('~') {
-            assert!(test_file(file_path_str).is_ok());
+            if let Err(message) = test_file(file_path_str) {
+                println!("{}", message);
+                panic!("Model was evaluated inconsistently with XLSX data.")
+            }
             assert!(test_load_and_saving(file_path_str, &dir).is_ok());
         } else {
             println!("skipping");
         }
     }
     fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn test_evaluation_error_on_load() {
+    let model = load_model_from_xlsx(
+        "tests/UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx",
+        "en",
+        "Europe/Berlin",
+    );
+    assert!(model.is_err());
+    assert_eq!(
+        model.err(),
+        Some(XlsxError::Evaluation(
+            include_str!("./UNSUPPORTED_FNS_DAYS_NETWORKDAYS.expected_error.txt").to_string()
+        ))
+    );
+}
+
+#[test]
+fn test_today_not_supported() {
+    let model = load_model_from_xlsx("tests/TODAY.xlsx", "en", "Europe/Berlin");
+    assert!(model.is_err());
+    assert_eq!(
+        model.err(),
+        Some(XlsxError::Evaluation(
+            include_str!("./TODAY.expected_error.txt").to_string()
+        ))
+    );
+}
+
+#[test]
+fn test_evaluation_discrepancy_on_load() {
+    let model = load_model_from_xlsx("tests/XLOOKUP_with_errors.xlsx", "en", "Europe/Berlin");
+    assert!(model.is_err());
+    if let Err(ref stri) = model {
+        println!("---");
+        println!("{0}", stri);
+        println!("---");
+    }
+    assert_eq!(
+        model.err(),
+        Some(XlsxError::Comparison(
+            include_str!("./XLOOKUP_with_errors.expected_error.txt").to_string()
+        ))
+    );
 }

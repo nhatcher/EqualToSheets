@@ -2,9 +2,6 @@ use chrono::Datelike;
 use chrono::Months;
 use chrono::NaiveDate;
 
-use chrono::NaiveDateTime;
-use chrono::TimeZone;
-
 use crate::{
     calc_result::{CalcResult, CellReference},
     constants::EXCEL_DATE_BASE,
@@ -146,22 +143,6 @@ impl Model {
         let date = from_excel_date(serial_number);
         let year = date.year() as f64;
         CalcResult::Number(year)
-    }
-
-    pub(crate) fn fn_today(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
-        let args_count = args.len();
-        if args_count != 0 {
-            return CalcResult::new_args_number_error(cell);
-        }
-        // milliseconds since January 1, 1970 00:00:00 UTC.
-        let milliseconds = (self.env.get_milliseconds_since_epoch)();
-        let seconds = milliseconds / 1000;
-        let dt = NaiveDateTime::from_timestamp_opt(seconds, 0)
-            .expect("problem with chrono::NaiveDateTime");
-        let local_time = self.tz.from_utc_datetime(&dt);
-        let days_from_1900 = local_time.num_days_from_ce() - EXCEL_DATE_BASE;
-
-        CalcResult::Number(days_from_1900 as f64)
     }
 
     // date, months

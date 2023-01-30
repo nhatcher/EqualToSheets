@@ -24,28 +24,28 @@ pub struct Diff {
 }
 
 /// Compares two Models in the internal representation and returns a list of differences
-pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
-    let ws1 = m1.workbook.get_worksheet_names();
-    let ws2 = m2.workbook.get_worksheet_names();
+pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
+    let ws1 = model1.workbook.get_worksheet_names();
+    let ws2 = model2.workbook.get_worksheet_names();
     if ws1.len() != ws2.len() {
         return Err(CompareError {
             message: "Different number of sheets".to_string(),
         });
     }
     let mut diffs = Vec::new();
-    let cells = m1.get_all_cells();
+    let cells = model1.get_all_cells();
     for cell in cells {
         let sheet = cell.index;
         let row = cell.row;
         let column = cell.column;
-        let cell1 = &m1
+        let cell1 = &model1
             .workbook
             .worksheet(sheet)
             .unwrap()
             .cell(row, column)
             .cloned()
             .unwrap_or_default();
-        let cell2 = &m2
+        let cell2 = &model2
             .workbook
             .worksheet(sheet)
             .unwrap()
@@ -136,11 +136,11 @@ pub fn compare(m1: Model, m2: Model) -> CompareResult<Vec<Diff>> {
     Ok(diffs)
 }
 
-fn compare_models(m1: Model, m2: Model) -> Result<(), String> {
+pub(crate) fn compare_models(m1: &Model, m2: &Model) -> Result<(), String> {
     match compare(m1, m2) {
         Ok(diffs) => {
             if diffs.is_empty() {
-                println!("Models are equivalent!");
+                Ok(())
             } else {
                 let mut message = "".to_string();
                 for diff in diffs {
@@ -155,14 +155,11 @@ fn compare_models(m1: Model, m2: Model) -> Result<(), String> {
                         diff.reason
                     );
                 }
-                panic!("Models are different: {}", message);
+                Err(format!("Models are different: {}", message))
             }
         }
-        Err(r) => {
-            panic!("Models are different: {}", r.message);
-        }
+        Err(r) => Err(format!("Models are different: {}", r.message)),
     }
-    Ok(())
 }
 
 /// Tests that file in file_path produces the same results in Excel and in EqualTo Calc.
@@ -170,7 +167,7 @@ pub fn test_file(file_path: &str) -> Result<(), String> {
     let model1 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
     let mut model2 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
     model2.evaluate();
-    compare_models(model1, model2)
+    compare_models(&model1, &model2)
 }
 
 /// Tests that file in file_path can be converted to xlsx and read again
@@ -186,5 +183,5 @@ pub fn test_load_and_saving(file_path: &str, temp_dir_name: &Path) -> Result<(),
     // test can open
     let mut model2 = load_model_from_xlsx(temp_file_path, "en", "UTC").unwrap();
     model2.evaluate();
-    compare_models(model1, model2)
+    compare_models(&model1, &model2)
 }

@@ -19,6 +19,7 @@ use equalto_calc::{
     types::{Workbook, WorkbookSettings},
 };
 
+use crate::compare::compare_models;
 use crate::error::XlsxError;
 
 use shared_strings::read_shared_strings;
@@ -106,12 +107,36 @@ pub fn load_xlsx_from_memory(
 ) -> Result<Model, XlsxError> {
     let reader = std::io::Cursor::new(data);
     let workbook = load_xlsx_from_reader(name.to_string(), reader, locale, tz)?;
-    Model::from_workbook(workbook, environment)
-        .map_err(|e| XlsxError::Workbook(format!("Could not load xlsx from memory: {}", e)))
+    let mut model = Model::from_workbook(workbook, environment).map_err(XlsxError::Workbook)?;
+    check_model_support(&mut model)?;
+    Ok(model)
 }
 
 pub fn load_model_from_xlsx(file_name: &str, locale: &str, tz: &str) -> Result<Model, XlsxError> {
     let workbook = load_from_excel(file_name, locale, tz)?;
     let env = Environment::default();
-    Ok(Model::from_workbook(workbook, env).unwrap())
+    let mut model = Model::from_workbook(workbook, env).map_err(XlsxError::Workbook)?;
+    check_model_support(&mut model)?;
+    Ok(model)
+}
+
+/// Checks if imported model can be safely used in our system.
+/// Doesn't provide full support check, but tries to catch basic errors as soon as possible.
+pub fn check_model_support(model: &mut Model) -> Result<(), XlsxError> {
+    let model_copy = model.clone();
+
+    // Checks if next evaluation of model won't change it's values. Returns Ok(()) if no changes
+    // are made, otherwise returns text report with differences.
+    // It is useful when testing if XLSX import can be safely used in our calculation engine.
+    // (XLSX contains pre-evaluated values for cells, so it's possible to compare against other
+    // spreadsheet applications).
+
+    model
+        .evaluate_with_error_check()
+        // We want to report issues with unsupported formulas as early as possible.
+        .map_err(XlsxError::Evaluation)?;
+
+    compare_models(model, &model_copy).map_err(XlsxError::Comparison)?;
+
+    Ok(())
 }
