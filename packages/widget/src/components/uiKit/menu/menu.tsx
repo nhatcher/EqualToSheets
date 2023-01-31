@@ -25,9 +25,14 @@ export const Content: FunctionComponent<{
   children: ReactNode;
   className?: string;
   onExited?: () => void;
+  side?: 'bottom' | 'top' | 'left' | 'right';
 }> = (properties) => (
   <DropdownMenu.Portal>
-    <StyledContent className={properties.className} onCloseAutoFocus={properties.onExited}>
+    <StyledContent
+      className={properties.className}
+      onCloseAutoFocus={properties.onExited}
+      side={properties.side}
+    >
       {properties.children}
     </StyledContent>
   </DropdownMenu.Portal>

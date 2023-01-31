@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import React, { PointerEvent, FunctionComponent, useCallback, useRef } from 'react';
-import { ChevronDownIcon } from 'src/components/uiKit/icons';
 import { palette } from 'src/theme';
 import Editor from '../editor';
 import { headerColumnWidth } from '../canvas';
@@ -60,9 +59,6 @@ const FormulaBar: FunctionComponent<FormulaBarProps> = (properties) => {
         <CellBarAddress data-testid={FormulaBarTestId.CellAddress}>
           {properties.cellAddress}
         </CellBarAddress>
-        <ChevronContainer>
-          <ChevronDownIcon />
-        </ChevronContainer>
       </NameContainer>
       <FormulaContainer onPointerUp={onPointerUp} onPointerDown={onPointerDown} ref={formulaBar}>
         <Editor
@@ -85,12 +81,6 @@ const FormulaBar: FunctionComponent<FormulaBarProps> = (properties) => {
 const CellBarAddress = styled.div`
   width: 100%;
   text-align: center;
-`;
-
-// TODO: Implement chevron. - We hide the chevron until implementation is ready
-const ChevronContainer = styled.div`
-  display: none;
-  padding-left: 3px;
 `;
 
 const FormulaBarContainer = styled.div`

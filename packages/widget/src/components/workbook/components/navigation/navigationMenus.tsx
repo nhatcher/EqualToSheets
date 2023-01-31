@@ -17,11 +17,11 @@ export const SheetListMenuContent: FunctionComponent<SheetListMenuProps> = (prop
   const { onSheetSelected, tabs } = properties;
 
   return (
-    <Menu.Content>
+    <Menu.Content side="top">
       {tabs.map((tab, index) => (
         <Menu.Item
           key={`sheet-list-item-${tab.name}-${tab.sheet_id}`}
-          onClick={(): void => onSheetSelected(index)}
+          onSelect={(): void => onSheetSelected(index)}
         >
           <SheetListItem>
             <SheetListItemColor $color={tab.color?.RGB} />

@@ -17,44 +17,46 @@ const FormatMenuContent: FunctionComponent<FormatMenuProps> = (properties) => {
 
   return (
     <Menu.Content onExited={properties.onExited}>
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.AUTO)}>{'Auto'}</MenuItemWrapped>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.AUTO)}>
+        {'Auto'}
+      </MenuItemWrapped>
       {/** TODO: Text option that transforms into plain text */}
       <Menu.Divider />
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.NUMBER)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.NUMBER)}>
         <MenuItemText>{'Number'}</MenuItemText>
         <MenuItemText>{'1,000.00'}</MenuItemText>
       </MenuItemWrapped>
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.PERCENTAGE)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.PERCENTAGE)}>
         <MenuItemText>{'Percentage'}</MenuItemText>
         <MenuItemText>{'10%'}</MenuItemText>
       </MenuItemWrapped>
 
       <Menu.Divider />
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.CURRENCY_EUR)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.CURRENCY_EUR)}>
         <MenuItemText>{'Euro (EUR)'}</MenuItemText>
         <MenuItemText>{'€'}</MenuItemText>
       </MenuItemWrapped>
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.CURRENCY_USD)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.CURRENCY_USD)}>
         <MenuItemText>{'Dollar (USD)'}</MenuItemText>
         <MenuItemText>{'$'}</MenuItemText>
       </MenuItemWrapped>
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.CURRENCY_GBP)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.CURRENCY_GBP)}>
         <MenuItemText>{'British Pound (GBP)'}</MenuItemText>
         <MenuItemText>{'£'}</MenuItemText>
       </MenuItemWrapped>
 
       <Menu.Divider />
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.DATE_SHORT)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.DATE_SHORT)}>
         <MenuItemText>{'Short date'}</MenuItemText>
         <MenuItemText>{'03/03/2021'}</MenuItemText>
       </MenuItemWrapped>
-      <MenuItemWrapped onClick={(): void => onChange(NumberFormats.DATE_LONG)}>
+      <MenuItemWrapped onSelect={(): void => onChange(NumberFormats.DATE_LONG)}>
         <MenuItemText>{'Long date'}</MenuItemText>
         <MenuItemText>{'Wednesday, March 3, 2021'}</MenuItemText>
       </MenuItemWrapped>
 
       <Menu.Divider />
-      <MenuItemWrapped onClick={(): void => setPickerOpen(true)}>{'Custom'}</MenuItemWrapped>
+      <MenuItemWrapped onSelect={(): void => setPickerOpen(true)}>{'Custom'}</MenuItemWrapped>
     </Menu.Content>
   );
 };

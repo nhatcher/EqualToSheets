@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import ReserveSpaceForFontWeight from 'src/components/uiKit/util/reserveSpaceForFontWeight';
 import StylelessButton from 'src/components/uiKit/button/styleless';
 import * as Menu from 'src/components/uiKit/menu';
-import { ChevronDownIcon } from 'src/components/uiKit/icons';
+import { ChevronDownIcon } from 'lucide-react';
 import PromptDialog, { PromptDialogSubmitResult } from 'src/components/uiKit/dialog/prompt';
 import { palette } from 'src/theme';
 import ColorPicker from '../colorPicker';
@@ -49,25 +49,25 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
         </NameButton>
         {!readOnly && (
           <Menu.Root>
-            <Menu.Trigger title="workbook.navigation.sheet_options_button_title">
-              <ChevronDownIcon />
+            <Menu.Trigger title="Sheet options">
+              <ChevronDownIcon size={14} />
             </Menu.Trigger>
-            <Menu.Content>
+            <Menu.Content side="top">
               {!hideRename && (
                 <Menu.Item
-                  onClick={(): void => {
+                  onSelect={(): void => {
                     setRenameDialogOpen(true);
                   }}
                 >
                   {'Rename'}
                 </Menu.Item>
               )}
-              <Menu.Item onClick={() => setDisplayPicker(true)}>
+              <Menu.Item onSelect={() => setDisplayPicker(true)}>
                 <span>{'Change color'}</span>
               </Menu.Item>
               {!hideDelete && (
                 <Menu.Item
-                  onClick={(): void => {
+                  onSelect={(): void => {
                     properties.onSheetDeleted();
                   }}
                 >

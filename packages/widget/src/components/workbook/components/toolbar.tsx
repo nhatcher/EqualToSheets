@@ -1,16 +1,28 @@
-import styled from 'styled-components';
-import StylelessButton from 'src/components/uiKit/button/styleless';
+import {
+  UndoIcon,
+  RedoIcon,
+  EuroIcon,
+  PercentIcon,
+  ChevronDownIcon,
+  BoldIcon,
+  ItalicIcon,
+  UnderlineIcon,
+  StrikethroughIcon,
+  TypeIcon,
+  PaintBucketIcon,
+  AlignLeftIcon,
+  AlignCenterIcon,
+  AlignRightIcon,
+} from 'lucide-react';
 import * as Icons from 'src/components/uiKit/icons';
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
-import { palette } from 'src/theme';
 import * as Menu from 'src/components/uiKit/menu';
+import * as Toolbar from 'src/components/uiKit/toolbar';
 import { decreaseDecimalPlaces, increaseDecimalPlaces, NumberFormats } from './formatUtil';
 import ColorPicker from './colorPicker';
 import FormatMenuContent from './formatMenu';
 import FormatPicker from './formatPicker';
 import { Area } from '../util';
-
-const toolbarHeight = 40;
 
 export type ToolbarProps = {
   className?: string;
@@ -42,7 +54,8 @@ export type ToolbarProps = {
   selectedArea: Area;
 };
 
-const Toolbar: FunctionComponent<ToolbarProps> = (properties) => {
+const TOOLBAR_ICON_SIZE = 19;
+const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
   const [fontColor, setFontColor] = useState<string>(properties.fontColor);
   const [fillColor, setFillColor] = useState<string>(properties.fillColor);
   const [fontColorPickerOpen, setFontColorPickerOpen] = useState(false);
@@ -60,75 +73,57 @@ const Toolbar: FunctionComponent<ToolbarProps> = (properties) => {
   const { canEdit } = properties;
 
   return (
-    <ToolbarContainer data-testid={properties['data-testid']}>
-      <Button
-        type="button"
-        $pressed={false}
-        onClick={properties.onUndo}
-        disabled={!properties.canUndo}
-        title="workbook.toolbar.undo_button_title"
-      >
-        <Icons.UndoIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={false}
-        onClick={properties.onRedo}
-        disabled={!properties.canRedo}
-        title="workbook.toolbar.redo_button_title"
-      >
-        <Icons.RedoIcon />
-      </Button>
-      <Divider />
-      <Button
-        type="button"
-        $pressed={false}
+    <Toolbar.Root data-testid={properties['data-testid']}>
+      <Toolbar.Button onClick={properties.onUndo} disabled={!properties.canUndo} title="Undo">
+        <UndoIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button onClick={properties.onRedo} disabled={!properties.canRedo} title="Redo">
+        <RedoIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Separator />
+      <Toolbar.Button
         onClick={(): void => {
           properties.onNumberFormatPicked(NumberFormats.CURRENCY_EUR);
         }}
         disabled={!canEdit}
-        title="workbook.toolbar.euro_button_title"
+        title="Format as Euro"
       >
-        <Icons.EuroIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={false}
+        <EuroIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button
         onClick={(): void => {
           properties.onNumberFormatPicked(NumberFormats.PERCENTAGE);
         }}
         disabled={!canEdit}
-        title="workbook.toolbar.percentage_button_title"
+        title="Format as percent"
       >
-        <Icons.PercentIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={false}
+        <PercentIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button
         onClick={(): void => {
           properties.onNumberFormatPicked(decreaseDecimalPlaces(properties.numFmt));
         }}
         disabled={!canEdit}
-        title="workbook.toolbar.decimal_places_decrease_button_title"
+        title="Decrease decimal places"
       >
         <Icons.DecimalPlacesDecreaseIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={false}
+      </Toolbar.Button>
+      <Toolbar.Button
         onClick={(): void => {
           properties.onNumberFormatPicked(increaseDecimalPlaces(properties.numFmt));
         }}
         disabled={!canEdit}
-        title="workbook.toolbar.decimal_places_increase_button_title"
+        title="Increase decimal places"
       >
         <Icons.DecimalPlacesIncreaseIcon />
-      </Button>
+      </Toolbar.Button>
       <Menu.Root>
-        <Menu.Trigger disabled={!canEdit} title="workbook.toolbar.format_button_title">
-          {'123'}
-          <Icons.ChevronDownIcon />
-        </Menu.Trigger>
+        <Toolbar.Button asChild style={{ width: 30 }}>
+          <Menu.Trigger disabled={!canEdit} title="workbook.toolbar.format_button_title">
+            {'123'}
+            <ChevronDownIcon size={14} />
+          </Menu.Trigger>
+        </Toolbar.Button>
         <FormatMenuContent
           numFmt={properties.numFmt}
           onChange={(numberFmt): void => {
@@ -147,95 +142,62 @@ const Toolbar: FunctionComponent<ToolbarProps> = (properties) => {
           onExited={(): void => properties.focusWorkbook()}
         />
       </Menu.Root>
-      <Divider />
-      <Button
+      <Toolbar.Separator />
+      <Toolbar.Button onClick={properties.onToggleBold} disabled={!canEdit} title="Bold">
+        <BoldIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button
         type="button"
-        $pressed={properties.bold}
-        onClick={properties.onToggleBold}
-        disabled={!canEdit}
-        title="workbook.toolbar.bold_button_title"
-      >
-        <Icons.BoldIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={properties.italic}
         onClick={properties.onToggleItalic}
         disabled={!canEdit}
-        title="workbook.toolbar.italic_button_title"
+        title="Italic"
       >
-        <Icons.ItalicIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={properties.underline}
-        onClick={properties.onToggleUnderline}
+        <ItalicIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button onClick={properties.onToggleUnderline} disabled={!canEdit} title="Underline">
+        <UnderlineIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button onClick={properties.onToggleStrike} disabled={!canEdit} title="Strikethrough">
+        <StrikethroughIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Separator />
+      <Toolbar.Button
         disabled={!canEdit}
-        title="workbook.toolbar.underline_button_title"
-      >
-        <Icons.UnderlineIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={properties.strike}
-        onClick={properties.onToggleStrike}
-        disabled={!canEdit}
-        title="workbook.toolbar.strike_button_title"
-      >
-        <Icons.StrikethroughIcon />
-      </Button>
-      <Divider />
-      <Button
-        type="button"
-        $pressed={false}
-        disabled={!canEdit}
-        title="workbook.toolbar.font_color_button_title"
+        title="Font color"
         ref={fontColorButton}
         $underlinedColor={fontColor}
         onClick={() => setFontColorPickerOpen(true)}
       >
-        <Icons.TypeIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={false}
+        <TypeIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button
         disabled={!canEdit}
-        title="workbook.toolbar.fill_button_title"
+        title="Fill color"
         ref={fillColorButton}
         $underlinedColor={fillColor}
         onClick={() => setFillColorPickerOpen(true)}
       >
-        <Icons.PainBucketIcon />
-      </Button>
+        <PaintBucketIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
 
-      <Divider />
-      <Button
-        type="button"
-        $pressed={properties.alignment === 'left'}
-        onClick={properties.onToggleAlignLeft}
-        disabled={!canEdit}
-        title="workbook.toolbar.align_left_button_title"
-      >
-        <Icons.AlignLeftIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={properties.alignment === 'center'}
+      <Toolbar.Separator />
+      <Toolbar.Button onClick={properties.onToggleAlignLeft} disabled={!canEdit} title="Align left">
+        <AlignLeftIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button
         onClick={properties.onToggleAlignCenter}
         disabled={!canEdit}
-        title="workbook.toolbar.align_center_button_title"
+        title="Align center"
       >
-        <Icons.AlignCenterIcon />
-      </Button>
-      <Button
-        type="button"
-        $pressed={properties.alignment === 'right'}
+        <AlignCenterIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
+      <Toolbar.Button
         onClick={properties.onToggleAlignRight}
         disabled={!canEdit}
-        title="workbook.toolbar.align_right_button_title"
+        title="Align right"
       >
-        <Icons.AlignRightIcon />
-      </Button>
+        <AlignRightIcon size={TOOLBAR_ICON_SIZE} />
+      </Toolbar.Button>
       <ColorPicker
         color={fontColor}
         onChange={(color): void => {
@@ -252,61 +214,8 @@ const Toolbar: FunctionComponent<ToolbarProps> = (properties) => {
         }}
         open={fillColorPickerOpen}
       />
-    </ToolbarContainer>
+    </Toolbar.Root>
   );
 };
 
-const Divider = styled.div`
-  display: inline-flex;
-  height: 10px;
-  width: 1px;
-  border-left: 1px solid #d3d6e9;
-  margin-left: 5px;
-  margin-right: 5px;
-`;
-
-const ToolbarContainer = styled.div`
-  display: flex;
-  flex-shrink: 0;
-  flex-grow: row;
-  align-items: center;
-  background: ${palette.background.default};
-  height: ${toolbarHeight}px;
-  line-height: ${toolbarHeight}px;
-  border-bottom: 1px solid ${palette.grays.gray2};
-`;
-
-type TypeButtonProperties = { $pressed: boolean; $underlinedColor?: string };
-const Button = styled(StylelessButton).attrs<TypeButtonProperties>((properties) => ({
-  'aria-pressed': properties.$pressed,
-}))<TypeButtonProperties>`
-  width: 23px;
-  height: 23px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  margin-right: 5px;
-  transition: all 0.2s;
-
-  ${({ disabled, $pressed, $underlinedColor }): string => {
-    if (disabled) {
-      return `
-      color: ${palette.grays.gray3};
-      cursor: default;
-    `;
-    }
-    return `
-      border-top: ${$underlinedColor ? '3px solid #FFF' : 'none'};
-      border-bottom: ${$underlinedColor ? `3px solid ${$underlinedColor}` : 'none'};
-      color: ${palette.text.primary};
-      background-color: ${$pressed ? palette.grays.gray3 : '#FFF'};
-      &:hover {
-        background-color: ${palette.grays.gray2};
-        border-top-color: ${palette.grays.gray2};
-      }
-    `;
-  }}
-`;
-
-export default Toolbar;
+export default WorkbookToolbar;

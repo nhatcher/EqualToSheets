@@ -2,7 +2,7 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import React, { ReactNode } from 'react';
 import Stack from 'src/components/uiKit/stack';
 import { BodyText, DialogTitle } from 'src/components/uiKit/typography';
-import { XIcon } from 'src/components/uiKit/icons';
+import { XIcon } from 'lucide-react';
 import styled from 'styled-components';
 import * as CSS from 'csstype';
 import StylelessButton from 'src/components/uiKit/button/styleless';
@@ -100,7 +100,7 @@ const Dialog: React.FC<DialogProps> = (properties) => (
               </DialogTitleContainer>
             </Stack>
             <CloseButton onClick={properties.onClose} aria-label="Close">
-              <XIcon />
+              <XIcon size={14} />
             </CloseButton>
           </DialogHeader>
         )}

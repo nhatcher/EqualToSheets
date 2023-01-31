@@ -1,8 +1,9 @@
 import React, { FunctionComponent } from 'react';
 import styled from 'styled-components';
-import { PlusIcon, MenuIcon } from 'src/components/uiKit/icons';
+import { PlusIcon, MenuIcon } from 'lucide-react';
 import { palette } from 'src/theme';
 import * as Menu from 'src/components/uiKit/menu';
+import * as Toolbar from 'src/components/uiKit/toolbar';
 import { SheetListMenuContent } from './navigationMenus';
 import SheetTab from './navigationTab';
 import { TabsInput } from './common';
@@ -43,27 +44,26 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
   return (
     <NavigationContainer data-testid={properties['data-testid']}>
       {!readOnly && (
-        <>
+        <Toolbar.Root>
           <Menu.Root>
-            <Menu.Trigger disabled={properties.disabled}>
-              <MenuIcon />
-            </Menu.Trigger>
+            <Toolbar.Button asChild disabled={properties.disabled} title="Sheets">
+              <Menu.Trigger>
+                <MenuIcon size={19} />
+              </Menu.Trigger>
+            </Toolbar.Button>
             <SheetListMenuContent tabs={tabs} onSheetSelected={onSheetSelected} />
           </Menu.Root>
           <Menu.Root>
-            <Menu.Trigger
-              disabled={properties.disabled}
-              title="workbook.navigation.add_sheet_button_title"
-            >
-              <PlusIcon />
-            </Menu.Trigger>
-            <Menu.Content>
-              <Menu.Item onClick={onAddBlankSheet} disabled>
-                {'Add blank sheet'}
-              </Menu.Item>
+            <Toolbar.Button asChild disabled={properties.disabled} title="Add sheet">
+              <Menu.Trigger>
+                <PlusIcon size={19} />
+              </Menu.Trigger>
+            </Toolbar.Button>
+            <Menu.Content side="top">
+              <Menu.Item onSelect={onAddBlankSheet}>{'Add blank sheet'}</Menu.Item>
             </Menu.Content>
           </Menu.Root>
-        </>
+        </Toolbar.Root>
       )}
       <SheetTabsContainer>
         {tabs.map((tab, index) => {
