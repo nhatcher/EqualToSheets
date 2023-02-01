@@ -57,6 +57,12 @@ impl Default for Environment {
     }
 }
 
+#[derive(Clone)]
+pub enum CellState {
+    Evaluated,
+    Evaluating,
+}
+
 #[derive(Debug, Clone)]
 pub enum ParsedDefinedName {
     CellReference(CellReference),
@@ -77,7 +83,7 @@ pub struct Model {
     pub parsed_formulas: Vec<Vec<Node>>,
     pub parsed_defined_names: HashMap<(Option<u32>, String), ParsedDefinedName>,
     pub parser: Parser,
-    pub cells: HashMap<String, char>,
+    pub cells: HashMap<(u32, i32, i32), CellState>,
     pub locale: Locale,
     pub language: Language,
     pub env: Environment,
@@ -729,30 +735,32 @@ impl Model {
 
         match cell.get_formula() {
             Some(f) => {
-                let key = format!(
-                    "{}!{}!{}",
-                    cell_reference.sheet, cell_reference.column, cell_reference.row,
+                let key = (
+                    cell_reference.sheet,
+                    cell_reference.row,
+                    cell_reference.column,
                 );
                 match self.cells.get(&key) {
-                    Some('c') => {
+                    Some(CellState::Evaluating) => {
                         return CalcResult::new_error(
                             Error::CIRC,
                             cell_reference,
                             "Circular reference detected".to_string(),
                         );
                     }
-                    Some('t') => {
+                    Some(CellState::Evaluated) => {
                         return self.get_cell_value(cell, cell_reference);
                     }
                     _ => {
-                        self.cells.insert(key.clone(), 'c');
+                        // mark cell as being evaluated
+                        self.cells.insert(key, CellState::Evaluating);
                     }
                 }
-                // mark cell as being evaluated
                 let node = &self.parsed_formulas[cell_reference.sheet as usize][f as usize].clone();
                 let result = self.evaluate_node_in_context(node, cell_reference);
                 self.set_cell_value(cell_reference, &result);
-                self.cells.insert(key, 't');
+                // mark cell as evaluated
+                self.cells.insert(key, CellState::Evaluated);
                 result
             }
             None => self.get_cell_value(cell, cell_reference),
