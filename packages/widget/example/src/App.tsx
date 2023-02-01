@@ -5,7 +5,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <Workbook type="workbook" initialWorkbook={{ type: 'empty' }} />
+        <Workbook />
       </header>
     </div>
   );

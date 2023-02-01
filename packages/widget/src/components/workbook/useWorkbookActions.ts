@@ -60,8 +60,7 @@ export type WorkbookActions = {
   onPaste: (event: ClipboardEvent) => void;
   onCut: (event: ClipboardEvent) => void;
   requestRender: () => void;
-  resetModel: (model: Model, assignmentsJson?: string) => void;
-  setAssignments: (assignmentsJson: string) => void;
+  resetModel: (model: Model) => void;
   focusWorkbook: () => void;
 };
 
@@ -492,18 +491,11 @@ const useWorkbookActions = (
   }, [dispatch]);
 
   const resetModel = useCallback(
-    (model: Model, assignmentsJson?: string) => {
+    (model: Model) => {
       dispatch({
         type: WorkbookActionType.RESET,
-        payload: { model, assignmentsJson },
+        payload: { model },
       });
-    },
-    [dispatch],
-  );
-
-  const setAssignments = useCallback(
-    (assignmentsJson: string) => {
-      dispatch({ type: WorkbookActionType.SET_ASSIGNMENTS, payload: { assignmentsJson } });
     },
     [dispatch],
   );
@@ -567,7 +559,6 @@ const useWorkbookActions = (
     onCut,
     requestRender,
     resetModel,
-    setAssignments,
     focusWorkbook,
   };
 };

@@ -43,7 +43,7 @@ interface WorkbookSettings {
   getFrozenRowsCount: () => number;
 }
 
-type BaseCanvasSettings = {
+type CanvasSettings = {
   model: Model;
   selectedSheet: number;
   state: StateSettings;
@@ -59,23 +59,10 @@ type BaseCanvasSettings = {
     rowGuide: HTMLDivElement;
     columnHeaders: HTMLDivElement;
   };
-  useCustomHeaders: boolean;
   cellEditing: CellEditingType | null;
   onColumnWidthChanges: (sheet: number, column: number, width: number) => void;
   onRowHeightChanges: (sheet: number, row: number, height: number) => void;
 };
-
-type WorkbookCanvasSettings = BaseCanvasSettings & {
-  type: 'workbook';
-};
-
-type DataGridCanvasSettings = BaseCanvasSettings & {
-  type: 'data-grid';
-  lastRow: number;
-  lastColumn: number;
-};
-
-type CanvasSettings = WorkbookCanvasSettings | DataGridCanvasSettings;
 
 interface CellCoordinates {
   row: number;
@@ -125,16 +112,14 @@ export default class WorksheetCanvas {
 
   onRowHeightChanges: (sheet: number, row: number, height: number) => void;
 
-  useCustomHeaders: boolean;
-
   constructor(options: CanvasSettings) {
     this.sheetWidth = 0;
     this.sheetHeight = 0;
     this.state = options.state;
     const { model } = options;
     this.selectedSheet = options.selectedSheet;
-    this.lastColumn = options.type === 'workbook' ? workbookLastColumn : options.lastColumn;
-    this.lastRow = options.type === 'workbook' ? workbookLastRow : options.lastRow;
+    this.lastColumn = workbookLastColumn;
+    this.lastRow = workbookLastRow;
     this.workbook = {
       getRowHeight: (row): number => model.getRowHeight(this.selectedSheet, row),
       getColumnWidth: (column): number => model.getColumnWidth(this.selectedSheet, column),
@@ -158,7 +143,6 @@ export default class WorksheetCanvas {
     this.cellEditing = options.cellEditing;
     this.onColumnWidthChanges = options.onColumnWidthChanges;
     this.onRowHeightChanges = options.onRowHeightChanges;
-    this.useCustomHeaders = options.useCustomHeaders;
     this.resetHeaders();
   }
 
@@ -171,10 +155,6 @@ export default class WorksheetCanvas {
     }
     for (const header of this.columnHeaders.children) {
       (header as HTMLDivElement).classList.add('column-header');
-    }
-    if (this.useCustomHeaders) {
-      const headersCount = this.columnHeaders.querySelectorAll('.column-header').length;
-      this.lastColumn = headersCount;
     }
   }
 
@@ -1020,12 +1000,7 @@ export default class WorksheetCanvas {
     if (columnStart > columnEnd) {
       [columnStart, columnEnd] = [columnEnd, columnStart];
     }
-    if (!this.useCustomHeaders) {
-      for (const header of columnHeaders.querySelectorAll('.column-header')) header.remove();
-    } else {
-      for (const header of columnHeaders.querySelectorAll('.column-header'))
-        (header as HTMLDivElement).style.display = 'none';
-    }
+    for (const header of columnHeaders.querySelectorAll('.column-header')) header.remove();
     for (const handle of columnHeaders.querySelectorAll('.column-resize-handle')) handle.remove();
     for (const separator of columnHeaders.querySelectorAll('.frozen-column-separator'))
       separator.remove();
@@ -1048,10 +1023,7 @@ export default class WorksheetCanvas {
       div.style.height = `${headerRowHeight}`;
       div.style.display = 'inline-block';
       div.style.backgroundColor = gridSeparatorColor;
-      const lastInsertedColumn = this.useCustomHeaders
-        ? (this.columnHeaders.querySelectorAll('.column-header')[frozenColumns] as HTMLDivElement)
-        : null;
-      this.columnHeaders.insertBefore(div, lastInsertedColumn);
+      this.columnHeaders.insertBefore(div, null);
       deltaX += frozenSeparatorWidth;
     }
 
@@ -1065,16 +1037,10 @@ export default class WorksheetCanvas {
 
   private addColumnHeader(deltaX: number, column: number, selected: boolean): number {
     const columnWidth = this.workbook.getColumnWidth(column);
-    const div = this.useCustomHeaders
-      ? (this.columnHeaders.querySelectorAll('.column-header')[column - 1] as HTMLDivElement)
-      : document.createElement('div');
-    if (!this.useCustomHeaders) {
-      div.className = 'column-header';
-      div.textContent = columnNameFromNumber(column);
-      this.columnHeaders.insertBefore(div, null);
-    } else {
-      div.style.display = 'inline-block';
-    }
+    const div = document.createElement('div');
+    div.className = 'column-header';
+    div.textContent = columnNameFromNumber(column);
+    this.columnHeaders.insertBefore(div, null);
 
     this.styleColumnHeader(columnWidth, div, selected);
     this.addColumnResizeHandle(deltaX + columnWidth, column, columnWidth);

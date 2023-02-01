@@ -8,16 +8,10 @@ import { SheetListMenuContent } from './navigationMenus';
 import SheetTab from './navigationTab';
 import { TabsInput } from './common';
 
-type TabOption = {
-  hideRename?: boolean;
-  hideDelete?: boolean;
-};
-
 export type NavigationProps = {
   className?: string;
   'data-testid'?: string;
   tabs: TabsInput[];
-  tabsOptions?: Record<TabsInput['sheet_id'], TabOption>;
   selectedSheet: number;
   onSheetSelected: (index: number) => void;
   onAddBlankSheet: () => void;
@@ -31,7 +25,6 @@ export type NavigationProps = {
 const Navigation: FunctionComponent<NavigationProps> = (properties) => {
   const {
     tabs,
-    tabsOptions,
     selectedSheet,
     onSheetSelected,
     onAddBlankSheet,
@@ -69,7 +62,6 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
         {tabs.map((tab, index) => {
           const color = tab.color?.RGB;
           const selected = index === selectedSheet;
-          const tabOptions = tabsOptions?.[tab.sheet_id];
           return (
             <SheetTab
               key={`${tab.name}-${tab.sheet_id}`}
@@ -81,8 +73,6 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
               onSheetRenamed={onSheetRenamed}
               onSheetDeleted={onSheetDeleted}
               readOnly={readOnly}
-              hideDelete={tabOptions?.hideDelete}
-              hideRename={tabOptions?.hideRename}
             />
           );
         })}

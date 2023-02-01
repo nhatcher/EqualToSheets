@@ -9,7 +9,6 @@ import {
   AreaWithBorder,
   NavigationKey,
 } from 'src/components/workbook/util';
-import { TabsInput } from 'src/components/workbook/components/navigation';
 import WorksheetCanvas from '../canvas';
 import { Border } from '../useKeyboardNavigation';
 import { EditorSelection } from '../editor/util';
@@ -23,7 +22,6 @@ type WorkbookStateUninitialized = {
   lifecycle: WorkbookLifecycle.Uninitialized;
   // TODO: Maybe we could figure out a way to remove below props from the uninitialized state;
   model: null;
-  tabs: [];
   selectedSheet: number;
   sheetStates: Record<string, unknown>;
   scrollPosition: ScrollPosition;
@@ -43,7 +41,6 @@ type WorkbookStateInitialized = {
    * We've decided to keep model inside the Reducer state even though it's mutable for the convenience.
    */
   model: Model;
-  tabs: TabsInput[];
   selectedSheet: number;
   sheetStates: {
     [sheetId: string]: StateSettings;
@@ -69,8 +66,6 @@ export enum WorkbookActionType {
   /** Called when new model was created or workbookJson was replaced externally */
   RESET = 'RESET',
   SET_AREA_SELECTED = 'SET_AREA_SELECTED',
-  /** Sets values in the workbook without calling the WORKBOOK_HAS_CHANGED, useful for assignments. */
-  SET_ASSIGNMENTS = 'SET_ASSIGNMENTS',
   SET_CELL_VALUE = 'SET_CELL_VALUE',
   EDIT_END = 'EDIT_END',
   EDIT_ESCAPE = 'EDIT_ESCAPE',
@@ -185,14 +180,6 @@ type ResetAction = {
   type: WorkbookActionType.RESET;
   payload: {
     model: Model;
-    assignmentsJson?: string;
-  };
-};
-
-type SetAssignmentsAction = {
-  type: WorkbookActionType.SET_ASSIGNMENTS;
-  payload: {
-    assignmentsJson: string;
   };
 };
 
@@ -471,7 +458,6 @@ export type Action =
   | WorkbookHasChangedAction
   | SetCellValueAction
   | SelectedCellHasChangedAction
-  | SetAssignmentsAction
   | EditEndAction
   | SelectSheetAction
   | SetScrollPositionAction

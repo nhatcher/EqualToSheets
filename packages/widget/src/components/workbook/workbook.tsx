@@ -1,17 +1,9 @@
-import React, {
-  FunctionComponent,
-  useEffect,
-  useRef,
-  useMemo,
-  MutableRefObject,
-  useState,
-  useCallback,
-} from 'react';
+import React, { FunctionComponent, useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import Loading from 'src/components/uiKit/loading';
 import styled from 'styled-components';
 import { fonts } from 'src/theme';
 import * as Menu from 'src/components/uiKit/menu';
-import Navigation, { NavigationProps as NavigationProperties } from './components/navigation';
+import Navigation from './components/navigation';
 import FormulaBar from './components/formulabar';
 import Toolbar from './components/toolbar';
 import WorksheetCanvas from './canvas';
@@ -23,12 +15,10 @@ import usePointer from './usePointer';
 import useResize from './useResize';
 import Editor from './editor';
 import { outlineBackgroundColor, outlineColor } from './constants';
-import useWorkbookReducer, { WorkbookReducer, defaultSheetState } from './useWorkbookReducer';
+import useWorkbookReducer, { defaultSheetState } from './useWorkbookReducer';
 import useScrollSync from './useScrollSync';
-import useWorkbookActions, {
-  WorkbookActions as InternalWorkbookActions,
-} from './useWorkbookActions';
-import useWorkbookEffects, { InitialWorkbook } from './useWorkbookEffects';
+import useWorkbookActions from './useWorkbookActions';
+import useWorkbookEffects from './useWorkbookEffects';
 import RowContextMenuContent from './rowContextMenuContent';
 import { escapeHTML } from './formulas';
 
@@ -43,64 +33,16 @@ export enum WorkbookTestId {
   WorkbookCellEditor = 'workbook-cell-editor',
 }
 
-export type EditorMode = {
-  type: 'calculation' | 'analysis';
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-};
-
-export type WorkbookActions = {
-  requestRender: InternalWorkbookActions['requestRender'];
-};
-
 export type WorkbookElements = {
   cellEditor: HTMLDivElement | null;
 };
 
-type BaseWorkbookProps = {
-  initialWorkbook: InitialWorkbook;
+type WorkbookProps = {
   className?: string;
-  assignmentsJson?: string;
-  /** TODO: Reducer is a leaky API we should expose only needed parts post-MVP
-   * https://github.com/EqualTo-Software/EqualTo/issues/733
-   */
-  /** Used for customizing the workbook behaviour */
-  reducer?: WorkbookReducer;
-  navigationTabsOptions?: NavigationProperties['tabsOptions'];
-  /** Used to pass reference to actions that parent component can use on the workbook */
-  actionsRef?: MutableRefObject<WorkbookActions | null>;
-  /**
-   * Used to pass reference to workbook elements that parent component can use for some special cases.
-   * For example to attach the comment thread to the cell editor.
-   */
-  elementsRef?: MutableRefObject<WorkbookElements | null>;
-  columnHeaders?: JSX.Element[];
 };
-
-/** In the future, when we extract logic out of UI component this should be split into 3 different components. */
-type WorkbookWorkbookPros = BaseWorkbookProps & {
-  type: 'workbook' | 'workbook-readonly';
-};
-
-type DataGridWorkbookProps = BaseWorkbookProps & {
-  type: 'data-grid';
-  lastColumn: number;
-  lastRow: number;
-};
-
-type WorkbookProps = WorkbookWorkbookPros | DataGridWorkbookProps;
 
 const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
-  const {
-    initialWorkbook,
-    assignmentsJson,
-    className,
-    type,
-    navigationTabsOptions,
-    reducer,
-    columnHeaders: customColumnHeaders,
-  } = properties;
+  const { className } = properties;
 
   // References to DOM elements
   const canvasElement = useRef<HTMLCanvasElement>(null);
@@ -119,16 +61,9 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
 
   const worksheetCanvas = useRef<WorksheetCanvas | null>(null);
 
-  const hideToolbar = ['workbook-readonly', 'data-grid'].includes(type);
-  const hideFormulaBar = type === 'data-grid';
-  const hideNavigation = type === 'data-grid';
-  const readOnly = type === 'workbook-readonly';
-  const noContextmenu = ['workbook-readonly', 'data-grid'].includes(type);
-
   const [
     {
       model,
-      tabs,
       selectedSheet,
       scrollPosition,
       selectedCell,
@@ -139,7 +74,8 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
       cellEditing,
     },
     dispatch,
-  ] = useWorkbookReducer(reducer);
+  ] = useWorkbookReducer();
+  const tabs = model?.getTabs() ?? [];
 
   const resizeSpacer = useCallback((options: { deltaWidth: number; deltaHeight: number }): void => {
     if (spacerElement.current) {
@@ -159,18 +95,6 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
     rootElement,
     onResize: resizeSpacer,
   });
-  if (properties.actionsRef) {
-    // eslint-disable-next-line no-param-reassign
-    properties.actionsRef.current = {
-      requestRender: workbookActions.requestRender,
-    };
-  }
-  if (properties.elementsRef) {
-    // eslint-disable-next-line no-param-reassign
-    properties.elementsRef.current = {
-      cellEditor: cellOutline.current,
-    };
-  }
 
   const {
     setScrollPosition,
@@ -226,7 +150,6 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
     onCut,
     requestRender,
     resetModel,
-    setAssignments,
     focusWorkbook,
   } = workbookActions;
 
@@ -234,11 +157,7 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
 
   useWorkbookEffects({
     model,
-    initialWorkbook,
-    readOnly,
     resetModel,
-    assignmentsJson,
-    setAssignments,
     calcModule,
   });
 
@@ -249,16 +168,13 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
   const [rowContextMenu, setRowContextMenu] = useState(0);
   const onRowContextMenu = useCallback(
     (row: number): void => {
-      if (noContextmenu) {
-        return;
-      }
       if (!model || model.isRowReadOnly(selectedSheet, row)) {
         return;
       }
       setIsRowContextMenuOpen(true);
       setRowContextMenu(row);
     },
-    [model, noContextmenu, selectedSheet],
+    [model, selectedSheet],
   );
 
   const { onPointerMove, onPointerDown, onPointerHandleDown, onPointerUp, onContextMenu } =
@@ -302,36 +218,6 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
     [model, selectedCell.column, selectedCell.row, selectedSheet],
   );
 
-  const useCustomHeaders = !!customColumnHeaders && customColumnHeaders.length > 0;
-
-  // We need to reapply the .column-header class to the custom headers if they changed
-  useEffect(() => {
-    if (worksheetCanvas.current) {
-      worksheetCanvas.current.resetHeaders();
-    }
-  }, [customColumnHeaders]);
-
-  // Work around the fact that properties.lastColumn exists only for properties.type === 'data-grid',
-  // so it can't be used as useEffect dependency because sometimes it doesn't exist
-  const dataGridLastColumn = properties.type === 'data-grid' ? properties.lastColumn : -1;
-  const dataGridLastRow = properties.type === 'data-grid' ? properties.lastRow : -1;
-
-  const initialLastColumn = useRef(dataGridLastColumn);
-  const initialLastRow = useRef(dataGridLastRow);
-
-  // Allows to change the lastRow and lastColumn without recreating the component
-  useEffect(() => {
-    if (worksheetCanvas.current && properties.type === 'data-grid') {
-      worksheetCanvas.current.lastRow = dataGridLastRow;
-      worksheetCanvas.current.lastColumn = dataGridLastColumn;
-      const [sheetWidth, sheetHeight] = worksheetCanvas.current.getSheetDimensions();
-      if (spacerElement.current) {
-        spacerElement.current.style.height = `${sheetHeight}px`;
-        spacerElement.current.style.width = `${sheetWidth}px`;
-      }
-    }
-  }, [dataGridLastColumn, dataGridLastRow, properties.type]);
-
   // Init canvas
   useEffect(() => {
     const outline = cellOutline.current;
@@ -364,10 +250,7 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
       throw new Error('Could not find the canvas element size.');
     }
 
-    const canvasType: 'data-grid' | 'workbook' =
-      properties.type === 'data-grid' ? 'data-grid' : 'workbook';
-
-    const baseCanvasSettings = {
+    const canvasSettings = {
       model,
       selectedSheet: 0,
       width: canvasSize.width,
@@ -382,7 +265,6 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
         canvas,
         columnHeaders: columnHeadersDiv,
       },
-      useCustomHeaders,
       state: {
         ...defaultSheetState,
       },
@@ -390,19 +272,6 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
       onColumnWidthChanges,
       onRowHeightChanges,
     };
-
-    const canvasSettings =
-      canvasType === 'data-grid'
-        ? {
-            ...baseCanvasSettings,
-            type: canvasType,
-            lastColumn: initialLastColumn.current,
-            lastRow: initialLastRow.current,
-          }
-        : {
-            ...baseCanvasSettings,
-            type: canvasType,
-          };
 
     worksheetCanvas.current = new WorksheetCanvas(canvasSettings);
 
@@ -420,17 +289,7 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
       worksheetCanvas.current = null;
       resizeObserver.disconnect();
     };
-  }, [
-    requestRender,
-    getCanvasSize,
-    model,
-    onColumnWidthChanges,
-    onResize,
-    onRowHeightChanges,
-    type,
-    properties.type,
-    useCustomHeaders,
-  ]);
+  }, [requestRender, getCanvasSize, model, onColumnWidthChanges, onResize, onRowHeightChanges]);
 
   // Sync canvas with sheet state
   useEffect(() => {
@@ -500,52 +359,48 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
         event.preventDefault();
       }}
     >
-      {!hideToolbar && (
-        <Toolbar
-          canUndo={model === null ? false : model.canUndo()}
-          canRedo={model === null ? false : model.canRedo()}
-          canEdit={canEdit}
-          onUndo={onUndo}
-          onRedo={onRedo}
-          onToggleBold={onToggleBold}
-          onToggleItalic={onToggleItalic}
-          onToggleUnderline={onToggleUnderline}
-          onToggleStrike={onToggleStrike}
-          onToggleAlignLeft={onToggleAlignLeft}
-          onToggleAlignCenter={onToggleAlignCenter}
-          onToggleAlignRight={onToggleAlignRight}
-          onTextColorPicked={onTextColorPicked}
-          onFillColorPicked={onFillColorPicked}
-          onNumberFormatPicked={onNumberFormatPicked}
-          focusWorkbook={focusWorkbook}
-          fontColor={cellStyle.font.color.RGB}
-          fillColor={cellStyle.fill.fg_color?.RGB ?? '#FFFFFF'}
-          bold={!!cellStyle.font.b}
-          italic={!!cellStyle.font.i}
-          underline={!!cellStyle.font.u}
-          strike={!!cellStyle.font.strike}
-          alignment={cellStyle.horizontal_alignment}
-          numFmt={cellStyle.num_fmt}
-          data-testid={WorkbookTestId.WorkbookToolbar}
-          selectedArea={selectedArea}
-        />
-      )}
-      {!hideFormulaBar && (
-        <FormulaBar
-          cellAddress={cellAddress}
-          data-testid={WorkbookTestId.WorkbookFormulaBar}
-          onEditStart={onFormulaEditStart}
-          onEditChange={onEditChange}
-          onEditEnd={onEditEnd}
-          onEditEscape={onEditEscape}
-          onReferenceCycle={onReferenceCycle}
-          html={cellEditing?.html || `<span>${escapeHTML(formula)}</span>`}
-          cursorStart={cellEditing?.cursorStart || 0}
-          cursorEnd={cellEditing?.cursorEnd || 0}
-          focus={cellEditing?.focus === FocusType.FormulaBar}
-          isEditing={cellEditing !== null}
-        />
-      )}
+      <Toolbar
+        canUndo={model === null ? false : model.canUndo()}
+        canRedo={model === null ? false : model.canRedo()}
+        canEdit={canEdit}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onToggleBold={onToggleBold}
+        onToggleItalic={onToggleItalic}
+        onToggleUnderline={onToggleUnderline}
+        onToggleStrike={onToggleStrike}
+        onToggleAlignLeft={onToggleAlignLeft}
+        onToggleAlignCenter={onToggleAlignCenter}
+        onToggleAlignRight={onToggleAlignRight}
+        onTextColorPicked={onTextColorPicked}
+        onFillColorPicked={onFillColorPicked}
+        onNumberFormatPicked={onNumberFormatPicked}
+        focusWorkbook={focusWorkbook}
+        fontColor={cellStyle.font.color.RGB}
+        fillColor={cellStyle.fill.fg_color?.RGB ?? '#FFFFFF'}
+        bold={!!cellStyle.font.b}
+        italic={!!cellStyle.font.i}
+        underline={!!cellStyle.font.u}
+        strike={!!cellStyle.font.strike}
+        alignment={cellStyle.horizontal_alignment}
+        numFmt={cellStyle.num_fmt}
+        data-testid={WorkbookTestId.WorkbookToolbar}
+        selectedArea={selectedArea}
+      />
+      <FormulaBar
+        cellAddress={cellAddress}
+        data-testid={WorkbookTestId.WorkbookFormulaBar}
+        onEditStart={onFormulaEditStart}
+        onEditChange={onEditChange}
+        onEditEnd={onEditEnd}
+        onEditEscape={onEditEscape}
+        onReferenceCycle={onReferenceCycle}
+        html={cellEditing?.html || `<span>${escapeHTML(formula)}</span>`}
+        cursorStart={cellEditing?.cursorStart || 0}
+        cursorEnd={cellEditing?.cursorEnd || 0}
+        focus={cellEditing?.focus === FocusType.FormulaBar}
+        isEditing={cellEditing !== null}
+      />
       <Menu.Root open={isRowContextMenuOpen} onOpenChange={setIsRowContextMenuOpen}>
         <Menu.Trigger>
           <ContextMenuAnchorElement ref={contextMenuAnchorElement} />
@@ -611,25 +466,21 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
           <CellOutlineHandle ref={cellOutlineHandle} onPointerDown={onPointerHandleDown} />
           <ColumnResizeGuide ref={columnResizeGuide} />
           <RowResizeGuide ref={rowResizeGuide} />
-          <ColumnHeaders ref={columnHeaders}>{customColumnHeaders}</ColumnHeaders>
+          <ColumnHeaders ref={columnHeaders} />
         </SheetCanvasWrapper>
       </Worksheet>
       {!model && <Loading marginTop="30px" />}
-      {!hideNavigation && (
-        <Navigation
-          data-testid={WorkbookTestId.WorkbookNavigation}
-          tabs={tabs}
-          selectedSheet={selectedSheet}
-          onSheetSelected={onSheetSelected}
-          onAddBlankSheet={onAddBlankSheet}
-          onSheetColorChanged={onSheetColorChanged}
-          readOnly={readOnly}
-          tabsOptions={navigationTabsOptions}
-          disabled={!model}
-          onSheetRenamed={onSheetRenamed}
-          onSheetDeleted={onSheetDeleted}
-        />
-      )}
+      <Navigation
+        data-testid={WorkbookTestId.WorkbookNavigation}
+        tabs={tabs}
+        selectedSheet={selectedSheet}
+        onSheetSelected={onSheetSelected}
+        onAddBlankSheet={onAddBlankSheet}
+        onSheetColorChanged={onSheetColorChanged}
+        disabled={!model}
+        onSheetRenamed={onSheetRenamed}
+        onSheetDeleted={onSheetDeleted}
+      />
     </WorkbookContainer>
   );
 };

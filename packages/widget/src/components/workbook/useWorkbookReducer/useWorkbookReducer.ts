@@ -42,7 +42,6 @@ export const defaultSheetState: StateSettings = {
 export const getInitialWorkbookState = (reducer: WorkbookReducer): WorkbookState => ({
   lifecycle: WorkbookLifecycle.Uninitialized,
   model: null,
-  tabs: [],
   selectedSheet: 0,
   sheetStates: {},
   requestRenderId: 0,
@@ -59,17 +58,13 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
   if (state.lifecycle === WorkbookLifecycle.Uninitialized) {
     switch (action.type) {
       case WorkbookActionType.RESET: {
-        const { model: newModel, assignmentsJson } = action.payload;
-        if (assignmentsJson) {
-          newModel.setCellsWithValuesJsonIgnoreReadonly(assignmentsJson);
-        }
+        const { model: newModel } = action.payload;
         return state.reducer(
           {
             ...state,
             lifecycle: WorkbookLifecycle.Initialized,
             selectedSheet: 0,
             model: newModel,
-            tabs: newModel.getTabs(),
             sheetStates: {},
             requestRenderId: 0,
             formula: '',
@@ -98,7 +93,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         );
         return {
           ...state,
-          tabs: model.getTabs(),
           requestRenderId: requestRenderId + 1,
           formula: newFormula,
         };
@@ -132,14 +126,12 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       }
 
       case WorkbookActionType.RESET: {
-        const { model: newModel, assignmentsJson } = action.payload;
-        if (assignmentsJson) {
-          newModel.setCellsWithValuesJsonIgnoreReadonly(assignmentsJson);
-        }
+        const { model: newModel } = action.payload;
         const { selectedSheet, requestRenderId, sheetStates } = state;
 
         // Save sheet state
-        sheetStates[state.tabs[selectedSheet].sheet_id] = {
+        const tabs = state.model.getTabs();
+        sheetStates[tabs[selectedSheet].sheet_id] = {
           scrollPosition: { ...state.scrollPosition },
           selectedCell: { ...state.selectedCell },
           selectedArea: { ...state.selectedArea },
@@ -157,7 +149,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           {
             ...state,
             model: newModel,
-            tabs: newTabs,
             selectedSheet: newSelectedSheet,
             requestRenderId: requestRenderId + 1,
             sheetStates: { ...sheetStates },
@@ -169,21 +160,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           },
           { type: WorkbookActionType.SELECTED_CELL_HAS_CHANGED },
         );
-      }
-
-      case WorkbookActionType.SET_ASSIGNMENTS: {
-        const { model, selectedSheet, selectedCell, requestRenderId } = state;
-        model.setCellsWithValuesJsonIgnoreReadonly(action.payload.assignmentsJson);
-        const newFormula = model.getFormulaOrValue(
-          selectedSheet,
-          selectedCell.row,
-          selectedCell.column,
-        );
-        return {
-          ...state,
-          requestRenderId: requestRenderId + 1,
-          formula: newFormula,
-        };
       }
 
       case WorkbookActionType.EDIT_END: {
@@ -409,10 +385,10 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       }
 
       case WorkbookActionType.SELECT_SHEET: {
-        const { sheetStates, tabs } = state;
+        const { model, sheetStates } = state;
+        const tabs = model.getTabs();
         // Save sheet state
-
-        sheetStates[state.tabs[state.selectedSheet].sheet_id] = {
+        sheetStates[tabs[state.selectedSheet].sheet_id] = {
           scrollPosition: { ...state.scrollPosition },
           selectedCell: { ...state.selectedCell },
           selectedArea: { ...state.selectedArea },
@@ -947,7 +923,8 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       }
 
       case WorkbookActionType.EDIT_POINTER_DOWN: {
-        const { model, cellEditing, selectedSheet, tabs } = state;
+        const { model, cellEditing, selectedSheet } = state;
+        const tabs = model.getTabs();
         if (!cellEditing) {
           return state;
         }
