@@ -232,5 +232,14 @@ def test_delete_cell(sheet: Sheet) -> None:
     assert not sheet[reference].value
 
 
+def test_sheet_instance_reused(empty_workbook: Workbook) -> None:
+    assert id(empty_workbook.sheets[0]) == id(empty_workbook.sheets["Sheet1"])
+
+
+def test_cell_instance_reused(empty_workbook: Workbook) -> None:
+    cell = empty_workbook.sheets[0].cell(1, 1)
+    assert id(cell) == id(empty_workbook["Sheet1!A1"])
+
+
 def _get_sheets(workbook: Workbook) -> list[tuple[int, str]]:
     return [(sheet.index, sheet.name) for sheet in workbook.sheets]

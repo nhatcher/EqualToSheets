@@ -24,6 +24,7 @@ class Sheet:
     def __init__(self, workbook_sheets: WorkbookSheets, sheet_id: int) -> None:
         self.workbook_sheets = workbook_sheets
         self.sheet_id = sheet_id
+        self._cell_cache: dict[tuple[int, int], Cell] = {}
 
     def __getitem__(self, key: str) -> Cell:
         """Get cell by the reference (i.e. "A1")."""
@@ -37,7 +38,10 @@ class Sheet:
         self[key].delete()
 
     def cell(self, row: int, column: int) -> Cell:
-        return Cell(sheet=self, row=row, column=column)
+        key = (row, column)
+        if key not in self._cell_cache:
+            self._cell_cache[key] = Cell(sheet=self, row=row, column=column)
+        return self._cell_cache[key]
 
     @property
     def name(self) -> str:
@@ -73,15 +77,16 @@ class WorkbookSheets:
     def __init__(self, workbook: Workbook) -> None:
         self.workbook = workbook
         self._load_sheets_metadata()
+        self._sheet_cache: dict[int, Sheet] = {}
 
     def __getitem__(self, key: str | int) -> Sheet:
         """Get sheet by either name or index."""
         if isinstance(key, str):
-            return Sheet(self, sheet_id=self._get_sheet_id_from_name(name=key))
+            return self._get_sheet(self._get_sheet_id_from_name(name=key))
         elif isinstance(key, int):
             if key < 0:
                 key = len(self) + key
-            return Sheet(self, sheet_id=self._get_sheet_id_from_index(index=key))
+            return self._get_sheet(self._get_sheet_id_from_index(index=key))
         raise ValueError("invalid sheet lookup key type")  # pragma: no cover
 
     def __delitem__(self, key: str | int) -> None:
@@ -118,6 +123,11 @@ class WorkbookSheets:
     _sheet_id_to_sheet_name: dict[int, str]
     _sheet_index_to_sheet_id: dict[int, int]
     _sheet_id_to_sheet_index: dict[int, int]
+
+    def _get_sheet(self, sheet_id: int) -> Sheet:
+        if sheet_id not in self._sheet_cache:
+            self._sheet_cache[sheet_id] = Sheet(self, sheet_id)
+        return self._sheet_cache[sheet_id]
 
     def _load_sheets_metadata(self) -> None:
         """
