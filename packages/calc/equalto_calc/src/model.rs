@@ -327,104 +327,10 @@ impl Model {
                 // Deal with errors properly
                 CalcResult::Number(l.powf(r))
             }
-            FunctionKind { name, args } => match name.as_str() {
-                // Logical
-                "AND" => self.fn_and(args, cell),
-                "FALSE" => CalcResult::Boolean(false),
-                "IF" => self.fn_if(args, cell),
-                "IFERROR" => self.fn_iferror(args, cell),
-                "IFNA" => self.fn_ifna(args, cell),
-                "IFS" => self.fn_ifs(args, cell),
-                "NOT" => self.fn_not(args, cell),
-                "OR" => self.fn_or(args, cell),
-                "SWITCH" => self.fn_switch(args, cell),
-                "TRUE" => CalcResult::Boolean(true),
-                "XOR" => self.fn_xor(args, cell),
-                // Math and trigonometry
-                "SIN" => self.fn_sin(args, cell),
-                "COS" => self.fn_cos(args, cell),
-                "TAN" => self.fn_tan(args, cell),
-
-                "ASIN" => self.fn_asin(args, cell),
-                "ACOS" => self.fn_acos(args, cell),
-                "ATAN" => self.fn_atan(args, cell),
-
-                "SINH" => self.fn_sinh(args, cell),
-                "COSH" => self.fn_cosh(args, cell),
-                "TANH" => self.fn_tanh(args, cell),
-
-                "ASINH" => self.fn_asinh(args, cell),
-                "ACOSH" => self.fn_acosh(args, cell),
-                "ATANH" => self.fn_atanh(args, cell),
-
-                "PI" => self.fn_pi(args, cell),
-
-                "MAX" => self.fn_max(args, cell),
-                "MIN" => self.fn_min(args, cell),
-                "ROUND" => self.fn_round(args, cell),
-                "ROUNDDOWN" => self.fn_rounddown(args, cell),
-                "ROUNDUP" => self.fn_roundup(args, cell),
-                "SUM" => self.fn_sum(args, cell),
-                "SUMIF" => self.fn_sumif(args, cell),
-                "SUMIFS" => self.fn_sumifs(args, cell),
-                // Lookup and Reference
-                "CHOOSE" => self.fn_choose(args, cell),
-                "COLUMN" => self.fn_column(args, cell),
-                "COLUMNS" => self.fn_columns(args, cell),
-                "INDEX" => self.fn_index(args, cell),
-                "INDIRECT" => self.fn_indirect(args, cell),
-                "HLOOKUP" => self.fn_hlookup(args, cell),
-                "LOOKUP" => self.fn_lookup(args, cell),
-                "MATCH" => self.fn_match(args, cell),
-                "OFFSET" => self.fn_offset(args, cell),
-                "ROW" => self.fn_row(args, cell),
-                "ROWS" => self.fn_rows(args, cell),
-                "VLOOKUP" => self.fn_vlookup(args, cell),
-                "XLOOKUP" => self.fn_xlookup(args, cell),
-                // Text
-                "CONCAT" => self.fn_concat(args, cell),
-                "FIND" => self.fn_find(args, cell),
-                "LEFT" => self.fn_left(args, cell),
-                "LEN" => self.fn_len(args, cell),
-                "LOWER" => self.fn_lower(args, cell),
-                "MID" => self.fn_mid(args, cell),
-                "RIGHT" => self.fn_right(args, cell),
-                "SEARCH" => self.fn_search(args, cell),
-                "TEXT" => self.fn_text(args, cell),
-                "TRIM" => self.fn_trim(args, cell),
-                "UPPER" => self.fn_upper(args, cell),
-                // Information
-                "ISNUMBER" => self.fn_isnumber(args, cell),
-                "ISNONTEXT" => self.fn_isnontext(args, cell),
-                "ISTEXT" => self.fn_istext(args, cell),
-                "ISLOGICAL" => self.fn_islogical(args, cell),
-                "ISBLANK" => self.fn_isblank(args, cell),
-                "ISERR" => self.fn_iserr(args, cell),
-                "ISERROR" => self.fn_iserror(args, cell),
-                "ISNA" => self.fn_isna(args, cell),
-                "NA" => CalcResult::new_error(Error::NA, cell, "".to_string()),
-                // Statistical
-                "AVERAGE" => self.fn_average(args, cell),
-                "AVERAGEA" => self.fn_averagea(args, cell),
-                "AVERAGEIF" => self.fn_averageif(args, cell),
-                "AVERAGEIFS" => self.fn_averageifs(args, cell),
-                "COUNT" => self.fn_count(args, cell),
-                "COUNTA" => self.fn_counta(args, cell),
-                "COUNTBLANK" => self.fn_countblank(args, cell),
-                "COUNTIF" => self.fn_countif(args, cell),
-                "COUNTIFS" => self.fn_countifs(args, cell),
-                "MAXIFS" => self.fn_maxifs(args, cell),
-                "MINIFS" => self.fn_minifs(args, cell),
-                // Date and Time
-                "YEAR" => self.fn_year(args, cell),
-                "DAY" => self.fn_day(args, cell),
-                "MONTH" => self.fn_month(args, cell),
-                "DATE" => self.fn_date(args, cell),
-                "EDATE" => self.fn_edate(args, cell),
-                _ => {
-                    CalcResult::new_error(Error::ERROR, cell, format!("Invalid function: {}", name))
-                }
-            },
+            FunctionKind { kind, args } => self.evaluate_function(kind, args, cell),
+            InvalidFunctionKind { name, args: _ } => {
+                CalcResult::new_error(Error::ERROR, cell, format!("Invalid function: {}", name))
+            }
             ArrayKind(_) => {
                 // TODO: NOT IMPLEMENTED
                 CalcResult::new_error(Error::NIMPL, cell, "Arrays not implemented".to_string())

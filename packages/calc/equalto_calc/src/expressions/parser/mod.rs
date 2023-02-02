@@ -27,6 +27,7 @@ f_args  => e (',' e)*
 </pre>
 */
 
+use crate::functions::Function;
 use crate::language::get_language;
 use crate::locale::get_locale;
 
@@ -125,6 +126,10 @@ pub enum Node {
         right: Box<Node>,
     },
     FunctionKind {
+        kind: Function,
+        args: Vec<Node>,
+    },
+    InvalidFunctionKind {
         name: String,
         args: Vec<Node>,
     },
@@ -539,10 +544,14 @@ impl Parser {
                             message: err.message,
                         };
                     }
-                    return Node::FunctionKind {
-                        name: name.to_ascii_uppercase(),
-                        args,
-                    };
+                    if let Some(function_kind) = Function::get_function(&name) {
+                        return Node::FunctionKind {
+                            kind: function_kind,
+                            args,
+                        };
+                    } else {
+                        return Node::InvalidFunctionKind { name, args };
+                    }
                 }
                 Node::VariableKind(name)
             }

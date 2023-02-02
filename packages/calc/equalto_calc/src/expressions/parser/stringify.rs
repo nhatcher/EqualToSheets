@@ -33,15 +33,6 @@ pub enum DisplaceData {
     None,
 }
 
-// Some functions in Excel like CONCAT are stringified as `_xlfn.CONCAT`.
-// NOTE: for now this is manual, but we should have a more automatic way of doing this.
-fn function_needs_prefix(name: &str) -> bool {
-    [
-        "CONCAT", "IFNA", "IFS", "MAXIFS", "MINIFS", "SWITCH", "XLOOKUP", "XOR",
-    ]
-    .contains(&name)
-}
-
 pub fn to_rc_format(node: &Node) -> String {
     stringify(node, None, &DisplaceData::None, false)
 }
@@ -236,6 +227,30 @@ pub(crate) fn stringify_reference(
             }
         }
     }
+}
+
+fn format_function(
+    name: &str,
+    args: &Vec<Node>,
+    context: Option<&CellReferenceRC>,
+    displace_data: &DisplaceData,
+    use_original_name: bool,
+) -> String {
+    let mut first = true;
+    let mut arguments = "".to_string();
+    for el in args {
+        if !first {
+            arguments = format!(
+                "{},{}",
+                arguments,
+                stringify(el, context, displace_data, use_original_name)
+            );
+        } else {
+            first = false;
+            arguments = stringify(el, context, displace_data, use_original_name);
+        }
+    }
+    format!("{}({})", name, arguments)
 }
 
 fn stringify(
@@ -445,25 +460,16 @@ fn stringify(
             stringify(left, context, displace_data, use_original_name),
             stringify(right, context, displace_data, use_original_name)
         ),
-        FunctionKind { name, args } => {
-            let mut first = true;
-            let mut arguments = "".to_string();
-            for el in args {
-                if !first {
-                    arguments = format!(
-                        "{},{}",
-                        arguments,
-                        stringify(el, context, displace_data, use_original_name)
-                    );
-                } else {
-                    first = false;
-                    arguments = stringify(el, context, displace_data, use_original_name);
-                }
-            }
-            if use_original_name && function_needs_prefix(name) {
-                return format!("_xlfn.{}({})", name, arguments);
-            }
-            format!("{}({})", name, arguments)
+        InvalidFunctionKind { name, args } => {
+            format_function(name, args, context, displace_data, use_original_name)
+        }
+        FunctionKind { kind, args } => {
+            let name = if use_original_name {
+                kind.to_xlsx_string()
+            } else {
+                kind.to_string()
+            };
+            format_function(&name, args, context, displace_data, use_original_name)
         }
         ArrayKind(args) => {
             let mut first = true;
@@ -563,7 +569,12 @@ pub(crate) fn rename_sheet_in_node(node: &mut Node, sheet_index: u32, new_name: 
             rename_sheet_in_node(left, sheet_index, new_name);
             rename_sheet_in_node(right, sheet_index, new_name);
         }
-        Node::FunctionKind { name: _, args } => {
+        Node::FunctionKind { kind: _, args } => {
+            for arg in args {
+                rename_sheet_in_node(arg, sheet_index, new_name);
+            }
+        }
+        Node::InvalidFunctionKind { name: _, args } => {
             for arg in args {
                 rename_sheet_in_node(arg, sheet_index, new_name);
             }

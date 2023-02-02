@@ -39,6 +39,20 @@ pub(crate) fn move_formula(node: &Node, move_context: &MoveContext) -> String {
     to_string_moved(node, move_context)
 }
 
+fn move_function(name: &str, args: &Vec<Node>, move_context: &MoveContext) -> String {
+    let mut first = true;
+    let mut arguments = "".to_string();
+    for el in args {
+        if !first {
+            arguments = format!("{},{}", arguments, to_string_moved(el, move_context));
+        } else {
+            first = false;
+            arguments = to_string_moved(el, move_context);
+        }
+    }
+    format!("{}({})", name, arguments)
+}
+
 fn to_string_moved(node: &Node, move_context: &MoveContext) -> String {
     use self::Node::*;
     match node {
@@ -339,18 +353,10 @@ fn to_string_moved(node: &Node, move_context: &MoveContext) -> String {
             to_string_moved(left, move_context),
             to_string_moved(right, move_context),
         ),
-        FunctionKind { name, args } => {
-            let mut first = true;
-            let mut arguments = "".to_string();
-            for el in args {
-                if !first {
-                    arguments = format!("{},{}", arguments, to_string_moved(el, move_context));
-                } else {
-                    first = false;
-                    arguments = to_string_moved(el, move_context);
-                }
-            }
-            format!("{}({})", name, arguments)
+        InvalidFunctionKind { name, args } => move_function(name, args, move_context),
+        FunctionKind { kind, args } => {
+            let name = &kind.to_string();
+            move_function(name, args, move_context)
         }
         ArrayKind(args) => {
             // This code is a placeholder. Arrays are not yet implemented
