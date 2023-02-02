@@ -9,6 +9,14 @@ from equalto.exceptions import CellReferenceError
 from equalto.workbook import Workbook
 
 
+def test_workbook_repr(example_workbook: Workbook) -> None:
+    assert repr(example_workbook) == "<Workbook: example>"
+
+
+def test_workbook_name(example_workbook: Workbook) -> None:
+    assert example_workbook.name == "example"
+
+
 def test_get_cell_by_reference(empty_workbook: Workbook) -> None:
     cell = empty_workbook["Sheet1!C2"]
 

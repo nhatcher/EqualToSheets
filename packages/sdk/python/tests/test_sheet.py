@@ -12,6 +12,10 @@ def fixture_sheet(empty_workbook: Workbook) -> Sheet:
     return empty_workbook.sheets[0]
 
 
+def test_sheet_repr(sheet: Sheet) -> None:
+    assert repr(sheet) == "<Sheet: Sheet1>"
+
+
 def test_get_sheet_by_name(example_workbook: Workbook) -> None:
     sheet = example_workbook.sheets["Second"]
     assert sheet.name == "Second"

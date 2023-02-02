@@ -1,6 +1,6 @@
 [package]
 name = "equalto"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["EqualTo <dev@equalto.com>"]
 edition = "2021"
 

@@ -10,6 +10,12 @@ from equalto.exceptions import WorkbookError, WorkbookValueError
 from equalto.workbook import Workbook
 
 
+@pytest.mark.parametrize("reference", ["Sheet1!A1", "Sheet1!C42", "Second!AA7"])
+def test_cell_repr(example_workbook: Workbook, reference: str) -> None:
+    cell = example_workbook[reference]
+    assert repr(cell) == f"<Cell: {reference}>"
+
+
 def test_set_formula(empty_workbook: Workbook) -> None:
     sheet = empty_workbook.sheets[0]
 

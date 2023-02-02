@@ -26,6 +26,9 @@ class Sheet:
         self.sheet_id = sheet_id
         self._cell_cache: dict[tuple[int, int], Cell] = {}
 
+    def __repr__(self) -> str:
+        return f"<Sheet: {self.name}>"
+
     def __getitem__(self, key: str) -> Cell:
         """Get cell by the reference (i.e. "A1")."""
         sheet_name, row, column = parse_cell_reference(key)

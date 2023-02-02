@@ -6,6 +6,7 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
 
+from equalto._equalto import number_to_column
 from equalto.exceptions import WorkbookValueError
 from equalto.style import Style
 
@@ -37,6 +38,10 @@ class Cell:
     def __str__(self) -> str:
         """Get formatted cell value."""
         return self._model.get_formatted_cell_value(*self.cell_ref)
+
+    def __repr__(self) -> str:
+        column_repr = number_to_column(self.column)
+        return f"<Cell: {self.sheet.name}!{column_repr}{self.row}>"
 
     @property
     def type(self) -> CellType:

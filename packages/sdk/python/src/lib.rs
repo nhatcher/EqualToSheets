@@ -1,6 +1,7 @@
-use pyo3::exceptions::PyException;
+use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::{create_exception, prelude::*, wrap_pyfunction};
 
+use equalto_calc::expressions::utils;
 use equalto_calc::model::{Environment, Model};
 use equalto_calc::types::CellType;
 use equalto_calc::types::Worksheet;
@@ -27,6 +28,10 @@ impl PyModel {
 
 #[pymethods]
 impl PyModel {
+    pub fn get_name(&self) -> PyResult<String> {
+        Ok(self.model.workbook.name.clone())
+    }
+
     pub fn get_formatted_cell_value(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
         self.model
             .formatted_cell_value(sheet.try_into().unwrap(), row, column)
@@ -184,12 +189,27 @@ pub fn create(name: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
     Ok(PyModel { model })
 }
 
+#[pyfunction]
+pub fn number_to_column(col_number: i32) -> PyResult<String> {
+    utils::number_to_column(col_number)
+        .ok_or_else(|| PyValueError::new_err("Invalid column number"))
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn _equalto(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+
+    // errors
+    m.add("WorkbookError", py.get_type::<WorkbookError>())?;
+
+    // PyModel
     m.add_function(wrap_pyfunction!(create, m)?).unwrap();
     m.add_function(wrap_pyfunction!(load_excel, m)?).unwrap();
-    m.add("WorkbookError", py.get_type::<WorkbookError>())?;
+
+    // utils
+    m.add_function(wrap_pyfunction!(number_to_column, m)?)
+        .unwrap();
+
     Ok(())
 }

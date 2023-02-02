@@ -18,6 +18,9 @@ class Workbook:
     def __init__(self, model: PyCalcModel):
         self._model = model
 
+    def __repr__(self) -> str:
+        return f"<Workbook: {self.name}>"
+
     def __getitem__(self, key: str) -> Cell:
         """Get cell by the reference (i.e. "Sheet1!A1")."""
         sheet_name, row, column = parse_cell_reference(key)
@@ -28,6 +31,10 @@ class Workbook:
     def __delitem__(self, key: str) -> None:
         """Delete the cell content and style."""
         self[key].delete()
+
+    @cached_property
+    def name(self) -> str:
+        return self._model.get_name()
 
     @cached_property
     def timezone(self) -> ZoneInfo:
