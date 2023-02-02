@@ -1,5 +1,5 @@
 import Model from 'src/components/workbook/model';
-import React, { RefObject, ClipboardEvent } from 'react';
+import { RefObject } from 'react';
 import {
   StateSettings,
   ScrollPosition,
@@ -13,34 +13,8 @@ import WorksheetCanvas from '../canvas';
 import { Border } from '../useKeyboardNavigation';
 import { EditorSelection } from '../editor/util';
 
-export enum WorkbookLifecycle {
-  Uninitialized,
-  Initialized,
-}
-
-type WorkbookStateUninitialized = {
-  lifecycle: WorkbookLifecycle.Uninitialized;
-  // TODO: Maybe we could figure out a way to remove below props from the uninitialized state;
-  model: null;
-  selectedSheet: number;
-  sheetStates: Record<string, unknown>;
-  scrollPosition: ScrollPosition;
-  selectedCell: Cell;
-  selectedArea: Area;
-  extendToArea: null;
-  requestRenderId: number;
-  formula: string;
-  cellEditing: null;
-  reducer: WorkbookReducer;
-};
-
-type WorkbookStateInitialized = {
-  lifecycle: WorkbookLifecycle.Initialized;
-  /** WARNING: This is kind of weird but model is mutable, only the reference is immutable.
-   * Keeping the whole model immutable would slow performance a lot - we would need to pass a lot of data to Rust often.
-   * We've decided to keep model inside the Reducer state even though it's mutable for the convenience.
-   */
-  model: Model;
+export type WorkbookState = {
+  modelRef: React.RefObject<Model | null>;
   selectedSheet: number;
   sheetStates: {
     [sheetId: string]: StateSettings;
@@ -50,22 +24,13 @@ type WorkbookStateInitialized = {
   /** NB the selected cell must be within the area selected */
   selectedArea: Area;
   extendToArea: AreaWithBorder | null;
-  requestRenderId: number;
-  formula: string;
   cellEditing: CellEditingType | null;
   reducer: WorkbookReducer;
 };
 
-export type WorkbookState = WorkbookStateInitialized | WorkbookStateUninitialized;
-
 export type WorkbookReducer = (state: WorkbookState, action: Action) => WorkbookState;
 
 export enum WorkbookActionType {
-  /** Called when workbook json has changed, useful when you want to subscribe to the changes */
-  WORKBOOK_HAS_CHANGED = 'WORKBOOK_HAS_CHANGED',
-  /** Called when new model was created or workbookJson was replaced externally */
-  RESET = 'RESET',
-  SET_AREA_SELECTED = 'SET_AREA_SELECTED',
   SET_CELL_VALUE = 'SET_CELL_VALUE',
   EDIT_END = 'EDIT_END',
   EDIT_ESCAPE = 'EDIT_ESCAPE',
@@ -95,34 +60,7 @@ export enum WorkbookActionType {
   EXTEND_TO_CELL = 'EXTEND_TO_CELL',
   EXTEND_TO_SELECTED = 'EXTEND_TO_SELECTED',
   EXTEND_TO_END = 'EXTEND_TO_END',
-  UNDO = 'UNDO',
-  REDO = 'REDO',
-  DELETE_CELLS = 'DELETE_CELLS',
-  TOGGLE_BOLD = 'TOGGLE_BOLD',
-  TOGGLE_ITALIC = 'TOGGLE_ITALIC',
-  TOGGLE_UNDERLINE = 'TOGGLE_UNDERLINE',
-  TOGGLE_STRIKE = 'TOGGLE_STRIKE',
-  TOGGLE_ALIGN_LEFT = 'TOGGLE_ALIGN_LEFT',
-  TOGGLE_ALIGN_CENTER = 'TOGGLE_ALIGN_CENTER',
-  TOGGLE_ALIGN_RIGHT = 'TOGGLE_ALIGN_RIGHT',
-  TEXT_COLOR_PICKED = 'TEXT_COLOR_PICKED',
-  FILL_COLOR_PICKED = 'FILL_COLOR_PICKED',
-  SHEET_COLOR_CHANGED = 'SHEET_COLOR_CHANGED',
-  SHEET_DELETED = 'SHEET_DELETED',
-  SHEET_RENAMED = 'SHEET_RENAMED',
-  ADD_BLANK_SHEET = 'ADD_BLANK_SHEET',
-  NUMBER_FORMAT_PICKED = 'NUMBER_FORMAT_PICKED',
-  CHANGE_COLUMN_WIDTH = 'CHANGE_COLUMN_WIDTH',
-  CHANGE_ROW_HEIGHT = 'CHANGE_ROW_HEIGHT',
-  DELETE_ROW = 'DELETE_ROW',
-  INSERT_ROW = 'INSERT_ROW',
   NAVIGATION_TO_EDGE = 'NAVIGATION_TO_EDGE',
-  COPY = 'COPY',
-  PASTE = 'PASTE',
-  CUT = 'CUT',
-  SELECTED_CELL_HAS_CHANGED = 'SELECTED_CELL_HAS_CHANGED',
-  REQUEST_CANVAS_RENDER = 'REQUEST_CANVAS_RENDER',
-  CHANGE_REDUCER = 'CHANGE_REDUCER',
 }
 
 type PointerMoveToCellAction = {
@@ -131,15 +69,6 @@ type PointerMoveToCellAction = {
     cell: Cell;
     canvasRef: RefObject<WorksheetCanvas>;
     worksheetRef: RefObject<HTMLDivElement>;
-  };
-};
-
-type SetCellValueAction = {
-  type: WorkbookActionType.SET_CELL_VALUE;
-  payload: {
-    sheet: number;
-    cell: Cell;
-    text: string;
   };
 };
 
@@ -165,7 +94,6 @@ type PointerDownAtCellAction = {
     cell: Cell;
     canvasRef: RefObject<WorksheetCanvas>;
     worksheetRef: RefObject<HTMLDivElement>;
-    event: React.MouseEvent;
   };
 };
 
@@ -173,13 +101,6 @@ type EditPointerDownAction = {
   type: WorkbookActionType.EDIT_POINTER_DOWN;
   payload: {
     cell: Cell;
-  };
-};
-
-type ResetAction = {
-  type: WorkbookActionType.RESET;
-  payload: {
-    model: Model;
   };
 };
 
@@ -240,88 +161,8 @@ type SelectSheetAction = {
   };
 };
 
-type WorkbookHasChangedAction = {
-  type: WorkbookActionType.WORKBOOK_HAS_CHANGED;
-};
-
 type UpdateModelAction = {
-  type:
-    | WorkbookActionType.EXTEND_TO_END
-    | WorkbookActionType.UNDO
-    | WorkbookActionType.REDO
-    | WorkbookActionType.DELETE_CELLS
-    | WorkbookActionType.TOGGLE_BOLD
-    | WorkbookActionType.TOGGLE_ITALIC
-    | WorkbookActionType.TOGGLE_UNDERLINE
-    | WorkbookActionType.TOGGLE_STRIKE
-    | WorkbookActionType.TOGGLE_ALIGN_LEFT
-    | WorkbookActionType.TOGGLE_ALIGN_CENTER
-    | WorkbookActionType.TOGGLE_ALIGN_RIGHT;
-};
-
-type ChangeColumnWidthAction = {
-  type: WorkbookActionType.CHANGE_COLUMN_WIDTH;
-  payload: {
-    sheet: number;
-    column: number;
-    width: number;
-    onResize: (options: { deltaWidth: number; deltaHeight: number }) => void;
-  };
-};
-
-type ChangeRowHeightAction = {
-  type: WorkbookActionType.CHANGE_ROW_HEIGHT;
-  payload: {
-    sheet: number;
-    row: number;
-    height: number;
-    onResize: (options: { deltaWidth: number; deltaHeight: number }) => void;
-  };
-};
-
-type DeleteRowAction = {
-  type: WorkbookActionType.DELETE_ROW;
-  payload: {
-    sheet: number;
-    row: number;
-  };
-};
-
-type InsertRowAction = {
-  type: WorkbookActionType.INSERT_ROW;
-  payload: {
-    sheet: number;
-    row: number;
-  };
-};
-
-type ColorUpdateAction = {
-  type:
-    | WorkbookActionType.TEXT_COLOR_PICKED
-    | WorkbookActionType.FILL_COLOR_PICKED
-    | WorkbookActionType.SHEET_COLOR_CHANGED;
-  payload: {
-    color: string;
-  };
-};
-
-type DeleteSheetAction = {
-  type: WorkbookActionType.SHEET_DELETED;
-};
-type RenameSheetAction = {
-  type: WorkbookActionType.SHEET_RENAMED;
-  payload: { newName: string };
-};
-
-type AddBlankSheetAction = {
-  type: WorkbookActionType.ADD_BLANK_SHEET;
-};
-
-type NumberFmtUpdateAction = {
-  type: WorkbookActionType.NUMBER_FORMAT_PICKED;
-  payload: {
-    numFmt: string;
-  };
+  type: WorkbookActionType.EXTEND_TO_END;
 };
 
 type SetScrollPositionAction = {
@@ -329,16 +170,6 @@ type SetScrollPositionAction = {
   payload: {
     left: number;
     top: number;
-  };
-};
-
-type SetAreaSelectedAction = {
-  type: WorkbookActionType.SET_AREA_SELECTED;
-  payload: {
-    area: Area;
-    border: Border;
-    canvasRef: RefObject<WorksheetCanvas>;
-    worksheetRef: RefObject<HTMLDivElement>;
   };
 };
 
@@ -413,51 +244,7 @@ type CanvasAction = {
   };
 };
 
-type CopyAction = {
-  type: WorkbookActionType.COPY;
-  payload: {
-    event: ClipboardEvent;
-  };
-};
-
-type PasteAction = {
-  type: WorkbookActionType.PASTE;
-  payload: {
-    format: string;
-    data: string;
-    event: ClipboardEvent;
-  };
-};
-
-type CutAction = {
-  type: WorkbookActionType.CUT;
-  payload: {
-    event: ClipboardEvent;
-  };
-};
-
-type SelectedCellHasChangedAction = {
-  type: WorkbookActionType.SELECTED_CELL_HAS_CHANGED;
-};
-
-type RequestCanvasRenderAction = {
-  type: WorkbookActionType.REQUEST_CANVAS_RENDER;
-};
-
-type ChangeReducerAction = {
-  type: WorkbookActionType.CHANGE_REDUCER;
-  payload: {
-    reducer: WorkbookReducer;
-  };
-};
-
 export type Action =
-  | SetAreaSelectedAction
-  | ChangeReducerAction
-  | ResetAction
-  | WorkbookHasChangedAction
-  | SetCellValueAction
-  | SelectedCellHasChangedAction
   | EditEndAction
   | SelectSheetAction
   | SetScrollPositionAction
@@ -467,28 +254,15 @@ export type Action =
   | ExtendToSelectedAction
   | ExtendToCellAction
   | UpdateModelAction
-  | ChangeColumnWidthAction
-  | ChangeRowHeightAction
-  | DeleteRowAction
-  | InsertRowAction
   | NavigationToEdgeAction
   | EditEscapeAction
   | EditChangeAction
   | EditCellEditorStartAction
   | EditFormulaBarEditorStartAction
-  | CopyAction
-  | PasteAction
-  | CutAction
-  | RequestCanvasRenderAction
   | EditKeyPressStartAction
   | ExpandAreaSelectedKeyboardAction
   | PointerMoveToCellAction
   | EditPointerMoveAction
   | ExpandAreaSelectedPointerAction
   | PointerDownAtCellAction
-  | EditPointerDownAction
-  | ColorUpdateAction
-  | AddBlankSheetAction
-  | DeleteSheetAction
-  | RenameSheetAction
-  | NumberFmtUpdateAction;
+  | EditPointerDownAction;

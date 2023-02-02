@@ -1,4 +1,12 @@
-import React, { FunctionComponent, useEffect, useRef, useMemo, useState, useCallback } from 'react';
+import React, {
+  FunctionComponent,
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  useCallback,
+  useReducer,
+} from 'react';
 import Loading from 'src/components/uiKit/loading';
 import styled from 'styled-components';
 import { fonts } from 'src/theme';
@@ -7,9 +15,9 @@ import Navigation from './components/navigation';
 import FormulaBar from './components/formulabar';
 import Toolbar from './components/toolbar';
 import WorksheetCanvas from './canvas';
-import { FocusType, getCellAddress } from './util';
+import { Cell, FocusType, getCellAddress } from './util';
 import useKeyboardNavigation from './useKeyboardNavigation';
-import { CellStyle } from './model';
+import Model, { CellStyle } from './model';
 import { useCalcModule } from './useCalcModule';
 import usePointer from './usePointer';
 import useResize from './useResize';
@@ -18,9 +26,9 @@ import { outlineBackgroundColor, outlineColor } from './constants';
 import useWorkbookReducer, { defaultSheetState } from './useWorkbookReducer';
 import useScrollSync from './useScrollSync';
 import useWorkbookActions from './useWorkbookActions';
-import useWorkbookEffects from './useWorkbookEffects';
 import RowContextMenuContent from './rowContextMenuContent';
-import { escapeHTML } from './formulas';
+import { escapeHTML, isInReferenceMode } from './formulas';
+import { getSelectedRangeInEditor } from './editor/util';
 
 export enum WorkbookTestId {
   WorkbookContainer = 'workbook-container',
@@ -41,8 +49,36 @@ type WorkbookProps = {
   className?: string;
 };
 
+export const CLIPBOARD_ID_SESSION_STORAGE_KEY = 'equalTo_clipboardId';
+
+const getNewClipboardId = () => new Date().toISOString();
+
 const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
   const { className } = properties;
+
+  const [requestRenderId, requestRender] = useReducer((x: number) => x + 1, 0);
+  const { calcModule } = useCalcModule();
+
+  // TODO: Move to useModel();
+  const [model, setModel] = useState<Model | null>(null);
+  useEffect(() => {
+    if (!calcModule) {
+      return;
+    }
+    if (!model) {
+      const newModel = calcModule.newEmpty();
+      setModel(newModel);
+    }
+  }, [model, calcModule]);
+
+  const [
+    { selectedSheet, scrollPosition, selectedCell, selectedArea, extendToArea, cellEditing },
+    dispatch,
+  ] = useWorkbookReducer(model);
+
+  const tabs = model?.getTabs() ?? [];
+  const formula =
+    model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column) ?? '';
 
   // References to DOM elements
   const canvasElement = useRef<HTMLCanvasElement>(null);
@@ -61,22 +97,6 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
 
   const worksheetCanvas = useRef<WorksheetCanvas | null>(null);
 
-  const [
-    {
-      model,
-      selectedSheet,
-      scrollPosition,
-      selectedCell,
-      selectedArea,
-      extendToArea,
-      requestRenderId,
-      formula,
-      cellEditing,
-    },
-    dispatch,
-  ] = useWorkbookReducer();
-  const tabs = model?.getTabs() ?? [];
-
   const resizeSpacer = useCallback((options: { deltaWidth: number; deltaHeight: number }): void => {
     if (spacerElement.current) {
       const spacerRect = spacerElement.current.getBoundingClientRect();
@@ -93,14 +113,12 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
     worksheetCanvas,
     worksheetElement,
     rootElement,
-    onResize: resizeSpacer,
   });
 
   const {
     setScrollPosition,
     onSheetSelected,
     onAreaSelected,
-    onCellsDeleted,
     onArrowUp,
     onArrowLeft,
     onArrowRight,
@@ -110,56 +128,309 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
     onPageDown,
     onPageUp,
     onExtendToCell,
-    onExtendToEnd,
-    onUndo,
-    onRedo,
-    onToggleBold,
-    onToggleItalic,
-    onToggleUnderline,
-    onToggleStrike,
-    onToggleAlignLeft,
-    onToggleAlignCenter,
-    onToggleAlignRight,
-    onTextColorPicked,
-    onFillColorPicked,
-    onAddBlankSheet,
-    onSheetColorChanged,
-    onSheetRenamed,
-    onSheetDeleted,
-    onNumberFormatPicked,
-    onColumnWidthChanges,
-    onRowHeightChanges,
-    onInsertRow,
-    onDeleteRow,
+    onExtendToEnd: updateSelectionExtendToEnd,
     onNavigationToEdge,
     onEditKeyPressStart,
     onExpandAreaSelectedKeyboard,
     onPointerMoveToCell,
-    onPointerDownAtCell,
     onEditChange,
     onReferenceCycle,
-    onEditEnd,
     onEditEscape,
     onCellEditStart,
-    onBold,
-    onItalic,
-    onUnderline,
     onFormulaEditStart,
-    onCopy,
-    onPaste,
-    onCut,
-    requestRender,
-    resetModel,
-    focusWorkbook,
   } = workbookActions;
 
-  const { calcModule } = useCalcModule();
+  const focusWorkbook = useCallback(() => {
+    rootElement.current?.focus();
+  }, []);
 
-  useWorkbookEffects({
-    model,
-    resetModel,
-    calcModule,
-  });
+  const onChange = useCallback(() => {
+    requestRender();
+    rootElement.current?.focus();
+  }, []);
+  // TODO: All of these actions will need to be synced to server and call requestRender
+  // Can we use some decorator on model for that?
+  const onAddBlankSheet = () => {
+    model?.addBlankSheet();
+    onChange();
+  };
+
+  const onSheetRenamed = (sheet: number, newName: string) => {
+    model?.renameSheet(sheet, newName);
+    onChange();
+  };
+
+  const onSheetDeleted = (sheet: number) => {
+    model?.deleteSheet(sheet);
+    onSheetSelected(0);
+    onChange();
+  };
+
+  const onSheetColorChanged = (sheet: number, color: string) => {
+    model?.setSheetColor(sheet, color);
+    onChange();
+  };
+
+  const onInsertRow = (row: number): void => {
+    model?.insertRow(selectedSheet, row);
+    setIsRowContextMenuOpen(false);
+    onChange();
+  };
+
+  const onDeleteRow = (row: number): void => {
+    model?.deleteRow(selectedSheet, row);
+    setIsRowContextMenuOpen(false);
+    onChange();
+  };
+
+  const onCellsDeleted = () => {
+    model?.deleteCells(selectedSheet, selectedArea);
+    onChange();
+  };
+
+  const onUndo = () => {
+    model?.undo();
+    onChange();
+  };
+
+  const onRedo = () => {
+    model?.redo();
+    onChange();
+  };
+
+  const onToggleBold = () => {
+    model?.toggleFontStyle(selectedSheet, selectedArea, 'bold');
+    onChange();
+  };
+  const onToggleItalic = () => {
+    model?.toggleFontStyle(selectedSheet, selectedArea, 'italic');
+    onChange();
+  };
+  const onToggleUnderline = () => {
+    model?.toggleFontStyle(selectedSheet, selectedArea, 'underline');
+    onChange();
+  };
+  const onToggleStrike = () => {
+    model?.toggleFontStyle(selectedSheet, selectedArea, 'strikethrough');
+    onChange();
+  };
+  const onToggleAlignLeft = () => {
+    model?.toggleAlign(selectedSheet, selectedArea, 'left');
+    onChange();
+  };
+  const onToggleAlignRight = () => {
+    model?.toggleAlign(selectedSheet, selectedArea, 'right');
+    onChange();
+  };
+  const onToggleAlignCenter = () => {
+    model?.toggleAlign(selectedSheet, selectedArea, 'center');
+    onChange();
+  };
+  const onTextColorPicked = (color: string) => {
+    model?.setTextColor(selectedSheet, selectedArea, color);
+    onChange();
+  };
+  const onFillColorPicked = (color: string) => {
+    model?.setFillColor(selectedSheet, selectedArea, color);
+    onChange();
+  };
+  const onNumberFormatPicked = (numberFormat: string) => {
+    model?.setNumberFormat(selectedSheet, selectedArea, numberFormat);
+    onChange();
+  };
+
+  const onColumnWidthChange = useCallback(
+    (sheet: number, column: number, width: number): void => {
+      if (!model) {
+        return;
+      }
+      // Minimum width is 2px
+      const newColumnWidth = Math.max(2, width);
+      const oldColumnWidth = model.getColumnWidth(sheet, column);
+
+      model.setColumnWidth(sheet, column, newColumnWidth);
+
+      resizeSpacer({ deltaWidth: newColumnWidth - oldColumnWidth, deltaHeight: 0 });
+      onChange();
+    },
+    [model, onChange, resizeSpacer],
+  );
+
+  const onRowHeightChange = useCallback(
+    (sheet: number, row: number, height: number): void => {
+      if (!model) {
+        return;
+      }
+      // Minimum height is 2px
+      const newRowHeight = Math.max(2, height);
+      const oldRowHeight = model.getRowHeight(sheet, row);
+
+      model.setRowHeight(sheet, row, newRowHeight);
+
+      resizeSpacer({ deltaHeight: newRowHeight - oldRowHeight, deltaWidth: 0 });
+      onChange();
+    },
+    [model, onChange, resizeSpacer],
+  );
+
+  const onPaste = (event: React.ClipboardEvent) => {
+    if (!model) {
+      return;
+    }
+    const { items } = event.clipboardData;
+    if (!items) {
+      return;
+    }
+    const mimeTypes = ['application/json', 'text/plain', 'text/csv', 'text/html'];
+    let mimeType;
+    let value;
+    const l = mimeTypes.length;
+    for (let index = 0; index < l; index += 1) {
+      mimeType = mimeTypes[index];
+      value = event.clipboardData.getData(mimeType);
+      if (value) {
+        break;
+      }
+    }
+    if (!mimeType || !value) {
+      // No clipboard data to paste
+      return;
+    }
+    if (mimeType === 'application/json') {
+      // We are copying from within the application
+      const targetArea = {
+        sheet: selectedSheet,
+        ...selectedArea,
+      };
+
+      try {
+        const source = JSON.parse(value);
+        const clipboardId = sessionStorage.getItem(CLIPBOARD_ID_SESSION_STORAGE_KEY);
+        let sourceType = source.type;
+        if (clipboardId !== source.clipboardId) {
+          sourceType = 'copy';
+        }
+        model.paste(source.area, targetArea, source.sheetData, sourceType);
+        if (sourceType === 'cut') {
+          event.clipboardData.clearData();
+        }
+      } catch {
+        // Trying to paste incorrect JSON
+        // FIXME: We should validate the JSON and not try/catch
+        // If JSON is invalid We should try to paste 'text/plain' content if it exist
+      }
+    } else if (mimeType === 'text/plain') {
+      model.pasteText(selectedSheet, selectedCell, value);
+    } else {
+      // NOT IMPLEMENTED
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    onChange();
+  };
+
+  const onCut = (event: React.ClipboardEvent<Element>) => {
+    if (!model) {
+      return;
+    }
+    const { tsv, area, sheetData } = model.copy({ sheet: selectedSheet, ...selectedArea });
+    let clipboardId = sessionStorage.getItem(CLIPBOARD_ID_SESSION_STORAGE_KEY);
+    if (!clipboardId) {
+      clipboardId = getNewClipboardId();
+      sessionStorage.setItem(CLIPBOARD_ID_SESSION_STORAGE_KEY, clipboardId);
+    }
+    event.clipboardData.setData('text/plain', tsv);
+    event.clipboardData.setData(
+      'application/json',
+      JSON.stringify({ type: 'cut', area, sheetData, clipboardId }),
+    );
+    event.preventDefault();
+    event.stopPropagation();
+    // FIXME: It doesn't really work, it should deleteCells too
+    onChange();
+  };
+
+  // Other
+  /**
+   * The clipboard allows us to attach different values to different mime types.
+   * When copying we return two things: A TSV string (tab separated values).
+   * And a an string representing the area we are copying.
+   * We attach the tsv string to "text/plain" useful to paste to a different application
+   * We attach the area to 'application/json' useful to paste within the application.
+   *
+   * FIXME: This second part is cheesy and will produce unexpected results:
+   *      1. User copies an area (call it's contents area1)
+   *      2. User modifies the copied area (call it's contents area2)
+   *      3. User paste content to a different place within the application
+   *
+   * To the user surprise area2 will be pasted. The fix for this ius ro actually return a json with the actual content.
+   */
+  // FIXME: Copy only works for areas [<top,left>, <bottom,right>]
+  const onCopy = (event: React.ClipboardEvent<Element>) => {
+    if (!model) {
+      return;
+    }
+    const { tsv, area, sheetData } = model.copy({ sheet: selectedSheet, ...selectedArea });
+    let clipboardId = sessionStorage.getItem(CLIPBOARD_ID_SESSION_STORAGE_KEY);
+    if (!clipboardId) {
+      clipboardId = getNewClipboardId();
+      sessionStorage.setItem(CLIPBOARD_ID_SESSION_STORAGE_KEY, clipboardId);
+    }
+    event.clipboardData.setData('text/plain', tsv);
+    event.clipboardData.setData(
+      'application/json',
+      JSON.stringify({ type: 'copy', area, sheetData, clipboardId }),
+    );
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const onExtendToEnd = () => {
+    if (!model || !extendToArea) {
+      return;
+    }
+    model.extendTo(selectedSheet, selectedArea, extendToArea);
+    updateSelectionExtendToEnd();
+    onChange();
+  };
+
+  const onSetCellValue = (sheet: number, row: number, column: number, text: string) => {
+    if (!model) {
+      return;
+    }
+    model.setCellValue(sheet, row, column, text);
+    onChange();
+  };
+
+  const onPointerDownAtCell = (cell: Cell, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (cellEditing) {
+      if (isInReferenceMode(cellEditing.text, cellEditing.cursorEnd)) {
+        workbookActions.onEditPointerDown(cell);
+        return;
+      }
+      // FIXME: This is out of context. This happens while you are editing a cell and finish the editing by
+      // clicking somewhere else.
+      // This probably should be done in the onBlur event in the editor.
+      // The cellEditing object might have not been updated because we debounce key strokes,
+      // So we use the text in the editor (note that we are editing the cell)
+      const sel = getSelectedRangeInEditor();
+      const text = sel ? sel.text : '';
+      onSetCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, text);
+    }
+    workbookActions.onPointerDownAtCell(cell);
+    onChange();
+  };
+
+  const onEditEnd = (delta: { deltaRow: number; deltaColumn: number }) => {
+    if (!cellEditing) {
+      return;
+    }
+    onSetCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, cellEditing.text);
+    workbookActions.onEditEnd(delta);
+    onChange();
+  };
 
   const { getCanvasSize, onResize } = useResize(worksheetElement, worksheetCanvas);
   const { onScroll } = useScrollSync(scrollElement, scrollPosition, setScrollPosition);
@@ -200,9 +471,9 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
     onKeyEnd,
     onCellsDeleted,
     onCellEditStart,
-    onBold,
-    onItalic,
-    onUnderline,
+    onBold: onToggleBold,
+    onItalic: onToggleItalic,
+    onUnderline: onToggleUnderline,
     onExpandAreaSelectedKeyboard,
     onUndo,
     onRedo,
@@ -269,8 +540,8 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
         ...defaultSheetState,
       },
       cellEditing: null,
-      onColumnWidthChanges,
-      onRowHeightChanges,
+      onColumnWidthChanges: onColumnWidthChange,
+      onRowHeightChanges: onRowHeightChange,
     };
 
     worksheetCanvas.current = new WorksheetCanvas(canvasSettings);
@@ -289,7 +560,7 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
       worksheetCanvas.current = null;
       resizeObserver.disconnect();
     };
-  }, [requestRender, getCanvasSize, model, onColumnWidthChanges, onResize, onRowHeightChanges]);
+  }, [requestRender, getCanvasSize, model, onColumnWidthChange, onResize, onRowHeightChange]);
 
   // Sync canvas with sheet state
   useEffect(() => {
@@ -409,14 +680,8 @@ const Workbook: FunctionComponent<WorkbookProps> = (properties) => {
           isMenuOpen={isRowContextMenuOpen}
           row={rowContextMenu}
           anchorEl={contextMenuAnchorElement.current}
-          onDeleteRow={(row: number): void => {
-            onDeleteRow(selectedSheet, row);
-            setIsRowContextMenuOpen(false);
-          }}
-          onInsertRow={(row: number): void => {
-            onInsertRow(selectedSheet, row);
-            setIsRowContextMenuOpen(false);
-          }}
+          onDeleteRow={onDeleteRow}
+          onInsertRow={onInsertRow}
           onClose={(): void => {
             setIsRowContextMenuOpen(false);
           }}

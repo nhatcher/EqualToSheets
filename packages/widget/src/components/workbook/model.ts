@@ -175,6 +175,8 @@ type StyleReducer = (style: CellStyle) => CellStyle;
 
 type PasteType = 'copy' | 'cut';
 
+type FontStyle = 'underline' | 'italic' | 'bold' | 'strikethrough';
+
 // Replaces all tabs with spaces in a string
 function escapeTabs(s: string): string {
   return s.replace(/\t/g, '  ');
@@ -379,6 +381,60 @@ export default class Model {
     }
     this.history.undo.push(diffs);
     this.history.redo = []; */
+  }
+
+  setNumberFormat(sheet: number, area: Area, numberFormat: string): void {
+    this.setCellsStyle(sheet, area, (style) => ({
+      ...style,
+      num_fmt: numberFormat,
+    }));
+  }
+
+  setFillColor(sheet: number, area: Area, color: string): void {
+    this.setCellsStyle(sheet, area, (style) => ({
+      ...style,
+      fill: {
+        ...style.fill,
+        fg_color: {
+          RGB: color,
+        },
+      },
+    }));
+  }
+
+  setTextColor(sheet: number, area: Area, color: string): void {
+    this.setCellsStyle(sheet, area, (style) => ({
+      ...style,
+      font: {
+        ...style.font,
+        color: {
+          RGB: color,
+        },
+      },
+    }));
+  }
+
+  toggleAlign(sheet: number, area: Area, alignment: 'left' | 'center' | 'right'): void {
+    this.setCellsStyle(sheet, area, (style) => ({
+      ...style,
+      horizontal_alignment: style.horizontal_alignment === alignment ? 'default' : alignment,
+    }));
+  }
+
+  toggleFontStyle(sheet: number, area: Area, fontStyle: FontStyle): void {
+    const propertyMap: Record<FontStyle, keyof CellStyleFont> = {
+      underline: 'u',
+      italic: 'i',
+      bold: 'b',
+      strikethrough: 'strike',
+    };
+    this.setCellsStyle(sheet, area, (style) => ({
+      ...style,
+      font: {
+        ...style.font,
+        [propertyMap[fontStyle]]: !style.font[propertyMap[fontStyle]],
+      },
+    }));
   }
 
   isCellReadOnly(sheet: number, row: number, column: number): boolean {

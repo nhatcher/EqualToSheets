@@ -15,9 +15,9 @@ export type NavigationProps = {
   selectedSheet: number;
   onSheetSelected: (index: number) => void;
   onAddBlankSheet: () => void;
-  onSheetColorChanged: (hex: string) => void;
-  onSheetRenamed: (name: string) => void;
-  onSheetDeleted: () => void;
+  onSheetColorChanged: (sheet: number, hex: string) => void;
+  onSheetRenamed: (sheet: number, name: string) => void;
+  onSheetDeleted: (sheet: number) => void;
   readOnly?: boolean;
   disabled?: boolean;
 };
@@ -46,16 +46,13 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
             </Toolbar.Button>
             <SheetListMenuContent tabs={tabs} onSheetSelected={onSheetSelected} />
           </Menu.Root>
-          <Menu.Root>
-            <Toolbar.Button asChild disabled={properties.disabled} title="Add sheet">
-              <Menu.Trigger>
-                <PlusIcon size={19} />
-              </Menu.Trigger>
-            </Toolbar.Button>
-            <Menu.Content side="top">
-              <Menu.Item onSelect={onAddBlankSheet}>{'Add blank sheet'}</Menu.Item>
-            </Menu.Content>
-          </Menu.Root>
+          <Toolbar.Button
+            disabled={properties.disabled}
+            onClick={onAddBlankSheet}
+            title="Add sheet"
+          >
+            <PlusIcon size={19} />
+          </Toolbar.Button>
         </Toolbar.Root>
       )}
       <SheetTabsContainer>
@@ -69,9 +66,9 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
               selected={selected}
               color={color}
               onSheetSelected={(): void => onSheetSelected(index)}
-              onSheetColorChanged={onSheetColorChanged}
-              onSheetRenamed={onSheetRenamed}
-              onSheetDeleted={onSheetDeleted}
+              onSheetColorChanged={(hex: string) => onSheetColorChanged(index, hex)}
+              onSheetRenamed={(name: string) => onSheetRenamed(index, name)}
+              onSheetDeleted={() => onSheetDeleted(index)}
               readOnly={readOnly}
             />
           );
