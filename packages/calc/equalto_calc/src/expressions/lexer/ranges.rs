@@ -44,10 +44,8 @@ impl Lexer {
         }
         // Note that row numbers could start with 0
         self.position = position;
-        let column = column_to_number(&column);
-        if column > LAST_COLUMN {
-            return Err(self.set_error("Column too large in reference", position));
-        }
+        let column = column_to_number(&column).map_err(|error| self.set_error(&error, position))?;
+
         match row.parse::<i32>() {
             Ok(row) => {
                 if row > LAST_ROW {
@@ -183,14 +181,10 @@ impl Lexer {
                 if column_right.is_empty() || !row_right.is_empty() {
                     return Err(self.set_error("Error parsing Range", position));
                 }
-                let column_left = column_to_number(&column_left);
-                if column_left > LAST_COLUMN {
-                    return Err(self.set_error("Column too large in reference", position));
-                }
-                let column_right = column_to_number(&column_right);
-                if column_right > LAST_COLUMN {
-                    return Err(self.set_error("Column too large in reference", position));
-                }
+                let column_left = column_to_number(&column_left)
+                    .map_err(|error| self.set_error(&error, position))?;
+                let column_right = column_to_number(&column_right)
+                    .map_err(|error| self.set_error(&error, position))?;
                 Ok(ParsedRange {
                     left: ParsedReference {
                         row: 1,

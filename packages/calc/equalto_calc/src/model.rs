@@ -9,16 +9,19 @@ use crate::{
     calc_result::{CalcResult, CellReference, Range},
     cell::CellValue,
     constants,
-    expressions::parser::{
-        stringify::{to_rc_format, to_string},
-        Node, Parser,
-    },
     expressions::token::{Error, OpCompare, OpProduct, OpSum, OpUnary},
     expressions::{
         parser::move_formula::{move_formula, MoveContext},
         token::get_error_by_name,
         types::*,
         utils::{self, is_valid_row},
+    },
+    expressions::{
+        parser::{
+            stringify::{to_rc_format, to_string},
+            Node, Parser,
+        },
+        utils::is_valid_column_number,
     },
     formatter::format::format_number,
     functions::util::compare_values,
@@ -860,13 +863,18 @@ impl Model {
         if !(1..=constants::LAST_ROW).contains(&row) {
             return None;
         }
-        if column.is_empty() {
-            return None;
-        }
-        let column = utils::column_to_number(&column);
-        if !(1..=constants::LAST_COLUMN).contains(&column) {
-            return None;
-        }
+
+        let column = match utils::column_to_number(&column) {
+            Ok(column) => {
+                if is_valid_column_number(column) {
+                    column
+                } else {
+                    return None;
+                }
+            }
+            Err(_) => return None,
+        };
+
         Some(CellReference { sheet, row, column })
     }
 

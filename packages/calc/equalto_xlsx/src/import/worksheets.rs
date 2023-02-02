@@ -11,6 +11,7 @@ use equalto_calc::{
 };
 use roxmltree::Node;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::error::XlsxError;
 
@@ -179,11 +180,19 @@ fn load_comments<R: Read + std::io::Seek>(
     Ok(comments)
 }
 
+#[derive(Error, Debug, PartialEq, Eq)]
+enum ParseReferenceError {
+    #[error("RowError: {0}")]
+    RowError(ParseIntError),
+    #[error("ColumnError: {0}")]
+    ColumnError(String),
+}
+
 // This parses Sheet1!AS23 into sheet, column and row
-// FIXME: This is buggy. Does not check that is a valid sheet name or column
+// FIXME: This is buggy. Does not check that is a valid sheet name
 // There is a similar named function in equalto_calc. We probably should fix both at the same time.
 // NB: Maybe use regexes for this?
-fn parse_reference(s: &str) -> Result<CellReferenceRC, ParseIntError> {
+fn parse_reference(s: &str) -> Result<CellReferenceRC, ParseReferenceError> {
     let bytes = s.as_bytes();
     let mut sheet_name = "".to_string();
     let mut column = "".to_string();
@@ -213,8 +222,8 @@ fn parse_reference(s: &str) -> Result<CellReferenceRC, ParseIntError> {
     }
     Ok(CellReferenceRC {
         sheet: sheet_name,
-        row: row.parse::<i32>()?,
-        column: column_to_number(&column),
+        row: row.parse::<i32>().map_err(ParseReferenceError::RowError)?,
+        column: column_to_number(&column).map_err(ParseReferenceError::ColumnError)?,
     })
 }
 
@@ -224,7 +233,8 @@ fn from_a1_to_rc(
     context: String,
 ) -> Result<String, XlsxError> {
     let mut parser = Parser::new(worksheets.to_owned());
-    let cell_reference = parse_reference(&context)?;
+    let cell_reference =
+        parse_reference(&context).map_err(|error| XlsxError::Xml(error.to_string()))?;
     let t = parser.parse(&formula, &Some(cell_reference));
     Ok(to_rc_format(&t))
 }
@@ -588,7 +598,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
         for cell in row.children() {
             let cell_ref = get_attribute(&cell, "r")?;
             let column_letter = get_column_from_ref(cell_ref);
-            let column = column_to_number(column_letter.as_str());
+            let column = column_to_number(column_letter.as_str()).map_err(XlsxError::Xml)?;
 
             // We check the value "v" child.
             let vs: Vec<Node> = cell.children().filter(|n| n.has_tag_name("v")).collect();

@@ -4,20 +4,33 @@ use crate::constants::{LAST_COLUMN, LAST_ROW};
 #[cfg(test)]
 mod test;
 
-pub fn column_to_number(column: &str) -> i32 {
-    let bytes = column.as_bytes();
-    let mut column_number = 0;
-    let mut factor = 26_i32.pow((bytes.len() - 1) as u32);
-    for &byte in bytes {
-        let i = byte as i32;
-        column_number += (i - 64) * factor;
-        factor /= 26;
+/// Converts column letter identifier to number.
+pub fn column_to_number(column: &str) -> Result<i32, String> {
+    if column.is_empty() {
+        return Err("Column identifier cannot be empty.".to_string());
     }
-    column_number
+
+    if !column.is_ascii() {
+        return Err("Column identifier must be ASCII.".to_string());
+    }
+
+    let mut column_number = 0;
+    for character in column.chars() {
+        if !('A'..='Z').contains(&character) {
+            return Err("Column identifier can use only A-Z characters".to_string());
+        }
+        column_number = column_number * 26 + ((character as i32) - 64);
+    }
+
+    match is_valid_column_number(column_number) {
+        true => Ok(column_number),
+        false => Err("Column is not valid.".to_string()),
+    }
 }
 
+/// If input number is outside valid range `None` is returned.
 pub fn number_to_column(mut i: i32) -> Option<String> {
-    if !(1..=LAST_COLUMN).contains(&i) {
+    if !is_valid_column_number(i) {
         return None;
     }
     let mut column = "".to_string();
@@ -29,16 +42,27 @@ pub fn number_to_column(mut i: i32) -> Option<String> {
     Some(column)
 }
 
+/// Checks if column number is in valid range.
+pub fn is_valid_column_number(column: i32) -> bool {
+    (1..=LAST_COLUMN).contains(&column)
+}
+
 pub fn is_valid_column(column: &str) -> bool {
     // last column XFD
     if column.len() > 3 {
         return false;
     }
-    column_to_number(column) <= LAST_COLUMN
+
+    let column_number = column_to_number(column);
+
+    match column_number {
+        Ok(column_number) => is_valid_column_number(column_number),
+        Err(_) => false,
+    }
 }
 
 pub fn is_valid_row(row: i32) -> bool {
-    row <= LAST_ROW
+    (1..=LAST_ROW).contains(&row)
 }
 
 fn is_valid_row_str(row: &str) -> bool {
@@ -175,9 +199,10 @@ pub fn parse_reference_a1(r: &str) -> Option<ParsedReference> {
         Ok(r) => r,
         Err(_) => return None,
     };
+
     Some(ParsedReference {
         row,
-        column: column_to_number(&column),
+        column: column_to_number(&column).ok()?,
         absolute_column,
         absolute_row,
     })

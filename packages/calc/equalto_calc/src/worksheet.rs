@@ -1,4 +1,5 @@
 use crate::constants;
+use crate::expressions::utils::{is_valid_column_number, is_valid_row};
 use crate::{expressions::token::Error, types::*};
 
 use std::collections::HashMap;
@@ -238,13 +239,18 @@ impl Worksheet {
     /// Changes the height of a row.
     ///   * If the row does not a have a style we add it.
     ///   * If it has we modify the height and make sure it is applied.
-    pub fn set_row_height(&mut self, row: i32, height: f64) {
+    /// Fails if column index is outside allowed range.
+    pub fn set_row_height(&mut self, row: i32, height: f64) -> Result<(), String> {
+        if !is_valid_row(row) {
+            return Err(format!("Row number '{row}' is not valid."));
+        }
+
         let rows = &mut self.rows;
         for r in rows.iter_mut() {
             if r.r == row {
                 r.height = height / constants::ROW_HEIGHT_FACTOR;
                 r.custom_height = true;
-                return;
+                return Ok(());
             }
         }
         rows.push(Row {
@@ -253,12 +259,17 @@ impl Worksheet {
             custom_format: false,
             custom_height: true,
             s: 0,
-        })
+        });
+        Ok(())
     }
     /// Changes the width of a column.
     ///   * If the column does not a have a width we simply add it
     ///   * If it has, it might be part of a range and we ned to split the range.
-    pub fn set_column_width(&mut self, column: i32, width: f64) {
+    /// Fails if column index is outside allowed range.
+    pub fn set_column_width(&mut self, column: i32, width: f64) -> Result<(), String> {
+        if !is_valid_column_number(column) {
+            return Err(format!("Column number '{column}' is not valid."));
+        }
         let cols = &mut self.cols;
         let mut col = Col {
             min: column,
@@ -275,7 +286,7 @@ impl Worksheet {
             if min <= column && column <= max {
                 if min == column && max == column {
                     c.width = width / constants::COLUMN_WIDTH_FACTOR;
-                    return;
+                    return Ok(());
                 } else {
                     // We need to split the result
                     split = true;
@@ -317,33 +328,42 @@ impl Worksheet {
         } else {
             cols.insert(index, col);
         }
+        Ok(())
     }
 
     /// Return the width of a column in pixels
-    pub fn get_column_width(&self, column: i32) -> f64 {
+    pub fn column_width(&self, column: i32) -> Result<f64, String> {
+        if !is_valid_column_number(column) {
+            return Err(format!("Column number '{column}' is not valid."));
+        }
+
         let cols = &self.cols;
         for col in cols {
             let min = col.min;
             let max = col.max;
             if column >= min && column <= max {
                 if col.custom_width {
-                    return col.width * constants::COLUMN_WIDTH_FACTOR;
+                    return Ok(col.width * constants::COLUMN_WIDTH_FACTOR);
                 } else {
                     break;
                 }
             }
         }
-        constants::DEFAULT_COLUMN_WIDTH
+        Ok(constants::DEFAULT_COLUMN_WIDTH)
     }
 
     /// Returns the height of a row in pixels
-    pub fn get_row_height(&self, row: i32) -> f64 {
+    pub fn row_height(&self, row: i32) -> Result<f64, String> {
+        if !is_valid_row(row) {
+            return Err(format!("Row number '{row}' is not valid."));
+        }
+
         let rows = &self.rows;
         for r in rows {
             if r.r == row {
-                return r.height * constants::ROW_HEIGHT_FACTOR;
+                return Ok(r.height * constants::ROW_HEIGHT_FACTOR);
             }
         }
-        constants::DEFAULT_ROW_HEIGHT
+        Ok(constants::DEFAULT_ROW_HEIGHT)
     }
 }

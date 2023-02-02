@@ -9,7 +9,7 @@ const mapSheetToObject = (sheet: ISheet) => {
   };
 };
 
-describe("Workbook", () => {
+describe("Worksheet", () => {
   beforeAll(async () => {
     await initialize();
   });
@@ -358,5 +358,83 @@ describe("Workbook", () => {
     };
     expect(failCase).toThrow('Could not find sheet with name="DoesNotExist"');
     expect(failCase).toThrow(CalcError);
+  });
+
+  test('can set column widths', async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+
+    expect(sheet.getColumnWidth(1)).toEqual(100);
+    expect(sheet.getColumnWidth(2)).toEqual(100);
+    expect(sheet.getColumnWidth(3)).toEqual(100);
+
+    sheet.setColumnWidth(2, 215);
+    sheet.setColumnWidth(3, 60);
+
+    expect(sheet.getColumnWidth(1)).toEqual(100);
+    expect(sheet.getColumnWidth(2)).toEqual(215);
+    expect(sheet.getColumnWidth(3)).toEqual(60);
+
+    expect(sheet.getRowHeight(1)).toEqual(21);
+    expect(sheet.getRowHeight(2)).toEqual(21);
+    expect(sheet.getRowHeight(3)).toEqual(21);
+  });
+
+  test.each([-1, 0, 17_000])('throws when reading width of invalid column (%d)', async (column) => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+    expect(() => sheet.getColumnWidth(column)).toThrow(
+      `Column number '${column}' is not valid.`
+    );
+  });
+
+  test.each([-1, 0, 16385])('throws when setting width of invalid column (%d)', async (column) => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+    expect(() => sheet.setColumnWidth(column, 45)).toThrow(
+      `Column number '${column}' is not valid.`
+    );
+  });
+
+  test.each([-1, 0, 1048577])('throws when reading height of invalid row (%d)', async (column) => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+    expect(() => sheet.getRowHeight(column)).toThrow(
+      `Row number '${column}' is not valid.`
+    );
+  });
+
+  test.each([-1, 0, 1048577])('throws when setting height of invalid row (%d)', async (column) => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+    expect(() => sheet.setRowHeight(column, 30)).toThrow(
+      `Row number '${column}' is not valid.`
+    );
+  });
+
+  test('can set row heights', async () => {
+    const { newWorkbook } = await getApi();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+
+    expect(sheet.getRowHeight(1)).toEqual(21);
+    expect(sheet.getRowHeight(2)).toEqual(21);
+    expect(sheet.getRowHeight(3)).toEqual(21);
+
+    sheet.setRowHeight(2, 75);
+    sheet.setRowHeight(3, 18);
+
+    expect(sheet.getRowHeight(1)).toEqual(21);
+    expect(sheet.getRowHeight(2)).toEqual(75);
+    expect(sheet.getRowHeight(3)).toEqual(18);
+
+    expect(sheet.getColumnWidth(1)).toEqual(100);
+    expect(sheet.getColumnWidth(2)).toEqual(100);
+    expect(sheet.getColumnWidth(3)).toEqual(100);
   });
 });

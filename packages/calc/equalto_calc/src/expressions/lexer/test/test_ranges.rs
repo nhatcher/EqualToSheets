@@ -1,6 +1,7 @@
 #![allow(clippy::unwrap_used)]
 
 use crate::constants::{LAST_COLUMN, LAST_ROW};
+use crate::expressions::lexer::LexerError;
 use crate::expressions::{
     lexer::{Lexer, LexerMode},
     token::TokenType::*,
@@ -131,6 +132,19 @@ fn test_range_column() {
                 absolute_row: true,
             }
         }
+    );
+    assert_eq!(lx.next_token(), EOF);
+}
+
+#[test]
+fn test_range_column_out_of_range() {
+    let mut lx = new_lexer("C:XFE");
+    assert_eq!(
+        lx.next_token(),
+        ILLEGAL(LexerError {
+            position: 5,
+            message: "Column is not valid.".to_string(),
+        })
     );
     assert_eq!(lx.next_token(), EOF);
 }

@@ -1,16 +1,54 @@
 use super::*;
+
 #[test]
 fn test_column_to_number() {
-    assert_eq!(column_to_number("A"), 1);
-    assert_eq!(column_to_number("Z"), 26);
-    assert_eq!(column_to_number("AA"), 27);
-    assert_eq!(column_to_number("AB"), 28);
-    assert_eq!(column_to_number("XFD"), 16_384);
-    assert_eq!(column_to_number("XFD"), LAST_COLUMN);
+    assert_eq!(column_to_number("A"), Ok(1));
+    assert_eq!(column_to_number("Z"), Ok(26));
+    assert_eq!(column_to_number("AA"), Ok(27));
+    assert_eq!(column_to_number("AB"), Ok(28));
+    assert_eq!(column_to_number("XFD"), Ok(16_384));
+    assert_eq!(column_to_number("XFD"), Ok(LAST_COLUMN));
+
+    assert_eq!(
+        column_to_number("XFE"),
+        Err("Column is not valid.".to_string())
+    );
+    assert_eq!(
+        column_to_number(""),
+        Err("Column identifier cannot be empty.".to_string())
+    );
+    assert_eq!(
+        column_to_number("💥"),
+        Err("Column identifier must be ASCII.".to_string())
+    );
+    assert_eq!(
+        column_to_number("A1"),
+        Err("Column identifier can use only A-Z characters".to_string())
+    );
+    assert_eq!(
+        column_to_number("ab"),
+        Err("Column identifier can use only A-Z characters".to_string())
+    );
 }
 
 #[test]
-fn test_number_to_colum() {
+fn test_is_valid_column() {
+    assert!(is_valid_column("A"));
+    assert!(is_valid_column("AA"));
+    assert!(is_valid_column("XFD"));
+
+    assert!(!is_valid_column("a"));
+    assert!(!is_valid_column("aa"));
+    assert!(!is_valid_column("xfd"));
+
+    assert!(!is_valid_column("1"));
+    assert!(!is_valid_column("-1"));
+    assert!(!is_valid_column("XFE"));
+    assert!(!is_valid_column(""));
+}
+
+#[test]
+fn test_number_to_column() {
     assert_eq!(number_to_column(1), Some("A".to_string()));
     assert_eq!(number_to_column(26), Some("Z".to_string()));
     assert_eq!(number_to_column(27), Some("AA".to_string()));

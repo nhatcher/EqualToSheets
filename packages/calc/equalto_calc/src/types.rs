@@ -118,19 +118,26 @@ pub struct Worksheet {
 /// It is row first and because of this all of our API's should be row first
 pub type SheetData = HashMap<i32, HashMap<i32, Cell>>;
 
+// ECMA-376-1:2016 section 18.3.1.73
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Row {
-    pub height: f64,
+    /// Row index
     pub r: i32,
+    pub height: f64,
     pub custom_format: bool,
     pub custom_height: bool,
     pub s: i32,
 }
 
+// ECMA-376-1:2016 section 18.3.1.13
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Col {
+    // Column definitions are defined on ranges, unlike rows which store unique, per-row entries.
+    /// First column affected by this record. Settings apply to column in \[min, max\] range.
     pub min: i32,
+    /// Last column affected by this record. Settings apply to column in \[min, max\] range.
     pub max: i32,
+
     pub width: f64,
     pub custom_width: bool,
     #[serde(skip_serializing_if = "Option::is_none")]

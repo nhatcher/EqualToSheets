@@ -217,4 +217,58 @@ impl WasmWorkbook {
             .map_err(WorkbookError::from)
             .map_err(JsError::from)
     }
+
+    #[wasm_bindgen(js_name = "getColumnWidth")]
+    pub fn column_width(&self, sheet_index: u32, column: i32) -> Result<f64, JsError> {
+        self.model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .column_width(column)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
+
+    #[wasm_bindgen(js_name = "getRowHeight")]
+    pub fn row_height(&self, sheet_index: u32, row: i32) -> Result<f64, JsError> {
+        self.model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .row_height(row)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
+
+    #[wasm_bindgen(js_name = "setColumnWidth")]
+    pub fn set_column_width(
+        &mut self,
+        sheet_index: u32,
+        column: i32,
+        width: f64,
+    ) -> Result<(), JsError> {
+        self.model
+            .workbook
+            .worksheet_mut(sheet_index)
+            .map_err(WorkbookError::from)?
+            .set_column_width(column, width)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
+
+    #[wasm_bindgen(js_name = "setRowHeight")]
+    pub fn set_row_height(
+        &mut self,
+        sheet_index: u32,
+        row: i32,
+        height: f64,
+    ) -> Result<(), JsError> {
+        self.model
+            .workbook
+            .worksheet_mut(sheet_index)
+            .map_err(WorkbookError::from)?
+            .set_row_height(row, height)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
 }

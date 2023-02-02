@@ -1,8 +1,8 @@
-import { ErrorKind, CalcError, wrapWebAssemblyError } from "src/errors";
-import { parseCellReference } from "../utils";
-import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
-import { Cell, ICell } from "./cell";
-import { WorkbookSheets } from "./workbookSheets";
+import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
+import { parseCellReference } from '../utils';
+import { WasmWorkbook } from '../__generated_pkg/equalto_wasm';
+import { Cell, ICell } from './cell';
+import { WorkbookSheets } from './workbookSheets';
 
 export interface ISheet {
   /**
@@ -47,6 +47,32 @@ export interface ISheet {
    * @throws {@link CalcError} thrown if reference isn't valid.
    */
   cell(row: number, column: number): ICell;
+
+  /**
+   * @param column - column index (count starts from 1: A=1, B=2, ...)
+   * @returns Column width.
+   */
+  getColumnWidth(column: number): number;
+
+  /**
+   * Sets column width.
+   * @param column - column index (count starts from 1: A=1, B=2, ...)
+   * @param columnWidth - column width
+   */
+  setColumnWidth(column: number, columnWidth: number): void;
+
+  /**
+   * @param row - row index (count starts from 1)
+   * @returns row height
+   */
+  getRowHeight(row: number): number;
+
+  /**
+   * Sets row height.
+   * @param row - row index (count starts from 1)
+   * @param rowHeight - row height
+   */
+  setRowHeight(row: number, rowHeight: number): void;
 }
 
 export class Sheet implements ISheet {
@@ -54,11 +80,7 @@ export class Sheet implements ISheet {
   private readonly _wasmWorkbook: WasmWorkbook;
   private readonly _sheetId: number;
 
-  constructor(
-    workbookSheets: WorkbookSheets,
-    wasmWorkbook: WasmWorkbook,
-    sheetId: number
-  ) {
+  constructor(workbookSheets: WorkbookSheets, wasmWorkbook: WasmWorkbook, sheetId: number) {
     this._workbookSheets = workbookSheets;
     this._wasmWorkbook = wasmWorkbook;
     this._sheetId = sheetId;
@@ -98,29 +120,61 @@ export class Sheet implements ISheet {
   cell(textReference: string): ICell;
   cell(row: number, column: number): ICell;
   cell(textReferenceOrRow: string | number, column?: number): ICell {
-    if (typeof textReferenceOrRow === "string") {
+    if (typeof textReferenceOrRow === 'string') {
       const textReference = textReferenceOrRow;
       const reference = parseCellReference(textReference);
       if (reference === null) {
         throw new CalcError(
           `Cell reference error. "${textReference}" is not valid reference.`,
-          ErrorKind.ReferenceError
+          ErrorKind.ReferenceError,
         );
       }
       if (reference.sheetName !== undefined) {
         throw new CalcError(
           `Cell reference error. Sheet name cannot be specified in sheet cell getter.`,
-          ErrorKind.ReferenceError
+          ErrorKind.ReferenceError,
         );
       }
       return this.cell(reference.row, reference.column);
     }
 
-    if (typeof textReferenceOrRow === "number" && typeof column === "number") {
+    if (typeof textReferenceOrRow === 'number' && typeof column === 'number') {
       const row = textReferenceOrRow;
       return new Cell(this._wasmWorkbook, this, row, column);
     }
 
-    throw new CalcError("Function Sheet.cell received unexpected parameters.");
+    throw new CalcError('Function Sheet.cell received unexpected parameters.');
+  }
+
+  getColumnWidth(column: number): number {
+    try {
+      return this._wasmWorkbook.getColumnWidth(this.index, column);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  setColumnWidth(column: number, columnWidth: number): void {
+    try {
+      this._wasmWorkbook.setColumnWidth(this.index, column, columnWidth);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  getRowHeight(row: number): number {
+    try {
+      return this._wasmWorkbook.getRowHeight(this.index, row);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  setRowHeight(row: number, rowHeight: number): void {
+    try {
+      this._wasmWorkbook.setRowHeight(this.index, row, rowHeight);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
   }
 }
