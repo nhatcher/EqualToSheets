@@ -2,7 +2,7 @@
 
 use crate::cell::CellValue;
 
-use crate::{number_format::to_excel_precision_str, types::Color};
+use crate::number_format::to_excel_precision_str;
 
 use crate::test::util::new_empty_model;
 
@@ -295,18 +295,18 @@ fn test_style_fmt_id() {
 #[test]
 fn test_set_sheet_color() {
     let mut model = new_empty_model();
-    assert_eq!(model.workbook.worksheet(0).unwrap().color, Color::None);
+    assert_eq!(model.workbook.worksheet(0).unwrap().color, None);
     assert!(model.set_sheet_color(0, "#FFFAAA").is_ok());
 
     // Test new tab color is properly set
     assert_eq!(
         model.workbook.worksheet(0).unwrap().color,
-        Color::RGB("#FFFAAA".to_string())
+        Some("#FFFAAA".to_string())
     );
 
     // Test we can remove it
     assert!(model.set_sheet_color(0, "").is_ok());
-    assert_eq!(model.workbook.worksheet(0).unwrap().color, Color::None);
+    assert_eq!(model.workbook.worksheet(0).unwrap().color, None);
 }
 
 #[test]

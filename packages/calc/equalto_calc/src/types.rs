@@ -101,9 +101,8 @@ pub struct Worksheet {
     pub shared_formulas: Vec<String>,
     pub sheet_id: u32,
     pub state: SheetState,
-    #[serde(default = "Color::new")]
-    #[serde(skip_serializing_if = "Color::is_none")]
-    pub color: Color,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
     pub merge_cells: Vec<String>,
     pub comments: Vec<Comment>,
     #[serde(default)]
@@ -142,27 +141,6 @@ pub struct Col {
     pub custom_width: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub style: Option<i32>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub enum Color {
-    None,
-    RGB(String),
-}
-
-impl Color {
-    pub fn is_none(&self) -> bool {
-        matches!(self, Color::None)
-    }
-    pub fn new() -> Color {
-        Color::None
-    }
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 /// Cell type enum matching Excel TYPE() function values.
@@ -309,7 +287,7 @@ pub struct Font {
     #[serde(skip_serializing_if = "is_false")]
     pub i: bool,
     pub sz: i32,
-    pub color: Color,
+    pub color: Option<String>,
     pub name: String,
     // This is the font family fallback
     // 1 -> serif
@@ -328,7 +306,7 @@ impl Default for Font {
             b: false,
             i: false,
             sz: 11,
-            color: Color::RGB("#000000".to_string()),
+            color: Some("#000000".to_string()),
             name: "Calibri".to_string(),
             family: 2,
             scheme: FontScheme::Minor,
@@ -340,12 +318,10 @@ impl Default for Font {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Fill {
     pub pattern_type: String,
-    #[serde(default = "Color::new")]
-    #[serde(skip_serializing_if = "Color::is_none")]
-    pub fg_color: Color,
-    #[serde(default = "Color::new")]
-    #[serde(skip_serializing_if = "Color::is_none")]
-    pub bg_color: Color,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fg_color: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bg_color: Option<String>,
 }
 
 impl Default for Fill {
@@ -573,7 +549,7 @@ impl Display for BorderStyle {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct BorderItem {
     pub style: BorderStyle,
-    pub color: Color,
+    pub color: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]

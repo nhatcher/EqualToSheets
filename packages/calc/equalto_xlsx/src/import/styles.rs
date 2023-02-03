@@ -1,8 +1,8 @@
 use std::{collections::HashMap, io::Read};
 
 use equalto_calc::types::{
-    Alignment, Border, BorderItem, BorderStyle, CellStyleXfs, CellStyles, CellXfs, Color, Fill,
-    Font, FontScheme, HorizontalAlignment, NumFmt, Styles, VerticalAlignment,
+    Alignment, Border, BorderItem, BorderStyle, CellStyleXfs, CellStyles, CellXfs, Fill, Font,
+    FontScheme, HorizontalAlignment, NumFmt, Styles, VerticalAlignment,
 };
 use roxmltree::Node;
 
@@ -42,7 +42,7 @@ fn get_border(node: Node, name: &str) -> Result<Option<BorderItem>, XlsxError> {
         if color_node.len() == 1 {
             color = get_color(color_node[0])?;
         } else {
-            color = Color::None;
+            color = None;
         }
     } else {
         return Ok(None);
@@ -93,7 +93,7 @@ pub(super) fn load_styles<R: Read + std::io::Seek>(
         let mut b = false;
         let mut i = false;
         let mut strike = false;
-        let mut color = Color::RGB("FFFFFF00".to_string());
+        let mut color = Some("FFFFFF00".to_string());
         let mut family = 2;
         let mut scheme = FontScheme::default();
         for feature in font.children() {
@@ -172,8 +172,8 @@ pub(super) fn load_styles<R: Read + std::io::Seek>(
             .attribute("patternType")
             .unwrap_or("none")
             .to_string();
-        let mut fg_color = Color::None;
-        let mut bg_color = Color::None;
+        let mut fg_color = None;
+        let mut bg_color = None;
         for feature in pattern_fill.children() {
             match feature.tag_name().name() {
                 "fgColor" => {

@@ -559,10 +559,10 @@ impl Model {
     pub fn set_sheet_color(&mut self, sheet: u32, color: &str) -> Result<(), String> {
         let mut worksheet = self.workbook.worksheet_mut(sheet)?;
         if color.is_empty() {
-            worksheet.color = Color::None;
+            worksheet.color = None;
             return Ok(());
         } else if common::is_valid_hex_color(color) {
-            worksheet.color = Color::RGB(color.to_string());
+            worksheet.color = Some(color.to_string());
             return Ok(());
         }
         Err(format!("Invalid color: {}", color))

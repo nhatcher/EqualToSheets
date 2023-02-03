@@ -1,5 +1,4 @@
 use colors::{get_indexed_color, get_themed_color};
-use equalto_calc::types::Color;
 use roxmltree::{ExpandedName, Node};
 
 use crate::error::XlsxError;
@@ -35,7 +34,7 @@ pub(super) fn get_value_or_default(node: &Node, tag_name: &str, default: &str) -
     }
 }
 
-pub(super) fn get_color(node: Node) -> Result<Color, XlsxError> {
+pub(super) fn get_color(node: Node) -> Result<Option<String>, XlsxError> {
     // 18.3.1.15 color (Data Bar Color)
     if node.has_attribute("rgb") {
         let mut val = node.attribute("rgb").unwrap().to_string();
@@ -43,11 +42,11 @@ pub(super) fn get_color(node: Node) -> Result<Color, XlsxError> {
         if val.len() == 8 {
             val = format!("#{}", &val[2..8]);
         }
-        Ok(Color::RGB(val))
+        Ok(Some(val))
     } else if node.has_attribute("indexed") {
         let index = node.attribute("indexed").unwrap().parse::<i32>()?;
         let rgb = get_indexed_color(index);
-        Ok(Color::RGB(rgb))
+        Ok(Some(rgb))
     // Color::Indexed(val)
     } else if node.has_attribute("theme") {
         let theme = node.attribute("theme").unwrap().parse::<i32>()?;
@@ -56,15 +55,15 @@ pub(super) fn get_color(node: Node) -> Result<Color, XlsxError> {
             None => 0.0,
         };
         let rgb = get_themed_color(theme, tint);
-        Ok(Color::RGB(rgb))
+        Ok(Some(rgb))
     // Color::Theme { theme, tint }
     } else if node.has_attribute("auto") {
         // TODO: Is this correct?
         // A boolean value indicating the color is automatic and system color dependent.
-        Ok(Color::None)
+        Ok(None)
     } else {
         println!("Unexpected color node {:?}", node);
-        Ok(Color::None)
+        Ok(None)
     }
 }
 

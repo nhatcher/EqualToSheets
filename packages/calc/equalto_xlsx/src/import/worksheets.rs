@@ -7,7 +7,7 @@ use equalto_calc::{
         types::CellReferenceRC,
         utils::column_to_number,
     },
-    types::{Cell, Col, Color, Comment, DefinedName, Row, SheetData, SheetState, Worksheet},
+    types::{Cell, Col, Comment, DefinedName, Row, SheetData, SheetState, Worksheet},
 };
 use roxmltree::Node;
 use serde::{Deserialize, Serialize};
@@ -119,11 +119,11 @@ fn load_merge_cells(ws: Node) -> Result<Vec<String>, XlsxError> {
     Ok(merge_cells)
 }
 
-fn load_sheet_color(ws: Node) -> Result<Color, XlsxError> {
+fn load_sheet_color(ws: Node) -> Result<Option<String>, XlsxError> {
     // <sheetPr>
     //     <tabColor theme="5" tint="-0.249977111117893"/>
     // </sheetPr>
-    let mut color = Color::None;
+    let mut color = None;
     let sheet_pr = ws
         .children()
         .filter(|n| n.has_tag_name("sheetPr"))

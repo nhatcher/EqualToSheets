@@ -1,5 +1,5 @@
 use equalto_calc::types::{
-    Alignment, BorderItem, Color, HorizontalAlignment, Styles, VerticalAlignment, Workbook,
+    Alignment, BorderItem, HorizontalAlignment, Styles, VerticalAlignment, Workbook,
 };
 
 use super::{escape::escape_xml, xml_constants::XML_DECLARATION};
@@ -9,7 +9,7 @@ fn get_fonts_xml(styles: &Styles) -> String {
     let mut fonts_str: Vec<String> = vec![];
     for font in fonts {
         let size = format!("<sz val=\"{}\"/>", font.sz);
-        let color = if let Color::RGB(some_color) = &font.color {
+        let color = if let Some(some_color) = &font.color {
             format!("<color rgb=\"FF{}\"/>", some_color.trim_start_matches('#'))
         } else {
             "".to_string()
@@ -42,9 +42,9 @@ fn get_fonts_xml(styles: &Styles) -> String {
     )
 }
 
-fn get_color_xml(color: &Color, name: &str) -> String {
+fn get_color_xml(color: &Option<String>, name: &str) -> String {
     // We blindly append FF at the beginning of these RGB color to make it ARGB
-    if let Color::RGB(some_color) = color {
+    if let Some(some_color) = color {
         format!("<{name} rgb=\"FF{}\"/>", some_color.trim_start_matches('#'))
     } else {
         "".to_string()
