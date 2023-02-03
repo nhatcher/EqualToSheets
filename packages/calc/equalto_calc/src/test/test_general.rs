@@ -438,3 +438,37 @@ fn test_cell_formula() {
         Err("Invalid sheet index".to_string()),
     );
 }
+
+#[test]
+fn test_xlfn() {
+    let mut model = new_empty_model();
+    model._set("A1", "=_xlfn.SIN(1)");
+    model._set("A2", "=_xlfn.SINY(1)");
+    model.evaluate();
+    // known formulas strip the '_xlfn.'
+    assert_eq!(
+        model.cell_formula(0, 1, 1).unwrap(),
+        Some("=SIN(1)".to_string())
+    );
+    // unknown formulas keep the '_xlfn.' prefix
+    assert_eq!(
+        model.cell_formula(0, 2, 1).unwrap(),
+        Some("=_xlfn.SINY(1)".to_string())
+    );
+}
+
+#[test]
+fn test_letter_case() {
+    let mut model = new_empty_model();
+    model._set("A1", "=sin(1)");
+    model._set("A2", "=sIn(2)");
+    model.evaluate();
+    assert_eq!(
+        model.cell_formula(0, 1, 1).unwrap(),
+        Some("=SIN(1)".to_string())
+    );
+    assert_eq!(
+        model.cell_formula(0, 2, 1).unwrap(),
+        Some("=SIN(2)".to_string())
+    );
+}

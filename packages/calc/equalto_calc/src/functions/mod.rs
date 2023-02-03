@@ -117,9 +117,11 @@ impl Function {
         }
     }
 
-    /// Gets the function
+    /// Gets the function from the name.
+    /// Note that in Excel any function could be prefixed by `_xlfn.`
     pub fn get_function(name: &str) -> Option<Function> {
-        match name {
+        let upper_case_name = name.to_ascii_uppercase();
+        match upper_case_name.trim_start_matches("_XLFN.") {
             "AND" => Some(Function::And),
             "FALSE" => Some(Function::False),
             "IF" => Some(Function::If),

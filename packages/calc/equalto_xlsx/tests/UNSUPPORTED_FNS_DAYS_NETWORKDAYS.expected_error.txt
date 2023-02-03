@@ -1,1 +1,1 @@
-Sheet1!A3 ('=DAYS(A2,A1)'): Invalid function: DAYS
+Sheet1!A3 ('=_xlfn.DAYS(A2,A1)'): Invalid function: _xlfn.DAYS

@@ -489,6 +489,6 @@ fn test_ident_cannot_start_with_period() {
 #[test]
 fn test_xlfn() {
     let mut lx = new_lexer("_xlfn.MyVar", true);
-    assert_eq!(lx.next_token(), IDENT("MyVar".to_string()));
+    assert_eq!(lx.next_token(), IDENT("_xlfn.MyVar".to_string()));
     assert_eq!(lx.next_token(), EOF);
 }

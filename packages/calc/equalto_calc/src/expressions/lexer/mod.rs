@@ -152,7 +152,7 @@ impl Lexer {
     pub fn next_token(&mut self) -> TokenType {
         self.next_token_position = None;
         self.consume_whitespace();
-        self.consume_xlfn();
+
         match self.read_next_char() {
             Some(char) => {
                 match char {
@@ -522,7 +522,6 @@ impl Lexer {
     }
 
     // Consumes an identifier from the input stream
-    // It strips `_xlfn.` from the beginning of the identifier
     fn consume_identifier(&mut self) -> String {
         let mut position = self.position;
         while position < self.len {
@@ -533,10 +532,9 @@ impl Lexer {
                 break;
             }
         }
-        let chars: String = self.chars[self.position..position].iter().collect();
+        let chars = self.chars[self.position..position].iter().collect();
         self.position = position;
-        // skip Excel's "_xlfn.""
-        chars.trim_start_matches("_xlfn.").to_string()
+        chars
     }
 
     fn consume_string(&mut self) -> String {
@@ -640,22 +638,6 @@ impl Lexer {
             return TokenType::ERROR(Error::CIRC);
         }
         TokenType::ILLEGAL(self.set_error("Invalid error.", self.position))
-    }
-
-    fn consume_xlfn(&mut self) {
-        let position = self.position;
-        let chars = vec!['_', 'x', 'l', 'f', 'n', '.'];
-        let len = self.len;
-        let mut index = 0;
-        while position + index < len && index < chars.len() {
-            if self.chars[position + index] != chars[index] {
-                break;
-            }
-            index += 1;
-        }
-        if index == chars.len() {
-            self.position = position + index;
-        }
     }
 
     fn consume_whitespace(&mut self) {

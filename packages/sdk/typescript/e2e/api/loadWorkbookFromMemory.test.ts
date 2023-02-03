@@ -30,6 +30,6 @@ describe('loadWorkbookFromMemory', () => {
     const xlsxFile = readFileSync('./api/xlsx/UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx');
     expect(() => {
       loadWorkbookFromMemory(xlsxFile);
-    }).toThrow("Sheet1!A3 ('=DAYS(A2,A1)'): Invalid function: DAYS");
+    }).toThrow("Sheet1!A3 ('=_xlfn.DAYS(A2,A1)'): Invalid function: _xlfn.DAYS");
   });
 });
