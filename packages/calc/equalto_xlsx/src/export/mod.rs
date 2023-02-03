@@ -96,11 +96,16 @@ pub fn save_to_xlsx(model: &Model, file_name: &str) -> Result<(), XlsxError> {
     for (sheet_index, worksheet) in workbook.worksheets.iter().enumerate() {
         let id = sheet_index + 1;
         zip.start_file(&format!("xl/worksheets/sheet{id}.xml"), options)?;
-        let (row_min, column_min, row_max, column_max) =
-            model.get_sheet_dimension(sheet_index as u32);
-        let column_min_str = number_to_column(column_min).unwrap();
-        let column_max_str = number_to_column(column_max).unwrap();
-        let sheet_dimension_str = &format!("{column_min_str}{row_min}:{column_max_str}{row_max}");
+        let dimension = model
+            .workbook
+            .worksheet(sheet_index as u32)
+            .unwrap()
+            .dimension();
+        let column_min_str = number_to_column(dimension.min_column).unwrap();
+        let column_max_str = number_to_column(dimension.max_column).unwrap();
+        let min_row = dimension.min_row;
+        let max_row = dimension.max_row;
+        let sheet_dimension_str = &format!("{column_min_str}{min_row}:{column_max_str}{max_row}");
         zip.write_all(
             worksheets::get_worksheet_xml(
                 worksheet,

@@ -379,13 +379,20 @@ impl Model {
         let left_column = first_range.left.column;
         let right_row = first_range.right.row;
         let right_column = first_range.right.column;
-        let (_, _, row_max, column_max) = self.get_sheet_dimension(first_range.left.sheet);
+
+        let dimension = self
+            .workbook
+            .worksheet(first_range.left.sheet)
+            .expect("Sheet expected during evaluation.")
+            .dimension();
+        let max_row = dimension.max_row;
+        let max_column = dimension.max_column;
 
         let open_row = left_row == 1 && right_row == LAST_ROW;
         let open_column = left_column == 1 && right_column == LAST_COLUMN;
 
         for row in left_row..right_row + 1 {
-            if open_row && row > row_max {
+            if open_row && row > max_row {
                 // If the row is larger than the max row in the sheet then all cells are empty.
                 // We compute it only once
                 let mut is_true = true;
@@ -396,12 +403,12 @@ impl Model {
                     }
                 }
                 if is_true {
-                    total += ((LAST_ROW - row_max) * (right_column - left_column + 1)) as f64;
+                    total += ((LAST_ROW - max_row) * (right_column - left_column + 1)) as f64;
                 }
                 break;
             }
             for column in left_column..right_column + 1 {
-                if open_column && column > column_max {
+                if open_column && column > max_column {
                     // If the column is larger than the max column in the sheet then all cells are empty.
                     // We compute it only once
                     let mut is_true = true;
@@ -412,7 +419,7 @@ impl Model {
                         }
                     }
                     if is_true {
-                        total += (LAST_COLUMN - column_max) as f64;
+                        total += (LAST_COLUMN - max_column) as f64;
                     }
                     break;
                 }
@@ -518,12 +525,20 @@ impl Model {
         let mut right_column = sum_range.right.column;
 
         if left_row == 1 && right_row == LAST_ROW {
-            let (_, _, row_max, _) = self.get_sheet_dimension(sum_range.left.sheet);
-            right_row = row_max;
+            right_row = self
+                .workbook
+                .worksheet(sum_range.left.sheet)
+                .expect("Sheet expected during evaluation.")
+                .dimension()
+                .max_row;
         }
         if left_column == 1 && right_column == LAST_COLUMN {
-            let (_, _, _, column_max) = self.get_sheet_dimension(sum_range.left.sheet);
-            right_column = column_max;
+            right_column = self
+                .workbook
+                .worksheet(sum_range.left.sheet)
+                .expect("Sheet expected during evaluation.")
+                .dimension()
+                .max_column;
         }
 
         for row in left_row..right_row + 1 {

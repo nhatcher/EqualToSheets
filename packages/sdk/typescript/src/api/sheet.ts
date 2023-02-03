@@ -73,6 +73,16 @@ export interface ISheet {
    * @param rowHeight - row height
    */
   setRowHeight(row: number, rowHeight: number): void;
+
+  /**
+   * @returns Dimensions of the worksheet.
+   */
+  getDimensions(): {
+    minRow: number;
+    maxRow: number;
+    minColumn: number;
+    maxColumn: number;
+  };
 }
 
 export class Sheet implements ISheet {
@@ -173,6 +183,27 @@ export class Sheet implements ISheet {
   setRowHeight(row: number, rowHeight: number): void {
     try {
       this._wasmWorkbook.setRowHeight(this.index, row, rowHeight);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  getDimensions(): {
+    minRow: number;
+    maxRow: number;
+    minColumn: number;
+    maxColumn: number;
+  } {
+    try {
+      const wasmSheetDimensions = this._wasmWorkbook.getSheetDimensions(this.index);
+      const sheetDimensions = {
+        minRow: wasmSheetDimensions.minRow,
+        maxRow: wasmSheetDimensions.maxRow,
+        minColumn: wasmSheetDimensions.minColumn,
+        maxColumn: wasmSheetDimensions.maxColumn,
+      };
+      wasmSheetDimensions.free();
+      return sheetDimensions;
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

@@ -13,6 +13,18 @@ use equalto_xlsx::import::load_xlsx_from_memory;
 
 use crate::error::WorkbookError;
 
+#[wasm_bindgen(js_name = "SheetDimension")]
+pub struct WasmSheetDimension {
+    #[wasm_bindgen(js_name = "minColumn")]
+    pub min_column: i32,
+    #[wasm_bindgen(js_name = "maxColumn")]
+    pub max_column: i32,
+    #[wasm_bindgen(js_name = "minRow")]
+    pub min_row: i32,
+    #[wasm_bindgen(js_name = "maxRow")]
+    pub max_row: i32,
+}
+
 #[wasm_bindgen]
 pub struct WasmWorkbook {
     model: Model,
@@ -270,5 +282,22 @@ impl WasmWorkbook {
             .set_row_height(row, height)
             .map_err(WorkbookError::from)
             .map_err(JsError::from)
+    }
+
+    #[wasm_bindgen(js_name = "getSheetDimensions")]
+    pub fn sheet_dimensions(&self, sheet_index: u32) -> Result<WasmSheetDimension, JsError> {
+        let dimension = self
+            .model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .dimension();
+
+        Ok(WasmSheetDimension {
+            min_row: dimension.min_row,
+            min_column: dimension.min_column,
+            max_row: dimension.max_row,
+            max_column: dimension.max_column,
+        })
     }
 }

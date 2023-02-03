@@ -437,4 +437,78 @@ describe("Worksheet", () => {
     expect(sheet.getColumnWidth(2)).toEqual(100);
     expect(sheet.getColumnWidth(3)).toEqual(100);
   });
+
+  describe('dimensions', () => {
+    test('calculates dimension of empty sheet', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get(0);
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 1,
+        maxRow: 1,
+        minColumn: 1,
+        maxColumn: 1,
+      });
+    });
+
+    test('calculates dimension of sheet with one cell', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get(0);
+      sheet.cell('AZ187').value = 3;
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 187,
+        maxRow: 187,
+        minColumn: 52,
+        maxColumn: 52,
+      });
+    });
+
+    test('calculates dimension of sheet with multiple cells set', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get(0);
+
+      sheet.cell('AZ187').value = 3;
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 187,
+        maxRow: 187,
+        minColumn: 52,
+        maxColumn: 52,
+      });
+
+      sheet.cell('Z15').value = 3;
+      sheet.cell('AA15').value = 3;
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 15,
+        maxRow: 187,
+        minColumn: 26,
+        maxColumn: 52,
+      });
+
+      sheet.cell('BA18').value = 3;
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 15,
+        maxRow: 187,
+        minColumn: 26,
+        maxColumn: 53,
+      });
+
+      sheet.cell('A1').value = 3;
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 1,
+        maxRow: 187,
+        minColumn: 1,
+        maxColumn: 53,
+      });
+
+      sheet.cell('AZ188').value = 3;
+      expect(sheet.getDimensions()).toEqual({
+        minRow: 1,
+        maxRow: 188,
+        minColumn: 1,
+        maxColumn: 53,
+      });
+    });
+  });
 });

@@ -4,6 +4,14 @@ use crate::{expressions::token::Error, types::*};
 
 use std::collections::HashMap;
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct WorksheetDimension {
+    pub min_row: i32,
+    pub max_row: i32,
+    pub min_column: i32,
+    pub max_column: i32,
+}
+
 impl Worksheet {
     pub fn get_name(&self) -> String {
         self.name.clone()
@@ -365,5 +373,62 @@ impl Worksheet {
             }
         }
         Ok(constants::DEFAULT_ROW_HEIGHT)
+    }
+
+    /// Calculates dimension of the sheet. This function isn't cheap to calculate.
+    pub fn dimension(&self) -> WorksheetDimension {
+        // FIXME: It's probably better to just track the size as operations happen.
+        if self.sheet_data.is_empty() {
+            return WorksheetDimension {
+                min_row: 1,
+                max_row: 1,
+                min_column: 1,
+                max_column: 1,
+            };
+        }
+
+        let mut row_range: Option<(i32, i32)> = None;
+        let mut column_range: Option<(i32, i32)> = None;
+
+        for (row_index, columns) in &self.sheet_data {
+            row_range = if let Some((current_min, current_max)) = row_range {
+                Some((current_min.min(*row_index), current_max.max(*row_index)))
+            } else {
+                Some((*row_index, *row_index))
+            };
+
+            for column_index in columns.keys() {
+                column_range = if let Some((current_min, current_max)) = column_range {
+                    Some((
+                        current_min.min(*column_index),
+                        current_max.max(*column_index),
+                    ))
+                } else {
+                    Some((*column_index, *column_index))
+                }
+            }
+        }
+
+        let dimension = if let Some((min_row, max_row)) = row_range {
+            if let Some((min_column, max_column)) = column_range {
+                Some(WorksheetDimension {
+                    min_row,
+                    min_column,
+                    max_row,
+                    max_column,
+                })
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        dimension.unwrap_or(WorksheetDimension {
+            min_row: 1,
+            max_row: 1,
+            min_column: 1,
+            max_column: 1,
+        })
     }
 }

@@ -253,12 +253,20 @@ impl Model {
                         let column1 = left.column;
 
                         if row1 == 1 && row2 == LAST_ROW {
-                            let (_, _, row_max, _) = self.get_sheet_dimension(left.sheet);
-                            row2 = row_max;
+                            row2 = self
+                                .workbook
+                                .worksheet(left.sheet)
+                                .expect("Sheet expected during evaluation.")
+                                .dimension()
+                                .max_row;
                         }
                         if column1 == 1 && column2 == LAST_COLUMN {
-                            let (_, _, _, column_max) = self.get_sheet_dimension(left.sheet);
-                            column2 = column_max;
+                            column2 = self
+                                .workbook
+                                .worksheet(left.sheet)
+                                .expect("Sheet expected during evaluation.")
+                                .dimension()
+                                .max_column;
                         }
                         let left = CellReference {
                             sheet: left.sheet,

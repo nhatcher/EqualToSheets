@@ -109,18 +109,26 @@ impl Model {
                     }
                     // TODO: We should do this for all functions that run through ranges
                     // Running cargo test for the equalto_xlsx takes around .8 seconds with this speedup
-                    // and ~ 3.5 seconds without it. Note that once properly in place get_sheet_dimension should be almost a noop
+                    // and ~ 3.5 seconds without it. Note that once properly in place sheet.dimension should be almost a noop
                     let row1 = left.row;
                     let mut row2 = right.row;
                     let column1 = left.column;
                     let mut column2 = right.column;
                     if row1 == 1 && row2 == LAST_ROW {
-                        let (_, _, row_max, _) = self.get_sheet_dimension(left.sheet);
-                        row2 = row_max;
+                        row2 = self
+                            .workbook
+                            .worksheet(left.sheet)
+                            .expect("Sheet expected during evaluation.")
+                            .dimension()
+                            .max_row;
                     }
                     if column1 == 1 && column2 == LAST_COLUMN {
-                        let (_, _, _, column_max) = self.get_sheet_dimension(left.sheet);
-                        column2 = column_max;
+                        column2 = self
+                            .workbook
+                            .worksheet(left.sheet)
+                            .expect("Sheet expected during evaluation.")
+                            .dimension()
+                            .max_column;
                     }
                     for row in row1..row2 + 1 {
                         for column in column1..(column2 + 1) {

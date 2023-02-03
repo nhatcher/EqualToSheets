@@ -189,24 +189,6 @@ fn test_booleans() {
 }
 
 #[test]
-fn test_get_sheet_dimensions() {
-    let mut model = new_empty_model();
-    assert_eq!(model.get_sheet_dimension(0), (1, 1, 1, 1));
-
-    model.set_input(0, 30, 50, "Hello World".to_string(), 0);
-    assert_eq!(model.get_sheet_dimension(0), (30, 50, 30, 50));
-
-    model.set_input(0, 10, 15, "Hello World".to_string(), 0);
-    assert_eq!(model.get_sheet_dimension(0), (10, 15, 30, 50));
-
-    model.set_input(0, 5, 25, "Hello World".to_string(), 0);
-    assert_eq!(model.get_sheet_dimension(0), (5, 15, 30, 50));
-
-    model.set_input(0, 10, 250, "Hello World".to_string(), 0);
-    assert_eq!(model.get_sheet_dimension(0), (5, 15, 30, 250));
-}
-
-#[test]
 fn test_set_cell_style() {
     let mut model = new_empty_model();
     let mut style = model.get_style_for_cell(0, 1, 1);

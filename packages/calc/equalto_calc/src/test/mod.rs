@@ -25,6 +25,7 @@ mod test_quote_prefix;
 mod test_sheets;
 mod test_styles;
 mod test_trigonometric;
+mod test_worksheet;
 pub(crate) mod util;
 
 mod test_number_format;

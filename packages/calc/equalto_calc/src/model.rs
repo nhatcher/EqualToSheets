@@ -1191,41 +1191,6 @@ impl Model {
         cells
     }
 
-    /// Returns dimension of the sheet: (min_row, min_column, max_row, max_column)
-    pub fn get_sheet_dimension(&self, sheet: u32) -> (i32, i32, i32, i32) {
-        // FIXME, this should be read from the worksheet:
-        // self.workbook.worksheets[sheet as usize].dimension
-        let mut min_column = -1;
-        let mut max_column = -1;
-        let worksheet = &self.workbook.worksheets[sheet as usize];
-        let mut sorted_rows: Vec<_> = worksheet.sheet_data.keys().collect();
-        sorted_rows.sort_unstable();
-        if sorted_rows.is_empty() {
-            return (1, 1, 1, 1);
-        }
-        let min_row = *sorted_rows[0];
-        let max_row = *sorted_rows[sorted_rows.len() - 1];
-        for row in sorted_rows {
-            let row_data = &worksheet.sheet_data[row];
-            let mut sorted_columns: Vec<_> = row_data.keys().collect();
-            sorted_columns.sort_unstable();
-            if sorted_columns.is_empty() {
-                continue;
-            }
-            if min_column == -1 {
-                min_column = *sorted_columns[0];
-                max_column = *sorted_columns[sorted_columns.len() - 1];
-            } else {
-                min_column = min_column.min(*sorted_columns[0]);
-                max_column = max_column.max(*sorted_columns[sorted_columns.len() - 1]);
-            }
-        }
-        if min_column == -1 {
-            return (1, 1, 1, 1);
-        }
-        (min_row, min_column, max_row, max_column)
-    }
-
     /// Evaluates the model with a top-down recursive algorithm
     pub fn evaluate(&mut self) {
         // clear all computation artifacts
