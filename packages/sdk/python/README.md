@@ -1,6 +1,6 @@
-# equalto-python-sdk
+# equalto
 
-Python SDK providing a high-level interface for EqualTo Calc.
+Python package allowing to create, edit and evaluate Excel spreadsheets.
 
 ## Requirements
 

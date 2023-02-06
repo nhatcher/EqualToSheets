@@ -4,8 +4,40 @@ version = "0.1.1"
 author = "EqualTo"
 author_email = "dev@equalto.com"
 packages = ["equalto"]
-description=  "EqualTo python SDK"
+description=  "Create, edit and evaluate Excel spreadsheets"
 python_requires = ">=3.9"
+license = {file = "LICENSE"}
+keywords=[
+  "xls",
+  "xlsx",
+  "excel",
+  "spreadsheet",
+  "workbook",
+  "formula",
+  "calculation",
+  "evaluation",
+]
+classifiers = [
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Office/Business :: Financial :: Spreadsheet",
+]
+
+
+[project.urls]
+Homepage = "https://www.equalto.com/"
+Source = "https://github.com/EqualTo-Software/EqualToSheets"
+Tracker = "https://github.com/EqualTo-Software/EqualToSheets/issues"
 
 
 [project.optional-dependencies]
