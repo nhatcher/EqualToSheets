@@ -1,6 +1,6 @@
 import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
 import { parseCellReference } from '../utils';
-import { WasmWorkbook } from '../__generated_pkg/equalto_wasm';
+import { WasmWorkbook, WasmNavigationDirection } from '../__generated_pkg/equalto_wasm';
 import { Cell, ICell } from './cell';
 import { WorkbookSheets } from './workbookSheets';
 
@@ -83,17 +83,50 @@ export interface ISheet {
     minColumn: number;
     maxColumn: number;
   };
+
+  /**
+   * Returns sub-interface providing features useful when implementing user interface
+   * on top of the workbook.
+   */
+  get userInterface(): ISheetForUserInterface;
+}
+
+export type NavigationDirection = 'left' | 'right' | 'up' | 'down';
+
+function navigationDirectionToWasm(direction: NavigationDirection): WasmNavigationDirection {
+    switch (direction) {
+      case 'left':
+        return WasmNavigationDirection.Left;
+      case 'right':
+        return WasmNavigationDirection.Right;
+      case 'up':
+        return WasmNavigationDirection.Up;
+      case 'down':
+        return WasmNavigationDirection.Down;
+      default:
+        const unknownDirection: never = direction;
+        throw new CalcError(`Unrecognized direction: ${unknownDirection}`);
+    }
+}
+
+export interface ISheetForUserInterface {
+  /**
+   * @returns Cell to navigate to when CTRL+direction arrow is used.
+   */
+  navigateToEdgeInDirection(row: number, column: number, direction: NavigationDirection): [number, number];
 }
 
 export class Sheet implements ISheet {
   private readonly _workbookSheets: WorkbookSheets;
   private readonly _wasmWorkbook: WasmWorkbook;
   private readonly _sheetId: number;
+  private readonly _sheetForUserInterface: SheetForUserInterface;
 
   constructor(workbookSheets: WorkbookSheets, wasmWorkbook: WasmWorkbook, sheetId: number) {
     this._workbookSheets = workbookSheets;
     this._wasmWorkbook = wasmWorkbook;
     this._sheetId = sheetId;
+    this._sheetForUserInterface = new SheetForUserInterface(this, wasmWorkbook);
   }
 
   get id(): number {
@@ -204,6 +237,40 @@ export class Sheet implements ISheet {
       };
       wasmSheetDimensions.free();
       return sheetDimensions;
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  get userInterface(): ISheetForUserInterface {
+    return this._sheetForUserInterface;
+  }
+}
+
+export class SheetForUserInterface implements ISheetForUserInterface {
+  private readonly _sheet: Sheet;
+  private readonly _wasmWorkbook: WasmWorkbook;
+
+  constructor(sheet: Sheet, wasmWorkbook: WasmWorkbook) {
+    this._sheet = sheet;
+    this._wasmWorkbook = wasmWorkbook;
+  }
+
+  navigateToEdgeInDirection(
+    row: number,
+    column: number,
+    direction: NavigationDirection
+  ): [number, number] {
+    try {
+
+      const cell = this._wasmWorkbook.navigateToEdgeInDirection(
+        this._sheet.index,
+        row,
+        column,
+        navigationDirectionToWasm(direction),
+      );
+
+      return [cell.row, cell.column];
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

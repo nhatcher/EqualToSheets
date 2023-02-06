@@ -4,7 +4,7 @@ import "./dayjsConfig";
 
 export type { IWorkbook } from "./api/workbook";
 export type { IWorkbookSheets } from "./api/workbookSheets";
-export type { ISheet } from "./api/sheet";
+export type { ISheet, NavigationDirection } from "./api/sheet";
 export type { ICell } from "./api/cell";
 
 // Copying type over here directly yields better type generation

@@ -6,12 +6,38 @@ use wasm_bindgen::{
 use equalto_calc::{
     cell::CellValue,
     model::{Environment, Model},
+    worksheet::NavigationDirection,
 };
 
 #[cfg(feature = "xlsx")]
 use equalto_xlsx::import::load_xlsx_from_memory;
 
 use crate::error::WorkbookError;
+
+#[wasm_bindgen]
+pub enum WasmNavigationDirection {
+    Left,
+    Right,
+    Up,
+    Down,
+}
+
+#[wasm_bindgen]
+pub struct WasmLocalCellCoordinate {
+    pub row: i32,
+    pub column: i32,
+}
+
+impl From<WasmNavigationDirection> for NavigationDirection {
+    fn from(value: WasmNavigationDirection) -> Self {
+        match value {
+            WasmNavigationDirection::Left => NavigationDirection::Left,
+            WasmNavigationDirection::Right => NavigationDirection::Right,
+            WasmNavigationDirection::Up => NavigationDirection::Up,
+            WasmNavigationDirection::Down => NavigationDirection::Down,
+        }
+    }
+}
 
 #[wasm_bindgen(js_name = "SheetDimension")]
 pub struct WasmSheetDimension {
@@ -299,5 +325,23 @@ impl WasmWorkbook {
             max_row: dimension.max_row,
             max_column: dimension.max_column,
         })
+    }
+
+    #[wasm_bindgen(js_name = "navigateToEdgeInDirection")]
+    pub fn navigate_to_edge_in_direction(
+        &self,
+        sheet_index: u32,
+        row: i32,
+        column: i32,
+        direction: WasmNavigationDirection,
+    ) -> Result<WasmLocalCellCoordinate, JsError> {
+        let (row, column) = self
+            .model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .navigate_to_edge_in_direction(row, column, direction.into())
+            .map_err(WorkbookError::from)?;
+        Ok(WasmLocalCellCoordinate { row, column })
     }
 }

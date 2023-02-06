@@ -612,19 +612,7 @@ impl Model {
     /// Cell with formula that evaluates to empty string is not considered empty.
     pub fn is_empty_cell(&self, sheet: u32, row: i32, column: i32) -> Result<bool, String> {
         let worksheet = self.workbook.worksheet(sheet)?;
-        let sheet_data = &worksheet.sheet_data;
-
-        let is_empty = if let Some(data_row) = sheet_data.get(&row) {
-            if let Some(cell) = data_row.get(&column) {
-                matches!(cell, Cell::EmptyCell { .. })
-            } else {
-                true
-            }
-        } else {
-            true
-        };
-
-        Ok(is_empty)
+        worksheet.is_empty_cell(row, column)
     }
 
     pub(crate) fn evaluate_cell(&mut self, cell_reference: CellReference) -> CalcResult {

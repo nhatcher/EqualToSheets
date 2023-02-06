@@ -1,4 +1,4 @@
-import { initialize, getApi, CalcError } from "@equalto-software/calc";
+import { initialize, getApi, CalcError, NavigationDirection } from "@equalto-software/calc";
 import type { ISheet } from "@equalto-software/calc";
 
 const mapSheetToObject = (sheet: ISheet) => {
@@ -508,6 +508,81 @@ describe("Worksheet", () => {
         maxRow: 188,
         minColumn: 1,
         maxColumn: 53,
+      });
+    });
+  });
+
+  describe('user interface', () => {
+    describe('navigateToEdgeInDirection', () => {
+      const getTestWorkbook = async () => {
+        const { newWorkbook } = await getApi();
+        const workbook = newWorkbook();
+        //   1 2 3 4 5 6
+        //   A B C D E F
+        // 1
+        // 2     X
+        // 3   X X X   X
+        // 4     X
+        // 5
+        // 6     X
+        const sheet = workbook.sheets.get(0);
+        for (const cell of ['B3', 'C2', 'C3', 'C4', 'C6', 'D3', 'F3']) {
+          sheet.cell(cell).value = 1;
+        }
+        return workbook;
+      };
+
+      test('direction = up', async () => {
+        const workbook = await getTestWorkbook();
+        const sheet = workbook.sheets.get(0);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(8, 3, 'up')).toEqual([6, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(6, 3, 'up')).toEqual([4, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(4, 3, 'up')).toEqual([2, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(2, 3, 'up')).toEqual([1, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 3, 'up')).toEqual([1, 3]);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 1, 'up')).toEqual([1, 1]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(1_000_000, 5, 'up')).toEqual([1, 5]);
+      });
+
+      test('direction = down', async () => {
+        const workbook = await getTestWorkbook();
+        const sheet = workbook.sheets.get(0);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 3, 'down')).toEqual([2, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(2, 3, 'down')).toEqual([4, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(4, 3, 'down')).toEqual([6, 3]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(6, 3, 'down')).toEqual([1_048_576, 3]);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 1, 'down')).toEqual([1_048_576, 1]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 5, 'down')).toEqual([1_048_576, 5]);
+      });
+
+      test('direction = left', async () => {
+        const workbook = await getTestWorkbook();
+        const sheet = workbook.sheets.get(0);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 8, 'left')).toEqual([3, 6]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 6, 'left')).toEqual([3, 4]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 4, 'left')).toEqual([3, 2]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 2, 'left')).toEqual([3, 1]);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 100, 'left')).toEqual([1, 1]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(5, 100, 'left')).toEqual([5, 1]);
+      });
+
+      test('direction = right', async () => {
+        const workbook = await getTestWorkbook();
+        const sheet = workbook.sheets.get(0);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 1, 'right')).toEqual([3, 2]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 2, 'right')).toEqual([3, 4]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 4, 'right')).toEqual([3, 6]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(3, 6, 'right')).toEqual([3, 16_384]);
+
+        expect(sheet.userInterface.navigateToEdgeInDirection(1, 1, 'right')).toEqual([1, 16_384]);
+        expect(sheet.userInterface.navigateToEdgeInDirection(5, 1, 'right')).toEqual([5, 16_384]);
       });
     });
   });

@@ -1,4 +1,4 @@
-use crate::constants;
+use crate::constants::{self, LAST_COLUMN, LAST_ROW};
 use crate::expressions::utils::{is_valid_column_number, is_valid_row};
 use crate::{expressions::token::Error, types::*};
 
@@ -10,6 +10,14 @@ pub struct WorksheetDimension {
     pub max_row: i32,
     pub min_column: i32,
     pub max_column: i32,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum NavigationDirection {
+    Left,
+    Right,
+    Up,
+    Down,
 }
 
 impl Worksheet {
@@ -431,4 +439,134 @@ impl Worksheet {
             max_column: 1,
         })
     }
+
+    /// Returns true if cell is completely empty.
+    /// Cell with formula that evaluates to empty string is not considered empty.
+    pub fn is_empty_cell(&self, row: i32, column: i32) -> Result<bool, String> {
+        if !is_valid_column_number(column) || !is_valid_row(row) {
+            return Err("Row or column is outside valid range.".to_string());
+        }
+
+        let is_empty = if let Some(data_row) = self.sheet_data.get(&row) {
+            if let Some(cell) = data_row.get(&column) {
+                matches!(cell, Cell::EmptyCell { .. })
+            } else {
+                true
+            }
+        } else {
+            true
+        };
+
+        Ok(is_empty)
+    }
+
+    /// It provides convenient method for user navigation in the spreadsheet by jumping to edges.
+    /// Spreadsheet engines usually allow this method of navigation by using CTRL+arrows.
+    /// Behaviour summary:
+    /// - if starting cell is empty then find first non empty cell in given direction
+    /// - if starting cell is not empty, and neighbour in given direction is empty, then find
+    ///   first non empty cell in given direction
+    /// - if starting cell is not empty, and neighbour in given direction is also not empty, then
+    ///   find last non empty cell in given direction
+    pub fn navigate_to_edge_in_direction(
+        &self,
+        row: i32,
+        column: i32,
+        direction: NavigationDirection,
+    ) -> Result<(i32, i32), String> {
+        if !is_valid_column_number(column) || !is_valid_row(row) {
+            return Err("Row or column is outside valid range.".to_string());
+        }
+
+        let start_cell = (row, column);
+        let neighbour_cell = if let Some(cell) = step_in_direction(start_cell, direction) {
+            cell
+        } else {
+            return Ok((start_cell.0, start_cell.1));
+        };
+
+        if self.is_empty_cell(start_cell.0, start_cell.1)? {
+            // Find first non-empty cell or move to the end.
+            let found_cells = walk_in_direction(start_cell, direction, |(row, column)| {
+                Ok(!self.is_empty_cell(row, column)?)
+            })?;
+            Ok(match found_cells.found_cell {
+                Some(cell) => cell,
+                None => found_cells.previous_cell,
+            })
+        } else {
+            // Neighbour cell is empty     => find FIRST that is NOT empty
+            // Neighbour cell is not empty => find LAST  that is NOT empty in sequence
+            if self.is_empty_cell(neighbour_cell.0, neighbour_cell.1)? {
+                let found_cells = walk_in_direction(start_cell, direction, |(row, column)| {
+                    Ok(!self.is_empty_cell(row, column)?)
+                })?;
+                Ok(match found_cells.found_cell {
+                    Some(cell) => cell,
+                    None => found_cells.previous_cell,
+                })
+            } else {
+                let found_cells = walk_in_direction(start_cell, direction, |(row, column)| {
+                    self.is_empty_cell(row, column)
+                })?;
+                Ok(found_cells.previous_cell)
+            }
+        }
+    }
+}
+
+struct WalkFoundCells {
+    /// If cell is found, it contains coordinates of the cell, otherwise None
+    found_cell: Option<(i32, i32)>,
+    /// Previous cell in chain relative to `found_cell`.
+    /// If `found_cell` is None then it's last considered cell.
+    previous_cell: (i32, i32),
+}
+
+/// Walks in direction until condition is met or boundary reached.
+/// Returns tuple `(current_cell, previous_cell)`. `current_cell` is either None or passes predicate
+fn walk_in_direction<F>(
+    start_cell: (i32, i32),
+    direction: NavigationDirection,
+    predicate: F,
+) -> Result<WalkFoundCells, String>
+where
+    F: Fn((i32, i32)) -> Result<bool, String>,
+{
+    let mut previous_cell = start_cell;
+    let mut current_cell = step_in_direction(start_cell, direction);
+    while let Some(cell) = current_cell {
+        if !predicate((cell.0, cell.1))? {
+            previous_cell = cell;
+            current_cell = step_in_direction(cell, direction);
+        } else {
+            break;
+        }
+    }
+    Ok(WalkFoundCells {
+        found_cell: current_cell,
+        previous_cell,
+    })
+}
+
+/// Returns coordinate of cell in given direction from given cell.
+/// Returns `None` if steps over the edge.
+fn step_in_direction(
+    (row, column): (i32, i32),
+    direction: NavigationDirection,
+) -> Option<(i32, i32)> {
+    if (row == 1 && direction == NavigationDirection::Up)
+        || (row == LAST_ROW && direction == NavigationDirection::Down)
+        || (column == 1 && direction == NavigationDirection::Left)
+        || (column == LAST_COLUMN && direction == NavigationDirection::Right)
+    {
+        return None;
+    }
+
+    Some(match direction {
+        NavigationDirection::Left => (row, column - 1),
+        NavigationDirection::Right => (row, column + 1),
+        NavigationDirection::Up => (row - 1, column),
+        NavigationDirection::Down => (row + 1, column),
+    })
 }
