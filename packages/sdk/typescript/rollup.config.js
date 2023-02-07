@@ -1,13 +1,13 @@
-import nodeResolve from "@rollup/plugin-node-resolve";
-import commonjs from "@rollup/plugin-commonjs";
-import terser from "@rollup/plugin-terser";
-import typescript from "@rollup/plugin-typescript";
-import wasm from "@rollup/plugin-wasm";
+import nodeResolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
+import wasm from '@rollup/plugin-wasm';
 
 const getDistributionDirectory = (format, environment) => {
-  if (environment === "node") {
+  if (environment === 'node') {
     // node is expected to be bundled into CommonJS only.
-    return "node";
+    return 'node';
   }
 
   return `${environment}/${format}`;
@@ -15,13 +15,13 @@ const getDistributionDirectory = (format, environment) => {
 
 const roll = (format, environment) => {
   let wasmPlugin;
-  if (environment === "node") {
+  if (environment === 'node') {
     wasmPlugin = wasm({
       maxFileSize: 0,
-      targetEnv: "node",
+      targetEnv: 'node',
       // .wasm is placed directly into dist, so one directory up from node:
-      publicPath: "../",
-      fileName: "[name][extname]",
+      publicPath: '../',
+      fileName: '[name][extname]',
     });
   } else {
     wasmPlugin = wasm({ maxFileSize: 10000000 });
@@ -30,27 +30,24 @@ const roll = (format, environment) => {
   return {
     input: `src/index_${environment}.ts`,
     output: {
-      dir: "dist",
+      dir: 'dist',
       format: format,
-      name: "EqualToCalc",
-      entryFileNames: `${getDistributionDirectory(
-        format,
-        environment
-      )}/[name].${
+      name: 'EqualToCalc',
+      entryFileNames: `${getDistributionDirectory(format, environment)}/[name].${
         {
-          node: "cjs",
-          browser: "js",
+          node: 'cjs',
+          browser: 'js',
         }[environment]
       }`,
     },
-    external: [...(environment === "node" ? ["fs"] : [])],
+    external: [...(environment === 'node' ? ['fs'] : [])],
     plugins: [
       typescript(),
       nodeResolve(),
       commonjs(),
       wasmPlugin,
       {
-        name: "remove-import-meta-url",
+        name: 'remove-import-meta-url',
         resolveImportMeta: () => `""`,
       },
       terser(),
@@ -59,9 +56,9 @@ const roll = (format, environment) => {
 };
 
 export default [
-  roll("cjs", "browser"),
-  roll("es", "browser"),
-  roll("umd", "browser"),
+  roll('cjs', 'browser'),
+  roll('es', 'browser'),
+  roll('umd', 'browser'),
 
-  roll("cjs", "node"),
+  roll('cjs', 'node'),
 ];

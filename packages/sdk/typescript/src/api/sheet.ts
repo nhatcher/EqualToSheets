@@ -94,26 +94,30 @@ export interface ISheet {
 export type NavigationDirection = 'left' | 'right' | 'up' | 'down';
 
 function navigationDirectionToWasm(direction: NavigationDirection): WasmNavigationDirection {
-    switch (direction) {
-      case 'left':
-        return WasmNavigationDirection.Left;
-      case 'right':
-        return WasmNavigationDirection.Right;
-      case 'up':
-        return WasmNavigationDirection.Up;
-      case 'down':
-        return WasmNavigationDirection.Down;
-      default:
-        const unknownDirection: never = direction;
-        throw new CalcError(`Unrecognized direction: ${unknownDirection}`);
-    }
+  switch (direction) {
+    case 'left':
+      return WasmNavigationDirection.Left;
+    case 'right':
+      return WasmNavigationDirection.Right;
+    case 'up':
+      return WasmNavigationDirection.Up;
+    case 'down':
+      return WasmNavigationDirection.Down;
+    default:
+      const unknownDirection: never = direction;
+      throw new CalcError(`Unrecognized direction: ${unknownDirection}`);
+  }
 }
 
 export interface ISheetForUserInterface {
   /**
    * @returns Cell to navigate to when CTRL+direction arrow is used.
    */
-  navigateToEdgeInDirection(row: number, column: number, direction: NavigationDirection): [number, number];
+  navigateToEdgeInDirection(
+    row: number,
+    column: number,
+    direction: NavigationDirection,
+  ): [number, number];
 }
 
 export class Sheet implements ISheet {
@@ -259,10 +263,9 @@ export class SheetForUserInterface implements ISheetForUserInterface {
   navigateToEdgeInDirection(
     row: number,
     column: number,
-    direction: NavigationDirection
+    direction: NavigationDirection,
   ): [number, number] {
     try {
-
       const cell = this._wasmWorkbook.navigateToEdgeInDirection(
         this._sheet.index,
         row,

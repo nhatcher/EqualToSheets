@@ -1,19 +1,14 @@
-import init from "./__generated_pkg/equalto_wasm";
-import { IWorkbook, newWorkbook, loadWorkbookFromMemory } from "./api/workbook";
-import "./dayjsConfig";
+import init from './__generated_pkg/equalto_wasm';
+import { IWorkbook, newWorkbook, loadWorkbookFromMemory } from './api/workbook';
+import './dayjsConfig';
 
-export type { IWorkbook } from "./api/workbook";
-export type { IWorkbookSheets } from "./api/workbookSheets";
-export type { ISheet, NavigationDirection } from "./api/sheet";
-export type { ICell } from "./api/cell";
+export type { IWorkbook } from './api/workbook';
+export type { IWorkbookSheets } from './api/workbookSheets';
+export type { ISheet, NavigationDirection } from './api/sheet';
+export type { ICell } from './api/cell';
 
 // Copying type over here directly yields better type generation
-export type InitInput =
-  | RequestInfo
-  | URL
-  | Response
-  | BufferSource
-  | WebAssembly.Module;
+export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 let defaultWasmInit: (() => InitInput) | null = null;
 export const setDefaultWasmInit = (newDefault: typeof defaultWasmInit) => {
@@ -33,7 +28,7 @@ async function initializeWasm() {
 let initializationPromise: Promise<void> | null = null;
 export async function initialize(): Promise<SheetsApi> {
   if (initializationPromise !== null) {
-    throw new Error("Sheets API cannot be initialized twice.");
+    throw new Error('Sheets API cannot be initialized twice.');
   }
   initializationPromise = initializeWasm();
   await initializationPromise;
@@ -49,9 +44,7 @@ export async function initialize(): Promise<SheetsApi> {
  */
 export async function getApi(): Promise<SheetsApi> {
   if (initializationPromise === null) {
-    throw new Error(
-      "Sheets API needs to be initialized prior to requesting API."
-    );
+    throw new Error('Sheets API needs to be initialized prior to requesting API.');
   }
   await initializationPromise;
   return {

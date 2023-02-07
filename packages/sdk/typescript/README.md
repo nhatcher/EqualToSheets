@@ -40,7 +40,7 @@ Package exports two top-level asynchronous functions:
 Split of these methods is caused by plans for support of alternative methods of loading WebAssembly.
 
 ```javascript
-let { initialize } = require("@equalto-software/calc");
+let { initialize } = require('@equalto-software/calc');
 
 // Can be initialized and used immediately.
 let { newWorkbook } = await initialize();
@@ -49,8 +49,8 @@ let { newWorkbook } = await initialize();
 Or, alternatively, if Calc is used in multiple places:
 
 ```javascript
-let { initialize, getApi } = require("@equalto-software/calc");
-let { readFileSync } = require("fs");
+let { initialize, getApi } = require('@equalto-software/calc');
+let { readFileSync } = require('fs');
 
 // Initialize calc, with your app ignoring returned API
 await initialize();
@@ -58,9 +58,9 @@ await initialize();
 // Then use preinitialized Calc in your functions
 async function calculateOutputs(input) {
   const { loadWorkbookFromMemory } = await getApi();
-  const workbook = loadWorkbookFromMemory(readFileSync("./model.xlsx"));
-  workbook.cell("Sheet1!B1").value = input;
-  return workbook.cell("Sheet1!B2").numberValue;
+  const workbook = loadWorkbookFromMemory(readFileSync('./model.xlsx'));
+  workbook.cell('Sheet1!B1').value = input;
+  return workbook.cell('Sheet1!B2').numberValue;
 }
 
 await calculateOutputs(7);
@@ -205,13 +205,13 @@ Operations can throw `CalcError` on failure. `CalcError` extends standard `Error
 For example:
 
 ```javascript
-let { CalcError } = require("@equalto-software/calc");
+let { CalcError } = require('@equalto-software/calc');
 
 // ...
 
 try {
-  workbook.sheets.add("Calculation1");
-  workbook.sheets.add("Calculation1"); // <- duplicated sheet name
+  workbook.sheets.add('Calculation1');
+  workbook.sheets.add('Calculation1'); // <- duplicated sheet name
 } catch (error) {
   if (error instanceof CalcError) {
     console.log(`Calc error occurred! ${error.name}: ${error.message}`);

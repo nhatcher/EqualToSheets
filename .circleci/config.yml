@@ -140,6 +140,10 @@ jobs:
       - store_artifacts:
           path: ./packages/sdk/typescript/equalto-software-calc.zip
           destination: equalto-calc-typescript-sdk.zip
+      - run: # code style near the end to allow build to fail on more important steps first
+          name: Check code style (Prettier)
+          command: npm run prettier:check
+          working_directory: ./packages/sdk/typescript
 
   test-widget:
     docker:

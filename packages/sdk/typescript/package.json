@@ -15,7 +15,9 @@
     "dts-bundle-node": "api-extractor run --config api-extractor.node.json",
     "publish:zip": "rm -f equalto-software-calc-*.tgz equalto-software-calc.zip && npm pack && zip equalto-software-calc.zip equalto-software-calc-0.1.0.tgz README.md LICENSE",
     "test": "jest",
-    "test:e2e": "npm run build && rm -rf e2e/node_modules && cd e2e && npm install && npm test"
+    "test:e2e": "npm run build && rm -rf e2e/node_modules && cd e2e && npm install && npm test",
+    "prettier": "prettier --write .",
+    "prettier:check": "prettier --check ."
   },
   "private": true,
   "license": "SEE LICENSE IN LICENSE FILE",
@@ -60,6 +62,7 @@
     "@types/jest": "^29.2.6",
     "@types/node": "^18.11.18",
     "jest": "^29.3.1",
+    "prettier": "2.8.3",
     "rollup": "^3.10.0",
     "ts-jest": "^29.0.5",
     "tslib": "^2.4.1",

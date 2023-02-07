@@ -1,15 +1,7 @@
 {
   "preset": "ts-jest",
   "testEnvironment": "node",
-  "moduleDirectories": [
-    "node_modules",
-    "<rootDir>"
-  ],
-  "testPathIgnorePatterns": [
-    "/dist/",
-    "/e2e/"
-  ],
-  "setupFiles": [
-    "<rootDir>/src/setupTests.ts"
-  ]
+  "moduleDirectories": ["node_modules", "<rootDir>"],
+  "testPathIgnorePatterns": ["/dist/", "/e2e/"],
+  "setupFiles": ["<rootDir>/src/setupTests.ts"]
 }

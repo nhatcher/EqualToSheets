@@ -7,7 +7,7 @@ import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
 export function newWorkbook(): IWorkbook {
   let wasmWorkbook;
   try {
-    wasmWorkbook = new WasmWorkbook("en", "UTC");
+    wasmWorkbook = new WasmWorkbook('en', 'UTC');
   } catch (error) {
     throw wrapWebAssemblyError(error);
   }
@@ -18,7 +18,7 @@ export function newWorkbook(): IWorkbook {
 export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
   let wasmWorkbook;
   try {
-    wasmWorkbook = WasmWorkbook.loadFromMemory(data, "en", "UTC");
+    wasmWorkbook = WasmWorkbook.loadFromMemory(data, 'en', 'UTC');
   } catch (error) {
     throw wrapWebAssemblyError(error);
   }
@@ -59,31 +59,25 @@ export class Workbook implements IWorkbook {
 
   cell(textReference: string): ICell;
   cell(sheet: number, row: number, column: number): ICell;
-  cell(
-    textReferenceOrSheet: string | number,
-    row?: number,
-    column?: number
-  ): ICell {
-    if (typeof textReferenceOrSheet === "string") {
+  cell(textReferenceOrSheet: string | number, row?: number, column?: number): ICell {
+    if (typeof textReferenceOrSheet === 'string') {
       const textReference = textReferenceOrSheet;
       const reference = parseCellReference(textReference);
       if (reference === null) {
         throw new CalcError(
           `Cell reference error. "${textReference}" is not valid reference.`,
-          ErrorKind.ReferenceError
+          ErrorKind.ReferenceError,
         );
       }
       if (reference.sheetName === undefined) {
         throw new CalcError(
           `Cell reference error. Sheet name is required in top-level workbook cell getter.`,
-          ErrorKind.ReferenceError
+          ErrorKind.ReferenceError,
         );
       }
-      return this.sheets
-        .get(reference.sheetName)
-        .cell(reference.row, reference.column);
+      return this.sheets.get(reference.sheetName).cell(reference.row, reference.column);
     } else if (
-      typeof textReferenceOrSheet === "number" &&
+      typeof textReferenceOrSheet === 'number' &&
       row !== undefined &&
       column !== undefined
     ) {
@@ -91,8 +85,6 @@ export class Workbook implements IWorkbook {
       return this.sheets.get(sheet).cell(row, column);
     }
 
-    throw new CalcError(
-      "Function Workbook.cell received unexpected parameters."
-    );
+    throw new CalcError('Function Workbook.cell received unexpected parameters.');
   }
 }

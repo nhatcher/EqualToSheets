@@ -1,1 +1,1 @@
-import "./dayjsConfig";
+import './dayjsConfig';

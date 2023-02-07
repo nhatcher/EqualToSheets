@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from 'dayjs';
 
 export function columnNumberFromName(columnName: string): number {
   let column = 0;
@@ -15,27 +15,25 @@ type ParsedReference = {
   column: number;
 };
 
-export function parseCellReference(
-  textReference: string
-): ParsedReference | null {
+export function parseCellReference(textReference: string): ParsedReference | null {
   const regex = /^((?<sheet>[A-Za-z0-9]{1,31})!)?(?<column>[A-Z]+)(?<row>\d+)$/;
   const matches = regex.exec(textReference);
   if (
     matches === null ||
     !matches.groups ||
-    !("column" in matches.groups) ||
-    !("row" in matches.groups)
+    !('column' in matches.groups) ||
+    !('row' in matches.groups)
   ) {
     return null;
   }
 
   const reference: ParsedReference = {
-    row: Number(matches.groups["row"]),
-    column: columnNumberFromName(matches.groups["column"]),
+    row: Number(matches.groups['row']),
+    column: columnNumberFromName(matches.groups['column']),
   };
 
-  if ("sheet" in matches.groups) {
-    reference.sheetName = matches.groups["sheet"];
+  if ('sheet' in matches.groups) {
+    reference.sheetName = matches.groups['sheet'];
   }
 
   return reference;
@@ -45,12 +43,12 @@ export function parseCellReference(
  * GSheets seem to behave consistently.
  */
 export function convertSpreadsheetDateToDayjsUTC(excelDate: number): Dayjs {
-  const baseDate = dayjs.utc("1899-12-30");
+  const baseDate = dayjs.utc('1899-12-30');
 
   const fullDays = Math.floor(excelDate);
   const seconds = 24 * 60 * 60 * (excelDate - fullDays);
 
-  return baseDate.add(fullDays, "day").add(seconds, "second");
+  return baseDate.add(fullDays, 'day').add(seconds, 'second');
 }
 
 /**
@@ -58,11 +56,11 @@ export function convertSpreadsheetDateToDayjsUTC(excelDate: number): Dayjs {
  * GSheets seem to behave consistently.
  */
 export function convertDayjsUTCToSpreadsheetDate(date: Dayjs): number {
-  const baseDate = dayjs.utc("1899-12-30");
-  const fullDays = date.diff(baseDate, "day");
+  const baseDate = dayjs.utc('1899-12-30');
+  const fullDays = date.diff(baseDate, 'day');
 
-  const baseForDayFraction = baseDate.add(fullDays, "day");
-  const dayFraction = date.diff(baseForDayFraction, "second") / (24 * 60 * 60);
+  const baseForDayFraction = baseDate.add(fullDays, 'day');
+  const dayFraction = date.diff(baseForDayFraction, 'second') / (24 * 60 * 60);
 
   return fullDays + dayFraction;
 }

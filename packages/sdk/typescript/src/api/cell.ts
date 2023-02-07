@@ -1,11 +1,8 @@
-import dayjs from "dayjs";
-import { ErrorKind, CalcError, wrapWebAssemblyError } from "src/errors";
-import {
-  convertDayjsUTCToSpreadsheetDate,
-  convertSpreadsheetDateToDayjsUTC,
-} from "src/utils";
-import { WasmWorkbook } from "../__generated_pkg/equalto_wasm";
-import { Sheet } from "./sheet";
+import dayjs from 'dayjs';
+import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
+import { convertDayjsUTCToSpreadsheetDate, convertSpreadsheetDateToDayjsUTC } from 'src/utils';
+import { WasmWorkbook } from '../__generated_pkg/equalto_wasm';
+import { Sheet } from './sheet';
 
 export interface ICell {
   /**
@@ -76,12 +73,7 @@ export class Cell implements ICell {
   private _row: number;
   private _column: number;
 
-  constructor(
-    wasmWorkbook: WasmWorkbook,
-    sheet: Sheet,
-    row: number,
-    column: number
-  ) {
+  constructor(wasmWorkbook: WasmWorkbook, sheet: Sheet, row: number, column: number) {
     this._wasmWorkbook = wasmWorkbook;
     this._sheet = sheet;
     this._row = row;
@@ -101,11 +93,7 @@ export class Cell implements ICell {
    */
   get value(): string | number | boolean | Date | null {
     try {
-      return this._wasmWorkbook.getCellValueByIndex(
-        this._sheet.index,
-        this._row,
-        this._column
-      );
+      return this._wasmWorkbook.getCellValueByIndex(this._sheet.index, this._row, this._column);
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }
@@ -113,40 +101,28 @@ export class Cell implements ICell {
 
   set value(value: string | number | boolean | Date | null) {
     try {
-      if (value === null || typeof value === "string") {
+      if (value === null || typeof value === 'string') {
         this._wasmWorkbook.updateCellWithText(
           this._sheet.index,
           this._row,
           this._column,
-          value ?? ""
+          value ?? '',
         );
-      } else if (typeof value === "number") {
-        this._wasmWorkbook.updateCellWithNumber(
-          this._sheet.index,
-          this._row,
-          this._column,
-          value
-        );
-      } else if (typeof value === "boolean") {
-        this._wasmWorkbook.updateCellWithBool(
-          this._sheet.index,
-          this._row,
-          this._column,
-          value
-        );
+      } else if (typeof value === 'number') {
+        this._wasmWorkbook.updateCellWithNumber(this._sheet.index, this._row, this._column, value);
+      } else if (typeof value === 'boolean') {
+        this._wasmWorkbook.updateCellWithBool(this._sheet.index, this._row, this._column, value);
       } else if (value instanceof Date) {
         const date = dayjs.utc(value);
         const excelDate = convertDayjsUTCToSpreadsheetDate(date);
         if (excelDate < 0) {
-          throw new CalcError(
-            `Date "${date.toISOString()}" is not representable in workbook.`
-          );
+          throw new CalcError(`Date "${date.toISOString()}" is not representable in workbook.`);
         }
         this._wasmWorkbook.updateCellWithNumber(
           this._sheet.index,
           this._row,
           this._column,
-          excelDate
+          excelDate,
         );
       }
 
@@ -158,10 +134,10 @@ export class Cell implements ICell {
 
   get dateValue(): Date {
     const value = this.value;
-    if (typeof value !== "number") {
+    if (typeof value !== 'number') {
       throw new CalcError(
-        "Cell value is not a number. Underlying number value is required for dates.",
-        ErrorKind.TypeError
+        'Cell value is not a number. Underlying number value is required for dates.',
+        ErrorKind.TypeError,
       );
     }
     if (value < 0) {
@@ -172,12 +148,10 @@ export class Cell implements ICell {
 
   get stringValue(): string {
     const value = this.value;
-    if (typeof value !== "string") {
+    if (typeof value !== 'string') {
       throw new CalcError(
-        `Type of cell's value is not string, cell value: ${JSON.stringify(
-          value
-        )}`,
-        ErrorKind.TypeError
+        `Type of cell's value is not string, cell value: ${JSON.stringify(value)}`,
+        ErrorKind.TypeError,
       );
     }
     return value;
@@ -185,12 +159,10 @@ export class Cell implements ICell {
 
   get numberValue(): number {
     const value = this.value;
-    if (typeof value !== "number") {
+    if (typeof value !== 'number') {
       throw new CalcError(
-        `Type of cell's value is not number, cell value: ${JSON.stringify(
-          value
-        )}`,
-        ErrorKind.TypeError
+        `Type of cell's value is not number, cell value: ${JSON.stringify(value)}`,
+        ErrorKind.TypeError,
       );
     }
     return value;
@@ -198,12 +170,10 @@ export class Cell implements ICell {
 
   get booleanValue(): boolean {
     const value = this.value;
-    if (typeof value !== "boolean") {
+    if (typeof value !== 'boolean') {
       throw new CalcError(
-        `Type of cell's value is not boolean, cell value: ${JSON.stringify(
-          value
-        )}`,
-        ErrorKind.TypeError
+        `Type of cell's value is not boolean, cell value: ${JSON.stringify(value)}`,
+        ErrorKind.TypeError,
       );
     }
     return value;
@@ -211,11 +181,7 @@ export class Cell implements ICell {
 
   get formattedValue(): string {
     try {
-      return this._wasmWorkbook.getFormattedCellValue(
-        this._sheet.index,
-        this._row,
-        this._column
-      );
+      return this._wasmWorkbook.getFormattedCellValue(this._sheet.index, this._row, this._column);
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }
@@ -223,13 +189,7 @@ export class Cell implements ICell {
 
   get formula(): string | null {
     try {
-      return (
-        this._wasmWorkbook.getCellFormula(
-          this._sheet.index,
-          this._row,
-          this._column
-        ) ?? null
-      );
+      return this._wasmWorkbook.getCellFormula(this._sheet.index, this._row, this._column) ?? null;
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }
@@ -242,15 +202,10 @@ export class Cell implements ICell {
           this._sheet.index,
           this._row,
           this._column,
-          formula
+          formula,
         );
       } else {
-        this._wasmWorkbook.updateCellWithText(
-          this._sheet.index,
-          this._row,
-          this._column,
-          ""
-        );
+        this._wasmWorkbook.updateCellWithText(this._sheet.index, this._row, this._column, '');
       }
       this._wasmWorkbook.evaluate();
     } catch (error) {
