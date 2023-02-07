@@ -6,55 +6,47 @@ import * as Menu from 'src/components/uiKit/menu';
 import * as Toolbar from 'src/components/uiKit/toolbar';
 import { SheetListMenuContent } from './navigationMenus';
 import SheetTab from './navigationTab';
-import { TabsInput } from './common';
+import { useWorkbookContext } from '../../workbookContext';
 
 export type NavigationProps = {
   className?: string;
   'data-testid'?: string;
-  tabs: TabsInput[];
-  selectedSheet: number;
-  onSheetSelected: (index: number) => void;
-  onAddBlankSheet: () => void;
-  onSheetColorChanged: (sheet: number, hex: string) => void;
-  onSheetRenamed: (sheet: number, name: string) => void;
-  onSheetDeleted: (sheet: number) => void;
-  readOnly?: boolean;
-  disabled?: boolean;
 };
 
 const Navigation: FunctionComponent<NavigationProps> = (properties) => {
-  const {
-    tabs,
-    selectedSheet,
-    onSheetSelected,
-    onAddBlankSheet,
-    onSheetColorChanged,
-    onSheetRenamed,
-    onSheetDeleted,
-    readOnly,
-  } = properties;
+  const { model, editorState, editorActions } = useWorkbookContext();
+  const { selectedSheet } = editorState;
+
+  if (!model) {
+    return null;
+  }
+
+  const tabs = model.getTabs();
+  const onSheetDeleted = (sheet: number) => {
+    model.deleteSheet(sheet);
+    if (sheet === selectedSheet) {
+      editorActions.onSheetSelected(0);
+    }
+  };
 
   return (
     <NavigationContainer data-testid={properties['data-testid']}>
-      {!readOnly && (
-        <Toolbar.Root>
-          <Menu.Root>
-            <Toolbar.Button asChild disabled={properties.disabled} title="Sheets">
-              <Menu.Trigger>
-                <MenuIcon size={19} />
-              </Menu.Trigger>
-            </Toolbar.Button>
-            <SheetListMenuContent tabs={tabs} onSheetSelected={onSheetSelected} />
-          </Menu.Root>
-          <Toolbar.Button
-            disabled={properties.disabled}
-            onClick={onAddBlankSheet}
-            title="Add sheet"
-          >
-            <PlusIcon size={19} />
+      <Toolbar.Root>
+        <Menu.Root>
+          <Toolbar.Button asChild title="Sheets">
+            <Menu.Trigger>
+              <MenuIcon size={19} />
+            </Menu.Trigger>
           </Toolbar.Button>
-        </Toolbar.Root>
-      )}
+          <SheetListMenuContent
+            tabs={tabs}
+            onSheetSelected={(index: number) => editorActions.onSheetSelected(index)}
+          />
+        </Menu.Root>
+        <Toolbar.Button onClick={() => model.addBlankSheet()} title="Add sheet">
+          <PlusIcon size={19} />
+        </Toolbar.Button>
+      </Toolbar.Root>
       <SheetTabsContainer>
         {tabs.map((tab, index) => {
           const color = tab.color?.RGB;
@@ -65,11 +57,10 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
               name={tab.name}
               selected={selected}
               color={color}
-              onSheetSelected={(): void => onSheetSelected(index)}
-              onSheetColorChanged={(hex: string) => onSheetColorChanged(index, hex)}
-              onSheetRenamed={(name: string) => onSheetRenamed(index, name)}
+              onSheetSelected={() => editorActions.onSheetSelected(index)}
+              onSheetColorChanged={(hex: string) => model.setSheetColor(index, hex)}
+              onSheetRenamed={(name: string) => model.renameSheet(index, name)}
               onSheetDeleted={() => onSheetDeleted(index)}
-              readOnly={readOnly}
             />
           );
         })}

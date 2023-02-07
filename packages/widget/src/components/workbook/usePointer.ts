@@ -1,7 +1,6 @@
 import { useCallback, RefObject, PointerEvent, useRef } from 'react';
 import WorksheetCanvas, { headerColumnWidth, headerRowHeight } from './canvas';
-import { Area, Cell } from './util';
-import { Border } from './useKeyboardNavigation';
+import { Area, Cell, Border } from './util';
 
 interface PointerSettings {
   canvasElement: RefObject<HTMLCanvasElement>;
@@ -56,8 +55,9 @@ const usePointer = (options: PointerSettings): PointerEvents => {
           event.preventDefault();
           event.stopPropagation();
           if (contextMenuAnchorElement.current) {
-            contextMenuAnchorElement.current.style.left = `${x + canvasRect.x}px`;
-            contextMenuAnchorElement.current.style.top = `${y + canvasRect.y}px`;
+            const scrollPosition = worksheet.getScrollPosition();
+            contextMenuAnchorElement.current.style.left = `${x + scrollPosition.left}px`;
+            contextMenuAnchorElement.current.style.top = `${y + scrollPosition.top}px`;
           }
           options.onPointerDownAtCell(cell, event);
           onRowContextMenu(cell.row);

@@ -4,15 +4,12 @@ import { debounce } from 'src/util';
 import useEditorKeyDown from './useEditorKeyDown';
 import setCaretPosition, { editorClass, getSelectedRangeInEditor } from './util';
 import { CellEditMode } from '../util';
+import { useWorkbookContext } from '../workbookContext';
 
 export enum EditorPageTestId {
   FormulaEditor = 'workbook-editor-formula-editor',
 }
 export interface EditorProps {
-  onEditChange: (text: string, cursorStart: number, cursorEnd: number) => void;
-  onEditEnd: (delta: { deltaRow: number; deltaColumn: number }) => void;
-  onEditEscape: () => void;
-  onReferenceCycle: (text: string, cursorStart: number, cursorEnd: number) => void;
   display: boolean;
   html: string;
   cursorStart: number;
@@ -22,20 +19,22 @@ export interface EditorProps {
 }
 
 const Editor: FunctionComponent<EditorProps> = (properties) => {
+  const { editorActions } = useWorkbookContext();
+  const { onReferenceCycle, onEditChange, onEditEscape } = editorActions;
   const cellEditorElement = useRef<HTMLDivElement>(null);
 
   const onEditEnd = (delta: { deltaRow: number; deltaColumn: number }) => {
     const sel = getSelectedRangeInEditor();
     if (sel) {
-      properties.onEditChange(sel.text, sel.start, sel.end);
+      onEditChange(sel.text, sel.start, sel.end);
     }
-    properties.onEditEnd(delta);
+    editorActions.onEditEnd(delta);
   };
 
   const cellEditorKeyDown = useEditorKeyDown({
     onEditEnd,
-    onEditEscape: properties.onEditEscape,
-    onReferenceCycle: properties.onReferenceCycle,
+    onEditEscape,
+    onReferenceCycle,
     mode: properties.mode,
   });
 
@@ -67,10 +66,10 @@ const Editor: FunctionComponent<EditorProps> = (properties) => {
       debounce(() => {
         const sel = getSelectedRangeInEditor();
         if (sel) {
-          properties.onEditChange(sel.text, sel.start, sel.end);
+          onEditChange(sel.text, sel.start, sel.end);
         }
       }, 500),
-    [properties],
+    [onEditChange],
   );
 
   return (
@@ -114,7 +113,7 @@ const Editor: FunctionComponent<EditorProps> = (properties) => {
           if (sel) {
             const newEnd = sel.start + value.length;
             const text = sel.text.slice(0, sel.start) + value + sel.text.slice(sel.end);
-            properties.onEditChange(text, newEnd, newEnd);
+            onEditChange(text, newEnd, newEnd);
           }
         }
         event.preventDefault();

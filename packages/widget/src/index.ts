@@ -1,1 +1,1 @@
-export { default as Workbook } from './components/workbook';
+export { Root, Worksheet, Toolbar, FormulaBar, Navigation } from './components/workbook';

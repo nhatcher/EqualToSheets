@@ -1,6 +1,7 @@
 import Model from 'src/components/workbook/model';
 import { RefObject } from 'react';
 import {
+  Border,
   StateSettings,
   ScrollPosition,
   Cell,
@@ -10,7 +11,6 @@ import {
   NavigationKey,
 } from 'src/components/workbook/util';
 import WorksheetCanvas from '../canvas';
-import { Border } from '../useKeyboardNavigation';
 import { EditorSelection } from '../editor/util';
 
 export type WorkbookState = {

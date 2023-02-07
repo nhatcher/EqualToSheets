@@ -3,24 +3,16 @@ import React, { PointerEvent, FunctionComponent, useCallback, useRef } from 'rea
 import { palette } from 'src/theme';
 import Editor from '../editor';
 import { headerColumnWidth } from '../canvas';
-import { getSelectedRangeInEditor, EditorSelection } from '../editor/util';
+import { getSelectedRangeInEditor } from '../editor/util';
+import { useWorkbookContext } from '../workbookContext';
+import { FocusType, getCellAddress } from '../util';
+import { escapeHTML } from '../formulas';
 
 const formulaBarHeight = 30;
 
 type FormulaBarProps = {
   className?: string;
   'data-testid'?: string;
-  cellAddress: string;
-  onEditStart: (selection: EditorSelection) => void;
-  onEditChange: (text: string, cursorStart: number, cursorEnd: number) => void;
-  onEditEnd: (delta: { deltaRow: number; deltaColumn: number }) => void;
-  onEditEscape: () => void;
-  onReferenceCycle: (text: string, cursorStart: number, cursorEnd: number) => void;
-  html: string;
-  cursorStart: number;
-  cursorEnd: number;
-  focus: boolean;
-  isEditing: boolean;
 };
 
 export enum FormulaBarTestId {
@@ -28,7 +20,16 @@ export enum FormulaBarTestId {
 }
 
 const FormulaBar: FunctionComponent<FormulaBarProps> = (properties) => {
-  const { isEditing, onEditStart } = properties;
+  const { model, editorActions, editorState } = useWorkbookContext();
+  const { selectedSheet, selectedArea, selectedCell, cellEditing } = editorState;
+  const isEditing = cellEditing !== null;
+  const formula =
+    model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column) ?? '';
+  const focus = cellEditing?.focus === FocusType.FormulaBar;
+  const cursorStart = cellEditing?.cursorStart ?? 0;
+  const cursorEnd = cellEditing?.cursorEnd ?? 0;
+  const html = cellEditing?.html ?? `<span>${escapeHTML(formula)}</span>`;
+  const cellAddress = getCellAddress(selectedArea, selectedCell);
 
   const formulaBar = useRef<HTMLDivElement>(null);
 
@@ -38,12 +39,12 @@ const FormulaBar: FunctionComponent<FormulaBarProps> = (properties) => {
       if (!isEditing) {
         const sel = getSelectedRangeInEditor();
         if (sel) {
-          onEditStart(sel);
+          editorActions.onFormulaEditStart(sel);
         }
       }
       event.stopPropagation();
     },
-    [isEditing, onEditStart, formulaBar],
+    [isEditing, editorActions],
   );
 
   const onPointerDown = useCallback(
@@ -56,22 +57,16 @@ const FormulaBar: FunctionComponent<FormulaBarProps> = (properties) => {
   return (
     <FormulaBarContainer data-testid={properties['data-testid']}>
       <NameContainer>
-        <CellBarAddress data-testid={FormulaBarTestId.CellAddress}>
-          {properties.cellAddress}
-        </CellBarAddress>
+        <CellBarAddress data-testid={FormulaBarTestId.CellAddress}>{cellAddress}</CellBarAddress>
       </NameContainer>
       <FormulaContainer onPointerUp={onPointerUp} onPointerDown={onPointerDown} ref={formulaBar}>
         <Editor
-          onEditChange={properties.onEditChange}
-          onEditEnd={properties.onEditEnd}
-          onEditEscape={properties.onEditEscape}
-          onReferenceCycle={properties.onReferenceCycle}
           display
-          html={properties.html}
+          html={html}
           mode="edit"
-          focus={properties.focus}
-          cursorStart={properties.cursorStart}
-          cursorEnd={properties.cursorEnd}
+          focus={focus}
+          cursorStart={cursorStart}
+          cursorEnd={cursorEnd}
         />
       </FormulaContainer>
     </FormulaBarContainer>

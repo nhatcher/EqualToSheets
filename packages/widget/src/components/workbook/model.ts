@@ -3,7 +3,7 @@
 
 import { ICell, IWorkbook } from '@equalto-software/calc';
 import Papa from 'papaparse';
-import { TabsInput } from './components/navigation';
+import { TabsInput } from './components/navigation/common';
 import { MarkedToken } from './tokenTypes';
 import { Area, Cell, NavigationKey } from './util';
 
@@ -212,17 +212,24 @@ function isCellInArea(sheet: number, row: number, column: number, area: SheetAre
   }
   return true;
 }
+
+export type Change = {
+  type: string;
+};
+type Subscriber = (change: Change) => void;
+
 export default class Model {
-  readOnly: boolean;
-
-  workbook: IWorkbook;
-
   getTokens: (formula: string) => MarkedToken[];
 
-  history: { undo: Diff[][]; redo: Diff[][] };
+  private history: { undo: Diff[][]; redo: Diff[][] };
+
+  private workbook: IWorkbook;
+
+  private nextSubscriberKey = 0;
+
+  private subscribers: Record<number, Subscriber> = {};
 
   constructor(options: ModelSettings) {
-    this.readOnly = !!options.readOnly;
     this.workbook = options.workbook;
     this.getTokens = options.getTokens;
     this.history = {
@@ -231,8 +238,28 @@ export default class Model {
     };
   }
 
+  subscribe(subscriber: Subscriber): number {
+    const key = this.nextSubscriberKey;
+    this.nextSubscriberKey += 1;
+    this.subscribers[key] = subscriber;
+    return key;
+  }
+
+  unsubscribe(key: number): void {
+    if (key in this.subscribers) {
+      delete this.subscribers[key];
+    }
+  }
+
+  private notifySubscribers(change: Change) {
+    for (const subscriber of Object.values(this.subscribers)) {
+      subscriber(change);
+    }
+  }
+
   setSheetColor(sheet: number, color: string): void {
     // TODO: this.wasm.set_sheet_color(sheet, color);
+    this.notifySubscribers({ type: 'setSheetColor' });
   }
 
   getColumnWidth(sheet: number, column: number): number {
@@ -253,6 +280,7 @@ export default class Model {
     this.history.redo = [];
     // TODO:
     // this.wasm.set_column_width(sheet, column, width);
+    this.notifySubscribers({ type: 'setColumnWidth' });
   }
 
   getTabs(): TabsInput[] {
@@ -282,6 +310,7 @@ export default class Model {
     ]);
     this.history.redo = [];
     // this.wasm.set_row_height(sheet, row, height);
+    this.notifySubscribers({ type: 'setRowHeight' });
   }
 
   getTextAt(sheet: number, row: number, column: number): string {
@@ -340,17 +369,21 @@ export default class Model {
 
   addBlankSheet(): void {
     this.workbook.sheets.add();
+    this.notifySubscribers({ type: 'addBlankSheet' });
   }
 
   renameSheet(sheet: number, newName: string): void {
     this.workbook.sheets.get(sheet).name = newName;
+    this.notifySubscribers({ type: 'renameSheet' });
   }
 
   deleteSheet(sheet: number): void {
     this.workbook.sheets.get(sheet).delete();
+    this.notifySubscribers({ type: 'deleteSheet' });
   }
 
   setCellsStyle(sheet: number, area: Area, reducer: StyleReducer): void {
+    this.notifySubscribers({ type: 'setCellStyle' });
     // TODO:
     /*  const diffs: Diff[] = [];
     if (this.isAreaReadOnly(sheet, area)) {
@@ -644,6 +677,7 @@ export default class Model {
     }
     this.history.undo.push(diffs);
     this.history.redo = [];
+    this.notifySubscribers({ type: 'deleteCells' });
   }
 
   setCellValue(sheet: number, row: number, column: number, value: string): void {
@@ -669,14 +703,11 @@ export default class Model {
     } else {
       this.workbook.cell(sheet, row, column).value = value;
     }
-  }
-
-  setCellsWithValuesJsonIgnoreReadonly(inputs: string): void {
-    // this.wasm.set_cells_with_values_json(inputs);
-    // this.wasm.evaluate();
+    this.notifySubscribers({ type: 'setCellValue' });
   }
 
   extendTo(sheet: number, initialArea: Area, extendedArea: Area): void {
+    this.notifySubscribers({ type: 'extendTo' });
     /* const diffs: Array<Diff> = [];
     let { rowStart, rowEnd, columnStart, columnEnd } = initialArea;
     if (rowStart > rowEnd) {
@@ -837,6 +868,7 @@ export default class Model {
 
   // This takes care of _internal_ paste, that is copy/paste within the application
   paste(source: SheetArea, target: SheetArea, sheetData: SheetData, type: PasteType): void {
+    this.notifySubscribers({ type: 'paste' });
     /* const sourceArea = {
       sheet: source.sheet,
       row: source.rowStart,
@@ -1008,6 +1040,7 @@ export default class Model {
   }
 
   pasteText(sheet: number, target: Cell, value: string): void {
+    this.notifySubscribers({ type: 'pasteText' });
     /* const parsedData = Papa.parse(value, { delimiter: '\t', header: false });
     const data = parsedData.data as string[][];
     const rowCount = data.length;
@@ -1091,6 +1124,7 @@ export default class Model {
   }
 
   insertRow(sheet: number, row: number): void {
+    this.notifySubscribers({ type: 'insertRow' });
     /* this.wasm.insert_rows(sheet, row, 1);
     this.history.undo.push([
       {
@@ -1106,6 +1140,7 @@ export default class Model {
   // We need to delete (and save) the row style
   // We need to delete (and save) the data
   deleteRow(sheet: number, row: number): void {
+    this.notifySubscribers({ type: 'deleteRow' });
     // get old row style, if any
     // oldRowStyle
     /* const rowData = this.wasm.get_row_undo_data(sheet, row);

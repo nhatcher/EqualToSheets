@@ -1,5 +1,6 @@
 import { useReducer, Dispatch, useRef } from 'react';
 import {
+  Border,
   StateSettings,
   mergedAreas,
   FocusType,
@@ -9,7 +10,6 @@ import {
 } from 'src/components/workbook/util';
 import { WorkbookActionType, Action, WorkbookReducer, WorkbookState } from './common';
 import { headerRowHeight, headerColumnWidth } from '../canvas';
-import { Border } from '../useKeyboardNavigation';
 import { getFormulaHTML, cycleReference } from '../formulas';
 import Model from '../model';
 

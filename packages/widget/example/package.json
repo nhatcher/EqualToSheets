@@ -22,7 +22,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "reinstall": "rm -rf ./node_modules/@equalto-software && npm i"
+    "reinstall": "rm -rf ./node_modules/@equalto-software && rm -rf ./node_modules/.cache && npm i"
   },
   "eslintConfig": {
     "extends": [

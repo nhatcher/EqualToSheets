@@ -1,36 +1,21 @@
 import { useCallback, KeyboardEvent, RefObject } from 'react';
-import { isEditingKey, isNavigationKey, NavigationKey } from './util';
-
-export enum Border {
-  Top = 'top',
-  Bottom = 'bottom',
-  Right = 'right',
-  Left = 'left',
-}
+import Model from './model';
+import { WorkbookActions } from './useWorkbookActions';
+import { WorkbookState } from './useWorkbookReducer';
+import { isEditingKey, isNavigationKey } from './util';
 
 interface Options {
-  onCellsDeleted: () => void;
-  onExpandAreaSelectedKeyboard: (key: 'ArrowRight' | 'ArrowLeft' | 'ArrowUp' | 'ArrowDown') => void;
-  onEditKeyPressStart: (initText: string) => void;
-  onCellEditStart: () => void;
-  onBold: () => void;
-  onItalic: () => void;
-  onUnderline: () => void;
-  onNavigationToEdge: (direction: NavigationKey) => void;
-  onPageDown: () => void;
-  onPageUp: () => void;
-  onArrowDown: () => void;
-  onArrowUp: () => void;
-  onArrowLeft: () => void;
-  onArrowRight: () => void;
-  onKeyHome: () => void;
-  onKeyEnd: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
+  model: Model | null;
+  editorState: WorkbookState;
+  editorActions: WorkbookActions;
   root: RefObject<HTMLDivElement>;
 }
 
 const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardEvent) => void } => {
+  const { model, editorState, editorActions } = options;
+  const { selectedSheet, selectedArea } = editorState;
+
+  // TODO: We can probably drop the useCallback
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
       const { key } = event;
@@ -45,35 +30,35 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
       if (event.metaKey || event.ctrlKey) {
         switch (key) {
           case 'z': {
-            options.onUndo();
+            model?.undo();
             event.stopPropagation();
             event.preventDefault();
 
             break;
           }
           case 'y': {
-            options.onRedo();
+            model?.redo();
             event.stopPropagation();
             event.preventDefault();
 
             break;
           }
           case 'b': {
-            options.onBold();
+            model?.toggleFontStyle(selectedSheet, selectedArea, 'bold');
             event.stopPropagation();
             event.preventDefault();
 
             break;
           }
           case 'i': {
-            options.onItalic();
+            model?.toggleFontStyle(selectedSheet, selectedArea, 'italic');
             event.stopPropagation();
             event.preventDefault();
 
             break;
           }
           case 'u': {
-            options.onUnderline();
+            model?.toggleFontStyle(selectedSheet, selectedArea, 'underline');
             event.stopPropagation();
             event.preventDefault();
 
@@ -83,21 +68,21 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
             break;
         }
         if (isNavigationKey(key)) {
-          options.onNavigationToEdge(key);
+          editorActions.onNavigationToEdge(key);
           event.stopPropagation();
           event.preventDefault();
         }
         return;
       }
       if (key === 'F2') {
-        options.onCellEditStart();
+        editorActions.onCellEditStart();
         event.stopPropagation();
         event.preventDefault();
         return;
       }
       if (isEditingKey(key) || key === 'Backspace') {
         const initText = key === 'Backspace' ? '' : key;
-        options.onEditKeyPressStart(initText);
+        editorActions.onEditKeyPressStart(initText);
         event.stopPropagation();
         event.preventDefault();
         return;
@@ -110,9 +95,9 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
           key === 'ArrowUp' ||
           key === 'ArrowDown'
         ) {
-          options.onExpandAreaSelectedKeyboard(key);
+          editorActions.onExpandAreaSelectedKeyboard(key);
         } else if (key === 'Tab') {
-          options.onArrowLeft();
+          editorActions.onArrowLeft();
           event.stopPropagation();
           event.preventDefault();
         }
@@ -121,48 +106,48 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
       switch (key) {
         case 'ArrowRight':
         case 'Tab': {
-          options.onArrowRight();
+          editorActions.onArrowRight();
 
           break;
         }
         case 'ArrowLeft': {
-          options.onArrowLeft();
+          editorActions.onArrowLeft();
 
           break;
         }
         case 'ArrowDown':
         case 'Enter': {
-          options.onArrowDown();
+          editorActions.onArrowDown();
 
           break;
         }
         case 'ArrowUp': {
-          options.onArrowUp();
+          editorActions.onArrowUp();
 
           break;
         }
         case 'End': {
-          options.onKeyEnd();
+          editorActions.onKeyEnd();
 
           break;
         }
         case 'Home': {
-          options.onKeyHome();
+          editorActions.onKeyHome();
 
           break;
         }
         case 'Delete': {
-          options.onCellsDeleted();
+          model?.deleteCells(selectedSheet, selectedArea);
 
           break;
         }
         case 'PageDown': {
-          options.onPageDown();
+          editorActions.onPageDown();
 
           break;
         }
         case 'PageUp': {
-          options.onPageUp();
+          editorActions.onPageUp();
 
           break;
         }
@@ -172,7 +157,7 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
       event.stopPropagation();
       event.preventDefault();
     },
-    [options],
+    [editorActions, model, options, selectedArea, selectedSheet],
   );
   return { onKeyDown };
 };

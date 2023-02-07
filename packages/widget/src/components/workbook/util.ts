@@ -391,3 +391,10 @@ export const getCellAddress = (selectedArea: Area, selectedCell?: Cell) => {
         selectedArea.rowStart
       }:${columnNameFromNumber(selectedArea.columnEnd)}${selectedArea.rowEnd}`;
 };
+
+export enum Border {
+  Top = 'top',
+  Bottom = 'bottom',
+  Right = 'right',
+  Left = 'left',
+}

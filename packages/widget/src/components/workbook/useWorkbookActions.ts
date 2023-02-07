@@ -1,8 +1,7 @@
 import { useCallback, RefObject } from 'react';
-import { Action, WorkbookActionType } from './useWorkbookReducer';
+import { Action, WorkbookActionType } from './useWorkbookReducer/common';
 import WorksheetCanvas from './canvas';
-import { Area, Cell, NavigationKey, ScrollPosition } from './util';
-import { Border } from './useKeyboardNavigation';
+import { Area, Cell, NavigationKey, ScrollPosition, Border } from './util';
 import { EditorSelection } from './editor/util';
 
 export type WorkbookActions = {
