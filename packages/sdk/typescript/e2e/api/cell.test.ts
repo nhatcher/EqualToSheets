@@ -280,4 +280,230 @@ describe('Workbook - Cell operations', () => {
     expect(failCase).toThrow('Could not find sheet with sheetId=2');
     expect(failCase).toThrow(CalcError);
   });
+
+  describe('style', () => {
+    test('can read number format', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      expect(cell.style.numberFormat).toEqual('general');
+    });
+
+    test('can set number format', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.value = 7;
+      cell.style.numberFormat = '0.00%';
+      expect(cell.formattedValue).toEqual('700.00%');
+      expect(cell.style.numberFormat).toEqual('0.00%');
+    });
+
+    test('setting number format updates own style snapshot', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      const style = cell.style;
+      style.numberFormat = '0.00%';
+      expect(style.numberFormat).toEqual('0.00%');
+    });
+
+    test('can set bold on cell', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.font.bold = true;
+
+      expect(cell.style.font.bold).toEqual(true);
+
+      expect(cell.style.font.italics).toEqual(false);
+      expect(cell.style.font.underline).toEqual(false);
+      expect(cell.style.font.strikethrough).toEqual(false);
+    });
+
+    test('can set italics on cell', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.font.italics = true;
+
+      expect(cell.style.font.italics).toEqual(true);
+
+      expect(cell.style.font.bold).toEqual(false);
+      expect(cell.style.font.underline).toEqual(false);
+      expect(cell.style.font.strikethrough).toEqual(false);
+    });
+
+    test('can set underline on cell', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.font.underline = true;
+
+      expect(cell.style.font.underline).toEqual(true);
+
+      expect(cell.style.font.bold).toEqual(false);
+      expect(cell.style.font.italics).toEqual(false);
+      expect(cell.style.font.strikethrough).toEqual(false);
+    });
+
+    test('can set strikethrough on cell', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.font.strikethrough = true;
+
+      expect(cell.style.font.strikethrough).toEqual(true);
+
+      expect(cell.style.font.bold).toEqual(false);
+      expect(cell.style.font.italics).toEqual(false);
+      expect(cell.style.font.underline).toEqual(false);
+    });
+
+    test('can unset toggleable font properties', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+
+      expect(cell.style.font.bold).toEqual(false);
+      expect(cell.style.font.italics).toEqual(false);
+      expect(cell.style.font.underline).toEqual(false);
+      expect(cell.style.font.strikethrough).toEqual(false);
+
+      cell.style.bulkUpdate({
+        font: {
+          bold: true,
+          italics: true,
+          underline: true,
+          strikethrough: true,
+        },
+      });
+
+      expect(cell.style.font.bold).toEqual(true);
+      expect(cell.style.font.italics).toEqual(true);
+      expect(cell.style.font.underline).toEqual(true);
+      expect(cell.style.font.strikethrough).toEqual(true);
+
+      cell.style.font.bold = false;
+      cell.style.font.italics = false;
+      cell.style.font.underline = false;
+      cell.style.font.strikethrough = false;
+
+      expect(cell.style.font.bold).toEqual(false);
+      expect(cell.style.font.italics).toEqual(false);
+      expect(cell.style.font.underline).toEqual(false);
+      expect(cell.style.font.strikethrough).toEqual(false);
+    });
+
+    test('can read default font color', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      expect(cell.style.font.color).toEqual('#000000');
+    });
+
+    test('can set font color', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.font.color = '#ff0000';
+      expect(cell.style.font.color).toEqual('#FF0000');
+    });
+
+    test('throws if set font color is invalid', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      expect(() => {
+        cell.style.font.color = 'does not make sense';
+      }).toThrow('Color "does not make sense" is not valid 3-channel hex color.');
+      expect(cell.style.font.color).toEqual('#000000');
+    });
+
+    test('can set solid fill', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+
+      expect(cell.style.fill.patternType).toEqual('none');
+      expect(cell.style.fill.foregroundColor).toEqual('#FFFFFF');
+      expect(cell.style.fill.backgroundColor).toEqual('#FFFFFF');
+
+      cell.style.bulkUpdate({
+        fill: {
+          patternType: 'solid',
+          foregroundColor: '#ff00ff',
+        },
+      });
+
+      expect(cell.style.fill.patternType).toEqual('solid');
+      expect(cell.style.fill.foregroundColor).toEqual('#FF00FF');
+      expect(cell.style.fill.backgroundColor).toEqual('#FFFFFF');
+    });
+
+    test('throws if fill color is invalid', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+
+      expect(() => {
+        cell.style.fill.foregroundColor = '#fff';
+      }).toThrow('Color "#fff" is not valid 3-channel hex color.');
+
+      expect(() => {
+        cell.style.fill.backgroundColor = '#aaa';
+      }).toThrow('Color "#aaa" is not valid 3-channel hex color.');
+    });
+
+    test('can unset fill', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+
+      cell.style.bulkUpdate({
+        fill: {
+          patternType: 'solid',
+          foregroundColor: '#ff00ff',
+        },
+      });
+
+      cell.style.fill.patternType = 'none';
+      expect(cell.style.fill.patternType).toEqual('none');
+      // saved, but user code should ignore the value:
+      expect(cell.style.fill.foregroundColor).toEqual('#FF00FF');
+    });
+
+    test('bulk style update', async () => {
+      const { newWorkbook } = await getApi();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+
+      expect(cell.style.numberFormat).toEqual('general');
+      expect(cell.style.font.bold).toEqual(false);
+
+      cell.style.bulkUpdate({
+        numberFormat: '0.00%',
+        font: {
+          bold: true,
+          italics: true,
+          underline: false,
+          strikethrough: false,
+        },
+        fill: {
+          patternType: 'solid',
+          foregroundColor: '#ff00ff',
+          backgroundColor: '#00ffff',
+        },
+      });
+
+      expect(cell.style.numberFormat).toEqual('0.00%');
+      expect(cell.style.font.bold).toEqual(true);
+      expect(cell.style.font.italics).toEqual(true);
+      expect(cell.style.font.underline).toEqual(false);
+      expect(cell.style.font.strikethrough).toEqual(false);
+      expect(cell.style.fill.patternType).toEqual('solid');
+      expect(cell.style.fill.foregroundColor).toEqual('#FF00FF');
+      expect(cell.style.fill.backgroundColor).toEqual('#00FFFF');
+    });
+  });
 });

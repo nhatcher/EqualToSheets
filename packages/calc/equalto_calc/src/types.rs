@@ -279,7 +279,7 @@ pub struct Font {
     pub strike: bool,
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
-    pub u: bool,
+    pub u: bool, // seems that Excel supports a bit more - double underline / account underline etc.
     #[serde(default = "default_as_false")]
     #[serde(skip_serializing_if = "is_false")]
     pub b: bool,

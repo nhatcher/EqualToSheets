@@ -344,4 +344,42 @@ impl WasmWorkbook {
             .map_err(WorkbookError::from)?;
         Ok(WasmLocalCellCoordinate { row, column })
     }
+
+    #[wasm_bindgen(js_name = "getCellStyle")]
+    pub fn get_cell_style(
+        &self,
+        sheet_index: u32,
+        row: i32,
+        column: i32,
+    ) -> Result<String, JsError> {
+        Ok(
+            serde_json::to_string(&self.model.get_style_for_cell(sheet_index, row, column))
+                .map_err(|_| "Could not stringify style to JSON.".to_string())
+                .map_err(WorkbookError::from)?,
+        )
+    }
+
+    #[wasm_bindgen(js_name = "setCellStyle")]
+    pub fn set_cell_style(
+        &mut self,
+        sheet_index: u32,
+        row: i32,
+        column: i32,
+        style: &str,
+    ) -> Result<(), JsError> {
+        self.model
+            .set_cell_style(
+                sheet_index,
+                row,
+                column,
+                &serde_json::from_str(style)
+                    .map_err(|_| "Could not parse data transfer blob for style.".to_string())
+                    .map_err(WorkbookError::from)?,
+            )
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
 }
+
+#[wasm_bindgen]
+struct WasmCellStyleAssignment {}

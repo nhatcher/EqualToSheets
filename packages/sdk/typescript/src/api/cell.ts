@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
-import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
+import { CalcError, ErrorKind, wrapWebAssemblyError } from 'src/errors';
 import { convertDayjsUTCToSpreadsheetDate, convertSpreadsheetDateToDayjsUTC } from 'src/utils';
 import { WasmWorkbook } from '../__generated_pkg/equalto_wasm';
-import { Sheet } from './sheet';
+import { ISheet, Sheet } from './sheet';
+import { CellStyleManager, ICellStyle, RawCellStyle } from './style';
 
 export interface ICell {
   /**
@@ -65,6 +66,8 @@ export interface ICell {
    * Deletes cell content along with it's properties (including style).
    */
   delete(): void;
+
+  get style(): ICellStyle;
 }
 
 export class Cell implements ICell {
@@ -78,6 +81,10 @@ export class Cell implements ICell {
     this._sheet = sheet;
     this._row = row;
     this._column = column;
+  }
+
+  get sheet(): ISheet {
+    return this._sheet;
   }
 
   get row(): number {
@@ -216,6 +223,17 @@ export class Cell implements ICell {
   delete(): void {
     try {
       this._wasmWorkbook.deleteCell(this._sheet.index, this._row, this._column);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  get style(): ICellStyle {
+    try {
+      const rawStyle = JSON.parse(
+        this._wasmWorkbook.getCellStyle(this._sheet.index, this._row, this._column),
+      ) as RawCellStyle;
+      return new CellStyleManager(this._wasmWorkbook, this, rawStyle);
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }
