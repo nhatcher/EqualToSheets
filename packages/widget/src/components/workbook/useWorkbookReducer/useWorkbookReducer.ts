@@ -895,34 +895,35 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       }
 
       const { cell } = action.payload;
-      const { row, column } = cell;
-      if (row > 0 && row <= canvas.lastRow && column > 0 && column <= canvas.lastColumn) {
-        // Magic scrolling by Nico
-        const { width, height } = worksheet.getBoundingClientRect();
-        const [x, y] = canvas.getCoordinatesByCell(row, column);
-        const [x1, y1] = canvas.getCoordinatesByCell(row + 1, column + 1);
-        const { left: canvasLeft, top: canvasTop } = canvas.getScrollPosition();
-        let { left, top } = state.scrollPosition;
+      let { row, column } = cell;
+      row = Math.max(0, Math.min(row, canvas.lastRow));
+      column = Math.max(0, Math.min(column, canvas.lastColumn));
 
-        if (x < headerColumnWidth) {
-          left = canvasLeft - headerColumnWidth + x;
-        } else if (x1 > width - 20) {
-          left = canvasLeft + x1 - width + 20;
-        }
-        if (y < headerRowHeight) {
-          top = canvasTop - headerRowHeight + y;
-        } else if (y1 > height - 20) {
-          top = canvasTop + y1 - height + 20;
-        }
+      // Magic scrolling by Nico
+      const { width, height } = worksheet.getBoundingClientRect();
+      const [x, y] = canvas.getCoordinatesByCell(row, column);
+      const [x1, y1] = canvas.getCoordinatesByCell(row + 1, column + 1);
+      const { left: canvasLeft, top: canvasTop } = canvas.getScrollPosition();
+      let { left, top } = state.scrollPosition;
 
-        return {
-          ...state,
-          selectedCell: { row, column },
-          selectedArea: { rowStart: row, rowEnd: row, columnStart: column, columnEnd: column },
-          scrollPosition: { left, top },
-          cellEditing: null,
-        };
+      if (x < headerColumnWidth) {
+        left = canvasLeft - headerColumnWidth + x;
+      } else if (x1 > width - 20) {
+        left = canvasLeft + x1 - width + 20;
       }
+      if (y < headerRowHeight) {
+        top = canvasTop - headerRowHeight + y;
+      } else if (y1 > height - 20) {
+        top = canvasTop + y1 - height + 20;
+      }
+
+      return {
+        ...state,
+        selectedCell: { row, column },
+        selectedArea: { rowStart: row, rowEnd: row, columnStart: column, columnEnd: column },
+        scrollPosition: { left, top },
+        cellEditing: null,
+      };
       return state;
     }
 
@@ -930,21 +931,19 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       const { selectedSheet, selectedCell } = state;
       const model = state.modelRef.current;
       const { key, canvasRef, worksheetRef } = action.payload;
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        return state;
-      }
-      const newSelectedCell = model.getNavigationEdge(
+      const cell = model.getNavigationEdge(
         key,
         selectedSheet,
         selectedCell.row,
         selectedCell.column,
-        canvas.lastRow,
-        canvas.lastColumn,
       );
       return state.reducer(state, {
         type: WorkbookActionType.CELL_SELECTED,
-        payload: { cell: newSelectedCell, canvasRef, worksheetRef },
+        payload: {
+          cell,
+          canvasRef,
+          worksheetRef,
+        },
       });
     }
 

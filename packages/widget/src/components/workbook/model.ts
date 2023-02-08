@@ -1,9 +1,10 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { ICell, IWorkbook } from '@equalto-software/calc';
+import { ICell, IWorkbook, NavigationDirection } from '@equalto-software/calc';
 import Papa from 'papaparse';
 import { TabsInput } from './components/navigation/common';
+import { workbookLastColumn, workbookLastRow } from './constants';
 import { MarkedToken } from './tokenTypes';
 import { Area, Cell, NavigationKey } from './util';
 
@@ -1078,49 +1079,23 @@ export default class Model {
     sheet: number,
     row: number,
     column: number,
-    lastRow: number,
-    lastColumn: number,
   ): { row: number; column: number } {
-    return { row: 0, column: 0 };
-    /* if (key === 'ArrowRight') {
-      return {
-        row,
-        column: Math.min(this.wasm.get_navigation_right_edge(sheet, row, column), lastColumn),
-      };
-    }
-    if (key === 'ArrowLeft') {
-      return {
-        row,
-        column: this.wasm.get_navigation_left_edge(sheet, row, column),
-      };
-    }
-    if (key === 'ArrowDown') {
-      return {
-        row: Math.min(this.wasm.get_navigation_bottom_edge(sheet, row, column), lastRow),
-        column,
-      };
-    }
-    if (key === 'ArrowUp') {
-      return {
-        row: this.wasm.get_navigation_top_edge(sheet, row, column),
-        column,
-      };
-    }
-    if (key === 'Home') {
-      const home = this.wasm.get_navigation_home(sheet);
-      return {
-        row: home.row,
-        column: home.column,
-      };
-    }
-    if (key === 'End') {
-      const end = this.wasm.get_navigation_end(sheet);
-      return {
-        row: end.row,
-        column: end.column,
-      };
-    }
-    return assertUnreachable(key); */
+    const keyToDirection = {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+      // FIXME
+      Home: 'up',
+      End: 'up',
+    } satisfies Record<NavigationKey, NavigationDirection>;
+    const [newRow, newColumn] = this.workbook.sheets
+      .get(sheet)
+      .userInterface.navigateToEdgeInDirection(row, column, keyToDirection[key]);
+    return {
+      row: Math.min(newRow, workbookLastRow),
+      column: Math.min(newColumn, workbookLastColumn),
+    };
   }
 
   insertRow(sheet: number, row: number): void {
