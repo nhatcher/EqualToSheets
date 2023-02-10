@@ -195,6 +195,7 @@ pub fn is_english_error_string(name: &str) -> bool {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[serde(tag = "type", content = "data")]
 pub enum TokenType {
     ILLEGAL(LexerError),
     EOF,

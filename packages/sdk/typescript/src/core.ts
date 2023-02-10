@@ -1,11 +1,15 @@
 import init from './__generated_pkg/equalto_wasm';
 import { IWorkbook, newWorkbook, loadWorkbookFromMemory } from './api/workbook';
 import './dayjsConfig';
+import { getFormulaTokens } from './api/utils';
 
 export type { IWorkbook } from './api/workbook';
 export type { IWorkbookSheets } from './api/workbookSheets';
 export type { ISheet, NavigationDirection } from './api/sheet';
 export type { ICell } from './api/cell';
+export type { FormulaToken } from './api/utils';
+
+export { FormulaErrorCode } from './api/utils';
 
 // Copying type over here directly yields better type generation
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -18,6 +22,9 @@ export const setDefaultWasmInit = (newDefault: typeof defaultWasmInit) => {
 type SheetsApi = {
   newWorkbook(): IWorkbook;
   loadWorkbookFromMemory(data: Uint8Array): IWorkbook;
+  utils: {
+    getFormulaTokens: typeof getFormulaTokens;
+  };
 };
 
 async function initializeWasm() {
@@ -35,6 +42,9 @@ export async function initialize(): Promise<SheetsApi> {
   return {
     newWorkbook,
     loadWorkbookFromMemory,
+    utils: {
+      getFormulaTokens,
+    },
   };
 }
 
@@ -50,5 +60,8 @@ export async function getApi(): Promise<SheetsApi> {
   return {
     newWorkbook,
     loadWorkbookFromMemory,
+    utils: {
+      getFormulaTokens,
+    },
   };
 }

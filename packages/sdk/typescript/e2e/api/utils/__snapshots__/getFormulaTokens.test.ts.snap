@@ -1,0 +1,260 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getFormulaTokens snapshot test for formula: 'Sheet name'!A1 1`] = `
+[
+  {
+    "end": 15,
+    "start": 0,
+    "token": {
+      "data": {
+        "absolute_column": false,
+        "absolute_row": false,
+        "column": 1,
+        "row": 1,
+        "sheet": "Sheet name",
+      },
+      "type": "REFERENCE",
+    },
+  },
+]
+`;
+
+exports[`getFormulaTokens snapshot test for formula: =$A1+B$2 1`] = `
+[
+  {
+    "end": 1,
+    "start": 0,
+    "token": {
+      "data": "Equal",
+      "type": "COMPARE",
+    },
+  },
+  {
+    "end": 4,
+    "start": 1,
+    "token": {
+      "data": {
+        "absolute_column": true,
+        "absolute_row": false,
+        "column": 1,
+        "row": 1,
+        "sheet": null,
+      },
+      "type": "REFERENCE",
+    },
+  },
+  {
+    "end": 5,
+    "start": 4,
+    "token": {
+      "data": "Add",
+      "type": "SUM",
+    },
+  },
+  {
+    "end": 8,
+    "start": 5,
+    "token": {
+      "data": {
+        "absolute_column": false,
+        "absolute_row": true,
+        "column": 2,
+        "row": 2,
+        "sheet": null,
+      },
+      "type": "REFERENCE",
+    },
+  },
+]
+`;
+
+exports[`getFormulaTokens snapshot test for formula: =A1+A3 1`] = `
+[
+  {
+    "end": 1,
+    "start": 0,
+    "token": {
+      "data": "Equal",
+      "type": "COMPARE",
+    },
+  },
+  {
+    "end": 3,
+    "start": 1,
+    "token": {
+      "data": {
+        "absolute_column": false,
+        "absolute_row": false,
+        "column": 1,
+        "row": 1,
+        "sheet": null,
+      },
+      "type": "REFERENCE",
+    },
+  },
+  {
+    "end": 4,
+    "start": 3,
+    "token": {
+      "data": "Add",
+      "type": "SUM",
+    },
+  },
+  {
+    "end": 6,
+    "start": 4,
+    "token": {
+      "data": {
+        "absolute_column": false,
+        "absolute_row": false,
+        "column": 1,
+        "row": 3,
+        "sheet": null,
+      },
+      "type": "REFERENCE",
+    },
+  },
+]
+`;
+
+exports[`getFormulaTokens snapshot test for formula: =IF($A$1; B4; #N/A) 1`] = `
+[
+  {
+    "end": 1,
+    "start": 0,
+    "token": {
+      "data": "Equal",
+      "type": "COMPARE",
+    },
+  },
+  {
+    "end": 3,
+    "start": 1,
+    "token": {
+      "data": "IF",
+      "type": "IDENT",
+    },
+  },
+  {
+    "end": 4,
+    "start": 3,
+    "token": {
+      "type": "LPAREN",
+    },
+  },
+  {
+    "end": 8,
+    "start": 4,
+    "token": {
+      "data": {
+        "absolute_column": true,
+        "absolute_row": true,
+        "column": 1,
+        "row": 1,
+        "sheet": null,
+      },
+      "type": "REFERENCE",
+    },
+  },
+  {
+    "end": 9,
+    "start": 8,
+    "token": {
+      "type": "SEMICOLON",
+    },
+  },
+  {
+    "end": 12,
+    "start": 9,
+    "token": {
+      "data": {
+        "absolute_column": false,
+        "absolute_row": false,
+        "column": 2,
+        "row": 4,
+        "sheet": null,
+      },
+      "type": "REFERENCE",
+    },
+  },
+  {
+    "end": 13,
+    "start": 12,
+    "token": {
+      "type": "SEMICOLON",
+    },
+  },
+  {
+    "end": 18,
+    "start": 13,
+    "token": {
+      "data": 4,
+      "type": "ERROR",
+    },
+  },
+  {
+    "end": 19,
+    "start": 18,
+    "token": {
+      "type": "RPAREN",
+    },
+  },
+]
+`;
+
+exports[`getFormulaTokens snapshot test for formula: =SUM(A3:A4) 1`] = `
+[
+  {
+    "end": 1,
+    "start": 0,
+    "token": {
+      "data": "Equal",
+      "type": "COMPARE",
+    },
+  },
+  {
+    "end": 4,
+    "start": 1,
+    "token": {
+      "data": "SUM",
+      "type": "IDENT",
+    },
+  },
+  {
+    "end": 5,
+    "start": 4,
+    "token": {
+      "type": "LPAREN",
+    },
+  },
+  {
+    "end": 10,
+    "start": 5,
+    "token": {
+      "data": {
+        "left": {
+          "absolute_column": false,
+          "absolute_row": false,
+          "column": 1,
+          "row": 3,
+        },
+        "right": {
+          "absolute_column": false,
+          "absolute_row": false,
+          "column": 1,
+          "row": 4,
+        },
+        "sheet": null,
+      },
+      "type": "RANGE",
+    },
+  },
+  {
+    "end": 11,
+    "start": 10,
+    "token": {
+      "type": "RPAREN",
+    },
+  },
+]
+`;
