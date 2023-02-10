@@ -924,7 +924,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         scrollPosition: { left, top },
         cellEditing: null,
       };
-      return state;
     }
 
     case WorkbookActionType.NAVIGATION_TO_EDGE: {

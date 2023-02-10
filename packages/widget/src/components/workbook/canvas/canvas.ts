@@ -11,8 +11,6 @@ import {
   headerSelectedColor,
   headerTextColor,
   outlineColor,
-  workbookLastColumn,
-  workbookLastRow,
 } from '../constants';
 
 import Model, { CellStyle } from '../model';
@@ -49,6 +47,8 @@ type CanvasSettings = {
   state: StateSettings;
   width: number;
   height: number;
+  lastColumn: number;
+  lastRow: number;
   elements: {
     canvas: HTMLCanvasElement;
     cellOutline: HTMLDivElement;
@@ -118,8 +118,8 @@ export default class WorksheetCanvas {
     this.state = options.state;
     const { model } = options;
     this.selectedSheet = options.selectedSheet;
-    this.lastColumn = workbookLastColumn;
-    this.lastRow = workbookLastRow;
+    this.lastColumn = options.lastColumn;
+    this.lastRow = options.lastRow;
     this.workbook = {
       getRowHeight: (row): number => model.getRowHeight(this.selectedSheet, row),
       getColumnWidth: (column): number => model.getColumnWidth(this.selectedSheet, column),
@@ -350,10 +350,7 @@ export default class WorksheetCanvas {
     for (let row = 1; row < this.lastRow + 1; row += 1) {
       y += this.workbook.getRowHeight(row);
     }
-    [this.sheetWidth, this.sheetHeight] = [
-      Math.floor(x + this.workbook.getColumnWidth(this.lastColumn)),
-      Math.floor(y + 2 * this.workbook.getRowHeight(this.lastRow)),
-    ];
+    [this.sheetWidth, this.sheetHeight] = [Math.floor(x), Math.floor(y)];
     return [this.sheetWidth, this.sheetHeight];
   }
 

@@ -1,8 +1,6 @@
 import styled from 'styled-components';
 import React, { PointerEvent, FunctionComponent, useCallback, useRef } from 'react';
-import { palette } from 'src/theme';
 import Editor from '../editor';
-import { headerColumnWidth } from '../canvas';
 import { getSelectedRangeInEditor } from '../editor/util';
 import { useWorkbookContext } from '../workbookContext';
 import { FocusType, getCellAddress } from '../util';
@@ -79,17 +77,18 @@ const CellBarAddress = styled.div`
 `;
 
 const FormulaBarContainer = styled.div`
+  padding-left: 2px;
   flex-shrink: 0;
   display: flex;
   flex-direction: row;
   align-items: center;
-  background: ${palette.background.default};
   height: ${formulaBarHeight}px;
 `;
 
 const NameContainer = styled.div`
   background: #587af0;
-  padding: 5px;
+  padding: 4px;
+  margin-left: 2px;
   border-radius: 2px;
   color: #ffffff;
   font-style: normal;
@@ -97,7 +96,6 @@ const NameContainer = styled.div`
   font-size: 12px;
   display: flex;
   flex-grow: row;
-  min-width: ${headerColumnWidth}px;
 `;
 const FormulaContainer = styled.div`
   margin-left: 10px;

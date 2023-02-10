@@ -34,6 +34,8 @@ const Workbook: FunctionComponent<{
     editorActions,
     worksheetCanvas,
     worksheetElement,
+    lastRow,
+    lastColumn,
   } = useWorkbookContext();
   const { selectedSheet, selectedCell, selectedArea, cellEditing, extendToArea, scrollPosition } =
     editorState;
@@ -323,6 +325,8 @@ const Workbook: FunctionComponent<{
       cellEditing: null,
       onColumnWidthChanges: onColumnWidthChange,
       onRowHeightChanges: onRowHeightChange,
+      lastRow,
+      lastColumn,
     };
 
     worksheetCanvas.current = new WorksheetCanvas(canvasSettings);
@@ -350,6 +354,8 @@ const Workbook: FunctionComponent<{
     onRowHeightChange,
     worksheetElement,
     worksheetCanvas,
+    lastRow,
+    lastColumn,
   ]);
 
   // Sync canvas with sheet state

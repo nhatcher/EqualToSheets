@@ -15,6 +15,7 @@ import React, {
 import { fonts } from 'src/theme';
 import styled from 'styled-components';
 import WorksheetCanvas from './canvas';
+import { workbookLastColumn, workbookLastRow } from './constants';
 import Model from './model';
 import { useCalcModule } from './useCalcModule';
 import useKeyboardNavigation from './useKeyboardNavigation';
@@ -32,13 +33,18 @@ const WorkbookContext = createContext<
       worksheetElement: RefObject<HTMLDivElement>;
       editorState: WorkbookState;
       editorActions: WorkbookActions;
+      lastRow: number;
+      lastColumn: number;
     }
   | undefined
 >(undefined);
 
-export const Root: FunctionComponent<{ className?: string; children: ReactNode }> = (
-  properties,
-) => {
+export const Root: FunctionComponent<{
+  className?: string;
+  children: ReactNode;
+  lastRow?: number;
+  lastColumn?: number;
+}> = (properties) => {
   const { calcModule } = useCalcModule();
   const [model, setModel] = useState<Model | null>(null);
 
@@ -103,6 +109,13 @@ export const Root: FunctionComponent<{ className?: string; children: ReactNode }
     [cellEditing, editorActions, model],
   );
 
+  const lastRow = properties.lastRow
+    ? Math.min(workbookLastRow, properties.lastRow)
+    : workbookLastRow;
+  const lastColumn = properties.lastColumn
+    ? Math.min(workbookLastColumn, properties.lastColumn)
+    : workbookLastColumn;
+
   const contextValue = useMemo(
     () => ({
       model,
@@ -114,8 +127,20 @@ export const Root: FunctionComponent<{ className?: string; children: ReactNode }
       rootRef,
       worksheetCanvas,
       worksheetElement,
+      lastRow,
+      lastColumn,
     }),
-    [model, editorState, editorActions, onExtendToEnd, onEditEnd, requestRenderId, focusWorkbook],
+    [
+      model,
+      editorState,
+      editorActions,
+      onExtendToEnd,
+      onEditEnd,
+      requestRenderId,
+      focusWorkbook,
+      lastRow,
+      lastColumn,
+    ],
   );
 
   return (
