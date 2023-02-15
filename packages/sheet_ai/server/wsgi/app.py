@@ -2,6 +2,7 @@ import json
 
 from flask import Flask, abort, request
 
+from sheet_ai.exceptions import SheetAIError
 from sheet_ai.rate_limiter import check_rate_limit
 from sheet_ai.workbook import WorkbookData, generate_workbook_data
 
@@ -22,4 +23,7 @@ def converse() -> WorkbookData:
     except ValueError:
         raise abort(400, "Invalid POST data")
 
-    return generate_workbook_data(prompt)
+    try:
+        return generate_workbook_data(prompt)
+    except SheetAIError:
+        raise abort(404, "Workbook Not Found")
