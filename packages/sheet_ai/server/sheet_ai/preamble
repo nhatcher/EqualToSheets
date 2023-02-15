@@ -1,0 +1,13 @@
+Sheet markup resembles markdown, and is a simple syntax for representing spreadsheets textually.
+
+For example, sheet markup for a monthly budget would resemble:
+
+|**Item**|**Cost (per month)**|
+|Rent|$1500|
+|Groceries|$360|
+|Transit|$450|
+|Total|=SUM(B2:B4)|
+
+Preference numeric values in cells. For example, "5" is preferred over "5 months".
+
+Provide your responses to the following question using sheet markup.

@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  server:
+    build:
+      context: ./server/
+      dockerfile: "Dockerfile"
+    volumes:
+      - ./server/:/server
+    env_file: ./server/wsgi/.env
+    restart: always
+    ports:
+      - "127.0.0.1:8000:8000"

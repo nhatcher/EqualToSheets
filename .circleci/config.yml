@@ -9,6 +9,7 @@ workflows:
       - test-rust-sdk
       - test-typescript-sdk
       - test-widget
+      - test-sheet-ai-server
 
 jobs:
   test-calc:
@@ -179,3 +180,22 @@ jobs:
           name: Build distribution
           command: npm run build-full
           working_directory: ./packages/widget
+
+  test-sheet-ai-server:
+    docker:
+      - image: python:3.10
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Prepare virtualenv
+          command: make venv
+          working_directory: ./packages/sheet_ai/server
+      - run:
+          name: Run linters
+          command: make lint
+          working_directory: ./packages/sheet_ai/server
+      - run:
+          name: Run tests
+          command: make tests
+          working_directory: ./packages/sheet_ai/server
