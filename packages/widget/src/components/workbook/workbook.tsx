@@ -2,7 +2,7 @@ import React, { FunctionComponent, useEffect, useRef, useState, useCallback } fr
 import styled from 'styled-components';
 import * as Menu from 'src/components/uiKit/menu';
 import WorksheetCanvas from './canvas';
-import { Cell, FocusType } from './util';
+import { Cell } from './util';
 import usePointer from './usePointer';
 import useResize from './useResize';
 import Editor from './editor';
@@ -11,7 +11,6 @@ import { defaultSheetState } from './useWorkbookReducer';
 import useScrollSync from './useScrollSync';
 import RowContextMenuContent from './rowContextMenuContent';
 import { isInReferenceMode } from './formulas';
-import { getSelectedRangeInEditor } from './editor/util';
 import { useWorkbookContext } from './workbookContext';
 
 export type WorkbookElements = {
@@ -34,6 +33,7 @@ const Workbook: FunctionComponent<{
     editorActions,
     worksheetCanvas,
     worksheetElement,
+    cellInput,
     lastRow,
     lastColumn,
   } = useWorkbookContext();
@@ -221,18 +221,13 @@ const Workbook: FunctionComponent<{
     event.preventDefault();
     event.stopPropagation();
     if (cellEditing) {
-      if (isInReferenceMode(cellEditing.text, cellEditing.cursorEnd)) {
+      const value = cellInput.current?.value ?? '';
+      // FIXME: use ref and figure out selection
+      if (isInReferenceMode(value, cellEditing.text.length)) {
         editorActions.onEditPointerDown(cell);
         return;
       }
-      // FIXME: This is out of context. This happens while you are editing a cell and finish the editing by
-      // clicking somewhere else.
-      // This probably should be done in the onBlur event in the editor.
-      // The cellEditing object might have not been updated because we debounce key strokes,
-      // So we use the text in the editor (note that we are editing the cell)
-      const sel = getSelectedRangeInEditor();
-      const text = sel ? sel.text : '';
-      model?.setCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, text);
+      model?.setCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, value);
     }
     editorActions.onPointerDownAtCell(cell);
     focusWorkbook();
@@ -414,15 +409,16 @@ const Workbook: FunctionComponent<{
         ref={worksheetElement}
       >
         <SheetCanvas ref={canvasElement} />
-        <CellOutline ref={cellOutline}>
-          <Editor
-            display={!!cellEditing}
-            focus={cellEditing?.focus === FocusType.Cell}
-            html={cellEditing?.html ?? ''}
-            cursorStart={cellEditing?.cursorStart ?? 0}
-            cursorEnd={cellEditing?.cursorEnd ?? 0}
-            mode={cellEditing?.mode ?? 'init'}
-          />
+        <CellOutline
+          ref={cellOutline} // FIXME: Probably should be outside so we don't need to define event handlers
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+          onPointerMove={(event) => event.stopPropagation()}
+          onCopy={(event) => event.stopPropagation()}
+          onCut={(event) => event.stopPropagation()}
+          onPaste={(event) => event.stopPropagation()}
+        >
+          <Editor display={!!cellEditing} />
         </CellOutline>
         <AreaOutline ref={areaOutline} />
         <ExtendToOutline ref={extendToOutline} />

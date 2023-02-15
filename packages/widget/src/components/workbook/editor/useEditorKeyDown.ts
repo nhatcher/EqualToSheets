@@ -1,11 +1,10 @@
 import { useCallback, KeyboardEvent } from 'react';
 import { CellEditMode } from '../util';
-import { getSelectedRangeInEditor } from './util';
 
 interface Options {
   onEditEnd: (delta: { deltaRow: number; deltaColumn: number }) => void;
   onEditEscape: () => void;
-  onReferenceCycle: (text: string, cursorStart: number, cursorEnd: number) => void;
+  onReferenceCycle: () => void;
   mode: CellEditMode;
 }
 
@@ -66,13 +65,7 @@ const useEditorKeydown = (options: Options): ((event: KeyboardEvent) => void) =>
           break;
         }
         case 'F4': {
-          const caret = getSelectedRangeInEditor();
-          if (!caret) {
-            break;
-          }
-          const cursorEnd = caret.end;
-          const cursorStart = caret.start;
-          options.onReferenceCycle(caret.text, cursorStart, cursorEnd);
+          options.onReferenceCycle();
           event.preventDefault();
           event.stopPropagation();
 

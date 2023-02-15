@@ -31,6 +31,8 @@ const WorkbookContext = createContext<
       requestRender: () => void;
       worksheetCanvas: MutableRefObject<WorksheetCanvas | null>;
       worksheetElement: RefObject<HTMLDivElement>;
+      formulaBarEditor: MutableRefObject<HTMLDivElement | null>;
+      cellInput: MutableRefObject<HTMLInputElement | null>;
       editorState: WorkbookState;
       editorActions: WorkbookActions;
       lastRow: number;
@@ -51,6 +53,8 @@ export const Root: FunctionComponent<{
   const rootRef = useRef<HTMLDivElement>(null);
   const worksheetCanvas = useRef<WorksheetCanvas | null>(null);
   const worksheetElement = useRef<HTMLDivElement>(null);
+  const formulaBarEditor = useRef<HTMLDivElement>(null);
+  const cellInput = useRef<HTMLInputElement>(null);
 
   const [requestRenderId, requestRender] = useReducer((x: number) => x + 1, 0);
 
@@ -99,12 +103,12 @@ export const Root: FunctionComponent<{
   }, [editorActions, extendToArea, model, selectedArea, selectedSheet]);
 
   const onEditEnd = useCallback(
-    (delta: { deltaRow: number; deltaColumn: number }) => {
+    (text: string, delta: { deltaRow: number; deltaColumn: number }) => {
       if (!cellEditing) {
         return;
       }
-      model?.setCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, cellEditing.text);
-      editorActions.onEditEnd(delta);
+      model?.setCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, text);
+      editorActions.onEditEnd(text, delta);
     },
     [cellEditing, editorActions, model],
   );
@@ -127,6 +131,8 @@ export const Root: FunctionComponent<{
       rootRef,
       worksheetCanvas,
       worksheetElement,
+      formulaBarEditor,
+      cellInput,
       lastRow,
       lastColumn,
     }),

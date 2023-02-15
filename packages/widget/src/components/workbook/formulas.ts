@@ -1,5 +1,5 @@
+import { FormulaToken } from '@equalto-software/calc';
 import { LAST_COLUMN, LAST_ROW } from './constants';
-import { MarkedToken, tokenIsRangeType, tokenIsReferenceType } from './tokenTypes';
 import { columnNameFromNumber, getColor, referenceToString, SheetArea } from './util';
 
 export function escapeHTML(text: string): string {
@@ -79,7 +79,7 @@ function nextReferenceCycle(first: { absoluteRow: boolean; absoluteColumn: boole
 export function cycleReference(options: {
   text: string;
   context: { sheet: number; row: number; column: number };
-  getTokens: (s: string) => MarkedToken[];
+  getTokens: (s: string) => FormulaToken[];
   cursor: { start: number; end: number };
 }): { text: string; cursorStart: number; cursorEnd: number } {
   const { cursor, getTokens, text } = options;
@@ -98,8 +98,8 @@ export function cycleReference(options: {
         (cursor.start >= start + 1 && cursor.start <= end + 1) ||
         (cursor.end >= start + 1 && cursor.end <= end + 1);
 
-      if (within && tokenIsReferenceType(token)) {
-        const reference = token.REFERENCE;
+      if (within && token.type === 'REFERENCE') {
+        const reference = token.data;
 
         cursorStart = Math.min(outputFormula.length + 1, cursorStart);
         const sheetName =
@@ -122,8 +122,8 @@ export function cycleReference(options: {
         if (cursor.start === cursor.end) {
           cursorStart = outputFormula.length + 1;
         }
-      } else if (within && tokenIsRangeType(token)) {
-        const range = token.RANGE;
+      } else if (within && token.type === 'RANGE') {
+        const range = token.data;
         cursorStart = Math.min(outputFormula.length + 1, cursorStart);
         const txt = formula.slice(start, end);
         // we need to figure out if we are on the first part or the second part
@@ -219,7 +219,7 @@ export function getFormulaHTML(
   text: string,
   sheet: number,
   sheetList: string[],
-  getTokens: (s: string) => MarkedToken[],
+  getTokens: (s: string) => FormulaToken[],
 ): {
   html: string;
   activeRanges: SheetArea[];
@@ -235,8 +235,8 @@ export function getFormulaHTML(
     for (let index = 0; index < tokenCount; index += 1) {
       const { token, start, end } = tokens[index];
       // FIXME: Please factor repeated code in these two branches
-      if (tokenIsReferenceType(token)) {
-        const reference = token.REFERENCE;
+      if (token.type === 'REFERENCE') {
+        const reference = token.data;
         const color = getColor(colorCount);
         const rowStart = reference.row;
         const columnStart = reference.column;
@@ -258,9 +258,9 @@ export function getFormulaHTML(
           columnEnd,
           color,
         });
-      } else if (tokenIsRangeType(token)) {
+      } else if (token.type === 'RANGE') {
         const color = getColor(colorCount);
-        const range = token.RANGE;
+        const range = token.data;
         let rowStart = range.left.row;
         let columnStart = range.left.column;
 

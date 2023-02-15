@@ -11,7 +11,6 @@ import {
   NavigationKey,
 } from 'src/components/workbook/util';
 import WorksheetCanvas from '../canvas';
-import { EditorSelection } from '../editor/util';
 
 export type WorkbookState = {
   modelRef: React.RefObject<Model | null>;
@@ -34,8 +33,6 @@ export enum WorkbookActionType {
   SET_CELL_VALUE = 'SET_CELL_VALUE',
   EDIT_END = 'EDIT_END',
   EDIT_ESCAPE = 'EDIT_ESCAPE',
-  EDIT_CHANGE = 'EDIT_CHANGE',
-  EDIT_REFERENCE_CYCLE = 'EDIT_REFERENCE_CYCLE',
   EDIT_CELL_EDITOR_START = 'EDIT_CELL_EDITOR_START',
   EDIT_KEY_PRESS_START = 'EDIT_KEY_PRESS_START',
   EDIT_POINTER_MOVE = 'EDIT_POINTER_MOVE',
@@ -117,17 +114,6 @@ type EditEscapeAction = {
   type: WorkbookActionType.EDIT_ESCAPE;
 };
 
-type EditChangeAction = {
-  type: WorkbookActionType.EDIT_CHANGE | WorkbookActionType.EDIT_REFERENCE_CYCLE;
-  payload: {
-    text: string;
-    cursorStart: number;
-    cursorEnd: number;
-    /** Skips the readonly check */
-    forceEdit?: boolean;
-  };
-};
-
 type EditCellEditorStartAction = {
   type: WorkbookActionType.EDIT_CELL_EDITOR_START;
   payload: {
@@ -149,9 +135,7 @@ type EditKeyPressStartAction = {
 
 type EditFormulaBarEditorStartAction = {
   type: WorkbookActionType.EDIT_FORMULA_BAR_EDITOR_START;
-  payload: {
-    selection: EditorSelection;
-  };
+  payload: {};
 };
 
 type SelectSheetAction = {
@@ -256,7 +240,6 @@ export type Action =
   | UpdateModelAction
   | NavigationToEdgeAction
   | EditEscapeAction
-  | EditChangeAction
   | EditCellEditorStartAction
   | EditFormulaBarEditorStartAction
   | EditKeyPressStartAction

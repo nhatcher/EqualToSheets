@@ -1,17 +1,14 @@
-import { initialize } from '@equalto-software/calc';
+import { FormulaToken, initialize } from '@equalto-software/calc';
 import Model from './model';
-import { MarkedToken } from './tokenTypes';
 
 export interface CalcModule {
   newEmpty: () => Model;
-  getTokens: (formula: string) => MarkedToken[];
+  getTokens: (formula: string) => FormulaToken[];
 }
 
 export async function getModule(): Promise<CalcModule> {
   const module = await initialize();
-  function getTokens(): MarkedToken[] {
-    return []; // FIXME
-  }
+  const getTokens = module.utils.getFormulaTokens;
   function newEmpty(): Model {
     const workbook = module.newWorkbook();
     return new Model({ workbook, getTokens });

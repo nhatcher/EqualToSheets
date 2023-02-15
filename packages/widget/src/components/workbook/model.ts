@@ -1,11 +1,10 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { ICell, IWorkbook, NavigationDirection } from '@equalto-software/calc';
+import { FormulaToken, ICell, IWorkbook, NavigationDirection } from '@equalto-software/calc';
 import Papa from 'papaparse';
 import { TabsInput } from './components/navigation/common';
 import { workbookLastColumn, workbookLastRow } from './constants';
-import { MarkedToken } from './tokenTypes';
 import { Area, Cell, NavigationKey } from './util';
 
 export enum ValueType {
@@ -19,7 +18,7 @@ export type ExcelValue = string | number | boolean;
 interface ModelSettings {
   workbook: IWorkbook;
   readOnly?: boolean;
-  getTokens: (formula: string) => MarkedToken[];
+  getTokens: (formula: string) => FormulaToken[];
 }
 
 interface RowDiff {
@@ -220,7 +219,7 @@ export type Change = {
 type Subscriber = (change: Change) => void;
 
 export default class Model {
-  getTokens: (formula: string) => MarkedToken[];
+  getTokens: (formula: string) => FormulaToken[];
 
   private history: { undo: Diff[][]; redo: Diff[][] };
 
@@ -701,6 +700,10 @@ export default class Model {
     this.history.redo = [];
     if (value.startsWith('=')) {
       this.workbook.cell(sheet, row, column).formula = value;
+    } else if (['true', 'false'].includes(value.toLowerCase())) {
+      this.workbook.cell(sheet, row, column).value = value.toLowerCase() === 'true';
+    } else if (value.length > 0 && !Number.isNaN(value)) {
+      this.workbook.cell(sheet, row, column).value = Number.parseFloat(value);
     } else {
       this.workbook.cell(sheet, row, column).value = value;
     }

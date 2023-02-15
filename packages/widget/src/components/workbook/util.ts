@@ -308,9 +308,6 @@ export interface CellEditingType {
   column: number;
   text: string;
   base: string;
-  html: string;
-  cursorStart: number;
-  cursorEnd: number;
   mode: CellEditMode;
   activeRanges: SheetArea[];
   focus: FocusType;

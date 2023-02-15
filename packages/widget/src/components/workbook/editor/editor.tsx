@@ -1,144 +1,136 @@
-import styled from 'styled-components';
-import React, { FunctionComponent, useEffect, useMemo, useRef } from 'react';
-import { debounce } from 'src/util';
+import styled, { css } from 'styled-components';
+import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { palette } from 'src/theme';
 import useEditorKeyDown from './useEditorKeyDown';
-import setCaretPosition, { editorClass, getSelectedRangeInEditor } from './util';
-import { CellEditMode } from '../util';
 import { useWorkbookContext } from '../workbookContext';
+import { FocusType } from '../util';
 
 export enum EditorPageTestId {
   FormulaEditor = 'workbook-editor-formula-editor',
 }
-export interface EditorProps {
-  display: boolean;
-  html: string;
-  cursorStart: number;
-  cursorEnd: number;
-  focus: boolean;
-  mode: CellEditMode;
+
+function formulaToHTML(formula: string) {
+  return formula
+    .split('')
+    .map((char: string, index: number) =>
+      index % 2 === 0
+        ? `<span style="color:red;">${char}</span>`
+        : `<span style="color:blue;">${char}</span>`,
+    )
+    .join('');
 }
 
-const Editor: FunctionComponent<EditorProps> = (properties) => {
-  const { editorActions } = useWorkbookContext();
-  const { onReferenceCycle, onEditChange, onEditEscape } = editorActions;
-  const cellEditorElement = useRef<HTMLDivElement>(null);
+const Editor: FunctionComponent<{
+  display: boolean;
+}> = (properties) => {
+  const { model, editorActions, editorState, formulaBarEditor, cellInput } = useWorkbookContext();
+  const { selectedSheet, selectedCell, cellEditing } = editorState;
+  const { onEditEscape } = editorActions;
+  const [text, setText] = useState('');
+  const html = formulaToHTML(text);
+  const barInputRef = useRef<HTMLInputElement>(null);
 
-  const onEditEnd = (delta: { deltaRow: number; deltaColumn: number }) => {
-    const sel = getSelectedRangeInEditor();
-    if (sel) {
-      onEditChange(sel.text, sel.start, sel.end);
-    }
-    editorActions.onEditEnd(delta);
+  useEffect(() => {
+    const formula =
+      model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column) ?? '';
+    setText(formula);
+  }, [model, selectedCell.column, selectedCell.row, selectedSheet]);
+
+  // TODO: onReferenceCycle not needed for demo
+  const onReferenceCycle = () => {};
+  const onEditEnd = (delta: Parameters<(typeof editorActions)['onEditEnd']>[1]) => {
+    editorActions.onEditEnd(text, delta);
   };
+
+  useEffect(() => {
+    if (cellEditing) {
+      setText(cellEditing.text);
+      if (cellEditing.focus === FocusType.Cell) {
+        cellInput.current?.focus();
+      } else {
+        barInputRef.current?.focus();
+      }
+    }
+  }, [cellEditing, cellInput]);
 
   const cellEditorKeyDown = useEditorKeyDown({
     onEditEnd,
     onEditEscape,
     onReferenceCycle,
-    mode: properties.mode,
+    mode: cellEditing?.text === cellInput.current?.value ? 'init' : 'edit',
   });
-
-  useEffect(() => {
-    const editor = cellEditorElement.current;
-    if (editor) {
-      if (properties.display) {
-        const { html, focus, cursorStart, cursorEnd } = properties;
-        editor.innerHTML = html;
-        if (focus) {
-          if (cursorStart <= cursorEnd) {
-            setCaretPosition(editor, { start: cursorStart, end: cursorEnd });
-          } else {
-            setCaretPosition(editor, { start: cursorEnd, end: cursorStart });
-          }
-          editor.focus();
-        }
-      } else {
-        // Clearing the content of the cell editor after being used
-        editor.innerHTML = '<span></span><span style="flex-grow: 1;"></span>';
-      }
-    }
-  });
-
-  // We do not want to redraw the canvas with each keystroke if they are in quick succession.
-  // See issue: #1407
-  const onInput = useMemo(
-    () =>
-      debounce(() => {
-        const sel = getSelectedRangeInEditor();
-        if (sel) {
-          onEditChange(sel.text, sel.start, sel.end);
-        }
-      }, 500),
-    [onEditChange],
-  );
 
   return (
-    <CellEditor
-      // FIXME: This ID doesn't seem right, it's used for formula editor and for cell editor
-      data-testid={EditorPageTestId.FormulaEditor}
-      className={editorClass}
-      ref={cellEditorElement}
-      contentEditable="true"
-      spellCheck="false"
-      onKeyDown={cellEditorKeyDown}
-      onInput={onInput}
-      onPointerDown={(event): void => {
-        if (properties.focus) {
-          event.stopPropagation();
-        }
-      }}
-      onPointerMove={(event): void => {
-        if (properties.focus) {
-          event.stopPropagation();
-        }
-      }}
-      onPointerUp={(event): void => {
-        if (properties.focus) {
-          event.stopPropagation();
-        }
-      }}
-      onCut={(event): void => event.stopPropagation()}
-      onCopy={(event): void => event.stopPropagation()}
-      onPaste={(event): void => {
-        // We need to sanitize the input
-        const value = event.clipboardData.getData('text/plain');
-        if (!value) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-        const editor = cellEditorElement.current;
-        if (editor) {
-          const sel = getSelectedRangeInEditor();
-          if (sel) {
-            const newEnd = sel.start + value.length;
-            const text = sel.text.slice(0, sel.start) + value + sel.text.slice(sel.end);
-            onEditChange(text, newEnd, newEnd);
-          }
-        }
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-      $display={properties.display}
-    />
+    <>
+      <CellEditorContainer $display={properties.display}>
+        <MaskContainer dangerouslySetInnerHTML={{ __html: html }} />
+        <input
+          ref={cellInput}
+          spellCheck="false"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={cellEditorKeyDown}
+        />
+      </CellEditorContainer>
+      {formulaBarEditor.current
+        ? createPortal(
+            <CellEditorContainer $display>
+              <MaskContainer dangerouslySetInnerHTML={{ __html: html }} />
+              <input
+                ref={barInputRef}
+                onFocus={() => {
+                  if (!cellEditing) {
+                    editorActions.onFormulaEditStart();
+                  }
+                }}
+                spellCheck="false"
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                onKeyDown={cellEditorKeyDown}
+              />
+            </CellEditorContainer>,
+            formulaBarEditor.current,
+          )
+        : null}
+    </>
   );
 };
 
 export default Editor;
 
-const CellEditor = styled.div<{ $display: boolean }>`
+const EditorFontCSS = css`
+  line-height: 22px;
+  font-weight: normal;
+  height: 22px;
+  flex-grow: 1;
+  font-family: 'Fira Mono', 'Adjusted Courier New Fallback', serif;
+  font-size: 16px;
+  padding: 0px;
+`;
+const CellEditorContainer = styled.div<{ $display: boolean }>`
+  display: ${({ $display }): string => ($display ? 'flex' : 'none')};
   box-sizing: border-box;
   position: relative;
   width: 100%;
   padding: 0px;
+  input {
+    color: transparent;
+    caret-color: ${palette.text.primary};
+    outline: none;
+    border: none;
+    ${EditorFontCSS}
+  }
   border-width: 0px;
   outline: none;
   resize: none;
   white-space: pre-wrap;
   vertical-align: bottom;
   overflow: hidden;
-  display: ${({ $display }): string => ($display ? 'block' : 'none')};
-  span {
-    min-width: 1px;
-  }
+`;
+
+const MaskContainer = styled.div`
+  position: absolute;
+  pointer-events: none;
+  ${EditorFontCSS}
 `;

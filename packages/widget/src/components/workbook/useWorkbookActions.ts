@@ -2,7 +2,6 @@ import { useCallback, RefObject } from 'react';
 import { Action, WorkbookActionType } from './useWorkbookReducer/common';
 import WorksheetCanvas from './canvas';
 import { Area, Cell, NavigationKey, ScrollPosition, Border } from './util';
-import { EditorSelection } from './editor/util';
 
 export type WorkbookActions = {
   setScrollPosition: (position: ScrollPosition) => void;
@@ -24,12 +23,10 @@ export type WorkbookActions = {
   onPointerMoveToCell: (cell: Cell) => void;
   onPointerDownAtCell: (cell: Cell) => void;
   onEditPointerDown: (cell: Cell) => void;
-  onEditChange: (text: string, cursorStart: number, cursorEnd: number) => void;
-  onReferenceCycle: (text: string, cursorStart: number, cursorEnd: number) => void;
-  onEditEnd: (options: { deltaRow: number; deltaColumn: number }) => void;
+  onEditEnd: (text: string, delta: { deltaRow: number; deltaColumn: number }) => void;
   onEditEscape: () => void;
   onCellEditStart: () => void;
-  onFormulaEditStart: (selection: EditorSelection) => void;
+  onFormulaEditStart: () => void;
 };
 
 const useWorkbookActions = (
@@ -198,28 +195,8 @@ const useWorkbookActions = (
     [dispatch, worksheetCanvas, worksheetElement],
   );
 
-  const onEditChange = useCallback(
-    (text: string, cursorStart: number, cursorEnd: number): void => {
-      dispatch({
-        type: WorkbookActionType.EDIT_CHANGE,
-        payload: { text, cursorStart, cursorEnd },
-      });
-    },
-    [dispatch],
-  );
-
-  const onReferenceCycle = useCallback(
-    (text: string, cursorStart: number, cursorEnd: number): void => {
-      dispatch({
-        type: WorkbookActionType.EDIT_REFERENCE_CYCLE,
-        payload: { text, cursorStart, cursorEnd },
-      });
-    },
-    [dispatch],
-  );
-
   const onEditEnd = useCallback(
-    (options: { deltaRow: number; deltaColumn: number }): void => {
+    (text: string, options: { deltaRow: number; deltaColumn: number }): void => {
       const { deltaRow, deltaColumn } = options;
       dispatch({
         type: WorkbookActionType.EDIT_END,
@@ -242,15 +219,12 @@ const useWorkbookActions = (
     });
   }, [dispatch]);
 
-  const onFormulaEditStart = useCallback(
-    (selection: EditorSelection): void => {
-      dispatch({
-        type: WorkbookActionType.EDIT_FORMULA_BAR_EDITOR_START,
-        payload: { selection },
-      });
-    },
-    [dispatch],
-  );
+  const onFormulaEditStart = useCallback((): void => {
+    dispatch({
+      type: WorkbookActionType.EDIT_FORMULA_BAR_EDITOR_START,
+      payload: {},
+    });
+  }, [dispatch]);
 
   return {
     setScrollPosition,
@@ -271,8 +245,6 @@ const useWorkbookActions = (
     onExpandAreaSelectedKeyboard,
     onPointerMoveToCell,
     onPointerDownAtCell,
-    onEditChange,
-    onReferenceCycle,
     onEditEnd,
     onEditEscape,
     onEditPointerDown,

@@ -1,10 +1,7 @@
 import styled from 'styled-components';
-import React, { PointerEvent, FunctionComponent, useCallback, useRef } from 'react';
-import Editor from '../editor';
-import { getSelectedRangeInEditor } from '../editor/util';
+import React, { FunctionComponent } from 'react';
 import { useWorkbookContext } from '../workbookContext';
-import { FocusType, getCellAddress } from '../util';
-import { escapeHTML } from '../formulas';
+import { getCellAddress } from '../util';
 
 const formulaBarHeight = 30;
 
@@ -18,55 +15,16 @@ export enum FormulaBarTestId {
 }
 
 const FormulaBar: FunctionComponent<FormulaBarProps> = (properties) => {
-  const { model, editorActions, editorState } = useWorkbookContext();
-  const { selectedSheet, selectedArea, selectedCell, cellEditing } = editorState;
-  const isEditing = cellEditing !== null;
-  const formula =
-    model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column) ?? '';
-  const focus = cellEditing?.focus === FocusType.FormulaBar;
-  const cursorStart = cellEditing?.cursorStart ?? 0;
-  const cursorEnd = cellEditing?.cursorEnd ?? 0;
-  const html = cellEditing?.html ?? `<span>${escapeHTML(formula)}</span>`;
+  const { editorState, formulaBarEditor } = useWorkbookContext();
+  const { selectedArea, selectedCell } = editorState;
   const cellAddress = getCellAddress(selectedArea, selectedCell);
-
-  const formulaBar = useRef<HTMLDivElement>(null);
-
-  const onPointerUp = useCallback(
-    (event: PointerEvent) => {
-      formulaBar.current?.releasePointerCapture(event.pointerId);
-      if (!isEditing) {
-        const sel = getSelectedRangeInEditor();
-        if (sel) {
-          editorActions.onFormulaEditStart(sel);
-        }
-      }
-      event.stopPropagation();
-    },
-    [isEditing, editorActions],
-  );
-
-  const onPointerDown = useCallback(
-    (event: PointerEvent) => {
-      formulaBar.current?.setPointerCapture(event.pointerId);
-    },
-    [formulaBar],
-  );
 
   return (
     <FormulaBarContainer data-testid={properties['data-testid']}>
       <NameContainer>
         <CellBarAddress data-testid={FormulaBarTestId.CellAddress}>{cellAddress}</CellBarAddress>
       </NameContainer>
-      <FormulaContainer onPointerUp={onPointerUp} onPointerDown={onPointerDown} ref={formulaBar}>
-        <Editor
-          display
-          html={html}
-          mode="edit"
-          focus={focus}
-          cursorStart={cursorStart}
-          cursorEnd={cursorEnd}
-        />
-      </FormulaContainer>
+      <FormulaContainer ref={formulaBarEditor} />
     </FormulaBarContainer>
   );
 };

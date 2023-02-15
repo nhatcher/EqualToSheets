@@ -10,7 +10,7 @@ import {
 } from 'src/components/workbook/util';
 import { WorkbookActionType, Action, WorkbookReducer, WorkbookState } from './common';
 import { headerRowHeight, headerColumnWidth } from '../canvas';
-import { getFormulaHTML, cycleReference } from '../formulas';
+import { getFormulaHTML } from '../formulas';
 import Model from '../model';
 
 export const defaultSheetState: StateSettings = {
@@ -84,75 +84,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       return { ...state, cellEditing: null };
     }
 
-    case WorkbookActionType.EDIT_CHANGE: {
-      const { cellEditing } = state;
-      const model = state.modelRef.current;
-      if (!cellEditing) {
-        return state;
-      }
-      const { sheet, row, column } = cellEditing;
-      if (!action.payload.forceEdit && model.isCellReadOnly(sheet, row, column)) {
-        return state;
-      }
-      const { text, cursorStart, cursorEnd } = action.payload;
-      const { html, activeRanges } = getFormulaHTML(
-        text,
-        sheet,
-        model.getTabs().map((tab) => tab.name),
-        model.getTokens,
-      );
-      return {
-        ...state,
-        cellEditing: {
-          ...cellEditing,
-          text,
-          html,
-          activeRanges,
-          cursorStart,
-          cursorEnd,
-        },
-      };
-    }
-
-    case WorkbookActionType.EDIT_REFERENCE_CYCLE: {
-      const { cellEditing } = state;
-      const model = state.modelRef.current;
-      if (!cellEditing) {
-        return state;
-      }
-      const { sheet, row, column } = cellEditing;
-      if (model.isCellReadOnly(sheet, row, column)) {
-        return state;
-      }
-      const { text, cursorStart, cursorEnd } = action.payload;
-      const newFormula = cycleReference({
-        text,
-        context: { sheet, row, column },
-        getTokens: model.getTokens,
-        cursor: {
-          start: cursorStart,
-          end: cursorEnd,
-        },
-      });
-      const { html, activeRanges } = getFormulaHTML(
-        newFormula.text,
-        sheet,
-        model.getTabs().map((tab) => tab.name),
-        model.getTokens,
-      );
-      return {
-        ...state,
-        cellEditing: {
-          ...cellEditing,
-          text: newFormula.text,
-          html,
-          activeRanges,
-          cursorStart: newFormula.cursorStart,
-          cursorEnd: newFormula.cursorEnd,
-        },
-      };
-    }
-
     case WorkbookActionType.EDIT_KEY_PRESS_START: {
       const { selectedSheet, selectedCell } = state;
       const model = state.modelRef.current;
@@ -161,7 +92,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         return state;
       }
       const { initText } = action.payload;
-      const html = `<span>${initText}</span>`;
 
       return {
         ...state,
@@ -171,9 +101,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           column: selectedCell.column,
           text: initText,
           base: initText,
-          html,
-          cursorStart: initText.length,
-          cursorEnd: initText.length,
           mode: 'init',
           focus: FocusType.Cell,
           activeRanges: [],
@@ -196,13 +123,12 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (!action.payload.ignoreQuotePrefix && model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
-      const { html, activeRanges } = getFormulaHTML(
+      const { activeRanges } = getFormulaHTML(
         text,
         selectedSheet,
         model.getTabs().map((tab) => tab.name),
         model.getTokens,
       );
-      const cursor = text.length;
       return {
         ...state,
         cellEditing: {
@@ -212,9 +138,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           sheet: selectedSheet,
           row,
           column,
-          html,
-          cursorStart: cursor,
-          cursorEnd: cursor,
           mode: 'edit',
           activeRanges,
         },
@@ -238,14 +161,12 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
-      const { html, activeRanges } = getFormulaHTML(
+      const { activeRanges } = getFormulaHTML(
         text,
         selectedSheet,
         model.getTabs().map((tab) => tab.name),
         model.getTokens,
       );
-
-      const { selection } = action.payload;
 
       return {
         ...state,
@@ -256,9 +177,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           sheet: selectedSheet,
           row,
           column,
-          html,
-          cursorStart: selection.start,
-          cursorEnd: selection.end,
           mode: 'edit',
           activeRanges,
         },
@@ -759,7 +677,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       const prefix =
         cellEditing.sheet === selectedSheet ? '' : `${quoteSheetName(tabs[selectedSheet].name)}!`;
       const text = `${cellEditing.text}${prefix}${columnNameFromNumber(column)}${row}`;
-      const { html, activeRanges } = getFormulaHTML(
+      const { activeRanges } = getFormulaHTML(
         text,
         cellEditing.sheet,
         model.getTabs().map((tab) => tab.name),
@@ -771,10 +689,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           ...cellEditing,
           text,
           base: text,
-          html,
           activeRanges,
-          cursorStart: text.length,
-          cursorEnd: text.length,
         },
       };
     }
@@ -807,7 +722,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (!base.endsWith(cellReference)) {
         text = `${base}:${cellReference}`;
       }
-      const { html, activeRanges } = getFormulaHTML(
+      const { activeRanges } = getFormulaHTML(
         text,
         sheet,
         model.getTabs().map((tab) => tab.name),
@@ -818,10 +733,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         cellEditing: {
           ...cellEditing,
           text,
-          html,
           activeRanges,
-          cursorStart: text.length,
-          cursorEnd: text.length,
         },
       };
     }
