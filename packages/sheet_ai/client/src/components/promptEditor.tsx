@@ -1,41 +1,64 @@
-import { FunctionComponent, useRef } from 'react';
+import { FunctionComponent, useCallback, useRef, useState } from 'react';
 import styled from 'styled-components/macro';
-import { Send } from 'lucide-react';
+import { TextareaAutosize } from '@mui/base';
 
-const MIN_TEXT_AREA_HEIGHT = 25;
-const MAX_TEXT_AREA_HEIGHT = 100;
-
-export const PromptEditor: FunctionComponent<{}> = (properties) => {
+export const PromptEditor: FunctionComponent<{
+  onSubmit: (prompt: string) => Promise<boolean>;
+}> = (properties) => {
+  const { onSubmit } = properties;
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const [duringRequest, setDuringRequest] = useState(false);
+  const handleSubmit = useCallback(() => {
+    if (!textAreaRef.current) {
+      return;
+    }
+
+    if (duringRequest) {
+      return;
+    }
+    setDuringRequest(true);
+
+    const textArea = textAreaRef.current;
+    const prompt = textArea.value;
+
+    onSubmit(prompt)
+      .then((shouldClear) => {
+        if (shouldClear) {
+          textArea.value = '';
+        }
+        textArea.focus();
+      })
+      .finally(() => {
+        setDuringRequest(false);
+      });
+  }, [duringRequest, onSubmit]);
 
   return (
     <Form
       onSubmit={(event) => {
-        if (!textAreaRef.current) {
-          return;
-        }
-        const textArea = textAreaRef.current;
-        console.log('Submitted prompt: ', textArea.value);
+        handleSubmit();
         event.preventDefault();
       }}
     >
-      <TextArea
+      <Textarea
         name="prompt"
+        minRows={1}
+        maxRows={4}
         ref={textAreaRef}
-        onKeyUp={() => {
-          if (textAreaRef.current) {
-            const textArea = textAreaRef.current;
-            textArea.style.height = 'auto';
-            const height = Math.max(
-              MIN_TEXT_AREA_HEIGHT,
-              Math.min(MAX_TEXT_AREA_HEIGHT, textArea.scrollHeight),
-            );
-            textArea.style.height = `${height}px`;
+        disabled={duringRequest}
+        placeholder="Type in your prompt here"
+        onKeyDown={(event) => {
+          if (!event.shiftKey && event.key === 'Enter') {
+            event.preventDefault();
+            handleSubmit();
+            return;
           }
         }}
       />
-      <Button type="submit" aria-label="Send prompt">
-        <Send size={18} />
+      <HRule />
+      <Button type="submit" disabled={duringRequest}>
+        Send
       </Button>
     </Form>
   );
@@ -44,30 +67,42 @@ export const PromptEditor: FunctionComponent<{}> = (properties) => {
 const Form = styled.form`
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 30px;
-  gap: 5px;
+  background: #f1f2f8;
+  border-radius: 10px;
 `;
 
-const TextArea = styled.textarea`
+const Textarea = styled(TextareaAutosize)`
   resize: none;
-  max-height: ${MAX_TEXT_AREA_HEIGHT}px;
-  padding: 5px;
-  border: 1px solid #aeaeae;
-  border-radius: 5px;
+  padding: 10px 10px 10px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 10px 10px 0 0;
+  z-index: 1;
+`;
+
+const HRule = styled.div`
+  margin: 0 10px;
+  height: 1px;
+  border-bottom: 1px solid #e2e2e2;
 `;
 
 const Button = styled.button`
   display: inline-flex;
   border: none;
   background: none;
-  width: 24px;
-  height: 24px;
-  line-height: 18px;
   align-items: center;
   justify-content: center;
-  &:hover {
-    background: #f2f2f2;
+
+  font-weight: 700;
+  color: #587af0;
+
+  &:disabled {
+    color: #d0d0d0;
   }
 
+  cursor: pointer;
+
   align-self: end;
+  justify-self: end;
+  padding: 10px;
 `;

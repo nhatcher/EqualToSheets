@@ -9,6 +9,8 @@ export const UserMessageBubble = styled.div`
   border-radius: 10px 0 10px 10px;
   background: #5879f0;
   color: #ffffff;
+  max-width: 500px;
+  justify-self: end;
 `;
 
 export const SystemMessageBubble = styled.div.attrs(() => ({}))<{ ownComment: boolean }>`
@@ -18,6 +20,7 @@ export const SystemMessageBubble = styled.div.attrs(() => ({}))<{ ownComment: bo
   border-radius: 0 10px 10px 10px;
   background: #dee0ee;
   color: #292c42;
+  max-width: 500px;
 `;
 
 export const SystemMessageThread = (properties: PropsWithChildren<{}>) => {
