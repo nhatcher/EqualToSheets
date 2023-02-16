@@ -569,6 +569,7 @@ const Worksheet = styled.div<{ $hidden: boolean }>`
   flex-grow: 1;
   position: relative;
   overflow: scroll;
+  overscroll-behavior: none;
 
   ::-webkit-scrollbar-track {
     background-color: rgba(211, 214, 233, 0.2);

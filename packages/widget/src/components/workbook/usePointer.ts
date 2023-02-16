@@ -69,6 +69,12 @@ const usePointer = (options: PointerSettings): PointerEvents => {
 
   const onPointerMove = useCallback(
     (event: PointerEvent): void => {
+      // Range selections are disabled on non-mouse devices. Use touch move only
+      // to scroll for now.
+      if (event.pointerType !== 'mouse') {
+        return;
+      }
+
       if (isSelecting.current) {
         const { canvasElement, worksheetCanvas } = options;
         const canvas = canvasElement.current;
