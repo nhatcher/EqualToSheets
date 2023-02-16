@@ -2,7 +2,7 @@ import { PropsWithChildren } from 'react';
 import styled from 'styled-components/macro';
 import { ReactComponent as EqualToMessageLogo } from './equaltoMessageLogo.svg';
 
-export const UserMessageBubble = styled.div`
+export const UserMessageBubble = styled.div<{ $pending?: boolean }>`
   padding: 10px;
   white-space: pre-wrap;
   word-break: break-word;
@@ -11,9 +11,10 @@ export const UserMessageBubble = styled.div`
   color: #ffffff;
   max-width: 500px;
   justify-self: end;
+  opacity: ${({ $pending }) => ($pending ? 0.75 : 1)};
 `;
 
-export const SystemMessageBubble = styled.div.attrs(() => ({}))<{ ownComment: boolean }>`
+export const SystemMessageBubble = styled.div`
   padding: 10px;
   white-space: pre-wrap;
   word-break: break-word;
