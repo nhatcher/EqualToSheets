@@ -7,8 +7,8 @@ use crate::test::util::new_empty_model;
 fn test_model_set_cells_with_values_styles() {
     let mut model = new_empty_model();
     // Inputs
-    model.set_input(0, 1, 1, "21".to_string(), 0); // A1
-    model.set_input(0, 2, 1, "42".to_string(), 0); // A2
+    model.set_user_input(0, 1, 1, "21".to_string()); // A1
+    model.set_user_input(0, 2, 1, "42".to_string()); // A2
 
     let style_base = model.get_style_for_cell(0, 1, 1);
     let mut style = style_base.clone();

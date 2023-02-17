@@ -981,20 +981,12 @@ impl Model {
         self.set_cell_with_formula(sheet, row, column, formula, style_index)
     }
 
-    /// Sets a cell parametrized by (`sheet`, `row`, `column`) with `value` and `style`
-    /// The value is always a string, so we need to try to cast it into numbers/bools/errors
-    pub fn set_input(
-        &mut self,
-        sheet: u32,
-        row: i32,
-        column: i32,
-        value: String,
-        style_index: i32,
-    ) {
-        // FIXME: This is a bad API.
+    /// Sets a cell parametrized by (`sheet`, `row`, `column`) with `value`
+    /// This mimics a user entering a value on a cell.
+    /// The value is always a string, so we need to try to cast it into numbers/booleans/errors
+    pub fn set_user_input(&mut self, sheet: u32, row: i32, column: i32, value: String) {
         // If value starts with "'" then we force the style to be quote_prefix
-        // If it is not we force the styleNOT to be quote_prefix
-        // We probably should have two separate methods (set_input and set_style)
+        let style_index = self.get_cell_style_index(sheet, row, column);
         if let Some(new_value) = value.strip_prefix('\'') {
             // First check if it needs quoting
             let new_style = if common::value_needs_quoting(new_value, &self.language) {

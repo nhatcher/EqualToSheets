@@ -183,7 +183,7 @@ fn test_defined_names_casing() {
         ("=NaMeD3", "33"),
     ];
     for (formula, expected_value) in test_cases {
-        model.set_input(0, row, column, formula.to_string(), 0);
+        model.set_user_input(0, row, column, formula.to_string());
         model.evaluate();
         assert_eq!(
             model.formatted_cell_value(0, row, column).unwrap(),

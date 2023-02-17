@@ -57,13 +57,12 @@ fn test_quote_prefix_enter() {
     model._set("A2", "=ISTEXT(A1)");
     model.evaluate();
     // We introduce a value with a "quote prefix" index
-    let qp_index = model.get_cell_style_index(0, 1, 1);
-    model.set_input(0, 1, 3, "'=A1".to_string(), qp_index);
+    model.set_user_input(0, 1, 3, "'=A1".to_string());
     model.evaluate();
     assert_eq!(model._get_text("C1"), *"=A1");
 
     // But if we enter with a quote_prefix but without the "'" it won't be quote_prefix
-    model.set_input(0, 1, 4, "=A1".to_string(), qp_index);
+    model.set_user_input(0, 1, 4, "=A1".to_string());
     model.evaluate();
     assert_eq!(model._get_text("D1"), *"123");
 }
@@ -76,8 +75,7 @@ fn test_quote_prefix_reenter() {
     model.evaluate();
     assert_eq!(model._get_text("A2"), *"TRUE");
     // We introduce a value with a "quote prefix" index
-    let qp_index = model.get_cell_style_index(0, 1, 1);
-    model.set_input(0, 1, 1, "123".to_string(), qp_index);
+    model.set_user_input(0, 1, 1, "123".to_string());
     model.evaluate();
     assert_eq!(model._get_text("A2"), *"FALSE");
 }

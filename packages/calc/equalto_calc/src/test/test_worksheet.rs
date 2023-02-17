@@ -100,7 +100,7 @@ fn test_worksheet_dimension_progressive() {
         }
     );
 
-    model.set_input(0, 30, 50, "Hello World".to_string(), 0);
+    model.set_user_input(0, 30, 50, "Hello World".to_string());
     assert_eq!(
         model.workbook.worksheet(0).unwrap().dimension(),
         WorksheetDimension {
@@ -111,7 +111,7 @@ fn test_worksheet_dimension_progressive() {
         }
     );
 
-    model.set_input(0, 10, 15, "Hello World".to_string(), 0);
+    model.set_user_input(0, 10, 15, "Hello World".to_string());
     assert_eq!(
         model.workbook.worksheet(0).unwrap().dimension(),
         WorksheetDimension {
@@ -122,7 +122,7 @@ fn test_worksheet_dimension_progressive() {
         }
     );
 
-    model.set_input(0, 5, 25, "Hello World".to_string(), 0);
+    model.set_user_input(0, 5, 25, "Hello World".to_string());
     assert_eq!(
         model.workbook.worksheet(0).unwrap().dimension(),
         WorksheetDimension {
@@ -133,7 +133,7 @@ fn test_worksheet_dimension_progressive() {
         }
     );
 
-    model.set_input(0, 10, 250, "Hello World".to_string(), 0);
+    model.set_user_input(0, 10, 250, "Hello World".to_string());
     assert_eq!(
         model.workbook.worksheet(0).unwrap().dimension(),
         WorksheetDimension {

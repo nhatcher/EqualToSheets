@@ -32,7 +32,7 @@ impl Model {
         let cell_reference = self._parse_reference(cell);
         let column = cell_reference.column;
         let row = cell_reference.row;
-        self.set_input(cell_reference.sheet, row, column, value.to_string(), 0);
+        self.set_user_input(cell_reference.sheet, row, column, value.to_string());
     }
     pub fn _has_formula(&self, cell: &str) -> bool {
         self._get_formula_opt(cell).is_some()

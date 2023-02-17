@@ -14,7 +14,7 @@ fn test_is_empty_cell_non_existing_sheet() {
 fn test_is_empty_cell() {
     let mut model = new_empty_model();
     assert!(model.is_empty_cell(0, 3, 1).unwrap());
-    model.set_input(0, 3, 1, "Hello World".to_string(), 0);
+    model.set_user_input(0, 3, 1, "Hello World".to_string());
     assert!(!model.is_empty_cell(0, 3, 1).unwrap());
     model.set_cell_empty(0, 3, 1).unwrap();
     assert!(model.is_empty_cell(0, 3, 1).unwrap());

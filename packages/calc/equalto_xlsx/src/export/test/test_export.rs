@@ -26,16 +26,16 @@ pub fn new_empty_model() -> Model {
 fn test_values() {
     let mut model = new_empty_model();
     // numbers
-    model.set_input(0, 1, 1, "123.456".to_string(), 0);
+    model.set_user_input(0, 1, 1, "123.456".to_string());
     // strings
-    model.set_input(0, 2, 1, "Hello world!".to_string(), 0);
-    model.set_input(0, 3, 1, "Hello world!".to_string(), 0);
-    model.set_input(0, 4, 1, "你好世界！".to_string(), 0);
+    model.set_user_input(0, 2, 1, "Hello world!".to_string());
+    model.set_user_input(0, 3, 1, "Hello world!".to_string());
+    model.set_user_input(0, 4, 1, "你好世界！".to_string());
     // booleans
-    model.set_input(0, 5, 1, "TRUE".to_string(), 0);
-    model.set_input(0, 6, 1, "FALSE".to_string(), 0);
+    model.set_user_input(0, 5, 1, "TRUE".to_string());
+    model.set_user_input(0, 6, 1, "FALSE".to_string());
     // errors
-    model.set_input(0, 7, 1, "#VALUE!".to_string(), 0);
+    model.set_user_input(0, 7, 1, "#VALUE!".to_string());
 
     // noop
     model.evaluate();
@@ -58,14 +58,14 @@ fn test_values() {
 #[test]
 fn test_formulas() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "5.5".to_string(), 0);
-    model.set_input(0, 2, 1, "6.5".to_string(), 0);
-    model.set_input(0, 3, 1, "7.5".to_string(), 0);
+    model.set_user_input(0, 1, 1, "5.5".to_string());
+    model.set_user_input(0, 2, 1, "6.5".to_string());
+    model.set_user_input(0, 3, 1, "7.5".to_string());
 
-    model.set_input(0, 1, 2, "=A1*2".to_string(), 0);
-    model.set_input(0, 2, 2, "=A2*2".to_string(), 0);
-    model.set_input(0, 3, 2, "=A3*2".to_string(), 0);
-    model.set_input(0, 4, 2, "=SUM(A1:B3)".to_string(), 0);
+    model.set_user_input(0, 1, 2, "=A1*2".to_string());
+    model.set_user_input(0, 2, 2, "=A2*2".to_string());
+    model.set_user_input(0, 3, 2, "=A3*2".to_string());
+    model.set_user_input(0, 4, 2, "=SUM(A1:B3)".to_string());
 
     model.evaluate();
     let temp_file_name = "temp_file_test_formulas.xlsx";
@@ -104,7 +104,7 @@ fn test_sheets() {
 #[test]
 fn test_named_styles() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "5.5".to_string(), 0);
+    model.set_user_input(0, 1, 1, "5.5".to_string());
     let mut style = model.get_style_for_cell(0, 1, 1);
     style.font.b = true;
     style.font.i = true;

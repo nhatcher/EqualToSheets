@@ -17,7 +17,7 @@ fn test_empty_model() {
 #[test]
 fn test_model_simple_evaluation() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "= 1 + 3".to_string(), 0);
+    model.set_user_input(0, 1, 1, "= 1 + 3".to_string());
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"4");
@@ -43,7 +43,7 @@ fn test_model_simple_evaluation_order() {
 #[test]
 fn test_model_invalid_formula() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "= 1 +".to_string(), 0);
+    model.set_user_input(0, 1, 1, "= 1 +".to_string());
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"#ERROR!");
@@ -54,8 +54,8 @@ fn test_model_invalid_formula() {
 #[test]
 fn test_model_dependencies() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "23".to_string(), 0); // A1
-    model.set_input(0, 1, 2, "= A1* 2-4".to_string(), 0); // B1
+    model.set_user_input(0, 1, 1, "23".to_string()); // A1
+    model.set_user_input(0, 1, 2, "= A1* 2-4".to_string()); // B1
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"23");
@@ -65,7 +65,7 @@ fn test_model_dependencies() {
     let result = model._get_formula("B1");
     assert_eq!(result, *"=A1*2-4");
 
-    model.set_input(0, 2, 1, "=SUM(A1, B1)".to_string(), 0); // A2
+    model.set_user_input(0, 2, 1, "=SUM(A1, B1)".to_string()); // A2
     model.evaluate();
     let result = model._get_text_at(0, 2, 1);
     assert_eq!(result, *"65");
@@ -74,8 +74,8 @@ fn test_model_dependencies() {
 #[test]
 fn test_model_strings() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "Hello World".to_string(), 0);
-    model.set_input(0, 1, 2, "=A1".to_string(), 0);
+    model.set_user_input(0, 1, 1, "Hello World".to_string());
+    model.set_user_input(0, 1, 2, "=A1".to_string());
     model.evaluate();
     let result = model._get_text_at(0, 1, 1);
     assert_eq!(result, *"Hello World");
@@ -152,21 +152,21 @@ fn test_to_excel_precision_str() {
 #[test]
 fn test_booleans() {
     let mut model = new_empty_model();
-    model.set_input(0, 1, 1, "true".to_string(), 0);
-    model.set_input(0, 2, 1, "TRUE".to_string(), 0);
-    model.set_input(0, 3, 1, "True".to_string(), 0);
-    model.set_input(0, 4, 1, "false".to_string(), 0);
-    model.set_input(0, 5, 1, "FALSE".to_string(), 0);
-    model.set_input(0, 6, 1, "False".to_string(), 0);
+    model.set_user_input(0, 1, 1, "true".to_string());
+    model.set_user_input(0, 2, 1, "TRUE".to_string());
+    model.set_user_input(0, 3, 1, "True".to_string());
+    model.set_user_input(0, 4, 1, "false".to_string());
+    model.set_user_input(0, 5, 1, "FALSE".to_string());
+    model.set_user_input(0, 6, 1, "False".to_string());
 
-    model.set_input(0, 1, 2, "=ISLOGICAL(A1)".to_string(), 0);
-    model.set_input(0, 2, 2, "=ISLOGICAL(A2)".to_string(), 0);
-    model.set_input(0, 3, 2, "=ISLOGICAL(A3)".to_string(), 0);
-    model.set_input(0, 4, 2, "=ISLOGICAL(A4)".to_string(), 0);
-    model.set_input(0, 5, 2, "=ISLOGICAL(A5)".to_string(), 0);
-    model.set_input(0, 6, 2, "=ISLOGICAL(A6)".to_string(), 0);
+    model.set_user_input(0, 1, 2, "=ISLOGICAL(A1)".to_string());
+    model.set_user_input(0, 2, 2, "=ISLOGICAL(A2)".to_string());
+    model.set_user_input(0, 3, 2, "=ISLOGICAL(A3)".to_string());
+    model.set_user_input(0, 4, 2, "=ISLOGICAL(A4)".to_string());
+    model.set_user_input(0, 5, 2, "=ISLOGICAL(A5)".to_string());
+    model.set_user_input(0, 6, 2, "=ISLOGICAL(A6)".to_string());
 
-    model.set_input(0, 1, 5, "=IF(false, True, FALSe)".to_string(), 0);
+    model.set_user_input(0, 1, 5, "=IF(false, True, FALSe)".to_string());
 
     model.evaluate();
 
@@ -227,8 +227,8 @@ fn test_get_cell_style_index() {
 fn test_model_set_cells_with_values_styles() {
     let mut model = new_empty_model();
     // Inputs
-    model.set_input(0, 1, 1, "21".to_string(), 0); // A1
-    model.set_input(0, 2, 1, "2".to_string(), 0); // A2
+    model.set_user_input(0, 1, 1, "21".to_string()); // A1
+    model.set_user_input(0, 2, 1, "2".to_string()); // A2
 
     let style_index = model.get_cell_style_index(0, 1, 1);
     assert_eq!(style_index, 0);
@@ -334,9 +334,9 @@ fn set_input_autocomplete() {
     let mut model = new_empty_model();
     model._set("A1", "1");
     model._set("A2", "2");
-    model.set_input(0, 3, 1, "=SUM(A1:A2".to_string(), 0);
+    model.set_user_input(0, 3, 1, "=SUM(A1:A2".to_string());
     // This will fail anyway
-    model.set_input(0, 4, 1, "=SUM(A1*".to_string(), 0);
+    model.set_user_input(0, 4, 1, "=SUM(A1*".to_string());
     model.evaluate();
 
     assert_eq!(model._get_formula("A3"), "=SUM(A1:A2)");
