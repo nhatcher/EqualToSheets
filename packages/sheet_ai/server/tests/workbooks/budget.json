@@ -1,0 +1,64 @@
+[
+  [
+    {
+      "input": "Item",
+      "style": {
+        "bold": true
+      }
+    },
+    {
+      "input": "Cost (per month)",
+      "style": {
+        "bold": true
+      }
+    }
+  ],
+  [
+    {
+      "input": "Rent"
+    },
+    {
+      "input": "$1500"
+    }
+  ],
+  [
+    {
+      "input": "Utilities"
+    },
+    {
+      "input": "$200"
+    }
+  ],
+  [
+    {
+      "input": "Groceries"
+    },
+    {
+      "input": "$360"
+    }
+  ],
+  [
+    {
+      "input": "Transportation"
+    },
+    {
+      "input": "$450"
+    }
+  ],
+  [
+    {
+      "input": "Entertainment"
+    },
+    {
+      "input": "$120"
+    }
+  ],
+  [
+    {
+      "input": "Total"
+    },
+    {
+      "input": "=SUM(B2:B6)"
+    }
+  ]
+]

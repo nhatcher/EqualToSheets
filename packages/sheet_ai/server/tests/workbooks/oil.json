@@ -1,0 +1,48 @@
+[
+  [
+    {
+      "input": "Step",
+      "style": {
+        "bold": true
+      }
+    },
+    {
+      "input": "Cost (per month)",
+      "style": {
+        "bold": true
+      }
+    }
+  ],
+  [
+    {
+      "input": "Drilling Rig"
+    },
+    {
+      "input": "$50,000"
+    }
+  ],
+  [
+    {
+      "input": "Survey Equipment"
+    },
+    {
+      "input": "$20,000"
+    }
+  ],
+  [
+    {
+      "input": "Labor"
+    },
+    {
+      "input": "$15,000"
+    }
+  ],
+  [
+    {
+      "input": "Total"
+    },
+    {
+      "input": "=SUM(B2:B4)"
+    }
+  ]
+]
