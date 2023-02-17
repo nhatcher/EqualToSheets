@@ -1,4 +1,4 @@
-import { initialize, getApi, CalcError, NavigationDirection } from '@equalto-software/calc';
+import { initialize, CalcError } from '@equalto-software/calc';
 import type { ISheet } from '@equalto-software/calc';
 
 const mapSheetToObject = (sheet: ISheet) => {
@@ -15,7 +15,7 @@ describe('Worksheet', () => {
   });
 
   test('can list sheets in new workbook', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
       { id: 1, index: 0, name: 'Sheet1' },
@@ -23,7 +23,7 @@ describe('Worksheet', () => {
   });
 
   test('can create sheet with default name in new workbook', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const newSheet = workbook.sheets.add();
 
@@ -38,7 +38,7 @@ describe('Worksheet', () => {
   });
 
   test('can create sheet with given name in new workbook', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const newSheet = workbook.sheets.add('MyName');
 
@@ -53,7 +53,7 @@ describe('Worksheet', () => {
   });
 
   test('can use emojis in workbook name ', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add('🙈');
 
@@ -64,7 +64,7 @@ describe('Worksheet', () => {
   });
 
   test('can use only spaces in workbook name', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add(' ');
     expect(workbook.sheets.all().map(mapSheetToObject)).toEqual([
@@ -74,7 +74,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when new sheet name is blank', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
 
     const failCase = () => {
@@ -86,7 +86,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when new sheet name is longer than 31 characters', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
 
     let name31 = 'AAAAAAAAAA' + 'BBBBBBBBBB' + 'CCCCCCCCCC' + 'D'; // len 3*10+1
@@ -101,7 +101,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when name of new sheet is a duplicate', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add('MyName');
 
@@ -114,7 +114,7 @@ describe('Worksheet', () => {
   });
 
   test('can get sheet by index', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add();
     workbook.sheets.add();
@@ -133,7 +133,7 @@ describe('Worksheet', () => {
   });
 
   test('can get sheet by index (case: after sheet deletion)', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add(); // Sheet2
     workbook.sheets.add(); // Sheet3
@@ -150,7 +150,7 @@ describe('Worksheet', () => {
   });
 
   test.each<number>([-1, 10])('throws when getting sheet by invalid index (%i)', async (index) => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const failCase = () => {
       workbook.sheets.get(index);
@@ -160,7 +160,7 @@ describe('Worksheet', () => {
   });
 
   test('can get sheet by name', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add();
     workbook.sheets.add();
@@ -174,7 +174,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when getting sheet by invalid name', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const failCase = () => {
       workbook.sheets.get('DoesNotExist');
@@ -184,7 +184,7 @@ describe('Worksheet', () => {
   });
 
   test('can rename sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const newSheet = workbook.sheets.add('OldName');
 
@@ -201,7 +201,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when deleted sheet is renamed', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add();
     const sheet = workbook.sheets.get(0);
@@ -221,7 +221,7 @@ describe('Worksheet', () => {
   });
 
   test('can delete sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add();
     workbook.sheets.get(0).delete();
@@ -232,7 +232,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when sheet is deleted multiple times', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add();
     const sheet = workbook.sheets.get(0);
@@ -252,7 +252,7 @@ describe('Worksheet', () => {
   });
 
   test('renaming sheets does not break existing references', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const newSheet = workbook.sheets.add('OldName');
 
@@ -269,7 +269,7 @@ describe('Worksheet', () => {
   });
 
   test('deleting sheets does not break existing cell references for other sheets', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     workbook.sheets.add(); // Sheet2
     workbook.sheets.add(); // Sheet3
@@ -295,7 +295,7 @@ describe('Worksheet', () => {
   });
 
   test('can access cells through specific sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -304,7 +304,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when cells reference is invalid', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -317,7 +317,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when accessing cells through specific sheet with sheet specifier (Sheet!...)', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -332,7 +332,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when cell is accessed through workbook without sheet name in reference', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const failCase = () => {
       workbook.cell('A1');
@@ -344,7 +344,7 @@ describe('Worksheet', () => {
   });
 
   test('throws when cell is accessed by invalid sheet name in reference', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const failCase = () => {
       workbook.cell('DoesNotExist!A1');
@@ -354,7 +354,7 @@ describe('Worksheet', () => {
   });
 
   test('can set column widths', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -375,14 +375,14 @@ describe('Worksheet', () => {
   });
 
   test.each([-1, 0, 17_000])('throws when reading width of invalid column (%d)', async (column) => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
     expect(() => sheet.getColumnWidth(column)).toThrow(`Column number '${column}' is not valid.`);
   });
 
   test.each([-1, 0, 16385])('throws when setting width of invalid column (%d)', async (column) => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
     expect(() => sheet.setColumnWidth(column, 45)).toThrow(
@@ -391,21 +391,21 @@ describe('Worksheet', () => {
   });
 
   test.each([-1, 0, 1048577])('throws when reading height of invalid row (%d)', async (column) => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
     expect(() => sheet.getRowHeight(column)).toThrow(`Row number '${column}' is not valid.`);
   });
 
   test.each([-1, 0, 1048577])('throws when setting height of invalid row (%d)', async (column) => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
     expect(() => sheet.setRowHeight(column, 30)).toThrow(`Row number '${column}' is not valid.`);
   });
 
   test('can set row heights', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -427,7 +427,7 @@ describe('Worksheet', () => {
 
   describe('dimensions', () => {
     test('calculates dimension of empty sheet', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const sheet = workbook.sheets.get(0);
       expect(sheet.getDimensions()).toEqual({
@@ -439,7 +439,7 @@ describe('Worksheet', () => {
     });
 
     test('calculates dimension of sheet with one cell', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const sheet = workbook.sheets.get(0);
       sheet.cell('AZ187').value = 3;
@@ -452,7 +452,7 @@ describe('Worksheet', () => {
     });
 
     test('calculates dimension of sheet with multiple cells set', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const sheet = workbook.sheets.get(0);
 
@@ -502,7 +502,7 @@ describe('Worksheet', () => {
   describe('user interface', () => {
     describe('navigateToEdgeInDirection', () => {
       const getTestWorkbook = async () => {
-        const { newWorkbook } = await getApi();
+        const { newWorkbook } = await initialize();
         const workbook = newWorkbook();
         //   1 2 3 4 5 6
         //   A B C D E F

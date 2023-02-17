@@ -1,4 +1,4 @@
-import { initialize, getApi, CalcError } from '@equalto-software/calc';
+import { initialize, CalcError } from '@equalto-software/calc';
 import { readFileSync } from 'fs';
 
 describe('Workbook - Cell operations', () => {
@@ -7,14 +7,14 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can read formula on empty cell - returns null', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get(0);
     expect(sheet.cell('A1').formula).toBe(null);
   });
 
   test('can read formula on cell with value - returns null', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get(0);
     sheet.cell('A1').value = 'Hello world';
@@ -22,7 +22,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can evaluate formulas in cells', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -33,7 +33,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('cannot assign formula by value', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.get('Sheet1');
 
@@ -44,7 +44,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can read formatted value from cell', async () => {
-    const { loadWorkbookFromMemory } = await getApi();
+    const { loadWorkbookFromMemory } = await initialize();
     let xlsxFile = readFileSync('./api/xlsx/formats.xlsx');
     let workbook = loadWorkbookFromMemory(xlsxFile);
 
@@ -62,7 +62,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can delete cell with formatting', async () => {
-    const { loadWorkbookFromMemory } = await getApi();
+    const { loadWorkbookFromMemory } = await initialize();
     const xlsxFile = readFileSync('./api/xlsx/formats.xlsx');
     const workbook = loadWorkbookFromMemory(xlsxFile);
     const cell = workbook.cell('Sheet1!C2');
@@ -82,7 +82,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can read typed number value from cell', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -97,7 +97,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can read date using typed number getter', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -106,7 +106,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when non-number is read using typed number value getter', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -121,7 +121,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can read typed string value from cell', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -132,7 +132,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when non-string is read using typed string value getter', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -147,7 +147,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('can read typed boolean value from cell', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -160,7 +160,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when non-boolean is read using typed boolean value getter', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
@@ -177,7 +177,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('supports setting dates', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const cell = workbook.cell('Sheet1!A1');
     cell.value = new Date('2015-02-14');
@@ -187,7 +187,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('supports setting date-times', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const cell = workbook.cell('Sheet1!A1');
     cell.value = new Date('2015-02-14T13:30:00.000Z');
@@ -197,7 +197,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('cannot assign dates far in the past', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const cell = workbook.cell('Sheet1!A1');
     expect(() => {
@@ -206,7 +206,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('cannot read invalid dates - negative numbers', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const cell = workbook.cell('Sheet1!A1');
     cell.value = -1;
@@ -214,7 +214,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when values are read on cell from deleted sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     const cell = sheet.cell('A1');
@@ -231,7 +231,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when values are set on cell from deleted sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     const cell = sheet.cell('A1');
@@ -247,7 +247,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when formula is read on cell from deleted sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     sheet.cell('A1').value = 7;
@@ -266,7 +266,7 @@ describe('Workbook - Cell operations', () => {
   });
 
   test('throws when formula is set on cell from deleted sheet', async () => {
-    const { newWorkbook } = await getApi();
+    const { newWorkbook } = await initialize();
     const workbook = newWorkbook();
     const sheet = workbook.sheets.add();
     sheet.cell('A1').value = 7;
@@ -283,14 +283,14 @@ describe('Workbook - Cell operations', () => {
 
   describe('style', () => {
     test('can read number format', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       expect(cell.style.numberFormat).toEqual('general');
     });
 
     test('can set number format', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       cell.value = 7;
@@ -300,7 +300,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('setting number format updates own style snapshot', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       const style = cell.style;
@@ -309,7 +309,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can set bold on cell', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       cell.style.font.bold = true;
@@ -322,7 +322,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can set italics on cell', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       cell.style.font.italics = true;
@@ -335,7 +335,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can set underline on cell', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       cell.style.font.underline = true;
@@ -348,7 +348,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can set strikethrough on cell', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       cell.style.font.strikethrough = true;
@@ -361,7 +361,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can unset toggleable font properties', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
 
@@ -396,14 +396,14 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can read default font color', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       expect(cell.style.font.color).toEqual('#000000');
     });
 
     test('can set font color', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       cell.style.font.color = '#ff0000';
@@ -411,7 +411,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('throws if set font color is invalid', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
       expect(() => {
@@ -421,7 +421,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can set solid fill', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
 
@@ -442,7 +442,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('throws if fill color is invalid', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
 
@@ -456,7 +456,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('can unset fill', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
 
@@ -474,7 +474,7 @@ describe('Workbook - Cell operations', () => {
     });
 
     test('bulk style update', async () => {
-      const { newWorkbook } = await getApi();
+      const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
       const cell = workbook.sheets.get(0).cell('A1');
 

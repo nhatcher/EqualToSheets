@@ -1,4 +1,4 @@
-import { initialize, getApi, FormulaToken, FormulaErrorCode } from '@equalto-software/calc';
+import { initialize, FormulaToken, FormulaErrorCode } from '@equalto-software/calc';
 
 describe('getFormulaTokens', () => {
   beforeAll(async () => {
@@ -6,7 +6,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('reference assignment: =D13', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('=D13')).toEqual<FormulaToken[]>([
       { token: { type: 'COMPARE', data: 'Equal' }, start: 0, end: 1 },
       {
@@ -27,7 +27,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('range token: A1:B2', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('A1:B2')).toEqual<FormulaToken[]>([
       {
         token: {
@@ -55,7 +55,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('references, add/subtract tokens: =A1+B1-$E$14', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('=A1+B1-$E$14')).toEqual<FormulaToken[]>([
       { token: { type: 'COMPARE', data: 'Equal' }, start: 0, end: 1 },
       {
@@ -106,7 +106,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('product tokens */: 2*2/2', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('2*3/4')).toEqual<FormulaToken[]>([
       { token: { type: 'NUMBER', data: 2 }, start: 0, end: 1 },
       { token: { type: 'PRODUCT', data: 'Times' }, start: 1, end: 2 },
@@ -117,7 +117,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('misc tokens: ^()[]{}:;,!%&', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('^()[]{}:;,!%&')).toEqual<FormulaToken[]>([
       { token: { type: 'POWER' }, start: 0, end: 1 },
       { token: { type: 'LPAREN' }, start: 1, end: 2 },
@@ -136,7 +136,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('identifier tokens: HELLO WORLD', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('HELLO WORLD')).toEqual<FormulaToken[]>([
       { token: { type: 'IDENT', data: 'HELLO' }, start: 0, end: 5 },
       {
@@ -151,7 +151,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('string tokens: "HELLO WORLD"', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('"HELLO WORLD"')).toEqual<FormulaToken[]>([
       {
         token: {
@@ -170,7 +170,7 @@ describe('getFormulaTokens', () => {
     ['1234', 1234],
     ['12.34', 12.34],
   ])('number tokens: %s', async (formula, expectedNumber) => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens(formula)).toEqual<FormulaToken[]>([
       { token: { type: 'NUMBER', data: expectedNumber }, start: 0, end: expect.any(Number) },
     ]);
@@ -182,7 +182,7 @@ describe('getFormulaTokens', () => {
     ['-1234', 1234],
     ['-12.34', 12.34],
   ])('negative numbers return two tokens: %s', async (formula, expectedNumber) => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens(formula)).toEqual<FormulaToken[]>([
       { token: { type: 'SUM', data: 'Minus' }, start: 0, end: 1 },
       { token: { type: 'NUMBER', data: expectedNumber }, start: 1, end: expect.any(Number) },
@@ -190,7 +190,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('bool tokens: true True TRUE false False FALSE', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('true True TRUE false False FALSE')).toEqual<FormulaToken[]>([
       { token: { type: 'BOOLEAN', data: true }, start: 0, end: 4 },
       { token: { type: 'BOOLEAN', data: true }, start: 4, end: 9 },
@@ -202,7 +202,7 @@ describe('getFormulaTokens', () => {
   });
 
   test('tokens for compare operations', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('= < <= >= > <>')).toEqual<FormulaToken[]>([
       { token: { type: 'COMPARE', data: 'Equal' }, start: 0, end: 1 },
       { token: { type: 'COMPARE', data: 'LessThan' }, start: 1, end: 3 },
@@ -226,14 +226,14 @@ describe('getFormulaTokens', () => {
     ['#CALC!', FormulaErrorCode.CALC],
     ['#CIRC!', FormulaErrorCode.CIRC],
   ])('error tokens: %s', async (formula, errorKind) => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens(formula)).toEqual<FormulaToken[]>([
       { token: { type: 'ERROR', data: errorKind }, start: 0, end: expect.any(Number) },
     ]);
   });
 
   test('illegal token: emoji', async () => {
-    const { getFormulaTokens } = (await getApi()).utils;
+    const { getFormulaTokens } = (await initialize()).utils;
     expect(getFormulaTokens('☠️')).toEqual<FormulaToken[]>([
       {
         token: { type: 'ILLEGAL', data: { position: 1, message: 'Unknown error' } },
@@ -246,7 +246,7 @@ describe('getFormulaTokens', () => {
   test.each(['=A1+A3', '=$A1+B$2', '=IF($A$1; B4; #N/A)', '=SUM(A3:A4)', "'Sheet name'!A1"])(
     'snapshot test for formula: %s',
     async (formula) => {
-      const { getFormulaTokens } = (await getApi()).utils;
+      const { getFormulaTokens } = (await initialize()).utils;
       expect(getFormulaTokens(formula)).toMatchSnapshot();
     },
   );

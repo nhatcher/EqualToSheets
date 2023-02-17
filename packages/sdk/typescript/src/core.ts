@@ -34,27 +34,8 @@ async function initializeWasm() {
 
 let initializationPromise: Promise<void> | null = null;
 export async function initialize(): Promise<SheetsApi> {
-  if (initializationPromise !== null) {
-    throw new Error('Sheets API cannot be initialized twice.');
-  }
-  initializationPromise = initializeWasm();
-  await initializationPromise;
-  return {
-    newWorkbook,
-    loadWorkbookFromMemory,
-    utils: {
-      getFormulaTokens,
-    },
-  };
-}
-
-/**
- * Requires previous module initialization using `initialize`. Initialization
- * does not have to complete, but must be started.
- */
-export async function getApi(): Promise<SheetsApi> {
   if (initializationPromise === null) {
-    throw new Error('Sheets API needs to be initialized prior to requesting API.');
+    initializationPromise = initializeWasm();
   }
   await initializationPromise;
   return {

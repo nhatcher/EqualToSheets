@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@equalto-software/spreadsheet": "file:../../widget",
     "@mui/base": "^5.0.0-alpha.118",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
@@ -22,7 +23,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "npm run build-widget && react-scripts build",
+    "build-widget": "cd ../../widget && npm run build-full",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "prettier": "prettier --write ."

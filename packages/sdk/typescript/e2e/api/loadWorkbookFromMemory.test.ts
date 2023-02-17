@@ -1,4 +1,4 @@
-import { initialize, getApi } from '@equalto-software/calc';
+import { initialize } from '@equalto-software/calc';
 import { readFileSync } from 'fs';
 
 describe('loadWorkbookFromMemory', () => {
@@ -7,7 +7,7 @@ describe('loadWorkbookFromMemory', () => {
   });
 
   test('can load XLSX from memory (from file)', async () => {
-    const { loadWorkbookFromMemory } = await getApi();
+    const { loadWorkbookFromMemory } = await initialize();
     const xlsxFile = readFileSync('./api/xlsx/formats.xlsx');
     const workbook = loadWorkbookFromMemory(xlsxFile);
     expect(workbook.cell('Sheet1!A1').value).toEqual('General');
@@ -15,7 +15,7 @@ describe('loadWorkbookFromMemory', () => {
   });
 
   test('throws when loaded XLSX evaluates differently', async () => {
-    const { loadWorkbookFromMemory } = await getApi();
+    const { loadWorkbookFromMemory } = await initialize();
     const xlsxFile = readFileSync('./api/xlsx/XLOOKUP_with_errors.xlsx');
     expect(() => {
       loadWorkbookFromMemory(xlsxFile);
@@ -26,7 +26,7 @@ describe('loadWorkbookFromMemory', () => {
   });
 
   test('throws when loaded XLSX cannot evaluate without errors on init', async () => {
-    const { loadWorkbookFromMemory } = await getApi();
+    const { loadWorkbookFromMemory } = await initialize();
     const xlsxFile = readFileSync('./api/xlsx/UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx');
     expect(() => {
       loadWorkbookFromMemory(xlsxFile);

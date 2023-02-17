@@ -46,9 +46,20 @@ export const Root: FunctionComponent<{
   children: ReactNode;
   lastRow?: number;
   lastColumn?: number;
+  onModelCreate?: (model: Model) => void;
 }> = (properties) => {
+  const { onModelCreate } = properties;
   const { calcModule } = useCalcModule();
-  const [model, setModel] = useState<Model | null>(null);
+
+  // It is assumed for now that model is created exactly once.
+  const [model, setModelInState] = useState<Model | null>(null);
+  const setModel = useCallback(
+    (newModel: Model) => {
+      setModelInState(newModel);
+      onModelCreate?.(newModel);
+    },
+    [onModelCreate],
+  );
 
   const rootRef = useRef<HTMLDivElement>(null);
   const worksheetCanvas = useRef<WorksheetCanvas | null>(null);
@@ -76,7 +87,7 @@ export const Root: FunctionComponent<{
       newModel.subscribe(onChange);
       setModel(newModel);
     }
-  }, [model, calcModule, onChange]);
+  }, [model, calcModule, onChange, setModel]);
 
   const [editorState, dispatch] = useWorkbookReducer(model);
 

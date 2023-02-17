@@ -3,13 +3,13 @@ import {
   SystemMessageBubble,
   SystemMessageThread,
 } from './components/messageBubbles';
-import { Spreadsheet } from './components/spreadsheet';
 import styled from 'styled-components/macro';
 import { PromptEditor } from './components/promptEditor';
 import { useCallback, useRef, useState } from 'react';
 import { sendMessage } from './serverApi';
 import { ConversationEntry } from './types';
 import { CircularSpinner } from './components/circularSpinner';
+import * as Workbook from '@equalto-software/spreadsheet';
 
 function App() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
@@ -85,6 +85,15 @@ function App() {
     </div>
   );
 }
+const WorkbookRoot = styled(Workbook.Root)`
+  border: 1px solid #c6cae3;
+  filter: drop-shadow(0px 2px 2px rgba(33, 36, 58, 0.15));
+  border-radius: 10px;
+`;
+const Worksheet = styled(Workbook.Worksheet)`
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+`;
 
 const ChatWidget = styled.div`
   display: flex;
@@ -127,33 +136,56 @@ const ConversationMessageBlock = (properties: { entry: ConversationEntry }) => {
   }
 
   if (entry.source === 'server') {
-    return (
-      <SystemMessageThread>
-        <Spreadsheet />
-        <SimpleTable>
-          {entry.data.map((row, index) => (
-            <tr key={index}>
-              {row.map((cell, index) => {
-                // @ts-ignore
-                const input = cell['input'];
-                return <td key={index}>{input}</td>;
-              })}
-            </tr>
-          ))}
-        </SimpleTable>
-        {entry.text && <SystemMessageBubble>{entry.text}</SystemMessageBubble>}
-      </SystemMessageThread>
-    );
+    return <ServerMessageBlock entry={entry} />;
   }
 
   return null;
 };
 
-const SimpleTable = styled.table`
-  border-collapse: collapse;
-  td {
-    border: 1px solid #d0d0d0;
+const ServerMessageBlock = (properties: {
+  entry: Extract<ConversationEntry, { source: 'server' }>;
+}) => {
+  const { entry } = properties;
+
+  const COLUMNS = 10;
+  const ROWS = 10;
+
+  const setModelRef = useCallback(
+    (model: Workbook.Model) => {
+      for (let rowIndex = 0; rowIndex < entry.data.length; ++rowIndex) {
+        let row = entry.data[rowIndex];
+        for (let columnIndex = 0; columnIndex < row.length; ++columnIndex) {
+          const cell = row[columnIndex];
+          // @ts-ignore
+          const input = cell['input'];
+          model.setCellValue(0, rowIndex + 1, columnIndex + 1, removeFormatting(input));
+        }
+      }
+    },
+    [entry],
+  );
+
+  return (
+    <SystemMessageThread>
+      <div style={{ height: ROWS * 24 + 74, overflow: 'visible' }}>
+        <WorkbookRoot lastRow={COLUMNS + 10} lastColumn={ROWS + 10} onModelCreate={setModelRef}>
+          <Workbook.FormulaBar />
+          <Worksheet />
+        </WorkbookRoot>
+      </div>
+      {entry.text && <SystemMessageBubble>{entry.text}</SystemMessageBubble>}
+    </SystemMessageThread>
+  );
+};
+
+function removeFormatting(text: string): string {
+  if (text.includes('$')) {
+    return text.replace(/[^0-9.-]+/g, '');
   }
-`;
+  if (text.includes('%')) {
+    return text.replace(/[^0-9.-]+/g, '');
+  }
+  return text;
+}
 
 export default App;
