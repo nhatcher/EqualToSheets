@@ -10,6 +10,8 @@ import { sendMessage } from './serverApi';
 import { ConversationEntry } from './types';
 import { CircularSpinner } from './components/circularSpinner';
 import * as Workbook from '@equalto-software/spreadsheet';
+import { saveAs } from 'file-saver';
+import { Download } from 'lucide-react';
 
 function App() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
@@ -150,7 +152,8 @@ const ServerMessageBlock = (properties: {
   const COLUMNS = 10;
   const ROWS = 10;
 
-  const setModelRef = useCallback(
+  const [model, setModel] = useState<Workbook.Model | null>(null);
+  const onModelCreate = useCallback(
     (model: Workbook.Model) => {
       for (let rowIndex = 0; rowIndex < entry.data.length; ++rowIndex) {
         let row = entry.data[rowIndex];
@@ -161,18 +164,32 @@ const ServerMessageBlock = (properties: {
           model.setCellValue(0, rowIndex + 1, columnIndex + 1, removeFormatting(input));
         }
       }
+      setModel(model);
     },
     [entry],
   );
 
+  const downloadXlsx = useCallback(() => {
+    if (!model) {
+      return;
+    }
+
+    const buffer = model.saveToXlsx();
+    const blob = new Blob([buffer], { type: 'application/vnd.ms-excel' });
+    saveAs(blob, 'Spreadsheet.xlsx');
+  }, [model]);
+
   return (
     <SystemMessageThread>
       <div style={{ height: ROWS * 24 + 74, overflow: 'visible' }}>
-        <WorkbookRoot lastRow={COLUMNS + 10} lastColumn={ROWS + 10} onModelCreate={setModelRef}>
+        <WorkbookRoot lastRow={COLUMNS + 10} lastColumn={ROWS + 10} onModelCreate={onModelCreate}>
           <Workbook.FormulaBar />
           <Worksheet />
         </WorkbookRoot>
       </div>
+      <DownloadButton disabled={model === null} type="button" onClick={downloadXlsx}>
+        <Download size={18} />
+      </DownloadButton>
       {entry.text && <SystemMessageBubble>{entry.text}</SystemMessageBubble>}
     </SystemMessageThread>
   );
@@ -187,5 +204,23 @@ function removeFormatting(text: string): string {
   }
   return text;
 }
+
+const DownloadButton = styled.button`
+  justify-self: right;
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer;
+  background: #f8f8f8;
+  &:hover {
+    background: #d0d2f8;
+  }
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  border-radius: 15px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
 
 export default App;

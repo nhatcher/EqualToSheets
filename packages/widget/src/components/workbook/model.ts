@@ -1132,4 +1132,8 @@ export default class Model {
     this.history.redo = [];
     this.wasm.evaluate(); */
   }
+
+  saveToXlsx(): Uint8Array {
+    return this.workbook.saveToXlsx();
+  }
 }
