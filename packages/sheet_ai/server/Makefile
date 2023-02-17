@@ -2,6 +2,7 @@ VENV_NAME?=venv
 LINT_FILES=./sheet_ai ./tests ./wsgi
 
 docker:
+	@docker-compose down --rmi all
 	@docker-compose up -d --build
 
 venv: clean $(VENV_NAME)/bin/activate

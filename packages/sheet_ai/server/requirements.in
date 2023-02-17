@@ -1,3 +1,5 @@
-openai~=0.26.5
-gunicorn~=20.1.0
 flask~=2.2.2
+flask-limiter[mongodb]~=3.2.0
+gunicorn~=20.1.0
+openai~=0.26.5
+pymongo~=4.3.3

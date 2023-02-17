@@ -1,5 +1,6 @@
 black
 isort
+mongomock
 mypy
 pytest
 wemake-python-styleguide
