@@ -64,6 +64,13 @@ fn test_number_scientific_1() {
 }
 
 #[test]
+fn test_number_scientific_1b() {
+    let mut lx = new_lexer("2.4E-12", true);
+    assert_eq!(lx.next_token(), NUMBER(2.4e-12));
+    assert_eq!(lx.next_token(), EOF);
+}
+
+#[test]
 fn test_not_a_number() {
     let mut lx = new_lexer("..", true);
     assert!(matches!(lx.next_token(), ILLEGAL(_)));

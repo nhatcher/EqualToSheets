@@ -494,7 +494,7 @@ impl Lexer {
                 position += 1;
             }
         }
-        if position + 1 < len && self.chars[position] == 'e' {
+        if position + 1 < len && (self.chars[position] == 'e' || self.chars[position] == 'E') {
             // exponential side
             let x = self.chars[position + 1];
             if x == '-' || x == '+' || x.is_ascii_digit() {
