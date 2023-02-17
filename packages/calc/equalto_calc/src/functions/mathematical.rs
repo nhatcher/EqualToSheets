@@ -445,7 +445,6 @@ impl Model {
 
     pub(crate) fn fn_abs(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         if args.len() != 1 {
-            // Incorrect number of arguments
             return CalcResult::new_args_number_error(cell);
         }
         let value = match self.get_number(&args[0], cell) {
@@ -453,5 +452,104 @@ impl Model {
             Err(s) => return s,
         };
         CalcResult::Number(value.abs())
+    }
+
+    pub(crate) fn fn_sqrtpi(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 1 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let value = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        if value < 0.0 {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message: "Argument of SQRTPI should be >= 0".to_string(),
+            };
+        }
+        CalcResult::Number((value * PI).sqrt())
+    }
+
+    pub(crate) fn fn_sqrt(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 1 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let value = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        if value < 0.0 {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message: "Argument of SQRT should be >= 0".to_string(),
+            };
+        }
+        CalcResult::Number(value.sqrt())
+    }
+
+    pub(crate) fn fn_atan2(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 2 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let x = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let y = match self.get_number(&args[1], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        if x == 0.0 && y == 0.0 {
+            return CalcResult::Error {
+                error: Error::DIV,
+                origin: cell,
+                message: "Arguments can't be both zero".to_string(),
+            };
+        }
+        CalcResult::Number(f64::atan2(y, x))
+    }
+
+    pub(crate) fn fn_power(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 2 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let x = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let y = match self.get_number(&args[1], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        if x == 0.0 && y == 0.0 {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message: "Arguments can't be both zero".to_string(),
+            };
+        }
+        if y == 0.0 {
+            return CalcResult::Number(1.0);
+        }
+        let result = x.powf(y);
+        if result.is_infinite() {
+            return CalcResult::Error {
+                error: Error::DIV,
+                origin: cell,
+                message: "POWER returned infinity".to_string(),
+            };
+        }
+        if result.is_nan() {
+            // This might happen for some combinations of negative base and exponent
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message: "Invalid arguments for POWER".to_string(),
+            };
+        }
+        CalcResult::Number(result)
     }
 }

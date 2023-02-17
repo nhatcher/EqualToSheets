@@ -12,6 +12,20 @@ fn test_fn_pi_arguments() {
 }
 
 #[test]
+fn test_fn_atan2_arguments() {
+    let mut model = new_empty_model();
+    model._set("A1", "=ATAN2(1)");
+    model._set("A2", "=ATAN2(1,1)");
+    model._set("A3", "=ATAN2(1,1,1)");
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("A1"), *"#ERROR!");
+    assert_eq!(model._get_text("A2"), *"0.785398163");
+    assert_eq!(model._get_text("A3"), *"#ERROR!");
+}
+
+#[test]
 fn test_fn_trigonometric_arguments() {
     let mut model = new_empty_model();
     model._set("A1", "=SIN()");

@@ -46,6 +46,10 @@ pub enum Function {
     Atanh,
     Pi,
     Abs,
+    Sqrtpi,
+    Sqrt,
+    Atan2,
+    Power,
     Max,
     Min,
     Round,
@@ -163,6 +167,10 @@ impl Function {
 
             "PI" => Some(Function::Pi),
             "ABS" => Some(Function::Abs),
+            "SQRT" => Some(Function::Sqrt),
+            "SQRTPI" => Some(Function::Sqrtpi),
+            "POWER" => Some(Function::Power),
+            "ATAN2" => Some(Function::Atan2),
 
             "MAX" => Some(Function::Max),
             "MIN" => Some(Function::Min),
@@ -267,6 +275,10 @@ impl fmt::Display for Function {
             Function::Atanh => write!(f, "ATANH"),
             Function::Abs => write!(f, "ABS"),
             Function::Pi => write!(f, "PI"),
+            Function::Sqrt => write!(f, "SQRT"),
+            Function::Sqrtpi => write!(f, "SQRTPI"),
+            Function::Atan2 => write!(f, "ATAN2"),
+            Function::Power => write!(f, "POWER"),
             Function::Max => write!(f, "MAX"),
             Function::Min => write!(f, "MIN"),
             Function::Round => write!(f, "ROUND"),
@@ -374,6 +386,11 @@ impl Model {
 
             Function::Pi => self.fn_pi(args, cell),
             Function::Abs => self.fn_abs(args, cell),
+
+            Function::Sqrt => self.fn_sqrt(args, cell),
+            Function::Sqrtpi => self.fn_sqrtpi(args, cell),
+            Function::Atan2 => self.fn_atan2(args, cell),
+            Function::Power => self.fn_power(args, cell),
 
             Function::Max => self.fn_max(args, cell),
             Function::Min => self.fn_min(args, cell),
