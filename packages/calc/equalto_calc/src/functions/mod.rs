@@ -8,6 +8,7 @@ use crate::{
 
 pub(crate) mod binary_search;
 mod date_and_time;
+mod financial;
 mod information;
 mod logical;
 mod lookup_and_reference;
@@ -44,6 +45,7 @@ pub enum Function {
     Acosh,
     Atanh,
     Pi,
+    Abs,
     Max,
     Min,
     Round,
@@ -101,6 +103,13 @@ pub enum Function {
     Month,
     Date,
     Edate,
+    Pmt,
+    Pv,
+    Rate,
+    Nper,
+    Fv,
+    Ipmt,
+    Ppmt,
 }
 
 impl Function {
@@ -153,6 +162,7 @@ impl Function {
             "ATANH" => Some(Function::Atanh),
 
             "PI" => Some(Function::Pi),
+            "ABS" => Some(Function::Abs),
 
             "MAX" => Some(Function::Max),
             "MIN" => Some(Function::Min),
@@ -216,6 +226,14 @@ impl Function {
             "MONTH" => Some(Function::Month),
             "DATE" => Some(Function::Date),
             "EDATE" => Some(Function::Edate),
+            // Financial
+            "PMT" => Some(Function::Pmt),
+            "PV" => Some(Function::Pv),
+            "RATE" => Some(Function::Rate),
+            "NPER" => Some(Function::Nper),
+            "FV" => Some(Function::Fv),
+            "PPMT" => Some(Function::Ppmt),
+            "IPMT" => Some(Function::Ipmt),
             _ => None,
         }
     }
@@ -247,6 +265,7 @@ impl fmt::Display for Function {
             Function::Asinh => write!(f, "ASINH"),
             Function::Acosh => write!(f, "ACOSH"),
             Function::Atanh => write!(f, "ATANH"),
+            Function::Abs => write!(f, "ABS"),
             Function::Pi => write!(f, "PI"),
             Function::Max => write!(f, "MAX"),
             Function::Min => write!(f, "MIN"),
@@ -305,6 +324,13 @@ impl fmt::Display for Function {
             Function::Month => write!(f, "MONTH"),
             Function::Date => write!(f, "DATE"),
             Function::Edate => write!(f, "EDATE"),
+            Function::Pmt => write!(f, "PMT"),
+            Function::Pv => write!(f, "PV"),
+            Function::Rate => write!(f, "RATE"),
+            Function::Nper => write!(f, "NPER"),
+            Function::Fv => write!(f, "FV"),
+            Function::Ppmt => write!(f, "PPMT"),
+            Function::Ipmt => write!(f, "IPMT"),
         }
     }
 }
@@ -347,6 +373,7 @@ impl Model {
             Function::Atanh => self.fn_atanh(args, cell),
 
             Function::Pi => self.fn_pi(args, cell),
+            Function::Abs => self.fn_abs(args, cell),
 
             Function::Max => self.fn_max(args, cell),
             Function::Min => self.fn_min(args, cell),
@@ -410,6 +437,14 @@ impl Model {
             Function::Month => self.fn_month(args, cell),
             Function::Date => self.fn_date(args, cell),
             Function::Edate => self.fn_edate(args, cell),
+            // Financial
+            Function::Pmt => self.fn_pmt(args, cell),
+            Function::Pv => self.fn_pv(args, cell),
+            Function::Rate => self.fn_rate(args, cell),
+            Function::Nper => self.fn_nper(args, cell),
+            Function::Fv => self.fn_fv(args, cell),
+            Function::Ppmt => self.fn_ppmt(args, cell),
+            Function::Ipmt => self.fn_ipmt(args, cell),
         }
     }
 }

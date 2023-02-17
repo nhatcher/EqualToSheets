@@ -23,6 +23,8 @@ pub struct Diff {
     pub reason: String,
 }
 
+const PRECISION: usize = 10;
+
 /// Compares two Models in the internal representation and returns a list of differences
 pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
     let ws1 = model1.workbook.get_worksheet_names();
@@ -62,7 +64,9 @@ pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
                 Cell::CellFormulaNumber { v: value1, .. },
                 Cell::CellFormulaNumber { v: value2, .. },
             ) => {
-                if (to_precision(*value1, 14) - to_precision(*value2, 14)).abs() > f64::EPSILON {
+                if (to_precision(*value1, PRECISION) - to_precision(*value2, PRECISION)).abs()
+                    > f64::EPSILON
+                {
                     diffs.push(Diff {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,

@@ -10,6 +10,7 @@ mod test_fn_average;
 mod test_fn_averageifs;
 mod test_fn_choose;
 mod test_fn_count;
+mod test_fn_financial;
 mod test_fn_if;
 mod test_fn_maxifs;
 mod test_fn_minifs;

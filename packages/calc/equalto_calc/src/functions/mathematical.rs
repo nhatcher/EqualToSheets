@@ -442,4 +442,16 @@ impl Model {
         }
         CalcResult::Number(PI)
     }
+
+    pub(crate) fn fn_abs(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 1 {
+            // Incorrect number of arguments
+            return CalcResult::new_args_number_error(cell);
+        }
+        let value = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        CalcResult::Number(value.abs())
+    }
 }
