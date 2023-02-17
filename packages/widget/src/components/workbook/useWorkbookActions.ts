@@ -22,7 +22,7 @@ export type WorkbookActions = {
   onExpandAreaSelectedKeyboard: (key: 'ArrowRight' | 'ArrowLeft' | 'ArrowDown' | 'ArrowUp') => void;
   onPointerMoveToCell: (cell: Cell) => void;
   onPointerDownAtCell: (cell: Cell) => void;
-  onEditPointerDown: (cell: Cell) => void;
+  onEditPointerDown: (cell: Cell, value: string) => void;
   onEditEnd: (text: string, delta: { deltaRow: number; deltaColumn: number }) => void;
   onEditEscape: () => void;
   onCellEditStart: () => void;
@@ -176,10 +176,10 @@ const useWorkbookActions = (
   );
 
   const onEditPointerDown = useCallback(
-    (cell: Cell): void => {
+    (cell: Cell, currentValue: string): void => {
       dispatch({
         type: WorkbookActionType.EDIT_POINTER_DOWN,
-        payload: { cell },
+        payload: { cell, currentValue },
       });
     },
     [dispatch],

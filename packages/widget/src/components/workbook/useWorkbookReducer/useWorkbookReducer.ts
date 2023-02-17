@@ -10,7 +10,6 @@ import {
 } from 'src/components/workbook/util';
 import { WorkbookActionType, Action, WorkbookReducer, WorkbookState } from './common';
 import { headerRowHeight, headerColumnWidth } from '../canvas';
-import { getFormulaHTML } from '../formulas';
 import Model from '../model';
 
 export const defaultSheetState: StateSettings = {
@@ -103,7 +102,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           base: initText,
           mode: 'init',
           focus: FocusType.Cell,
-          activeRanges: [],
         },
       };
     }
@@ -123,12 +121,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (!action.payload.ignoreQuotePrefix && model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
-      const { activeRanges } = getFormulaHTML(
-        text,
-        selectedSheet,
-        model.getTabs().map((tab) => tab.name),
-        model.getTokens,
-      );
       return {
         ...state,
         cellEditing: {
@@ -139,7 +131,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           row,
           column,
           mode: 'edit',
-          activeRanges,
         },
       };
     }
@@ -161,13 +152,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
-      const { activeRanges } = getFormulaHTML(
-        text,
-        selectedSheet,
-        model.getTabs().map((tab) => tab.name),
-        model.getTokens,
-      );
-
       return {
         ...state,
         cellEditing: {
@@ -178,7 +162,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           row,
           column,
           mode: 'edit',
-          activeRanges,
         },
       };
     }
@@ -672,24 +655,17 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (!cellEditing) {
         return state;
       }
-      const { cell } = action.payload;
+      const { cell, currentValue } = action.payload;
       const { row, column } = cell;
       const prefix =
         cellEditing.sheet === selectedSheet ? '' : `${quoteSheetName(tabs[selectedSheet].name)}!`;
-      const text = `${cellEditing.text}${prefix}${columnNameFromNumber(column)}${row}`;
-      const { activeRanges } = getFormulaHTML(
-        text,
-        cellEditing.sheet,
-        model.getTabs().map((tab) => tab.name),
-        model.getTokens,
-      );
+      const text = `${currentValue}${prefix}${columnNameFromNumber(column)}${row}`;
       return {
         ...state,
         cellEditing: {
           ...cellEditing,
           text,
           base: text,
-          activeRanges,
         },
       };
     }
@@ -710,30 +686,22 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
     case WorkbookActionType.EDIT_POINTER_MOVE: {
       const { cellEditing } = state;
-      const model = state.modelRef.current;
       if (!cellEditing) {
         return state;
       }
       const { cell } = action.payload;
-      const { base, sheet } = cellEditing;
+      const { base } = cellEditing;
       let { text } = cellEditing;
       // FIXME: This assumes that cellReference.row > base.row && cellReference.column > base.column
       const cellReference = `${columnNameFromNumber(cell.column)}${cell.row}`;
       if (!base.endsWith(cellReference)) {
         text = `${base}:${cellReference}`;
       }
-      const { activeRanges } = getFormulaHTML(
-        text,
-        sheet,
-        model.getTabs().map((tab) => tab.name),
-        model.getTokens,
-      );
       return {
         ...state,
         cellEditing: {
           ...cellEditing,
           text,
-          activeRanges,
         },
       };
     }

@@ -33,6 +33,7 @@ const WorkbookContext = createContext<
       worksheetElement: RefObject<HTMLDivElement>;
       formulaBarEditor: MutableRefObject<HTMLDivElement | null>;
       cellInput: MutableRefObject<HTMLInputElement | null>;
+      formulaBarInput: MutableRefObject<HTMLInputElement | null>;
       editorState: WorkbookState;
       editorActions: WorkbookActions;
       lastRow: number;
@@ -66,6 +67,7 @@ export const Root: FunctionComponent<{
   const worksheetElement = useRef<HTMLDivElement>(null);
   const formulaBarEditor = useRef<HTMLDivElement>(null);
   const cellInput = useRef<HTMLInputElement>(null);
+  const formulaBarInput = useRef<HTMLInputElement>(null);
 
   const [requestRenderId, requestRender] = useReducer((x: number) => x + 1, 0);
 
@@ -144,6 +146,7 @@ export const Root: FunctionComponent<{
       worksheetElement,
       formulaBarEditor,
       cellInput,
+      formulaBarInput,
       lastRow,
       lastColumn,
     }),

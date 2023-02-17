@@ -34,6 +34,7 @@ const Workbook: FunctionComponent<{
     worksheetCanvas,
     worksheetElement,
     cellInput,
+    formulaBarInput,
     lastRow,
     lastColumn,
   } = useWorkbookContext();
@@ -220,12 +221,20 @@ const Workbook: FunctionComponent<{
   const onPointerDownAtCell = (cell: Cell, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    if (cellEditing) {
-      const value = cellInput.current?.value ?? '';
-      // FIXME: use ref and figure out selection
-      if (isInReferenceMode(value, cellEditing.text.length)) {
-        editorActions.onEditPointerDown(cell);
-        return;
+    if (cellEditing && cellInput.current && formulaBarInput.current) {
+      const { value } = cellInput.current;
+      const selection = window.getSelection();
+      if (
+        selection?.anchorNode?.lastChild &&
+        (selection.anchorNode.lastChild === cellInput.current ||
+          selection.anchorNode.lastChild === formulaBarInput.current)
+      ) {
+        const cursor =
+          (selection.anchorNode.lastChild as HTMLInputElement).selectionEnd ?? value.length;
+        if (isInReferenceMode(value, cursor)) {
+          editorActions.onEditPointerDown(cell, value);
+          return;
+        }
       }
       model?.setCellValue(cellEditing.sheet, cellEditing.row, cellEditing.column, value);
     }
@@ -418,7 +427,15 @@ const Workbook: FunctionComponent<{
           onCut={(event) => event.stopPropagation()}
           onPaste={(event) => event.stopPropagation()}
         >
-          <Editor display={!!cellEditing} />
+          <Editor
+            display={!!cellEditing}
+            onReferencesChanged={(references) => {
+              if (worksheetCanvas.current) {
+                worksheetCanvas.current.activeRanges = references;
+                worksheetCanvas.current.renderSheet();
+              }
+            }}
+          />
         </CellOutline>
         <AreaOutline ref={areaOutline} />
         <ExtendToOutline ref={extendToOutline} />

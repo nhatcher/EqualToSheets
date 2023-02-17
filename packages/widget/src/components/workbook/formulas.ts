@@ -1,6 +1,6 @@
 import { FormulaToken } from '@equalto-software/calc';
 import { LAST_COLUMN, LAST_ROW } from './constants';
-import { columnNameFromNumber, getColor, referenceToString, SheetArea } from './util';
+import { columnNameFromNumber, getColor, referenceToString } from './util';
 
 export function escapeHTML(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -207,104 +207,75 @@ export function cycleReference(options: {
   return { text, cursorStart, cursorEnd };
 }
 
-/**
- *
- * This function get a formula like `=A1*SUM(B5:C6)` and transforms it to:
- *
- * `<span>=</span><span>A1</span><span>SUM</span><span>(</span><span>B5:C6</span><span>)</span>`
- *
- * While also returning the set of ranges [A1, B5:C6] with specific color assignments for each range
- */
-export function getFormulaHTML(
+type FormulaReference = {
+  sheet: number;
+  rowStart: number;
+  rowEnd: number;
+  columnStart: number;
+  columnEnd: number;
+  start: number;
+  end: number;
+};
+export function getReferencesFromFormula(
   text: string,
-  sheet: number,
+  currentSheet: number,
   sheetList: string[],
   getTokens: (s: string) => FormulaToken[],
-): {
-  html: string;
-  activeRanges: SheetArea[];
-} {
-  let html = '';
-  const activeRanges: SheetArea[] = [];
+): FormulaReference[] {
+  const formulaReferences: FormulaReference[] = [];
   if (text.startsWith('=')) {
-    const formula = text.slice(1);
-    let colorCount = 0;
-
+    const formula = text.slice(1); // We will need to +1 indexes
     const tokens = getTokens(formula);
-    const tokenCount = tokens.length;
-    for (let index = 0; index < tokenCount; index += 1) {
+    for (let index = 0; index < tokens.length; index += 1) {
       const { token, start, end } = tokens[index];
-      // FIXME: Please factor repeated code in these two branches
       if (token.type === 'REFERENCE') {
-        const reference = token.data;
-        const color = getColor(colorCount);
-        const rowStart = reference.row;
-        const columnStart = reference.column;
-        const rowEnd = rowStart;
-        const columnEnd = columnStart;
-        const txt = escapeHTML(formula.slice(start, end));
-        // NOTE: A bit closer to Dani's spec:
-        // const background = transparentize(0.8, color);
-        // html = `${html}<span style="color:${color}; background-color:${background}; border-radius: 2px; padding-left:2px; padding-right: 2px;">${txt}</span>`;
-        // but the formula jumps around a bit too much.
-        html = `${html}<span style="color:${color}">${txt}</span>`;
-        colorCount += 1;
-        const sheetIndex = reference.sheet ? sheetList.indexOf(reference.sheet) : sheet;
-        activeRanges.push({
-          sheet: sheetIndex,
-          rowStart,
-          columnStart,
-          rowEnd,
-          columnEnd,
-          color,
+        const { sheet, row, column } = token.data;
+        formulaReferences.push({
+          sheet: sheet ? sheetList.indexOf(sheet) : currentSheet,
+          rowStart: row,
+          columnStart: column,
+          rowEnd: row,
+          columnEnd: column,
+          start: start + 1,
+          end: end + 1,
         });
       } else if (token.type === 'RANGE') {
-        const color = getColor(colorCount);
-        const range = token.data;
-        let rowStart = range.left.row;
-        let columnStart = range.left.column;
-
-        let rowEnd = range.right.row;
-        let columnEnd = range.right.column;
-
-        if (rowStart > rowEnd) {
-          [rowStart, rowEnd] = [rowEnd, rowStart];
-        }
-        if (columnStart > columnEnd) {
-          [columnStart, columnEnd] = [columnEnd, columnStart];
-        }
-        const txt = escapeHTML(formula.slice(start, end));
-        // NOTE: A bit closer to Dani's spec:
-        // const background = transparentize(0.8, color);
-        // html = `${html}<span style="color:${color}; background-color:${background}; border-radius: 2px; padding-left:2px; padding-right: 2px;">${txt}</span>`;
-        // but the formula jumps around a bit too much.
-        html = `${html}<span style="color:${color}">${txt}</span>`;
-        colorCount += 1;
-        const sheetIndex = range.sheet ? sheetList.indexOf(range.sheet) : sheet;
-        activeRanges.push({
-          sheet: sheetIndex,
-          rowStart,
-          columnStart,
-          rowEnd,
-          columnEnd,
-          color,
+        const { sheet, left, right } = token.data;
+        formulaReferences.push({
+          sheet: sheet ? sheetList.indexOf(sheet) : currentSheet,
+          rowStart: Math.min(left.row, right.row),
+          columnStart: Math.min(left.column, right.column),
+          rowEnd: Math.max(left.row, right.row),
+          columnEnd: Math.max(left.column, right.column),
+          start: start + 1,
+          end: end + 1,
         });
-      } else {
-        const txt = escapeHTML(formula.slice(start, end));
-        html = `${html}<span>${txt}</span>`;
       }
     }
-    if (tokenCount > 0) {
-      const lastToken = tokens[tokens.length - 1];
-      if (lastToken.end < text.length - 1) {
-        html = `${html}<span>${text.slice(lastToken.end + 1, text.length)}</span>`;
-      }
-    }
-    html = `<span>=</span>${html}`;
-  } else {
-    html = `<span>${escapeHTML(text)}</span>`;
   }
-  // We add a clickable element that spans the rest of the available space
-  html = `${html}<span style="flex-grow: 1;"></span>`;
-  return { html, activeRanges };
+  return formulaReferences;
+}
+
+export type ColoredFormulaReference = FormulaReference & { color: string };
+export function getColoredReferences(
+  formulaReferences: FormulaReference[],
+): ColoredFormulaReference[] {
+  return formulaReferences.reduce<{
+    result: ColoredFormulaReference[];
+    usedColors: Record<string, string>;
+  }>(
+    ({ result, usedColors }, currentFormulaReference) => {
+      const { start, end, ...restOfFormula } = currentFormulaReference;
+      const key = JSON.stringify(restOfFormula);
+      let color = usedColors[key];
+      if (!color) {
+        color = getColor(Object.keys(usedColors).length);
+      }
+      return {
+        result: [...result, { ...currentFormulaReference, color }],
+        usedColors: { ...usedColors, [key]: color },
+      };
+    },
+    { result: [], usedColors: {} },
+  ).result;
 }

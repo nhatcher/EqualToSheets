@@ -63,6 +63,11 @@ export interface ICell {
    */
   set formula(formula: string | null);
   /**
+   * Sets user input in cell, eg.: `=A2*3`, `23`, `$23`, handles conversion to correct types.
+   * @throws {@link CalcError} will throw if input is not valid
+   */
+  set input(input: string);
+  /**
    * Deletes cell content along with it's properties (including style).
    */
   delete(): void;
@@ -214,6 +219,15 @@ export class Cell implements ICell {
       } else {
         this._wasmWorkbook.updateCellWithText(this._sheet.index, this._row, this._column, '');
       }
+      this._wasmWorkbook.evaluate();
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  set input(input: string) {
+    try {
+      this._wasmWorkbook.setUserInput(this._sheet.index, this._row, this._column, input);
       this._wasmWorkbook.evaluate();
     } catch (error) {
       throw wrapWebAssemblyError(error);

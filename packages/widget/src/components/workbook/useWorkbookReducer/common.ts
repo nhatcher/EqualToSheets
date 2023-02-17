@@ -98,6 +98,7 @@ type EditPointerDownAction = {
   type: WorkbookActionType.EDIT_POINTER_DOWN;
   payload: {
     cell: Cell;
+    currentValue: string;
   };
 };
 

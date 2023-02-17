@@ -698,14 +698,11 @@ export default class Model {
       },
     ]);
     this.history.redo = [];
+    // FIXME: For some reason input doesn't work with formulas.
     if (value.startsWith('=')) {
       this.workbook.cell(sheet, row, column).formula = value;
-    } else if (['true', 'false'].includes(value.toLowerCase())) {
-      this.workbook.cell(sheet, row, column).value = value.toLowerCase() === 'true';
-    } else if (value.length > 0 && !Number.isNaN(value)) {
-      this.workbook.cell(sheet, row, column).value = Number.parseFloat(value);
     } else {
-      this.workbook.cell(sheet, row, column).value = value;
+      this.workbook.cell(sheet, row, column).input = value;
     }
     this.notifySubscribers({ type: 'setCellValue' });
   }

@@ -246,15 +246,6 @@ export function isEditingKey(key: string): boolean {
 
 // /  Common types
 
-export interface SheetArea {
-  sheet: number;
-  color: string;
-  rowStart: number;
-  rowEnd: number;
-  columnStart: number;
-  columnEnd: number;
-}
-
 export interface Area {
   rowStart: number;
   rowEnd: number;
@@ -309,7 +300,6 @@ export interface CellEditingType {
   text: string;
   base: string;
   mode: CellEditMode;
-  activeRanges: SheetArea[];
   focus: FocusType;
 }
 

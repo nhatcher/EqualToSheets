@@ -260,6 +260,20 @@ impl WasmWorkbook {
             .map_err(JsError::from)
     }
 
+    #[wasm_bindgen(js_name = "setUserInput")]
+    pub fn set_user_input(
+        &mut self,
+        sheet: i32,
+        row: i32,
+        column: i32,
+        input: String,
+    ) -> Result<(), JsError> {
+        self.model
+            .set_user_input(sheet.try_into().unwrap(), row, column, input);
+        // FIXME: set_user_input should return result
+        Ok(())
+    }
+
     #[wasm_bindgen(js_name = "setCellEmpty")]
     pub fn set_cell_empty(&mut self, sheet: i32, row: i32, column: i32) -> Result<(), JsError> {
         self.model

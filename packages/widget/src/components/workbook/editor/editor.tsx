@@ -1,35 +1,51 @@
 import styled, { css } from 'styled-components';
-import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
+import React, { Fragment, FunctionComponent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { palette } from 'src/theme';
 import useEditorKeyDown from './useEditorKeyDown';
 import { useWorkbookContext } from '../workbookContext';
 import { FocusType } from '../util';
+import {
+  ColoredFormulaReference,
+  getColoredReferences,
+  getReferencesFromFormula,
+} from '../formulas';
 
 export enum EditorPageTestId {
   FormulaEditor = 'workbook-editor-formula-editor',
 }
 
-function formulaToHTML(formula: string) {
-  return formula
-    .split('')
-    .map((char: string, index: number) =>
-      index % 2 === 0
-        ? `<span style="color:red;">${char}</span>`
-        : `<span style="color:blue;">${char}</span>`,
-    )
-    .join('');
-}
-
 const Editor: FunctionComponent<{
   display: boolean;
+  onReferencesChanged: (references: ColoredFormulaReference[]) => void;
 }> = (properties) => {
-  const { model, editorActions, editorState, formulaBarEditor, cellInput } = useWorkbookContext();
+  const { onReferencesChanged } = properties;
+  const { model, editorActions, editorState, formulaBarEditor, cellInput, formulaBarInput } =
+    useWorkbookContext();
   const { selectedSheet, selectedCell, cellEditing } = editorState;
   const { onEditEscape } = editorActions;
+
   const [text, setText] = useState('');
-  const html = formulaToHTML(text);
-  const barInputRef = useRef<HTMLInputElement>(null);
+
+  const formulaReferences = getReferencesFromFormula(
+    text,
+    selectedSheet,
+    model?.getTabs().map((tab) => tab.name) ?? [],
+    model?.getTokens ?? (() => []),
+  );
+  const coloredReferences = getColoredReferences(formulaReferences);
+
+  // Sync references with canvas
+  const coloredReferencesJson = useRef(JSON.stringify(coloredReferences));
+  useEffect(() => {
+    const currentJson = JSON.stringify(coloredReferences);
+    if (coloredReferencesJson.current !== currentJson) {
+      coloredReferencesJson.current = currentJson;
+      onReferencesChanged(coloredReferences);
+    }
+  }, [coloredReferences, onReferencesChanged]);
+
+  const styledFormula = styleFormula(text, coloredReferences);
 
   useEffect(() => {
     const formula =
@@ -49,10 +65,10 @@ const Editor: FunctionComponent<{
       if (cellEditing.focus === FocusType.Cell) {
         cellInput.current?.focus();
       } else {
-        barInputRef.current?.focus();
+        formulaBarInput.current?.focus();
       }
     }
-  }, [cellEditing, cellInput]);
+  }, [cellEditing, cellInput, formulaBarInput]);
 
   const cellEditorKeyDown = useEditorKeyDown({
     onEditEnd,
@@ -64,7 +80,7 @@ const Editor: FunctionComponent<{
   return (
     <>
       <CellEditorContainer $display={properties.display}>
-        <MaskContainer dangerouslySetInnerHTML={{ __html: html }} />
+        <MaskContainer>{styledFormula}</MaskContainer>
         <input
           ref={cellInput}
           spellCheck="false"
@@ -76,9 +92,9 @@ const Editor: FunctionComponent<{
       {formulaBarEditor.current
         ? createPortal(
             <CellEditorContainer $display>
-              <MaskContainer dangerouslySetInnerHTML={{ __html: html }} />
+              <MaskContainer>{styledFormula}</MaskContainer>
               <input
-                ref={barInputRef}
+                ref={formulaBarInput}
                 onFocus={() => {
                   if (!cellEditing) {
                     editorActions.onFormulaEditStart();
@@ -98,6 +114,30 @@ const Editor: FunctionComponent<{
 };
 
 export default Editor;
+
+function styleFormula(formula: string, coloredReferences: ColoredFormulaReference[]) {
+  const nodes = [];
+  let currentIndex = 0;
+  coloredReferences.forEach((reference) => {
+    const { start, end, color } = reference;
+    const key = JSON.stringify(reference);
+    if (reference.start !== currentIndex) {
+      nodes.push(<Fragment key={`${key}-prefix`}>{formula.slice(currentIndex, start)}</Fragment>);
+    }
+    nodes.push(
+      <span key={key} style={{ color }}>
+        {formula.slice(start, end)}
+      </span>,
+    );
+    currentIndex = end;
+  });
+  if (currentIndex < formula.length) {
+    nodes.push(
+      <Fragment key="formula-suffix">{formula.slice(currentIndex, formula.length)}</Fragment>,
+    );
+  }
+  return nodes;
+}
 
 const EditorFontCSS = css`
   line-height: 22px;

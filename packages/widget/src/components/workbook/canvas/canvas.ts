@@ -12,16 +12,11 @@ import {
   headerTextColor,
   outlineColor,
 } from '../constants';
+import { ColoredFormulaReference } from '../formulas';
 
 import Model, { CellStyle } from '../model';
 
-import {
-  CellEditingType,
-  columnNameFromNumber,
-  ScrollPosition,
-  SheetArea,
-  StateSettings,
-} from '../util';
+import { CellEditingType, columnNameFromNumber, ScrollPosition, StateSettings } from '../util';
 
 export const headerRowHeight = 24;
 export const headerColumnWidth = 30;
@@ -70,6 +65,8 @@ interface CellCoordinates {
 }
 
 export default class WorksheetCanvas {
+  activeRanges: ColoredFormulaReference[];
+
   sheetWidth: number;
 
   sheetHeight: number;
@@ -115,6 +112,7 @@ export default class WorksheetCanvas {
   constructor(options: CanvasSettings) {
     this.sheetWidth = 0;
     this.sheetHeight = 0;
+    this.activeRanges = [];
     this.state = options.state;
     const { model } = options;
     this.selectedSheet = options.selectedSheet;
@@ -1167,9 +1165,9 @@ export default class WorksheetCanvas {
     context.clearRect(headerColumnWidth, 0, 1, canvas.height);
 
     // draw activeRanges
-    const activeRanges: SheetArea[] = [];
+    const activeRanges: ColoredFormulaReference[] = [];
     if (this.cellEditing) {
-      for (const range of this.cellEditing.activeRanges) {
+      for (const range of this.activeRanges) {
         if (range.sheet === this.selectedSheet) {
           activeRanges.push(range);
         }
