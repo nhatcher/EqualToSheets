@@ -12,6 +12,9 @@ use equalto_calc::{
 #[cfg(feature = "xlsx")]
 use equalto_xlsx::import::load_xlsx_from_memory;
 
+#[cfg(feature = "xlsx")]
+use equalto_xlsx::export::save_xlsx_to_writer;
+
 use crate::error::WorkbookError;
 
 #[wasm_bindgen]
@@ -77,6 +80,23 @@ impl WasmWorkbook {
         let model = load_xlsx_from_memory("workbook", data, locale, timezone, env)
             .map_err(WorkbookError::from)?;
         Ok(WasmWorkbook { model })
+    }
+
+    #[wasm_bindgen(js_name=saveToMemory)]
+    #[cfg(feature = "xlsx")]
+    pub fn save_xlsx_to_memory(&self) -> Result<js_sys::Uint8Array, JsError> {
+        use js_sys::Uint8Array;
+        use std::io::Cursor;
+
+        let memory_buffer = Vec::new();
+        let memory_writer = Cursor::new(memory_buffer);
+        let memory_writer = save_xlsx_to_writer(&self.model, memory_writer)?;
+        let memory_buffer = memory_writer.into_inner();
+
+        let byte_array = Uint8Array::new_with_length(memory_buffer.len() as u32);
+        byte_array.copy_from(&memory_buffer);
+
+        Ok(byte_array)
     }
 
     pub fn evaluate(&mut self) -> Result<(), JsError> {

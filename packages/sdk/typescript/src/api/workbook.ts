@@ -42,6 +42,10 @@ export interface IWorkbook {
    * @throws {@link CalcError} thrown if reference isn't valid.
    */
   cell(sheet: number, row: number, column: number): ICell;
+  /**
+   * @returns Uint8Buffer containing XLSX data.
+   */
+  saveToXlsx(): Uint8Array;
 }
 
 export class Workbook implements IWorkbook {
@@ -86,5 +90,9 @@ export class Workbook implements IWorkbook {
     }
 
     throw new CalcError('Function Workbook.cell received unexpected parameters.');
+  }
+
+  saveToXlsx(): Uint8Array {
+    return this._wasmWorkbook.saveToMemory();
   }
 }

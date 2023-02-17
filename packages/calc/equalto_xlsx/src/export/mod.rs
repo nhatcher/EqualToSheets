@@ -9,7 +9,10 @@ mod worksheets;
 mod xml_constants;
 
 use std::io::BufWriter;
-use std::{fs, io::Write};
+use std::{
+    fs,
+    io::{Seek, Write},
+};
 
 use equalto_calc::expressions::utils::number_to_column;
 use equalto_calc::model::Model;
@@ -52,13 +55,19 @@ fn get_content_types_xml(workbook: &Workbook) -> String {
 
 /// Exports a model to an xlsx file
 pub fn save_to_xlsx(model: &Model, file_name: &str) -> Result<(), XlsxError> {
-    let workbook = &model.workbook;
     let file_path = std::path::Path::new(&file_name);
     if file_path.exists() {
         return Err(XlsxError::IO(format!("file {} already exists", file_name)));
     }
     let file = fs::File::create(file_path).unwrap();
     let writer = BufWriter::new(file);
+    save_xlsx_to_writer(model, writer)?;
+
+    Ok(())
+}
+
+pub fn save_xlsx_to_writer<W: Write + Seek>(model: &Model, writer: W) -> Result<W, XlsxError> {
+    let workbook = &model.workbook;
     let mut zip = zip::ZipWriter::new(writer);
 
     let options =
@@ -116,9 +125,8 @@ pub fn save_to_xlsx(model: &Model, file_name: &str) -> Result<(), XlsxError> {
         )?;
     }
 
-    zip.finish()?;
-
-    Ok(())
+    let writer = zip.finish()?;
+    Ok(writer)
 }
 
 /// Exports an internal representation of a workbook into an equivalent EqualTo json format
