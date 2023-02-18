@@ -750,7 +750,6 @@ export default class WorksheetCanvas {
       cellOutline.style.overflowY = 'auto';
       cellOutline.style.width = 'auto';
       cellOutline.style.height = 'auto';
-      cellOutline.style.paddingRight = '5px';
     } else {
       // Reset CSS properties
       cellOutline.style.minWidth = '';
@@ -1180,16 +1179,11 @@ export default class WorksheetCanvas {
       const range = activeRanges[rangeIndex];
       const [xStart, yStart] = this.getCoordinatesByCell(range.rowStart, range.columnStart);
       const [xEnd, yEnd] = this.getCoordinatesByCell(range.rowEnd + 1, range.columnEnd + 1);
-      if (
-        ((xStart > 0 && xStart < this.sheetWidth) || (xEnd > 0 && xEnd < this.sheetWidth)) &&
-        ((yStart > 0 && yStart < this.sheetHeight) || (yEnd > 0 && yEnd < this.sheetHeight))
-      ) {
-        context.strokeStyle = range.color;
-        context.lineWidth = 1;
-        context.strokeRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
-        context.fillStyle = transparentize(0.9, range.color);
-        context.fillRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
-      }
+      context.strokeStyle = range.color;
+      context.lineWidth = 1;
+      context.strokeRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
+      context.fillStyle = transparentize(0.9, range.color);
+      context.fillRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
     }
     context.setLineDash([]);
     if (this.cellEditing && this.cellEditing.sheet !== this.selectedSheet) {

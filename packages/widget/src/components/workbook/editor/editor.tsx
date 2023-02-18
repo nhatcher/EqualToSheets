@@ -26,6 +26,8 @@ const Editor: FunctionComponent<{
   const { onEditEscape } = editorActions;
 
   const [text, setText] = useState('');
+  const cellInputMask = useRef<HTMLDivElement>(null);
+  const formulaBarMask = useRef<HTMLDivElement>(null);
 
   const formulaReferences = getReferencesFromFormula(
     text,
@@ -80,20 +82,26 @@ const Editor: FunctionComponent<{
   return (
     <>
       <CellEditorContainer $display={properties.display}>
-        <MaskContainer>{styledFormula}</MaskContainer>
+        <MaskContainer ref={cellInputMask}>{styledFormula}</MaskContainer>
         <input
           ref={cellInput}
           spellCheck="false"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={cellEditorKeyDown}
+          onScroll={() => {
+            if (cellInputMask.current && cellInput.current) {
+              cellInputMask.current.style.left = `-${cellInput.current.scrollLeft}px`;
+            }
+          }}
         />
       </CellEditorContainer>
       {formulaBarEditor.current
         ? createPortal(
             <CellEditorContainer $display>
-              <MaskContainer>{styledFormula}</MaskContainer>
+              <MaskContainer ref={formulaBarMask}>{styledFormula}</MaskContainer>
               <input
+                style={{ backgroundColor: 'transparent' }}
                 ref={formulaBarInput}
                 onFocus={() => {
                   if (!cellEditing) {
@@ -104,6 +112,11 @@ const Editor: FunctionComponent<{
                 value={text}
                 onChange={(event) => setText(event.target.value)}
                 onKeyDown={cellEditorKeyDown}
+                onScroll={() => {
+                  if (formulaBarMask.current && formulaBarInput.current) {
+                    formulaBarMask.current.style.left = `-${formulaBarInput.current.scrollLeft}px`;
+                  }
+                }}
               />
             </CellEditorContainer>,
             formulaBarEditor.current,
