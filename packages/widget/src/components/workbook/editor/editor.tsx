@@ -185,5 +185,6 @@ const CellEditorContainer = styled.div<{ $display: boolean }>`
 const MaskContainer = styled.div`
   position: absolute;
   pointer-events: none;
+  white-space: nowrap;
   ${EditorFontCSS}
 `;
