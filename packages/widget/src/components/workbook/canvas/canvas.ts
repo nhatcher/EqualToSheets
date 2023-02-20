@@ -1,4 +1,6 @@
 import { ICell } from '@equalto-software/calc';
+import isEqual from 'lodash/isEqual';
+import uniqWith from 'lodash/uniqWith';
 import { transparentize } from 'polished';
 import { fonts } from 'src/theme';
 import {
@@ -1173,10 +1175,21 @@ export default class WorksheetCanvas {
       }
     }
 
-    const activeRangeCount = activeRanges.length;
+    const uniqueActiveRanges = uniqWith(
+      activeRanges.map((range) => ({
+        rowStart: range.rowStart,
+        rowEnd: range.rowEnd,
+        columnStart: range.columnStart,
+        columnEnd: range.columnEnd,
+        color: range.color,
+      })),
+      isEqual,
+    );
+
+    const uniqueActiveRangesCount = uniqueActiveRanges.length;
     context.setLineDash([2, 2]);
-    for (let rangeIndex = 0; rangeIndex < activeRangeCount; rangeIndex += 1) {
-      const range = activeRanges[rangeIndex];
+    for (let rangeIndex = 0; rangeIndex < uniqueActiveRangesCount; rangeIndex += 1) {
+      const range = uniqueActiveRanges[rangeIndex];
       const [xStart, yStart] = this.getCoordinatesByCell(range.rowStart, range.columnStart);
       const [xEnd, yEnd] = this.getCoordinatesByCell(range.rowEnd + 1, range.columnEnd + 1);
       context.strokeStyle = range.color;
