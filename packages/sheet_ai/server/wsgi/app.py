@@ -50,6 +50,7 @@ def converse() -> WorkbookData:
         try:
             workbook_data = generate_workbook_data(prompt)
         except SheetAIError:
+            app.logger.exception("Workbook Not Found")
             raise abort(404, "Workbook Not Found")
 
     db.save_prompt_response(session_id, prompt, workbook_data)
