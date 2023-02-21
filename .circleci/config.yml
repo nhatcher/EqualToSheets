@@ -183,10 +183,16 @@ jobs:
 
   test-sheet-ai-server:
     docker:
-      - image: python:3.10
+      - image: rust:1.66.1-slim
     working_directory: ~/repo
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt -y --no-install-recommends upgrade
+            apt install --no-install-recommends -y make python3 pip
       - run:
           name: Prepare virtualenv
           command: make venv

@@ -16,6 +16,12 @@ def test_cell_repr(example_workbook: Workbook, reference: str) -> None:
     assert repr(cell) == f"<Cell: {reference}>"
 
 
+@pytest.mark.parametrize("reference", ["Sheet1!A1", "Sheet1!C42", "Second!AA7"])
+def test_cell_text_ref(example_workbook: Workbook, reference: str) -> None:
+    cell = example_workbook[reference]
+    assert cell.text_ref == reference
+
+
 def test_set_formula(empty_workbook: Workbook) -> None:
     sheet = empty_workbook.sheets[0]
 
@@ -171,6 +177,27 @@ def test_bool_value_error(cell: Cell, value: Any, error: str) -> None:
     cell.value = value
     with pytest.raises(WorkbookValueError, match=error):
         _ = cell.bool_value  # noqa: WPS122
+
+
+@pytest.mark.parametrize(
+    "input_value, value, formula, number_format",
+    [
+        ("foobar", "foobar", None, "general"),
+        ("4.2", 4.2, None, "general"),
+        ("7", 7, None, "general"),
+        ("=2+2*2", 6, "=2+2*2", "general"),
+        # TODO: The following could be improved
+        ("$3.00", "$3.00", None, "general"),  # should be recognized as a monetary value
+        ("$14,999.99", "$14,999.99", None, "general"),  # should be recognized as a monetary value
+        ("2.2032E13", 22032000000000, None, "general"),  # should use scientific notation formatting
+        ("1,000,000", "1,000,000", None, "general"),  # should be recognized as a number
+    ],
+)
+def test_set_user_input(cell: Cell, input_value: str, value: Any, formula: Any, number_format: str) -> None:
+    cell.set_user_input(input_value)
+    assert cell.value == value
+    assert cell.formula == formula
+    assert cell.style.format == number_format
 
 
 @pytest.mark.parametrize(

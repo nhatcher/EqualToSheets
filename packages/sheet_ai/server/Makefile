@@ -12,6 +12,7 @@ $(VENV_NAME)/bin/activate:
 	@test -d $(VENV_NAME) || python3 -m virtualenv --clear $(VENV_NAME)
 	${VENV_NAME}/bin/python -m pip install -r requirements.txt
 	${VENV_NAME}/bin/python -m pip install -r dev-requirements.txt
+	${VENV_NAME}/bin/python -m pip install ../../sdk/python
 	@touch $(VENV_NAME)/bin/activate
 
 tests: $(VENV_NAME)/bin/activate

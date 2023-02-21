@@ -3,8 +3,8 @@ version: "3"
 services:
   server:
     build:
-      context: ./server/
-      dockerfile: "Dockerfile"
+      context: ..
+      dockerfile: ./sheet_ai/server/Dockerfile
     volumes:
       - ./server/:/server
     env_file: ./server/wsgi/.env

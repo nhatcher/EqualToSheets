@@ -1,0 +1,8 @@
+Could not process completion
+
+Completion:
+|=INVALID()|
+
+Error:
+Generated workbook contains an error
+Sheet1!A1 ('=INVALID()'): Invalid function: INVALID

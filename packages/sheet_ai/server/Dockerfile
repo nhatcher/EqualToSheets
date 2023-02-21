@@ -1,13 +1,23 @@
-FROM python:3.10
+FROM rust:1.66.1-slim
 
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /server
 
-ADD requirements.txt /server
-RUN pip3 --default-timeout=300 install -r requirements.txt
+RUN apt-get update \
+  && apt-get -y upgrade \
+  && apt-get install -y --no-install-recommends python3 pip
 
-ADD . /server/
+# compile python SDK
+RUN mkdir /calc
+COPY ./calc /calc
+RUN mkdir /python_sdk
+COPY ./sdk/python /python_sdk
+RUN pip3 install /python_sdk
+RUN rm -rf /calc /python_sdk
+
+ADD ./sheet_ai/server /server/
+RUN pip3 --default-timeout=300 install -r requirements.txt
 
 EXPOSE 8000
 

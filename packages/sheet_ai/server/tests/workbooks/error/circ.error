@@ -1,0 +1,8 @@
+Could not process completion
+
+Completion:
+|=A1|
+
+Error:
+Generated workbook contains an error
+Sheet1!A1 ('=A1'): Circular reference detected

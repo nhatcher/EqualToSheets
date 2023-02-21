@@ -40,8 +40,7 @@ class Cell:
         return self._model.get_formatted_cell_value(*self.cell_ref)
 
     def __repr__(self) -> str:
-        column_repr = number_to_column(self.column)
-        return f"<Cell: {self.sheet.name}!{column_repr}{self.row}>"
+        return f"<Cell: {self.text_ref}>"
 
     @property
     def type(self) -> CellType:
@@ -128,6 +127,16 @@ class Cell:
         self._model.update_cell_with_formula(*self.cell_ref, formula)
         self._model.evaluate()
 
+    def set_user_input(self, value: str) -> None:
+        """
+        Update the cell emulating a user typing something in Excel.
+
+        Receives a string representation of the value and attempts to guess the correct
+        type and style/formatting.
+        """
+        self._model.set_user_input(*self.cell_ref, value)
+        self._model.evaluate()
+
     @property
     def style(self) -> Style:
         return Style(self)
@@ -143,6 +152,11 @@ class Cell:
     @property
     def cell_ref(self) -> tuple[int, int, int]:
         return self.sheet.index, self.row, self.column
+
+    @property
+    def text_ref(self) -> str:
+        column_repr = number_to_column(self.column)
+        return f"{self.sheet.name}!{column_repr}{self.row}"
 
     @cached_property
     def _model(self) -> PyCalcModel:

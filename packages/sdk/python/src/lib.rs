@@ -159,6 +159,11 @@ impl PyModel {
             .map_err(WorkbookError::new_err)
     }
 
+    pub fn set_user_input(&mut self, sheet: i32, row: i32, column: i32, value: String) {
+        let sheet: u32 = sheet.try_into().unwrap();
+        self.model.set_user_input(sheet, row, column, value)
+    }
+
     pub fn get_timezone(&self) -> PyResult<String> {
         Ok(self.model.tz.to_string())
     }
