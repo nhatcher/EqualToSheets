@@ -3,15 +3,22 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from functools import cache
+from hashlib import md5
 from typing import Any
 
 from pymongo import ASCENDING, IndexModel, MongoClient
 from pymongo.database import Database
 
-import sheet_ai
+from sheet_ai.completion import MODEL, PREAMBLE, TEMPERATURE
 from sheet_ai.workbook import WorkbookData
 
 MONGODB_URI = os.getenv("MONGODB_URI")
+
+COMPLETION_PARAMETERS = {
+    "model": MODEL,
+    "temperature": TEMPERATURE,
+    "preamble_md5": md5(PREAMBLE.encode("utf-8"), usedforsecurity=False).hexdigest(),
+}
 
 
 @cache
@@ -23,7 +30,7 @@ def _get_db() -> Database[dict[str, Any]]:
     db.prompt.create_indexes(
         [
             IndexModel([("session_id", ASCENDING)]),
-            IndexModel([("prompt", ASCENDING), ("sheet_ai_version", ASCENDING)]),
+            IndexModel([("prompt", ASCENDING), ("completion_parameters", ASCENDING)]),
         ],
     )
 
@@ -42,8 +49,8 @@ def get_prompt_response(prompt: list[str]) -> WorkbookData | None:
     document = _get_db().prompt.find_one(
         {
             "prompt": prompt,
-            # limit responses to completions using the current version
-            "sheet_ai_version": sheet_ai.__version__,
+            # limit responses to completions using the current settings
+            "completion_parameters": COMPLETION_PARAMETERS,
         },
     )
     if not document:
@@ -57,7 +64,7 @@ def save_prompt_response(session_id: str, prompt: list[str], workbook: WorkbookD
             "session_id": session_id,
             "prompt": prompt,
             "workbook": workbook,
-            "sheet_ai_version": sheet_ai.__version__,
+            "completion_parameters": COMPLETION_PARAMETERS,
         },
         update={"$setOnInsert": {"create_date": datetime.utcnow()}},
         upsert=True,

@@ -11,6 +11,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 DEFAULT_RETRIES = 5
 
+MODEL = "text-davinci-003"
 TEMPERATURE = 0.5
 MAX_TOKENS = 4000
 PREAMBLE = (Path(__file__).resolve().parent / "preamble").read_text()
@@ -25,7 +26,7 @@ def _create_completion(query: str, max_tokens: int, retries: int) -> str:
     try:
         return (
             openai.Completion.create(
-                model="text-davinci-003",
+                model=MODEL,
                 prompt=query,
                 temperature=TEMPERATURE,
                 max_tokens=max_tokens,
