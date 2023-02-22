@@ -1,19 +1,52 @@
-import {
-  UserMessageBubble,
-  SystemMessageBubble,
-  SystemMessageThread,
-} from './components/messageBubbles';
-import styled from 'styled-components/macro';
-import { PromptEditor } from './components/promptEditor';
-import { useCallback, useRef, useState } from 'react';
-import { sendMessage } from './serverApi';
-import { ConversationEntry } from './types';
-import { CircularSpinner } from './components/circularSpinner';
 import * as Workbook from '@equalto-software/spreadsheet';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { saveAs } from 'file-saver';
 import { Download } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import styled from 'styled-components/macro';
+import { CircularSpinner } from './components/circularSpinner';
+import {
+  ErrorMessageBubble,
+  SystemMessageBubble,
+  SystemMessageThread,
+  UserMessageBubble,
+} from './components/messageBubbles';
+import { PromptEditor } from './components/promptEditor';
+import { ConversationEntry } from './types';
+import { useSessionCookie } from './useSessionCookie';
+
+const queryClient = new QueryClient();
 
 function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ChatRoot />
+    </QueryClientProvider>
+  );
+}
+
+function ChatRoot() {
+  const sessionCookie = useSessionCookie();
+
+  if (sessionCookie === 'loading') {
+    return null;
+  } else if (sessionCookie === 'set') {
+    return <AppContent />;
+  } else if (sessionCookie === 'rate-limited') {
+    // TODO: Nicer layout
+    return (
+      <div>{'Rate limit for your IP has been reached. Please try again later.'}</div>
+    );
+  } else if (sessionCookie === 'error') {
+    // TODO: Nicer layout
+    return <div>{'Could not connect to the chat service. Please try again later.'}</div>;
+  } else {
+    const impossibleResult: never = sessionCookie;
+    throw new Error(`Session cookie has unknown state: ${impossibleResult}`);
+  }
+}
+
+function AppContent() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
@@ -30,23 +63,70 @@ function App() {
 
   const handleMessageSend = useCallback(
     async (prompt: string) => {
+      const newMessage = {
+        source: 'user' as const,
+        text: prompt,
+        hasFailed: false,
+      };
+
+      const newMessages: ConversationEntry[] = [...conversation, newMessage];
+      setPendingMessage(prompt);
+      scrollToBottom();
+
       try {
-        const newMessages: ConversationEntry[] = [
-          ...conversation,
-          {
-            source: 'user',
-            text: prompt,
+        const formData = new FormData();
+        formData.append(
+          'prompt',
+          JSON.stringify(
+            newMessages
+              .filter((entry) => entry.source === 'user' && !entry.hasFailed)
+              .map((entry) => entry.text),
+          ),
+        );
+
+        const fetchResponse = await fetch('/converse', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
           },
-        ];
-
-        setPendingMessage(prompt);
-        scrollToBottom();
-
-        const response = await sendMessage(newMessages);
-        newMessages.push({
-          source: 'server',
-          data: response.data,
+          body: formData,
         });
+
+        if (!fetchResponse.ok) {
+          let error: Extract<ConversationEntry, { source: 'server-error' }>;
+          if (fetchResponse.status === 400) {
+            error = {
+              source: 'server-error',
+              text: 'Your request could not be processed. Please try again.',
+            };
+          } else if (fetchResponse.status === 404) {
+            error = {
+              source: 'server-error',
+              text: 'Could not generate workbook for given prompt. Please try again.',
+            };
+          } else if (fetchResponse.status === 429) {
+            error = {
+              source: 'server-error',
+              text: 'Request quota has been exceeded. Thank you for trying us out!',
+            };
+          } else {
+            // 401 included here on purpose.
+            error = {
+              source: 'server-error',
+              text: 'An error has occurred. Please try again.',
+            };
+          }
+
+          setPendingMessage(null);
+          newMessage.hasFailed = true;
+          setConversation((currentMessages) => [...currentMessages, newMessage, error]);
+          return false;
+        }
+
+        const json = await fetchResponse.json();
+        const data = json as { input: string | number | boolean }[][];
+
+        newMessages.push({ source: 'server', data });
 
         setPendingMessage(null);
         setConversation(newMessages);
@@ -54,8 +134,18 @@ function App() {
 
         return true;
       } catch {
-        // TODO: Error handling
         setPendingMessage(null);
+
+        newMessage.hasFailed = true;
+        setConversation((currentMessages) => [
+          ...currentMessages,
+          newMessage,
+          {
+            source: 'server-error',
+            text: 'Could not communicate with the server, please try again later.',
+          },
+        ]);
+
         return false;
       }
     },
@@ -74,7 +164,9 @@ function App() {
               {pendingMessage !== null && (
                 <>
                   <UserMessageBubble $pending>{pendingMessage}</UserMessageBubble>
-                  <CenteredCircularSpinner $color="#70D379" />
+                  <SpinnerContainer>
+                    <PositionedSpinner $color="#70D379" />
+                  </SpinnerContainer>
                 </>
               )}
             </Discussion>
@@ -125,20 +217,35 @@ const TopContainer = styled.div`
   border: 1px solid #d0d0d0;
 `;
 
-const CenteredCircularSpinner = styled(CircularSpinner)`
-  justify-self: center;
+const SpinnerContainer = styled.div`
+  position: relative;
   margin-top: 20px;
+  height: 85px;
+`;
+
+const PositionedSpinner = styled(CircularSpinner)`
+  position: absolute;
+  top: 0;
+  left: calc(50% - 40px);
 `;
 
 const ConversationMessageBlock = (properties: { entry: ConversationEntry }) => {
   const { entry } = properties;
 
   if (entry.source === 'user') {
-    return <UserMessageBubble>{entry.text}</UserMessageBubble>;
+    return <UserMessageBubble $hasFailed={entry.hasFailed}>{entry.text}</UserMessageBubble>;
   }
 
   if (entry.source === 'server') {
     return <ServerMessageBlock entry={entry} />;
+  }
+
+  if (entry.source === 'server-error') {
+    return (
+      <SystemMessageThread>
+        <ErrorMessageBubble>{entry.text}</ErrorMessageBubble>
+      </SystemMessageThread>
+    );
   }
 
   return null;
@@ -159,9 +266,8 @@ const ServerMessageBlock = (properties: {
         let row = entry.data[rowIndex];
         for (let columnIndex = 0; columnIndex < row.length; ++columnIndex) {
           const cell = row[columnIndex];
-          // @ts-ignore
           const input = cell['input'];
-          model.setCellValue(0, rowIndex + 1, columnIndex + 1, removeFormatting(input));
+          model.setCellValue(0, rowIndex + 1, columnIndex + 1, removeFormatting(`${input}`));
         }
       }
       setModel(model);

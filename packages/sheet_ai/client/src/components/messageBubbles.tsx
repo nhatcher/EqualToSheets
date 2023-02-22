@@ -1,8 +1,8 @@
 import { PropsWithChildren } from 'react';
-import styled from 'styled-components/macro';
+import styled, { css } from 'styled-components/macro';
 import { ReactComponent as EqualToMessageLogo } from './equaltoMessageLogo.svg';
 
-export const UserMessageBubble = styled.div<{ $pending?: boolean }>`
+export const UserMessageBubble = styled.div<{ $pending?: boolean; $hasFailed?: boolean }>`
   padding: 10px;
   white-space: pre-wrap;
   word-break: break-word;
@@ -12,6 +12,14 @@ export const UserMessageBubble = styled.div<{ $pending?: boolean }>`
   max-width: 500px;
   justify-self: end;
   opacity: ${({ $pending }) => ($pending ? 0.75 : 1)};
+
+  ${({ $hasFailed }) =>
+    $hasFailed
+      ? css`
+          opacity: 0.95;
+          text-decoration: line-through;
+        `
+      : ''}
 `;
 
 export const SystemMessageBubble = styled.div`
@@ -20,6 +28,16 @@ export const SystemMessageBubble = styled.div`
   word-break: break-word;
   border-radius: 0 10px 10px 10px;
   background: #dee0ee;
+  color: #292c42;
+  max-width: 500px;
+`;
+
+export const ErrorMessageBubble = styled.div`
+  padding: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-radius: 0 10px 10px 10px;
+  background: #e06276;
   color: #292c42;
   max-width: 500px;
 `;
