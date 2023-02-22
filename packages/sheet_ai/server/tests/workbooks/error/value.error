@@ -1,0 +1,8 @@
+Could not process completion
+
+Completion:
+|foo|$3.00|=A1+B1|
+
+Error:
+Encountered formula resulting in #VALUE!
+Sheet1!C1=A1+B1

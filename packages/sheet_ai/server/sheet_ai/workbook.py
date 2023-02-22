@@ -65,14 +65,16 @@ def _process_completion(completion: str) -> WorkbookData:
 
     for row, col, cell_input in _get_workbook_data_iter(workbook_data):
         cell = sheet.cell(row, col)
-        # TODO: Once we fix number parsing, we should also raise an error when there are #VALUE! cells
+        if cell.formula and cell.value in {"#VALUE!", "#REF!", "#NAME?"}:
+            raise WorkbookProcessingError(
+                f"Encountered formula resulting in {cell.value}\n{cell.text_ref}{cell.formula}",
+            )
+
         new_cell_input = cell.formula or cell.value
         assert new_cell_input is None or isinstance(new_cell_input, (float, bool, str))
         cell_input["input"] = new_cell_input
 
         num_fmt = cell.style.format
-        # TODO: if `num_fmt` is "general" then we should see if the cell contains a formula and whether
-        #       we can use a more accurate formatting based on the cells it references
         if num_fmt != "general":
             cell_input.setdefault("style", {})
             cell_input["style"]["num_fmt"] = num_fmt
