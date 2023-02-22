@@ -6,6 +6,7 @@ import { Download } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components/macro';
 import { CircularSpinner } from './components/circularSpinner';
+import { DynamicMainLayout } from './components/dynamicMainLayout';
 import {
   ErrorMessageBubble,
   SystemMessageBubble,
@@ -13,7 +14,8 @@ import {
   UserMessageBubble,
 } from './components/messageBubbles';
 import { PromptEditor } from './components/promptEditor';
-import { ConversationEntry } from './types';
+import { TopBar } from './components/topBar';
+import { ConversationEntry, ServerResponse } from './types';
 import { useSessionCookie } from './useSessionCookie';
 
 const queryClient = new QueryClient();
@@ -21,10 +23,34 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ChatRoot />
+      <RootLayout>
+        <TopBar />
+        <DynamicMainLayout
+          mainContent={<ChatRoot />}
+          sideContent={
+            <div>
+              <p>
+                <strong>Serverless Spreadsheets</strong>
+              </p>
+              <p>
+                EqualTo Chat was built with our serverless spreadsheet tech, and leverages GPT-3
+                learning models.
+              </p>
+              {/* TODO: Sign up form. */}
+            </div>
+          }
+        />
+      </RootLayout>
     </QueryClientProvider>
   );
 }
+
+const RootLayout = styled.div`
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+`;
 
 function ChatRoot() {
   const sessionCookie = useSessionCookie();
@@ -116,7 +142,7 @@ function AppContent() {
         }
 
         const json = await fetchResponse.json();
-        const data = json as { input: string | number | boolean }[][];
+        const data = json as ServerResponse;
 
         newMessages.push({ source: 'server', id: uniqueId(), data });
 
@@ -150,30 +176,38 @@ function AppContent() {
   }, []);
 
   return (
-    <div>
-      <TopContainer>
-        <ChatWidget>
-          <DiscussionView ref={discussionViewRef}>
-            <Discussion>
-              {conversation.map((entry, index) => (
-                <ConversationMessageBlock key={index} entry={entry} onModelCreate={onModelCreate} />
-              ))}
-              {pendingMessage !== null && (
-                <>
-                  <UserMessageBubble $pending>{pendingMessage}</UserMessageBubble>
-                  <SpinnerContainer>
-                    <PositionedSpinner $color="#70D379" />
-                  </SpinnerContainer>
-                </>
-              )}
-            </Discussion>
-          </DiscussionView>
-          <DiscussionFooter>
-            <PromptEditor onSubmit={handleMessageSend} />
-          </DiscussionFooter>
-        </ChatWidget>
-      </TopContainer>
-    </div>
+    <ChatWidget>
+      <DiscussionView ref={discussionViewRef}>
+        <Discussion>
+          {conversation.map((entry, index) => (
+            <ConversationMessageBlock key={index} entry={entry} onModelCreate={onModelCreate} />
+          ))}
+          {pendingMessage !== null && (
+            <>
+              <UserMessageBubble $pending>{pendingMessage}</UserMessageBubble>
+              <SpinnerContainer>
+                <PositionedSpinner $color="#70D379" />
+              </SpinnerContainer>
+            </>
+          )}
+        </Discussion>
+      </DiscussionView>
+      <DiscussionFooter>
+        <PromptEditor onSubmit={handleMessageSend} />
+        <LinksFooter>
+          {/* eslint-disable-next-line react/jsx-no-target-blank */}
+          <a href="https://www.equalto.com/" target="_blank">
+            equalto.com
+          </a>
+          <LinksDivider />
+          {/* TODO: Replace with valid link. */}
+          {/* eslint-disable-next-line react/jsx-no-target-blank */}
+          <a href="https://www.equalto.com/" target="_blank">
+            Terms and Conditions
+          </a>
+        </LinksFooter>
+      </DiscussionFooter>
+    </ChatWidget>
   );
 }
 
@@ -246,12 +280,6 @@ const DiscussionFooter = styled.div`
   padding: 0 20px 20px 20px;
 `;
 
-const TopContainer = styled.div`
-  margin: 20px 20px;
-  height: 600px;
-  border: 1px solid #d0d0d0;
-`;
-
 const SpinnerContainer = styled.div`
   position: relative;
   margin-top: 20px;
@@ -262,6 +290,19 @@ const PositionedSpinner = styled(CircularSpinner)`
   position: absolute;
   top: 0;
   left: calc(50% - 40px);
+`;
+
+const LinksFooter = styled.div`
+  display: flex;
+  justify-content: center;
+  font-size: 9px;
+  margin-top: 10px;
+`;
+
+const LinksDivider = styled.span`
+  height: 10px;
+  border-left: 1px solid #f1f2f8;
+  margin: 0 10px;
 `;
 
 const ConversationMessageBlock = (properties: {
@@ -295,8 +336,11 @@ const ServerMessageBlock = (properties: {
 }) => {
   const { entry, onModelCreate: onModelCreateFromProperties } = properties;
 
-  const COLUMNS = 10;
-  const ROWS = 10;
+  const sizeRef = useRef({
+    columns: entry.data.length > 0 ? entry.data[0].length : 0,
+    rows: entry.data.length,
+  });
+  const { columns, rows } = sizeRef.current;
 
   const [model, setModel] = useState<Workbook.Model | null>(null);
   const onModelCreate = useCallback(
@@ -305,6 +349,14 @@ const ServerMessageBlock = (properties: {
         let row = entry.data[rowIndex];
         for (let columnIndex = 0; columnIndex < row.length; ++columnIndex) {
           const cell = row[columnIndex];
+
+          // TODO: Widget doesn't support bold rendering I think
+          // HACK: Inversed order to apply style and then cause redraw
+          if (cell.style?.bold) {
+            const uiCell = model.getUICell(0, rowIndex + 1, columnIndex + 1);
+            uiCell.style.font.bold = true;
+          }
+
           const input = cell['input'];
           model.setCellValue(0, rowIndex + 1, columnIndex + 1, removeFormatting(`${input}`));
         }
@@ -327,14 +379,17 @@ const ServerMessageBlock = (properties: {
 
   return (
     <SystemMessageThread>
-      <div style={{ height: ROWS * 24 + 74, overflow: 'visible' }}>
-        <WorkbookRoot lastRow={COLUMNS + 10} lastColumn={ROWS + 10} onModelCreate={onModelCreate}>
+      <div style={{ height: Math.min(rows, 10) * 24 + 74, overflow: 'visible' }}>
+        <WorkbookRoot lastRow={rows + 10} lastColumn={columns + 10} onModelCreate={onModelCreate}>
           <Workbook.FormulaBar />
           <Worksheet />
         </WorkbookRoot>
       </div>
       <DownloadButton disabled={model === null} type="button" onClick={downloadXlsx}>
-        <Download size={18} />
+        <DownloadIconWrapper>
+          <Download size={10} />
+        </DownloadIconWrapper>
+        {'Download (.xlsx)'}
       </DownloadButton>
       {entry.text && <SystemMessageBubble>{entry.text}</SystemMessageBubble>}
     </SystemMessageThread>
@@ -352,21 +407,30 @@ function removeFormatting(text: string): string {
 }
 
 const DownloadButton = styled.button`
-  justify-self: right;
-  transition: background-color 0.2s ease-in-out;
   cursor: pointer;
-  background: #f8f8f8;
+
+  color: #8b8fad;
+  background: #f1f2f8;
+
+  transition: background-color 0.2s ease-in-out;
   &:hover {
     background: #d0d2f8;
   }
-  width: 30px;
-  height: 30px;
-  padding: 6px;
+
+  padding: 5px 10px;
   border-radius: 15px;
   border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 9px;
+  line-height: 12px;
+
+  justify-self: start;
+`;
+
+const DownloadIconWrapper = styled.div`
+  display: inline-block;
+  margin-right: 5px;
+  position: relative;
+  top: 1px;
 `;
 
 export default App;

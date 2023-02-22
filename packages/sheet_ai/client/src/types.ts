@@ -1,3 +1,8 @@
+export type ServerResponse = {
+  input: string | number | boolean;
+  style?: { bold?: boolean };
+}[][];
+
 export type ConversationEntry =
   | {
       source: 'user';
@@ -6,7 +11,7 @@ export type ConversationEntry =
     }
   | {
       source: 'server';
-      data: { input: string | number | boolean }[][];
+      data: ServerResponse;
       text?: string | null;
       id: string;
     }
