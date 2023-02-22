@@ -18,7 +18,8 @@
       "input": "Drilling Rig"
     },
     {
-      "input": "$50,000"
+      "input": 50000,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [
@@ -26,7 +27,8 @@
       "input": "Survey Equipment"
     },
     {
-      "input": "$20,000"
+      "input": 20000,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [
@@ -34,7 +36,8 @@
       "input": "Labor"
     },
     {
-      "input": "$15,000"
+      "input": 15000,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [

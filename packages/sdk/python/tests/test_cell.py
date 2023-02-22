@@ -186,18 +186,26 @@ def test_bool_value_error(cell: Cell, value: Any, error: str) -> None:
         ("4.2", 4.2, None, "general"),
         ("7", 7, None, "general"),
         ("=2+2*2", 6, "=2+2*2", "general"),
-        # TODO: The following could be improved
-        ("$3.00", "$3.00", None, "general"),  # should be recognized as a monetary value
-        ("$14,999.99", "$14,999.99", None, "general"),  # should be recognized as a monetary value
-        ("2.2032E13", 22032000000000, None, "general"),  # should use scientific notation formatting
-        ("1,000,000", "1,000,000", None, "general"),  # should be recognized as a number
+        ("2.2032E+13", 2.2032e13, None, "general"),
+        ("$3.00", 3, None, "$#,##0.00"),
+        ("$14,999.99", 14999.99, None, "$#,##0.00"),
+        ("1,000.00", 1000, None, "#,##0.00"),
+        ("75%", 0.75, None, "#,##0%"),
+        ("0.95%", 0.0095, None, "#,##0.00%"),
+        ("1,000", 1000, None, "#,##0"),
+        ("$1,444,999.99", 1444999.99, None, "$#,##0.00"),
+        ("1,000,000.00", 1000000, None, "#,##0.00"),
+        ("1,000,000", 1000000, None, "#,##0"),
+        ("1,234,567.89", 1234567.89, None, "#,##0.00"),
+        ("$42", 42, None, "$#,##0"),
     ],
 )
 def test_set_user_input(cell: Cell, input_value: str, value: Any, formula: Any, number_format: str) -> None:
     cell.set_user_input(input_value)
-    assert cell.value == value
+    assert pytest.approx(cell.value, abs=0.00001) == value
     assert cell.formula == formula
     assert cell.style.format == number_format
+    assert formula or str(cell) == input_value
 
 
 @pytest.mark.parametrize(

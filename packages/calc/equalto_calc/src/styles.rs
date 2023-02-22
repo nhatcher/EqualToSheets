@@ -171,6 +171,12 @@ impl Styles {
         self.get_style_index_or_create(&style)
     }
 
+    pub(crate) fn get_style_with_format(&mut self, index: i32, num_fmt: &str) -> i32 {
+        let mut style = self.get_style(index);
+        style.num_fmt = num_fmt.to_string();
+        self.get_style_index_or_create(&style)
+    }
+
     pub(crate) fn get_style_without_quote_prefix(&mut self, index: i32) -> i32 {
         let mut style = self.get_style(index);
         style.quote_prefix = false;

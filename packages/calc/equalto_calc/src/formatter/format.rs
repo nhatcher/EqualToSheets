@@ -427,3 +427,142 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
         }
     }
 }
+
+// FIXME: Right now the locale does not include a currency
+// The problem is that https://github.com/unicode-org/cldr-json does NOT include a currency
+// It does include all the names for currencies in the language
+// and the formatting of those currencies in that language
+
+/// Parses a formatted number, returning the numeric value together with the format
+/// "$ 123,345.678" => (123345.678, "$ #,##0.00")
+/// "30.34%" => (0.3034, "0.00%")
+/// 100€ => 100,
+pub(crate) fn parse_formatted_number(value: &str) -> Result<(f64, Option<String>), String> {
+    let currency = "$";
+    let currency_format_standard = "$#,##0";
+    let currency_format_standard_with_decimals = "$#,##0.00";
+    let percentage_format_standard = "#,##0%";
+    let percentage_format_with_decimals = "#,##0.00%";
+    let format_with_thousand_separator = "#,##0";
+    let format_with_thousand_separator_and_decimals = "#,##0.00";
+    let value = value.trim();
+    if let Some(p) = value.strip_suffix('%') {
+        let (f, options) = parse_number(p.trim())?;
+        // We ignore the separator
+        if options.decimal_digits > 0 {
+            return Ok((f / 100.0, Some(percentage_format_with_decimals.to_string())));
+        }
+        return Ok((f / 100.0, Some(percentage_format_standard.to_string())));
+    } else if let Some(p) = value.strip_prefix(currency) {
+        let (f, options) = parse_number(p.trim())?;
+        if options.decimal_digits > 0 {
+            return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
+        }
+        return Ok((f, Some(currency_format_standard.to_string())));
+    } else if let Some(p) = value.strip_suffix(currency) {
+        let (f, options) = parse_number(p.trim())?;
+        if options.decimal_digits > 0 {
+            return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
+        }
+        return Ok((f, Some(currency_format_standard.to_string())));
+    }
+    let (f, options) = parse_number(value)?;
+    if options.has_commas {
+        if options.decimal_digits > 0 {
+            return Ok((
+                f,
+                Some(format_with_thousand_separator_and_decimals.to_string()),
+            ));
+        }
+        return Ok((f, Some(format_with_thousand_separator.to_string())));
+    }
+    Ok((f, None))
+}
+
+#[allow(dead_code)]
+struct NumberOptions {
+    has_commas: bool,
+    is_scientific: bool,
+    decimal_digits: usize,
+}
+
+// tries to parse 'value' as a number.
+// If it is a number it either uses commas as thousands separator or it does not
+fn parse_number(value: &str) -> Result<(f64, NumberOptions), String> {
+    let mut position = 0;
+    let bytes = value.as_bytes();
+    let len = bytes.len();
+    let mut chars = String::from("");
+    let decimal_separator = b'.';
+    let group_separator = b',';
+    let mut group_separator_index = Vec::new();
+    // numbers before the decimal point
+    while position < len {
+        let x = bytes[position];
+        if x.is_ascii_digit() {
+            chars.push(x as char);
+        } else if x == group_separator {
+            group_separator_index.push(chars.len());
+        } else {
+            break;
+        }
+        position += 1;
+    }
+    // Check the group separator is in multiples of three
+    for index in &group_separator_index {
+        if (chars.len() - index) % 3 != 0 {
+            return Err("Cannot parse number".to_string());
+        }
+    }
+    let mut decimal_digits = 0;
+    if position < len && bytes[position] == decimal_separator {
+        // numbers after the decimal point
+        chars.push('.');
+        position += 1;
+        let start_position = 0;
+        while position < len {
+            let x = bytes[position];
+            if x.is_ascii_digit() {
+                chars.push(x as char);
+            } else {
+                break;
+            }
+            position += 1;
+        }
+        decimal_digits = position - start_position;
+    }
+    let mut is_scientific = false;
+    if position + 1 < len && (bytes[position] == b'e' || bytes[position] == b'E') {
+        // exponential side
+        is_scientific = true;
+        let x = bytes[position + 1];
+        if x == b'-' || x == b'+' || x.is_ascii_digit() {
+            chars.push('e');
+            chars.push(x as char);
+            position += 2;
+            while position < len {
+                let x = bytes[position];
+                if x.is_ascii_digit() {
+                    chars.push(x as char);
+                } else {
+                    break;
+                }
+                position += 1;
+            }
+        }
+    }
+    if position != len {
+        return Err("Could not parse number".to_string());
+    };
+    match chars.parse::<f64>() {
+        Err(_) => Err("Failed to parse to double".to_string()),
+        Ok(v) => Ok((
+            v,
+            NumberOptions {
+                has_commas: !group_separator_index.is_empty(),
+                is_scientific,
+                decimal_digits,
+            },
+        )),
+    }
+}

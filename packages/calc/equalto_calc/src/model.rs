@@ -23,7 +23,7 @@ use crate::{
         },
         utils::is_valid_column_number,
     },
-    formatter::format::format_number,
+    formatter::format::{format_number, parse_formatted_number},
     functions::util::compare_values,
     implicit_intersection::implicit_intersection,
     language::{get_language, Language},
@@ -983,6 +983,8 @@ impl Model {
 
     /// Sets a cell parametrized by (`sheet`, `row`, `column`) with `value`
     /// This mimics a user entering a value on a cell.
+    /// If you enter a currency `$100` it will set as a number and update the style
+    /// Note that for currencies/percentage there is only one possible style
     /// The value is always a string, so we need to try to cast it into numbers/booleans/errors
     pub fn set_user_input(&mut self, sheet: u32, row: i32, column: i32, value: String) {
         // If value starts with "'" then we force the style to be quote_prefix
@@ -1012,7 +1014,13 @@ impl Model {
                 let worksheets = &mut self.workbook.worksheets;
                 let worksheet = &mut worksheets[sheet as usize];
                 // We try to parse as number
-                if let Ok(v) = value.parse::<f64>() {
+                if let Ok((v, number_format)) = parse_formatted_number(&value) {
+                    if let Some(num_fmt) = number_format {
+                        new_style_index = self
+                            .workbook
+                            .styles
+                            .get_style_with_format(new_style_index, &num_fmt);
+                    }
                     worksheet.set_cell_with_number(row, column, v, new_style_index);
                     return;
                 }

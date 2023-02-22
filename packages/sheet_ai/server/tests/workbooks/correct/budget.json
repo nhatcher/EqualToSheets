@@ -18,7 +18,8 @@
       "input": "Rent"
     },
     {
-      "input": "$1500"
+      "input": 1500,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [
@@ -26,7 +27,8 @@
       "input": "Utilities"
     },
     {
-      "input": "$200"
+      "input": 200,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [
@@ -34,7 +36,8 @@
       "input": "Groceries"
     },
     {
-      "input": "$360"
+      "input": 360,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [
@@ -42,7 +45,8 @@
       "input": "Transportation"
     },
     {
-      "input": "$450"
+      "input": 450,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [
@@ -50,7 +54,8 @@
       "input": "Entertainment"
     },
     {
-      "input": "$120"
+      "input": 120,
+      "style": {"num_fmt": "$#,##0"}
     }
   ],
   [

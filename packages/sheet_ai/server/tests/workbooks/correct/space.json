@@ -30,7 +30,8 @@
       "input": "Mercury"
     },
     {
-      "input": "58,000,000"
+      "input": 58000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 2.2032e+13
@@ -44,7 +45,8 @@
       "input": "Venus"
     },
     {
-      "input": "108,000,000"
+      "input": 108000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 3.24859e+14
@@ -58,7 +60,8 @@
       "input": "Earth"
     },
     {
-      "input": "150,000,000"
+      "input": 150000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 3.986e+14
@@ -72,7 +75,8 @@
       "input": "Mars"
     },
     {
-      "input": "228,000,000"
+      "input": 228000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 4.2828e+13
@@ -86,7 +90,8 @@
       "input": "Jupiter"
     },
     {
-      "input": "778,000,000"
+      "input": 778000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 1.26686534e+17
@@ -100,7 +105,8 @@
       "input": "Saturn"
     },
     {
-      "input": "1,427,000,000"
+      "input": 1427000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 3.7931187e+16
@@ -114,7 +120,8 @@
       "input": "Uranus"
     },
     {
-      "input": "2,870,000,000"
+      "input": 2870000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 5.793939e+15
@@ -128,7 +135,8 @@
       "input": "Neptune"
     },
     {
-      "input": "4,500,000,000"
+      "input": 4500000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 6.836529e+15
@@ -142,7 +150,8 @@
       "input": "Pluto"
     },
     {
-      "input": "5,900,000,000"
+      "input": 5900000000,
+      "style": {"num_fmt": "#,##0"}
     },
     {
       "input": 8.71e+11
