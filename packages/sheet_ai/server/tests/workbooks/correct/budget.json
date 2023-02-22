@@ -55,10 +55,16 @@
   ],
   [
     {
-      "input": "Total"
+      "input": "Total",
+      "style": {
+        "bold": true
+      }
     },
     {
-      "input": "=SUM(B2:B6)"
+      "input": "=SUM(B2:B6)",
+      "style": {
+        "bold": true
+      }
     }
   ]
 ]

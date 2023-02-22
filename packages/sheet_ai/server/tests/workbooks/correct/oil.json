@@ -39,10 +39,16 @@
   ],
   [
     {
-      "input": "Total"
+      "input": "Total",
+      "style": {
+        "bold": true
+      }
     },
     {
-      "input": "=SUM(B2:B4)"
+      "input": "=SUM(B2:B4)",
+      "style": {
+        "bold": true
+      }
     }
   ]
 ]

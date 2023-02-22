@@ -104,6 +104,14 @@ def _get_initial_workbook_data(completion: str) -> WorkbookData:
     for row in workbook_data:
         row += [_get_empty_cell() for _ in range(max_row_len - len(row))]
 
+    # if the last row starts with "Total" cell, use style.bold = True in all cells in the row
+    last_row = workbook_data[-1]
+    first_cell = last_row[0]
+    if isinstance(first_cell["input"], str) and first_cell["input"].lower() == "total":
+        for cell in last_row:
+            cell.setdefault("style", {})
+            cell["style"]["bold"] = True
+
     return workbook_data
 
 

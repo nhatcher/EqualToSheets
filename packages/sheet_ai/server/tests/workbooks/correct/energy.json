@@ -69,16 +69,28 @@
   ],
   [
     {
-      "input": "Total"
+      "input": "Total",
+      "style": {
+        "bold": true
+      }
     },
     {
-      "input": ""
+      "input": "",
+      "style": {
+        "bold": true
+      }
     },
     {
-      "input": ""
+      "input": "",
+      "style": {
+        "bold": true
+      }
     },
     {
-      "input": "=SUM(D2:D4)"
+      "input": "=SUM(D2:D4)",
+      "style": {
+        "bold": true
+      }
     }
   ]
 ]
