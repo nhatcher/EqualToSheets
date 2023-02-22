@@ -7,6 +7,7 @@ export type { IWorkbook } from './api/workbook';
 export type { IWorkbookSheets } from './api/workbookSheets';
 export type { ISheet, NavigationDirection } from './api/sheet';
 export type { ICell } from './api/cell';
+export type { ICellStyle } from './api/style';
 export type { FormulaToken } from './api/utils';
 
 export { FormulaErrorCode } from './api/utils';

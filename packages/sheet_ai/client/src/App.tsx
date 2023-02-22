@@ -1,6 +1,7 @@
 import * as Workbook from '@equalto-software/spreadsheet';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { saveAs } from 'file-saver';
+import uniqueId from 'lodash/uniqueId';
 import { Download } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components/macro';
@@ -34,9 +35,7 @@ function ChatRoot() {
     return <AppContent />;
   } else if (sessionCookie === 'rate-limited') {
     // TODO: Nicer layout
-    return (
-      <div>{'Rate limit for your IP has been reached. Please try again later.'}</div>
-    );
+    return <div>{'Rate limit for your IP has been reached. Please try again later.'}</div>;
   } else if (sessionCookie === 'error') {
     // TODO: Nicer layout
     return <div>{'Could not connect to the chat service. Please try again later.'}</div>;
@@ -62,27 +61,20 @@ function AppContent() {
   );
 
   const handleMessageSend = useCallback(
-    async (prompt: string) => {
+    async (newPrompt: string) => {
       const newMessage = {
         source: 'user' as const,
-        text: prompt,
+        text: newPrompt,
         hasFailed: false,
       };
 
       const newMessages: ConversationEntry[] = [...conversation, newMessage];
-      setPendingMessage(prompt);
+      setPendingMessage(newPrompt);
       scrollToBottom();
 
       try {
         const formData = new FormData();
-        formData.append(
-          'prompt',
-          JSON.stringify(
-            newMessages
-              .filter((entry) => entry.source === 'user' && !entry.hasFailed)
-              .map((entry) => entry.text),
-          ),
-        );
+        formData.append('prompt', buildRequestData(newMessages, models.current));
 
         const fetchResponse = await fetch('/converse', {
           method: 'POST',
@@ -126,7 +118,7 @@ function AppContent() {
         const json = await fetchResponse.json();
         const data = json as { input: string | number | boolean }[][];
 
-        newMessages.push({ source: 'server', data });
+        newMessages.push({ source: 'server', id: uniqueId(), data });
 
         setPendingMessage(null);
         setConversation(newMessages);
@@ -152,6 +144,11 @@ function AppContent() {
     [conversation, scrollToBottom],
   );
 
+  const models = useRef<Record<string, Workbook.Model>>({});
+  const onModelCreate = useCallback((id: string, model: Workbook.Model) => {
+    models.current[id] = model;
+  }, []);
+
   return (
     <div>
       <TopContainer>
@@ -159,7 +156,7 @@ function AppContent() {
           <DiscussionView ref={discussionViewRef}>
             <Discussion>
               {conversation.map((entry, index) => (
-                <ConversationMessageBlock key={index} entry={entry} />
+                <ConversationMessageBlock key={index} entry={entry} onModelCreate={onModelCreate} />
               ))}
               {pendingMessage !== null && (
                 <>
@@ -179,6 +176,7 @@ function AppContent() {
     </div>
   );
 }
+
 const WorkbookRoot = styled(Workbook.Root)`
   border: 1px solid #c6cae3;
   filter: drop-shadow(0px 2px 2px rgba(33, 36, 58, 0.15));
@@ -188,6 +186,43 @@ const Worksheet = styled(Workbook.Worksheet)`
   border-bottom-right-radius: 10px;
   border-bottom-left-radius: 10px;
 `;
+
+function buildRequestData(
+  conversation: ConversationEntry[],
+  models: Record<string, Workbook.Model>,
+): string {
+  const rawData = conversation.map((entry) => {
+    if (entry.source === 'user') {
+      return entry.text;
+    }
+
+    if (entry.source === 'server') {
+      if (models.hasOwnProperty(entry.id)) {
+        const model = models[entry.id];
+        const { maxColumn, maxRow } = model.getSheetDimensions(0);
+        const workbookData: string[][] = [];
+        for (let row = 1; row <= maxRow; ++row) {
+          const rowData: (typeof workbookData)[number] = [];
+          for (let column = 1; column <= maxColumn; ++column) {
+            const cell = model.getUICell(0, row, column);
+            const textRepresentation = cell.formula || cell.formattedValue || '';
+            rowData.push(textRepresentation);
+          }
+          workbookData.push(rowData);
+        }
+        return workbookData.map((row) => '|' + row.join('|') + '|').join('\n');
+      }
+
+      // No data for workbook. Indicates a bug.
+      return null;
+    }
+
+    return null;
+  });
+
+  console.log('Extracted data: ', rawData);
+  return JSON.stringify(rawData.filter((entry) => typeof entry === 'string'));
+}
 
 const ChatWidget = styled.div`
   display: flex;
@@ -229,15 +264,18 @@ const PositionedSpinner = styled(CircularSpinner)`
   left: calc(50% - 40px);
 `;
 
-const ConversationMessageBlock = (properties: { entry: ConversationEntry }) => {
-  const { entry } = properties;
+const ConversationMessageBlock = (properties: {
+  entry: ConversationEntry;
+  onModelCreate?: (id: string, model: Workbook.Model) => void;
+}) => {
+  const { entry, onModelCreate } = properties;
 
   if (entry.source === 'user') {
     return <UserMessageBubble $hasFailed={entry.hasFailed}>{entry.text}</UserMessageBubble>;
   }
 
   if (entry.source === 'server') {
-    return <ServerMessageBlock entry={entry} />;
+    return <ServerMessageBlock entry={entry} onModelCreate={onModelCreate} />;
   }
 
   if (entry.source === 'server-error') {
@@ -253,8 +291,9 @@ const ConversationMessageBlock = (properties: { entry: ConversationEntry }) => {
 
 const ServerMessageBlock = (properties: {
   entry: Extract<ConversationEntry, { source: 'server' }>;
+  onModelCreate?: (id: string, model: Workbook.Model) => void;
 }) => {
-  const { entry } = properties;
+  const { entry, onModelCreate: onModelCreateFromProperties } = properties;
 
   const COLUMNS = 10;
   const ROWS = 10;
@@ -271,8 +310,9 @@ const ServerMessageBlock = (properties: {
         }
       }
       setModel(model);
+      onModelCreateFromProperties?.(entry.id, model);
     },
-    [entry],
+    [entry, onModelCreateFromProperties],
   );
 
   const downloadXlsx = useCallback(() => {

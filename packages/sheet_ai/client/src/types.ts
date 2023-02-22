@@ -8,6 +8,7 @@ export type ConversationEntry =
       source: 'server';
       data: { input: string | number | boolean }[][];
       text?: string | null;
+      id: string;
     }
   | {
       source: 'server-error';

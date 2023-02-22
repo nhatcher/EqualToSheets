@@ -322,6 +322,10 @@ export default class Model {
     return this.workbook.cell(sheet, row, column);
   }
 
+  getSheetDimensions(sheet: number) {
+    return this.workbook.sheets.get(sheet).getDimensions();
+  }
+
   getCellStyle(sheet: number, row: number, column: number): CellStyle {
     return {
       fill: { fg_color: { RGB: '#FFFFFF' }, pattern_type: 'solid' },

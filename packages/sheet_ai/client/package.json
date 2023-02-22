@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@equalto-software/calc": "file:../../sdk/typescript",
     "@equalto-software/spreadsheet": "file:../../widget",
     "@mui/base": "^5.0.0-alpha.118",
     "@tanstack/react-query": "^4.24.9",
@@ -51,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.191",
     "@types/styled-components": "^5.1.26"
   },
   "proxy": "http://localhost:8000/"

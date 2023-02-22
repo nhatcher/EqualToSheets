@@ -7,6 +7,7 @@ export type {
   IWorkbookSheets,
   ISheet,
   ICell,
+  ICellStyle,
   NavigationDirection,
   FormulaToken,
   FormulaErrorCode,
