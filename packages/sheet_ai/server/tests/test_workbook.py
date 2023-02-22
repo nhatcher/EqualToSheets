@@ -27,3 +27,19 @@ def test_generate_workbook_data_error(markdown_path: Path, monkeypatch: Any) -> 
         mock.setattr("sheet_ai.workbook.create_completion", lambda _: markdown)
         with pytest.raises(WorkbookProcessingError, match=error):
             assert generate_workbook_data([], retries=0)
+
+
+def test_retry_logic_with_eventual_success(monkeypatch: Any) -> None:
+    markdowns = iter(["invalid", "invalid", "invalid", "|valid|"])
+    monkeypatch.setattr("sheet_ai.workbook.create_completion", lambda _: next(markdowns))
+
+    assert generate_workbook_data([]) == [[{"input": "valid"}]]
+
+
+def test_retry_logic_with_failure(monkeypatch: Any) -> None:
+    markdowns = iter(["invalid", "invalid", "invalid", "|valid|"])
+    monkeypatch.setattr("sheet_ai.workbook.create_completion", lambda _: next(markdowns))
+
+    # with 2 retries, the "valid" response won't be reached
+    with pytest.raises(WorkbookProcessingError, match="Could not find a workbook"):
+        assert generate_workbook_data([], retries=2)

@@ -33,7 +33,12 @@ def _create_completion(query: str, max_tokens: int, retries: int) -> str:
             .choices[0]
             .text.strip()
         )
-    except (InvalidRequestError, AuthenticationError, PermissionError):
+    except InvalidRequestError:
+        if retries > 0:
+            # we can try lowering `max_tokens` value
+            return _create_completion(query, max(200, max_tokens - 500), retries - 1)
+        raise
+    except (AuthenticationError, PermissionError):
         # there is no point in retrying when one of these exceptions is raised
         raise
     except OpenAIError:
