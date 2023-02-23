@@ -1,4 +1,5 @@
 import * as Workbook from '@equalto-software/spreadsheet';
+import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { saveAs } from 'file-saver';
 import uniqueId from 'lodash/uniqueId';
@@ -6,7 +7,7 @@ import { Download } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components/macro';
 import { CircularSpinner } from './components/circularSpinner';
-import { DynamicMainLayout } from './components/dynamicMainLayout';
+import { EmailCollectionBar } from './components/emailCollectionBar';
 import {
   ErrorMessageBubble,
   SystemMessageBubble,
@@ -20,35 +21,110 @@ import { useSessionCookie } from './useSessionCookie';
 
 const queryClient = new QueryClient();
 
+export const fonts = {
+  regular: 'Inter, sans-serif',
+  mono: '"Fira Mono", serif',
+};
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      light: '#E8F8E9',
+      main: '#72ED79',
+      dark: '#70D379',
+      contrastText: '#FFF',
+    },
+    secondary: {
+      light: '#6A6E88',
+      main: '#292C42',
+    },
+    error: {
+      main: '#E06276',
+    },
+    warning: {
+      main: '#F5BB49',
+    },
+    info: {
+      main: '#B4B7D1',
+    },
+    success: {
+      main: '#70D379',
+    },
+    text: {
+      primary: '#21243A',
+      secondary: '#7D8EC2',
+      disabled: '#ADAFBE',
+    },
+    background: {
+      default: '#FFFFFF',
+    },
+  },
+  typography: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    h1: {
+      fontFamily: fonts.regular,
+      fontWeight: 600,
+      fontSize: 24,
+    },
+    h2: {
+      fontFamily: fonts.regular,
+      fontWeight: 600,
+      fontSize: 20,
+    },
+    h3: {
+      fontFamily: fonts.regular,
+      fontWeight: 600,
+      fontSize: 16,
+    },
+    subtitle1: {
+      fontFamily: fonts.regular,
+      fontWeight: 600,
+      fontSize: 14,
+    },
+    subtitle2: {
+      fontFamily: fonts.regular,
+      fontWeight: 600,
+      fontSize: 14,
+    },
+    body1: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+    },
+    body2: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+    },
+    button: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      fontWeight: 500,
+      textTransform: 'none',
+    },
+  },
+});
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RootLayout>
-        <TopBar />
-        <DynamicMainLayout
-          mainContent={<ChatRoot />}
-          sideContent={
-            <div>
-              <p>
-                <strong>Serverless Spreadsheets</strong>
-              </p>
-              <p>
-                EqualTo Chat was built with our serverless spreadsheet tech, and leverages GPT-3
-                learning models.
-              </p>
-              {/* TODO: Sign up form. */}
-            </div>
-          }
-        />
-      </RootLayout>
-    </QueryClientProvider>
+    <>
+      <CssBaseline />
+      <ThemeProvider theme={theme}>
+        <QueryClientProvider client={queryClient}>
+          <RootLayout>
+            <TopBar />
+            <EmailCollectionBar />
+            <ChatRoot />
+          </RootLayout>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </>
   );
 }
 
 const RootLayout = styled.div`
   display: grid;
   grid-template-columns: 100%;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   height: 100%;
 `;
 
@@ -196,20 +272,27 @@ function AppContent() {
         <PromptEditor onSubmit={handleMessageSend} />
         <LinksFooter>
           {/* eslint-disable-next-line react/jsx-no-target-blank */}
-          <a href="https://www.equalto.com/" target="_blank">
+          <EqualToFooterLink href="https://www.equalto.com/" target="_blank">
             equalto.com
-          </a>
-          <LinksDivider />
-          {/* TODO: Replace with valid link. */}
-          {/* eslint-disable-next-line react/jsx-no-target-blank */}
-          <a href="https://www.equalto.com/" target="_blank">
-            Terms and Conditions
-          </a>
+          </EqualToFooterLink>
         </LinksFooter>
       </DiscussionFooter>
     </ChatWidget>
   );
 }
+
+const EqualToFooterLink = styled.a`
+  font-weight: 400;
+  font-size: 9px;
+  line-height: 11px;
+  &:link,
+  &:visited,
+  &:hover,
+  &:active {
+    text-decoration: none;
+    color: #8b8fad;
+  }
+`;
 
 const WorkbookRoot = styled(Workbook.Root)`
   border: 1px solid #c6cae3;
@@ -263,6 +346,9 @@ const ChatWidget = styled.div`
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  width: 100%;
+  max-width: 600px;
+  justify-self: center;
 `;
 
 const Discussion = styled.div`
@@ -297,12 +383,6 @@ const LinksFooter = styled.div`
   justify-content: center;
   font-size: 9px;
   margin-top: 10px;
-`;
-
-const LinksDivider = styled.span`
-  height: 10px;
-  border-left: 1px solid #f1f2f8;
-  margin: 0 10px;
 `;
 
 const ConversationMessageBlock = (properties: {

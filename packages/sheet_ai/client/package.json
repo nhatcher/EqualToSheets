@@ -5,7 +5,8 @@
   "dependencies": {
     "@equalto-software/calc": "file:../../sdk/typescript",
     "@equalto-software/spreadsheet": "file:../../widget",
-    "@mui/base": "^5.0.0-alpha.118",
+    "@mui/material": "^5.11.10",
+    "@mui/styled-engine-sc": "^5.11.9",
     "@tanstack/react-query": "^4.24.9",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
@@ -26,11 +27,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "npm run build-widget && react-scripts build",
+    "start": "craco start",
+    "build": "npm run build-widget && craco build",
     "build-widget": "cd ../../widget && npm run build-full",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "test": "craco test",
     "prettier": "prettier --write ."
   },
   "eslintConfig": {
@@ -52,8 +52,10 @@
     ]
   },
   "devDependencies": {
+    "@craco/craco": "^7.0.0",
     "@types/lodash": "^4.14.191",
-    "@types/styled-components": "^5.1.26"
+    "@types/styled-components": "^5.1.26",
+    "craco-alias": "^3.0.1"
   },
   "proxy": "http://localhost:8000/"
 }

@@ -1,6 +1,6 @@
 import { FunctionComponent, useCallback, useRef, useState } from 'react';
 import styled from 'styled-components/macro';
-import { TextareaAutosize } from '@mui/base';
+import { TextareaAutosize } from '@mui/material';
 
 export const PromptEditor: FunctionComponent<{
   onSubmit: (prompt: string) => Promise<boolean>;
