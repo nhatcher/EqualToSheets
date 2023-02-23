@@ -4,8 +4,6 @@ from typing import Any
 import pytest
 from flask.testing import FlaskClient
 
-from wsgi.app import MAX_SESSIONS_PER_IP
-
 
 @pytest.fixture(name="session_client")
 def fixture_session_client(client: FlaskClient) -> FlaskClient:
@@ -36,7 +34,7 @@ def test_converse_without_session(client: FlaskClient) -> None:
 
 
 def test_session_endpoint_rate_limit(client: FlaskClient) -> None:
-    for _ in range(MAX_SESSIONS_PER_IP):
+    for _ in range(20):
         assert client.get("/session").status_code == 200
 
     assert client.get("/session").status_code == 429

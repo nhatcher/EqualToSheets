@@ -10,7 +10,7 @@ from sheet_ai import db
 from sheet_ai.exceptions import SheetAIError
 from sheet_ai.workbook import WorkbookData, generate_workbook_data
 
-MAX_SESSIONS_PER_IP = int(os.getenv("MAX_SESSIONS_PER_IP", 100))
+SESSION_RATE_LIMIT_POLICY = os.getenv("SESSION_RATE_LIMIT_POLICY", "20/day")
 MAX_PROMPTS_PER_SESSION = int(os.getenv("MAX_PROMPTS_PER_SESSION", 10))
 
 app = Flask(__name__)
@@ -25,7 +25,7 @@ def ping() -> str:
 
 
 @app.route("/session", methods=["GET"])
-@limiter.limit(f"{MAX_SESSIONS_PER_IP}/hour")
+@limiter.limit(SESSION_RATE_LIMIT_POLICY)
 def start_session() -> str:
     session["session_id"] = get_new_session_id()
     return "OK"
