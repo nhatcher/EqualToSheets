@@ -7,7 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from sheet_ai import db
-from sheet_ai.exceptions import SheetAIError
+from sheet_ai.exceptions import EmailValidationError, SheetAIError
 from sheet_ai.workbook import WorkbookData, generate_workbook_data
 
 SESSION_RATE_LIMIT_POLICY = os.getenv("SESSION_RATE_LIMIT_POLICY", "20/day")
@@ -41,7 +41,7 @@ def converse() -> WorkbookData:
 
     try:
         prompt = json.loads(request.form["prompt"])
-    except ValueError:
+    except (KeyError, ValueError):
         raise abort(400, "Invalid POST data")
 
     workbook_data = db.get_prompt_response(prompt)
@@ -56,6 +56,15 @@ def converse() -> WorkbookData:
     db.save_prompt_response(session_id, prompt, workbook_data)
 
     return workbook_data
+
+
+@app.route("/signup", methods=["POST"])
+def signup() -> str:
+    try:
+        db.save_email_address(request.form["email"])
+    except (KeyError, EmailValidationError):
+        raise abort(400, "Invalid POST data")
+    return "OK"
 
 
 def check_rate_limit(session_id: str) -> None:

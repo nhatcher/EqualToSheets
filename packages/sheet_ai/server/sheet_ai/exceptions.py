@@ -8,3 +8,7 @@ class CompletionError(SheetAIError):
 
 class WorkbookProcessingError(SheetAIError):
     """Could not generate a workbook."""
+
+
+class EmailValidationError(Exception):
+    """Email validation error."""

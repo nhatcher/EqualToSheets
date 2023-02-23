@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import datetime
 from functools import cache
 from hashlib import md5
@@ -10,6 +11,7 @@ from pymongo import ASCENDING, IndexModel, MongoClient
 from pymongo.database import Database
 
 from sheet_ai.completion import MODEL, PREAMBLE, TEMPERATURE
+from sheet_ai.exceptions import EmailValidationError
 from sheet_ai.workbook import WorkbookData
 
 MONGODB_URI = os.getenv("MONGODB_URI")
@@ -33,6 +35,7 @@ def _get_db() -> Database[dict[str, Any]]:
             IndexModel([("prompt", ASCENDING), ("completion_parameters", ASCENDING)]),
         ],
     )
+    db.email.create_index("email", unique=True)
 
     return db
 
@@ -69,3 +72,18 @@ def save_prompt_response(session_id: str, prompt: list[str], workbook: WorkbookD
         update={"$setOnInsert": {"create_date": datetime.utcnow()}},
         upsert=True,
     )
+
+
+def save_email_address(email: str) -> None:
+    if len(email) > 255 or not re.match("^[^@]+@[^@]+$", email):
+        raise EmailValidationError()
+
+    _get_db().email.update_one(
+        filter={"email": email},
+        update={"$setOnInsert": {"create_date": datetime.utcnow()}},
+        upsert=True,
+    )
+
+
+def get_email_addresses() -> list[str]:
+    return [doc["email"] for doc in _get_db().email.find({}, {"email": 1}).sort("email")]

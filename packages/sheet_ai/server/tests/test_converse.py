@@ -59,13 +59,11 @@ def test_rate_limit_per_session(session_client: FlaskClient, monkeypatch: Any) -
     assert get_response_status_code("prompt3") == 429
 
 
-def test_converse_invalid_post_data(session_client: FlaskClient, monkeypatch: Any) -> None:
+@pytest.mark.parametrize("form_data", [{}, {"prompt": "not a json"}])
+def test_converse_invalid_post_data(session_client: FlaskClient, form_data: dict[str, Any], monkeypatch: Any) -> None:
     monkeypatch.setattr("sheet_ai.workbook.create_completion", lambda _: "invalid")
 
-    response = session_client.post(
-        "/converse",
-        data={"prompt": "not a json"},
-    )
+    response = session_client.post("/converse", data=form_data)
     assert response.status_code == 400
     assert b"Invalid POST data" in response.data
 
