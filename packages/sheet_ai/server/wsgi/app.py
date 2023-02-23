@@ -1,5 +1,5 @@
-import json
 import os
+from typing import Any
 from uuid import uuid4
 
 from flask import Flask, abort, request, session
@@ -12,6 +12,8 @@ from sheet_ai.workbook import WorkbookData, generate_workbook_data
 
 SESSION_RATE_LIMIT_POLICY = os.getenv("SESSION_RATE_LIMIT_POLICY", "20/day")
 MAX_PROMPTS_PER_SESSION = int(os.getenv("MAX_PROMPTS_PER_SESSION", 10))
+
+SUDO_PASSWORD = os.getenv("SUDO_PASSWORD")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -31,18 +33,28 @@ def start_session() -> str:
     return "OK"
 
 
+@app.route("/sudo", methods=["POST"])
+def start_sudo_session() -> str:
+    assert SUDO_PASSWORD, "sudo access is not enabled"
+
+    if _get_request_json().get("password") != SUDO_PASSWORD:
+        abort(401)
+
+    session["session_id"] = get_new_session_id()
+    session["sudo"] = True
+    return "OK"
+
+
 @app.route("/converse", methods=["POST"])
 def converse() -> WorkbookData:
     session_id = session.get("session_id")
     if not session_id:
         raise abort(401, "Missing session cookie")
 
-    check_rate_limit(session_id)
+    if not session.get("sudo"):
+        check_rate_limit(session_id)
 
-    try:
-        prompt = json.loads(request.form["prompt"])
-    except (KeyError, ValueError):
-        raise abort(400, "Invalid POST data")
+    prompt = _get_prompt()
 
     workbook_data = db.get_prompt_response(prompt)
 
@@ -58,10 +70,20 @@ def converse() -> WorkbookData:
     return workbook_data
 
 
+def _get_prompt() -> list[str]:
+    try:
+        prompt = _get_request_json()["prompt"]
+    except (KeyError, ValueError):
+        raise abort(400)
+    if not isinstance(prompt, list) or not all(isinstance(msg, str) for msg in prompt):
+        raise abort(400)
+    return prompt
+
+
 @app.route("/signup", methods=["POST"])
 def signup() -> str:
     try:
-        db.save_email_address(request.form["email"])
+        db.save_email_address(_get_request_json()["email"])
     except (KeyError, EmailValidationError):
         raise abort(400, "Invalid POST data")
     return "OK"
@@ -80,3 +102,10 @@ def check_rate_limit(session_id: str) -> None:
 
 def get_new_session_id() -> str:
     return uuid4().hex
+
+
+def _get_request_json() -> dict[str, Any]:
+    json = request.json
+    if json is None:
+        raise abort(400)
+    return json

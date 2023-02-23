@@ -29,15 +29,14 @@ function useEmailSubmit(): {
     }
 
     async function submitMail(sanitizedMail: string) {
-      const formData = new FormData();
-      formData.append('email', sanitizedMail);
       try {
         const response = await fetch('/signup', {
           method: 'POST',
-          body: formData,
           headers: {
+            'Content-Type': 'application/json',
             Accept: 'application/json',
           },
+          body: JSON.stringify({"email": sanitizedMail}),
         });
 
         if (!response.ok) {

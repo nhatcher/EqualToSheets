@@ -175,15 +175,13 @@ function AppContent() {
       scrollToBottom();
 
       try {
-        const formData = new FormData();
-        formData.append('prompt', buildRequestData(newMessages, models.current));
-
         const fetchResponse = await fetch('/converse', {
           method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          body: formData,
+          body: buildRequestData(newMessages, models.current),
         });
 
         if (!fetchResponse.ok) {
@@ -338,7 +336,7 @@ function buildRequestData(
   });
 
   console.log('Extracted data: ', rawData);
-  return JSON.stringify(rawData.filter((entry) => typeof entry === 'string'));
+  return JSON.stringify({prompt: rawData.filter((entry) => typeof entry === 'string')});
 }
 
 const ChatWidget = styled.div`
