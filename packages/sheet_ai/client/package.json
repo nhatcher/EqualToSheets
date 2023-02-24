@@ -2,6 +2,7 @@
   "name": "sheet-ai",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@equalto-software/calc": "file:../../sdk/typescript",
     "@equalto-software/spreadsheet": "file:../../widget",

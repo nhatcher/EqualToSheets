@@ -30,7 +30,7 @@ function useEmailSubmit(): {
 
     async function submitMail(sanitizedMail: string) {
       try {
-        const response = await fetch('/signup', {
+        const response = await fetch('./signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

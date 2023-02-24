@@ -6,7 +6,7 @@ export const useSessionCookie = (): 'loading' | 'set' | 'rate-limited' | 'error'
     queryFn: async () => {
       const sudoPassword = localStorage.getItem('equalto.chat.sudo_password');
       if (sudoPassword) {
-        const response = await fetch('/sudo', {
+        const response = await fetch('./sudo', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
@@ -25,7 +25,7 @@ export const useSessionCookie = (): 'loading' | 'set' | 'rate-limited' | 'error'
         return 'ok';
       }
 
-      const response = await fetch('/session', {
+      const response = await fetch('./session', {
         headers: {
           Accept: 'application/json',
         },

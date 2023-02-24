@@ -204,7 +204,7 @@ function AppContent() {
       scrollToBottom();
 
       try {
-        const fetchResponse = await fetch('/converse', {
+        const fetchResponse = await fetch('./converse', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
