@@ -45,12 +45,12 @@ export const useSessionCookie = (): 'loading' | 'set' | 'rate-limited' | 'error'
     staleTime: Infinity,
   });
 
-  if (isLoading) {
-    return 'loading';
-  }
-
   if (isError) {
     return 'error';
+  }
+
+  if (isLoading) {
+    return 'loading';
   }
 
   if (isFetched) {

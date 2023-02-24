@@ -9,6 +9,9 @@ export function TopBar() {
         <Divider />
         <code>Chat</code>
       </LogoBox>
+      <Link href="https://www.equalto.com/" target="_blank">
+        About EqualTo
+      </Link>
     </Container>
   );
 }
@@ -34,4 +37,17 @@ const Divider = styled.div`
   border-right: 1px solid #f1f2f8;
   height: 12px;
   margin: 0 10px;
+`;
+
+const Link = styled.a`
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 16px;
+  :link,
+  :visited,
+  :hover,
+  :active {
+    color: #000000;
+    text-decoration: none;
+  }
 `;

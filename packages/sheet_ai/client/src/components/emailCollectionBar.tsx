@@ -36,7 +36,7 @@ function useEmailSubmit(): {
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          body: JSON.stringify({"email": sanitizedMail}),
+          body: JSON.stringify({ email: sanitizedMail }),
         });
 
         if (!response.ok) {
@@ -61,11 +61,8 @@ export function EmailCollectionBar() {
   return (
     <Container>
       <SpreadsheetsCopy>
-        <CopyHeading>Serverless Spreadsheets</CopyHeading>
-        <CopyText>
-          EqualTo Chat was built with our serverless spreadsheet tech, and leverages GPT-3 learning
-          models.
-        </CopyText>
+        ✨ <strong>EqualTo Chat</strong> was built with our serverless spreadsheet tech, and
+        leverages <strong>GPT-3</strong> learning models.
       </SpreadsheetsCopy>
       {(submitState.state === 'waiting' ||
         submitState.state === 'submitting' ||
@@ -105,6 +102,8 @@ const Container = styled.div`
   justify-content: space-between;
   background: linear-gradient(180deg, #21243a 0%, #292d50 100%, rgba(41, 44, 66, 0.96) 100%);
   color: #f1f2f8;
+  min-height: 75px;
+  align-items: center;
 `;
 
 const SpreadsheetsCopy = styled.div`
@@ -118,17 +117,7 @@ const SpreadsheetsCopy = styled.div`
   > p + p {
     margin-top: 5px;
   }
-`;
 
-const CopyHeading = styled.p`
-  font-family: var(--monospace-font-family);
-  color: #b4b7d1;
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 18px;
-`;
-
-const CopyText = styled.p`
   font-family: var(--font-family);
   color: #f1f2f8;
   font-weight: 400;

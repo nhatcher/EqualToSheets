@@ -3,9 +3,10 @@ import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { saveAs } from 'file-saver';
 import uniqueId from 'lodash/uniqueId';
-import { Download } from 'lucide-react';
+import { AlertOctagon, Download } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components/macro';
+import { ChatWelcomeView } from './components/chatWelcomeView';
 import { CircularSpinner } from './components/circularSpinner';
 import { EmailCollectionBar } from './components/emailCollectionBar';
 import {
@@ -137,15 +138,43 @@ function ChatRoot() {
     return <AppContent />;
   } else if (sessionCookie === 'rate-limited') {
     // TODO: Nicer layout
-    return <div>{'Rate limit for your IP has been reached. Please try again later.'}</div>;
+    return (
+      <ErrorContainer>
+        <ErrorBox>
+          <AlertOctagon size={18} />
+          <div>{'Rate limit for your IP has been reached. Please try again later.'}</div>
+        </ErrorBox>
+      </ErrorContainer>
+    );
   } else if (sessionCookie === 'error') {
-    // TODO: Nicer layout
-    return <div>{'Could not connect to the chat service. Please try again later.'}</div>;
+    return (
+      <ErrorContainer>
+        <ErrorBox>
+          <AlertOctagon size={18} />
+          <div>{'Could not connect to the chat service. Please try again later.'}</div>
+        </ErrorBox>
+      </ErrorContainer>
+    );
   } else {
     const impossibleResult: never = sessionCookie;
     throw new Error(`Session cookie has unknown state: ${impossibleResult}`);
   }
 }
+
+const ErrorContainer = styled.div`
+  padding: 0 20px;
+`;
+
+const ErrorBox = styled.div`
+  padding: 20px;
+  margin: 40px auto 0 auto;
+  max-width: 600px;
+  border-radius: 10px;
+  text-align: center;
+  background-color: #fceff1;
+  border: 1px solid #fddbe0;
+  color: ${({ theme }) => theme.palette.error.main};
+`;
 
 function AppContent() {
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
@@ -251,21 +280,27 @@ function AppContent() {
 
   return (
     <ChatWidget>
-      <DiscussionView ref={discussionViewRef}>
-        <Discussion>
-          {conversation.map((entry, index) => (
-            <ConversationMessageBlock key={index} entry={entry} onModelCreate={onModelCreate} />
-          ))}
-          {pendingMessage !== null && (
-            <>
-              <UserMessageBubble $pending>{pendingMessage}</UserMessageBubble>
-              <SpinnerContainer>
-                <PositionedSpinner $color="#70D379" />
-              </SpinnerContainer>
-            </>
-          )}
-        </Discussion>
-      </DiscussionView>
+      {conversation.length === 0 && pendingMessage === null ? (
+        <WelcomeContainer>
+          <ChatWelcomeView />
+        </WelcomeContainer>
+      ) : (
+        <DiscussionView ref={discussionViewRef}>
+          <Discussion>
+            {conversation.map((entry, index) => (
+              <ConversationMessageBlock key={index} entry={entry} onModelCreate={onModelCreate} />
+            ))}
+            {pendingMessage !== null && (
+              <>
+                <UserMessageBubble $pending>{pendingMessage}</UserMessageBubble>
+                <SpinnerContainer>
+                  <PositionedSpinner $color="#70D379" />
+                </SpinnerContainer>
+              </>
+            )}
+          </Discussion>
+        </DiscussionView>
+      )}
       <DiscussionFooter>
         <PromptEditor onSubmit={handleMessageSend} />
         <LinksFooter>
@@ -336,8 +371,16 @@ function buildRequestData(
   });
 
   console.log('Extracted data: ', rawData);
-  return JSON.stringify({prompt: rawData.filter((entry) => typeof entry === 'string')});
+  return JSON.stringify({ prompt: rawData.filter((entry) => typeof entry === 'string') });
 }
+
+const WelcomeContainer = styled.div`
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+`;
 
 const ChatWidget = styled.div`
   display: flex;
@@ -345,23 +388,28 @@ const ChatWidget = styled.div`
   height: 100%;
   overflow: hidden;
   width: 100%;
-  max-width: 600px;
-  justify-self: center;
+`;
+
+const DiscussionView = styled.div`
+  flex: 1 1 auto;
+  overflow: auto;
+  width: 100%;
+  padding: 20px;
 `;
 
 const Discussion = styled.div`
   display: grid;
   gap: 10px;
-`;
-
-const DiscussionView = styled.div`
-  flex: 1 1 auto;
-  padding: 20px 20px 10px 20px;
-  overflow: auto;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
 `;
 
 const DiscussionFooter = styled.div`
-  padding: 0 20px 20px 20px;
+  max-width: 600px;
+  width: 100%;
+  padding: 5px 20px 20px 20px;
+  margin: 0 auto;
 `;
 
 const SpinnerContainer = styled.div`
