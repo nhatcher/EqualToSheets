@@ -7,7 +7,9 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
-    "reinstall": "cd ../sdk/typescript && npm run build && cd ../../widget && rm -rf node_modules/@equalto-software/calc && npm install",
+    "build-sdk": "cd ../sdk/typescript && npm install && npm run build",
+    "build-deps": "npm run build-sdk",
+    "reinstall": "npm run build-deps && rm -rf node_modules/@equalto-software && npm install",
     "rollup": "rollup --config",
     "build": "rm -rf dist && npm run rollup && cd example && npm run reinstall && cd ..",
     "build-full": "npm run reinstall && npm run build",

@@ -27,9 +27,12 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "build-widget": "cd ../../widget && npm install && npm run build-full",
+    "build-deps": "npm run build-widget",
+    "reinstall": "npm run build-deps && rm -rf node_modules/@equalto-software && npm install",
+    "build-full": "npm run reinstall && npm run build",
+    "build": "rm -rf dist && craco build",
     "start": "craco start",
-    "build": "npm run build-widget && craco build",
-    "build-widget": "cd ../../widget && npm run build-full",
     "test": "craco test",
     "prettier": "prettier --write ."
   },

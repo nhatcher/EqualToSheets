@@ -1,3 +1,8 @@
+# Building
+
+1. `npm run reinstall` - will build dependences and run install in this repo
+2. `npm run start` - will run server, ensure that server is running first
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
