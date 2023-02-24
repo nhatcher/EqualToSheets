@@ -4,6 +4,27 @@ export const useSessionCookie = (): 'loading' | 'set' | 'rate-limited' | 'error'
   const { isLoading, isError, isFetched, data } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
+      const sudoPassword = localStorage.getItem('equalto.chat.sudo_password');
+      if (sudoPassword) {
+        const response = await fetch('/sudo', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password: sudoPassword }),
+        });
+
+        if (!response.ok) {
+          console.error(
+            'Sudo password is set, but /sudo endpoint has failed. Ensure password is correct.',
+          );
+          throw new Error('Fetch call returned response that is not OK.');
+        }
+
+        return 'ok';
+      }
+
       const response = await fetch('/session', {
         headers: {
           Accept: 'application/json',
