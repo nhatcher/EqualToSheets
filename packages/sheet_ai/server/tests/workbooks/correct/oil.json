@@ -50,7 +50,8 @@
     {
       "input": "=SUM(B2:B4)",
       "style": {
-        "bold": true
+        "bold": true,
+        "num_fmt": "$#,##0"
       }
     }
   ]

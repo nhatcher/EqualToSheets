@@ -95,6 +95,12 @@ fn test_zero() {
 }
 
 #[test]
+fn test_negative_currencies() {
+    let locale = get_default_locale();
+    assert_eq!(format_number(-23.0, "$#,##0", locale).text, "-$23");
+}
+
+#[test]
 fn test_percent() {
     let locale = get_default_locale();
     assert_eq!(format_number(0.12, "0.00%", locale).text, "12.00%");

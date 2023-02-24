@@ -34,11 +34,9 @@
     },
     {
       "input": 0.15,
-      "style": {"num_fmt": "$#,##0.00"}
+      "style": { "num_fmt": "$#,##0.00" }
     },
-    {
-      "input": "=B2*C2*30"
-    }
+    { "input": "=B2*C2*30", "style": { "num_fmt": "$#,##0.00" } }
   ],
   [
     {
@@ -49,10 +47,11 @@
     },
     {
       "input": 0.25,
-      "style": {"num_fmt": "$#,##0.00"}
+      "style": { "num_fmt": "$#,##0.00" }
     },
     {
-      "input": "=B3*C3*30"
+      "input": "=B3*C3*30",
+      "style": { "num_fmt": "$#,##0.00" }
     }
   ],
   [
@@ -64,10 +63,11 @@
     },
     {
       "input": 0.1,
-      "style": {"num_fmt": "$#,##0.00"}
+      "style": { "num_fmt": "$#,##0.00" }
     },
     {
-      "input": "=B4*C4*30"
+      "input": "=B4*C4*30",
+      "style": { "num_fmt": "$#,##0.00" }
     }
   ],
   [
@@ -92,7 +92,8 @@
     {
       "input": "=SUM(D2:D4)",
       "style": {
-        "bold": true
+        "bold": true,
+        "num_fmt": "$#,##0.00"
       }
     }
   ]

@@ -21,6 +21,7 @@ mod styles;
 
 mod implicit_intersection;
 
+mod units;
 mod utils;
 mod workbook;
 

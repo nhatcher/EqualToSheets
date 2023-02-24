@@ -984,7 +984,8 @@ impl Model {
         let formula = formula
             .strip_prefix('=')
             .ok_or_else(|| format!("\"{formula}\" is not a valid formula"))?;
-        self.set_cell_with_formula(sheet, row, column, formula, style_index)
+        self.set_cell_with_formula(sheet, row, column, formula, style_index)?;
+        Ok(())
     }
 
     /// Sets a cell parametrized by (`sheet`, `row`, `column`) with `value`
@@ -1014,8 +1015,21 @@ impl Model {
                     .get_style_without_quote_prefix(style_index);
             }
             if let Some(formula) = value.strip_prefix('=') {
-                self.set_cell_with_formula(sheet, row, column, formula, new_style_index)
-                    .expect("could not set the cell formula")
+                let formula_index = self
+                    .set_cell_with_formula(sheet, row, column, formula, new_style_index)
+                    .expect("could not set the cell formula");
+                // Update the style if needed
+                let cell = CellReference { sheet, row, column };
+                let parsed_formula = &self.parsed_formulas[sheet as usize][formula_index as usize];
+                if let Some(units) = self.compute_node_units(parsed_formula, &cell) {
+                    let new_style_index = self
+                        .workbook
+                        .styles
+                        .get_style_with_format(new_style_index, &units.get_num_fmt());
+                    let style = self.workbook.styles.get_style(new_style_index);
+                    self.set_cell_style(sheet, row, column, &style)
+                        .expect("Failed setting the style");
+                }
             } else {
                 let worksheets = &mut self.workbook.worksheets;
                 let worksheet = &mut worksheets[sheet as usize];
@@ -1056,7 +1070,7 @@ impl Model {
         column: i32,
         formula: &str,
         style: i32,
-    ) -> Result<(), String> {
+    ) -> Result<i32, String> {
         let worksheet = self.workbook.worksheet_mut(sheet)?;
         let cell_reference = CellReferenceRC {
             sheet: worksheet.get_name(),
@@ -1088,7 +1102,7 @@ impl Model {
             formula_index = (shared_formulas.len() as i32) - 1;
         }
         worksheet.set_cell_with_formula(row, column, formula_index, style);
-        Ok(())
+        Ok(formula_index)
     }
 
     fn set_cell_with_string(&mut self, sheet: u32, row: i32, column: i32, value: &str, style: i32) {

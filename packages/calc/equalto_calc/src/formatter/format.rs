@@ -317,7 +317,7 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
                             let index = digit.index;
                             let number_index = ln - digit_count + index;
                             if index == 0 && is_negative {
-                                text = format!("{}-", text);
+                                text = format!("-{}", text);
                             }
                             if ln <= digit_count {
                                 // The number of digits is less or equal than the number of digit tokens
@@ -439,6 +439,7 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
 /// 100€ => 100,
 pub(crate) fn parse_formatted_number(value: &str) -> Result<(f64, Option<String>), String> {
     let currency = "$";
+    let negative_currency = "-$";
     let currency_format_standard = "$#,##0";
     let currency_format_standard_with_decimals = "$#,##0.00";
     let percentage_format_standard = "#,##0%";
@@ -453,6 +454,12 @@ pub(crate) fn parse_formatted_number(value: &str) -> Result<(f64, Option<String>
             return Ok((f / 100.0, Some(percentage_format_with_decimals.to_string())));
         }
         return Ok((f / 100.0, Some(percentage_format_standard.to_string())));
+    } else if let Some(p) = value.strip_prefix(negative_currency) {
+        let (f, options) = parse_number(p.trim())?;
+        if options.decimal_digits > 0 {
+            return Ok((-f, Some(currency_format_standard_with_decimals.to_string())));
+        }
+        return Ok((-f, Some(currency_format_standard.to_string())));
     } else if let Some(p) = value.strip_prefix(currency) {
         let (f, options) = parse_number(p.trim())?;
         if options.decimal_digits > 0 {
@@ -492,10 +499,23 @@ fn parse_number(value: &str) -> Result<(f64, NumberOptions), String> {
     let mut position = 0;
     let bytes = value.as_bytes();
     let len = bytes.len();
+    if len == 0 {
+        return Err("Cannot parse number".to_string());
+    }
     let mut chars = String::from("");
     let decimal_separator = b'.';
     let group_separator = b',';
     let mut group_separator_index = Vec::new();
+    // get the sign
+    let sign = if bytes[0] == b'-' {
+        position += 1;
+        -1.0
+    } else if bytes[0] == b'+' {
+        position += 1;
+        1.0
+    } else {
+        1.0
+    };
     // numbers before the decimal point
     while position < len {
         let x = bytes[position];
@@ -557,7 +577,7 @@ fn parse_number(value: &str) -> Result<(f64, NumberOptions), String> {
     match chars.parse::<f64>() {
         Err(_) => Err("Failed to parse to double".to_string()),
         Ok(v) => Ok((
-            v,
+            sign * v,
             NumberOptions {
                 has_commas: !group_separator_index.is_empty(),
                 is_scientific,
