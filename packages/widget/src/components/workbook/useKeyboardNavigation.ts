@@ -51,7 +51,7 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
             break;
           }
           case 'i': {
-            model?.toggleFontStyle(selectedSheet, selectedArea, 'italic');
+            model?.toggleFontStyle(selectedSheet, selectedArea, 'italics');
             event.stopPropagation();
             event.preventDefault();
 

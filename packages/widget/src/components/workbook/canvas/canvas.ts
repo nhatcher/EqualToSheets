@@ -15,7 +15,6 @@ import {
   outlineColor,
 } from '../constants';
 import { ColoredFormulaReference } from '../formulas';
-
 import Model, { CellStyle } from '../model';
 
 import { CellEditingType, columnNameFromNumber, ScrollPosition, StateSettings } from '../util';
@@ -365,23 +364,23 @@ export default class WorksheetCanvas {
     const style = this.workbook.getCellStyle(row, column);
 
     let backgroundColor = '#FFFFFF';
-    if (style.fill.fg_color) {
-      backgroundColor = style.fill.fg_color.RGB;
+    if (style.fill.foregroundColor) {
+      backgroundColor = style.fill.foregroundColor; // FIXME: ?!
     }
     const fontSize = 13;
     let font = `${fontSize}px ${defaultCellFontFamily}`;
     let textColor = defaultTextColor;
     if (style.font) {
-      textColor = style.font.color.RGB;
-      font = style.font.b ? `bold ${font}` : `400 ${font}`;
-      if (style.font.i) {
+      textColor = style.font.color;
+      font = style.font.bold ? `bold ${font}` : `400 ${font}`;
+      if (style.font.italics) {
         font = `italic ${font}`;
       }
     }
     let alignment = 'default';
-    if (style.horizontal_alignment) {
-      alignment = style.horizontal_alignment;
-    }
+    // if (style.horizontal_alignment) {
+    //  alignment = style.horizontal_alignment;
+    // }
 
     const context = this.ctx;
     context.font = font;
@@ -431,7 +430,7 @@ export default class WorksheetCanvas {
       textY += line * lineHeight;
       context.fillText(text, textX, textY);
       if (style.font) {
-        if (style.font.u) {
+        if (style.font.underline) {
           // There are no text-decoration in canvas. You have to do the underline yourself.
           const offset = Math.floor(fontSize / 2);
           context.beginPath();
@@ -441,7 +440,7 @@ export default class WorksheetCanvas {
           context.lineTo(textX + textWidth / 2, textY + offset);
           context.stroke();
         }
-        if (style.font.strike) {
+        if (style.font.strikethrough) {
           // There are no text-decoration in canvas. You have to do the strikethrough yourself.
           context.beginPath();
           context.strokeStyle = textColor;
@@ -764,9 +763,9 @@ export default class WorksheetCanvas {
       cellOutline.style.height = `${height}px`;
     }
     if (cellEditing) {
-      cellOutline.style.fontWeight = style.font.b ? 'bold' : 'normal';
-      cellOutline.style.fontStyle = style.font.i ? 'italic' : 'normal';
-      cellOutline.style.backgroundColor = style.fill.fg_color?.RGB ?? '#FFF';
+      cellOutline.style.fontWeight = style.font.bold ? 'bold' : 'normal';
+      cellOutline.style.fontStyle = style.font.italics ? 'italic' : 'normal';
+      cellOutline.style.backgroundColor = style.fill.foregroundColor; // FIXME: ?!
       // TODO: Should we add the same color as the text?
       // Only if it is not a formula?
       // cellOutline.style.color = style.font.color.RGB;

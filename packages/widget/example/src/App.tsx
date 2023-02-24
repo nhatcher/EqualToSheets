@@ -3,13 +3,14 @@ import './App.css';
 import styled from 'styled-components';
 
 function App() {
-  const ROWS = 5;
-  const COLUMNS = 6;
+  const ROWS = 15;
+  const COLUMNS = 10;
   return (
     <div className="App">
       <header className="App-header">
         <div style={{ width: COLUMNS * 100 + 30, height: ROWS * 24 + 74, overflow: 'visible' }}>
           <WorkbookRoot lastRow={ROWS + 10} lastColumn={COLUMNS + 10}>
+            <Workbook.Toolbar />
             <Workbook.FormulaBar />
             <Worksheet />
           </WorkbookRoot>

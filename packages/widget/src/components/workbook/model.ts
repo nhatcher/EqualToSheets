@@ -148,19 +148,12 @@ interface CellStyleBorder {
   bottom: BorderItem;
   diagonal: BorderItem;
 }
-export interface CellStyle {
-  read_only: boolean;
-  quote_prefix: boolean;
-  fill: CellStyleFill;
-  font: CellStyleFont;
-  border: CellStyleBorder;
-  num_fmt: string;
-  horizontal_alignment: string;
-}
+
+export type CellStyle = ICell['style'];
 
 interface CellData {
   value: CellValue;
-  style: CellStyle | null;
+  style: ICell['style'] | null;
 }
 
 interface RowData {
@@ -171,7 +164,7 @@ interface SheetData {
   [row: number]: RowData;
 }
 
-type StyleReducer = (style: CellStyle) => CellStyle;
+type StyleReducer = (style: ICell['style']) => Parameters<ICell['style']['bulkUpdate']>[0];
 
 type PasteType = 'copy' | 'cut';
 
@@ -326,49 +319,8 @@ export default class Model {
     return this.workbook.sheets.get(sheet).getDimensions();
   }
 
-  getCellStyle(sheet: number, row: number, column: number): CellStyle {
-    return {
-      fill: { fg_color: { RGB: '#FFFFFF' }, pattern_type: 'solid' },
-      font: {
-        color: { RGB: '#000000' },
-        b: false,
-        i: false,
-        strike: false,
-        u: false,
-        name: 'Arial',
-        family: 0,
-        sz: 14,
-        scheme: 'minor',
-      },
-      horizontal_alignment: 'left',
-      num_fmt: 'general',
-      read_only: false,
-      quote_prefix: false,
-      border: {
-        left: {
-          style: 'solid',
-          color: { RGB: '#FFFFFF' },
-        },
-        right: {
-          style: 'solid',
-          color: { RGB: '#FFFFFF' },
-        },
-        top: {
-          style: 'solid',
-          color: { RGB: '#FFFFFF' },
-        },
-        bottom: {
-          style: 'solid',
-          color: { RGB: '#FFFFFF' },
-        },
-        diagonal: {
-          style: 'none',
-          color: { RGB: '#FFFFFF' },
-        },
-      },
-    };
-    // TODO:
-    // return JSON.parse(this.wasm.get_style_for_cell(sheet, row, column));
+  getCellStyle(sheet: number, row: number, column: number): ICell['style'] {
+    return this.workbook.sheets.get(sheet).cell(row, column).style;
   }
 
   addBlankSheet(): void {
@@ -387,7 +339,20 @@ export default class Model {
   }
 
   setCellsStyle(sheet: number, area: Area, reducer: StyleReducer): void {
-    this.notifySubscribers({ type: 'setCellStyle' });
+    let { rowStart, rowEnd, columnStart, columnEnd } = area;
+    if (rowStart > rowEnd) {
+      [rowStart, rowEnd] = [rowEnd, rowStart];
+    }
+    if (columnStart > columnEnd) {
+      [columnStart, columnEnd] = [columnEnd, columnStart];
+    }
+    for (let row = rowStart; row <= rowEnd; row += 1) {
+      for (let column = columnStart; column <= columnEnd; column += 1) {
+        const cell = this.workbook.sheets.get(sheet).cell(row, column);
+        cell.style.bulkUpdate(reducer(cell.style));
+      }
+    }
+    this.notifySubscribers({ type: 'setCellsStyle' });
     // TODO:
     /*  const diffs: Diff[] = [];
     if (this.isAreaReadOnly(sheet, area)) {
@@ -421,55 +386,29 @@ export default class Model {
   }
 
   setNumberFormat(sheet: number, area: Area, numberFormat: string): void {
-    this.setCellsStyle(sheet, area, (style) => ({
-      ...style,
-      num_fmt: numberFormat,
-    }));
+    this.setCellsStyle(sheet, area, () => ({ numberFormat }));
   }
 
-  setFillColor(sheet: number, area: Area, color: string): void {
-    this.setCellsStyle(sheet, area, (style) => ({
-      ...style,
-      fill: {
-        ...style.fill,
-        fg_color: {
-          RGB: color,
-        },
-      },
-    }));
+  setFillColor(sheet: number, area: Area, foregroundColor: string): void {
+    this.setCellsStyle(sheet, area, () => ({ fill: { foregroundColor } }));
   }
 
   setTextColor(sheet: number, area: Area, color: string): void {
-    this.setCellsStyle(sheet, area, (style) => ({
-      ...style,
-      font: {
-        ...style.font,
-        color: {
-          RGB: color,
-        },
-      },
-    }));
+    this.setCellsStyle(sheet, area, () => ({ font: { color } }));
   }
 
   toggleAlign(sheet: number, area: Area, alignment: 'left' | 'center' | 'right'): void {
-    this.setCellsStyle(sheet, area, (style) => ({
+    /* this.setCellsStyle(sheet, area, (style) => ({
       ...style,
-      horizontal_alignment: style.horizontal_alignment === alignment ? 'default' : alignment,
-    }));
+      horizontal_alignment:
+        style.alignment.horizontal_alignment === alignment ? 'default' : alignment,
+    })); */
   }
 
-  toggleFontStyle(sheet: number, area: Area, fontStyle: FontStyle): void {
-    const propertyMap: Record<FontStyle, keyof CellStyleFont> = {
-      underline: 'u',
-      italic: 'i',
-      bold: 'b',
-      strikethrough: 'strike',
-    };
+  toggleFontStyle(sheet: number, area: Area, fontStyle: keyof ICell['style']['font']): void {
     this.setCellsStyle(sheet, area, (style) => ({
-      ...style,
       font: {
-        ...style.font,
-        [propertyMap[fontStyle]]: !style.font[propertyMap[fontStyle]],
+        [fontStyle]: !style.font[fontStyle],
       },
     }));
   }
@@ -483,7 +422,8 @@ export default class Model {
 
   isQuotePrefix(sheet: number, row: number, column: number): boolean {
     const style = this.getCellStyle(sheet, row, column);
-    return style.quote_prefix;
+    // FIXME
+    return false;
   }
 
   isAreaReadOnly(sheet: number, area: Area): boolean {

@@ -18,11 +18,13 @@ import * as Icons from 'src/components/uiKit/icons';
 import React, { FunctionComponent, useRef, useState } from 'react';
 import * as Menu from 'src/components/uiKit/menu';
 import * as Toolbar from 'src/components/uiKit/toolbar';
+import styled from 'styled-components';
 import { decreaseDecimalPlaces, increaseDecimalPlaces, NumberFormats } from './formatUtil';
 import ColorPicker from './colorPicker';
 import FormatMenuContent from './formatMenu';
 import FormatPicker from './formatPicker';
 import { useWorkbookContext } from '../workbookContext';
+import Model from '../model';
 
 export type ToolbarProps = {
   className?: string;
@@ -46,24 +48,24 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
 
   const canEdit = !model.isCellReadOnly(selectedSheet, selectedCell.row, selectedCell.column);
   const cellStyle = model.getCellStyle(selectedSheet, selectedCell.row, selectedCell.column);
-  const fontColor = cellStyle.font.color.RGB;
-  const fillColor = cellStyle.fill.fg_color?.RGB ?? '#FFFFFF';
-  const numberFormat = cellStyle.num_fmt;
+  const fontColor = cellStyle.font.color;
+  const fillColor = cellStyle.fill.foregroundColor;
+  const { numberFormat } = cellStyle;
 
   const onNumberFormatPicked = (selectedNumberFormat: string) =>
     model.setNumberFormat(selectedSheet, selectedArea, selectedNumberFormat);
 
-  const onToggleAlign = (align: 'left' | 'center' | 'right') =>
+  const onToggleAlign = (align: Parameters<Model['toggleAlign']>[2]) =>
     model.toggleAlign(selectedSheet, selectedArea, align);
 
-  const onToggleFontStyle = (fontStyle: 'bold' | 'italic' | 'strikethrough' | 'underline') =>
+  const onToggleFontStyle = (fontStyle: Parameters<Model['toggleFontStyle']>[2]) =>
     model.toggleFontStyle(selectedSheet, selectedArea, fontStyle);
 
   // NB: model.canUndo(), model.canRedo() won't subscribe to changes so if nothing else would
   // change then it wouldn't update the toolbar. But in real usage it can't really happen.
   // We need to rerender if something changes anyway.
   return (
-    <Toolbar.Root data-testid={properties['data-testid']}>
+    <ToolbarRoot data-testid={properties['data-testid']}>
       <Toolbar.Button onClick={model.undo} disabled={!model.canUndo()} title="Undo">
         <UndoIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
@@ -126,7 +128,7 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
       </Toolbar.Button>
       <Toolbar.Button
         type="button"
-        onClick={() => onToggleFontStyle('italic')}
+        onClick={() => onToggleFontStyle('italics')}
         disabled={!canEdit}
         title="Italic"
       >
@@ -200,8 +202,12 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
         }}
         open={fillColorPickerOpen}
       />
-    </Toolbar.Root>
+    </ToolbarRoot>
   );
 };
 
 export default WorkbookToolbar;
+
+const ToolbarRoot = styled(Toolbar.Root)`
+  background: transparent;
+`;
