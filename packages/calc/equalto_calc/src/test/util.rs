@@ -12,7 +12,7 @@ pub fn new_empty_model() -> Model {
     Model::new_empty(
         "model",
         "en",
-        "Europe/Berlin",
+        "UTC",
         Environment {
             get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
         },

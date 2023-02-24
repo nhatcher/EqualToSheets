@@ -1,6 +1,6 @@
 {
   "settings": {
-    "tz": "Europe/Berlin",
+    "tz": "UTC",
     "locale": "en"
   },
   "metadata": {

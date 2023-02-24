@@ -8,6 +8,8 @@ pub mod locale;
 pub mod model;
 pub mod new_empty;
 pub mod number_format;
+#[cfg(not(feature = "timezones"))]
+pub mod timezones_utc;
 pub mod types;
 pub mod worksheet;
 

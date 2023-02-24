@@ -13,7 +13,7 @@ use equalto_xlsx::import::{load_from_excel, load_model_from_xlsx};
 
 #[test]
 fn test_example() {
-    let model = load_from_excel("tests/example.xlsx", "en", "Europe/Berlin").unwrap();
+    let model = load_from_excel("tests/example.xlsx", "en", "UTC").unwrap();
     assert_eq!(model.worksheets[0].frozen_rows, 0);
     assert_eq!(model.worksheets[0].frozen_columns, 0);
     let contents =
@@ -24,13 +24,13 @@ fn test_example() {
 
 #[test]
 fn test_save_to_xlsx() {
-    let mut model = load_model_from_xlsx("tests/example.xlsx", "en", "Europe/Berlin").unwrap();
+    let mut model = load_model_from_xlsx("tests/example.xlsx", "en", "UTC").unwrap();
     model.evaluate();
     let temp_file_name = "temp_file_example.xlsx";
     // test can safe
     save_to_xlsx(&model, temp_file_name).unwrap();
     // test can open
-    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "UTC").unwrap();
     let metadata = &model.workbook.metadata;
     assert_eq!(metadata.application, "EqualTo Sheets");
     // FIXME: This will need to be updated once we fix versioning
@@ -42,7 +42,7 @@ fn test_save_to_xlsx() {
 #[test]
 fn test_freeze() {
     // freeze has 3 frozen columns and 2 frozen rows
-    let model = load_from_excel("tests/freeze.xlsx", "en", "Europe/Berlin").unwrap();
+    let model = load_from_excel("tests/freeze.xlsx", "en", "UTC").unwrap();
     assert_eq!(model.worksheets[0].frozen_rows, 2);
     assert_eq!(model.worksheets[0].frozen_columns, 3);
 }
@@ -50,7 +50,7 @@ fn test_freeze() {
 #[test]
 fn test_split() {
     // We test that a workbook with split panes do not produce frozen rows and columns
-    let model = load_from_excel("tests/split.xlsx", "en", "Europe/Berlin").unwrap();
+    let model = load_from_excel("tests/split.xlsx", "en", "UTC").unwrap();
     assert_eq!(model.worksheets[0].frozen_rows, 0);
     assert_eq!(model.worksheets[0].frozen_columns, 0);
 }
@@ -146,14 +146,14 @@ fn test_model_has_correct_styles(model: &Model) {
 
 #[test]
 fn test_simple_text() {
-    let model = load_model_from_xlsx("tests/basic_text.xlsx", "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx("tests/basic_text.xlsx", "en", "UTC").unwrap();
 
     test_model_has_correct_styles(&model);
 
     let temp_file_name = "temp_file_test_named_styles.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "UTC").unwrap();
     fs::remove_file(temp_file_name).unwrap();
     test_model_has_correct_styles(&model);
 }
@@ -223,11 +223,7 @@ fn test_xlsx() {
 
 #[test]
 fn test_evaluation_error_on_load() {
-    let model = load_model_from_xlsx(
-        "tests/UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx",
-        "en",
-        "Europe/Berlin",
-    );
+    let model = load_model_from_xlsx("tests/UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx", "en", "UTC");
     assert!(model.is_err());
     assert_eq!(
         model.err(),
@@ -239,7 +235,7 @@ fn test_evaluation_error_on_load() {
 
 #[test]
 fn test_today_not_supported() {
-    let model = load_model_from_xlsx("tests/TODAY.xlsx", "en", "Europe/Berlin");
+    let model = load_model_from_xlsx("tests/TODAY.xlsx", "en", "UTC");
     assert!(model.is_err());
     assert_eq!(
         model.err(),
@@ -251,7 +247,7 @@ fn test_today_not_supported() {
 
 #[test]
 fn test_evaluation_discrepancy_on_load() {
-    let model = load_model_from_xlsx("tests/XLOOKUP_with_errors.xlsx", "en", "Europe/Berlin");
+    let model = load_model_from_xlsx("tests/XLOOKUP_with_errors.xlsx", "en", "UTC");
     assert!(model.is_err());
     if let Err(ref stri) = model {
         println!("---");

@@ -14,7 +14,7 @@ pub fn new_empty_model() -> Model {
     Model::new_empty(
         "model",
         "en",
-        "Europe/Berlin",
+        "UTC",
         Environment {
             get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
         },
@@ -43,7 +43,7 @@ fn test_values() {
     let temp_file_name = "temp_file_test_values.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "UTC").unwrap();
     assert_eq!(model.formatted_cell_value(0, 1, 1).unwrap(), "123.456");
     assert_eq!(model.formatted_cell_value(0, 2, 1).unwrap(), "Hello world!");
     assert_eq!(model.formatted_cell_value(0, 3, 1).unwrap(), "Hello world!");
@@ -71,7 +71,7 @@ fn test_formulas() {
     let temp_file_name = "temp_file_test_formulas.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "UTC").unwrap();
     assert_eq!(model.formatted_cell_value(0, 1, 2).unwrap(), "11");
     assert_eq!(model.formatted_cell_value(0, 2, 2).unwrap(), "13");
     assert_eq!(model.formatted_cell_value(0, 3, 2).unwrap(), "15");
@@ -93,7 +93,7 @@ fn test_sheets() {
     let temp_file_name = "temp_file_test_sheets.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "UTC").unwrap();
     assert_eq!(
         model.workbook.get_worksheet_names(),
         vec!["Sheet1", "With space", "Tango & Cash", "你好世界"]
@@ -122,7 +122,7 @@ fn test_named_styles() {
     let temp_file_name = "temp_file_test_named_styles.xlsx";
     save_to_xlsx(&model, temp_file_name).unwrap();
 
-    let model = load_model_from_xlsx(temp_file_name, "en", "Europe/Berlin").unwrap();
+    let model = load_model_from_xlsx(temp_file_name, "en", "UTC").unwrap();
     assert!(model
         .workbook
         .styles
