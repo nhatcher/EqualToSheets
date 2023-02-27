@@ -538,17 +538,8 @@ export default class Model {
     if (this.isCellReadOnly(sheet, row, column)) {
       return;
     }
-    this.setInput(sheet, row, column, value);
+    this.workbook.cell(sheet, row, column).input = value;
     this.notifySubscribers({ type: 'setCellValue' });
-  }
-
-  private setInput(sheet: number, row: number, column: number, value: string): void {
-    // FIXME: For some reason input doesn't work with formulas.
-    if (value.startsWith('=')) {
-      this.workbook.cell(sheet, row, column).formula = value;
-    } else {
-      this.workbook.cell(sheet, row, column).input = value;
-    }
   }
 
   extendTo(sheet: number, sourceArea: Area, targetArea: Area): void {
@@ -610,7 +601,7 @@ export default class Model {
     const extendedValue = this.workbook.sheets
       .get(sheet)
       .userInterface.getExtendedValue(sourceRow, sourceColumn, targetRow, targetColumn);
-    this.setInput(sheet, targetRow, targetColumn, extendedValue);
+    this.workbook.cell(sheet, targetRow, targetColumn).input = extendedValue;
     const style = this.getCellStyle(sheet, sourceRow, sourceColumn);
     // TODO: Probably copying style should be supported in the SDK
     this.setCellsStyle(
