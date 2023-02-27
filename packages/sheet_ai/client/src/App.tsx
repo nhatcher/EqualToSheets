@@ -330,12 +330,12 @@ const EqualToFooterLink = styled.a`
 
 const WorkbookRoot = styled(Workbook.Root)`
   border: 1px solid #c6cae3;
-  filter: drop-shadow(0px 2px 2px rgba(33, 36, 58, 0.15));
-  border-radius: 10px;
+  box-shadow: 0px 2px 2px rgba(33, 36, 58, 0.15);
+  border-radius: 5px;
 `;
 const Worksheet = styled(Workbook.Worksheet)`
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
 `;
 
 function buildRequestData(

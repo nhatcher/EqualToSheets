@@ -516,7 +516,8 @@ const CellOutline = styled.div`
   box-sizing: border-box;
   position: absolute;
   border: 2px solid ${outlineColor};
-  border-radius: 3px;
+  border-radius: 1px;
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
   word-break: break-word;
   font-size: 13px;
   display: flex;

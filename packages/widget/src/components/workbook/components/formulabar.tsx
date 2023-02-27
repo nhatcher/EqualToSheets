@@ -54,6 +54,7 @@ const NameContainer = styled.div`
   font-size: 12px;
   display: flex;
   flex-grow: row;
+  line-height: 100%;
 `;
 const FormulaContainer = styled.div`
   margin-left: 10px;

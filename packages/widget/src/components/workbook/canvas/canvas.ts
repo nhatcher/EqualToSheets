@@ -8,7 +8,7 @@ import {
   gridColor,
   gridSeparatorColor,
   headerBackground,
-  headerGlobalSelectorColor,
+  headerBorderColor,
   headerSelectedBackground,
   headerSelectedColor,
   headerTextColor,
@@ -924,16 +924,18 @@ export default class WorksheetCanvas {
   /* eslint-disable no-param-reassign */
   // eslint-disable-next-line class-methods-use-this
   private styleColumnHeader(width: number, div: HTMLDivElement, selected: boolean): void {
+    div.style.boxSizing = 'border-box';
     div.style.width = `${width}px`;
     div.style.height = `${headerRowHeight}px`;
     div.style.backgroundColor = selected ? headerSelectedBackground : headerBackground;
     div.style.color = selected ? headerSelectedColor : headerTextColor;
+    div.style.fontWeight = 'bold';
+    div.style.border = `1px solid ${headerBorderColor}`;
     if (selected) {
       div.style.borderBottom = `1px solid ${outlineColor}`;
       div.classList.add('selected');
     } else {
       div.classList.remove('selected');
-      div.style.border = 'none';
     }
   }
   /* eslint-enable no-param-reassign */
@@ -962,13 +964,16 @@ export default class WorksheetCanvas {
     for (let row = firstRow; row <= bottomRightCell.row; row += 1) {
       const rowHeight = this.workbook.getRowHeight(row);
       const selected = row >= rowStart && row <= rowEnd;
-      context.fillStyle = selected ? headerSelectedBackground : headerBackground;
+      context.fillStyle = headerBorderColor;
       context.fillRect(0, topLeftCornerY, headerColumnWidth, rowHeight);
+      context.fillStyle = selected ? headerSelectedBackground : headerBackground;
+      context.fillRect(1, topLeftCornerY + 1, headerColumnWidth - 2, rowHeight - 2);
       if (selected) {
         context.fillStyle = outlineColor;
         context.fillRect(headerColumnWidth - 1, topLeftCornerY, 1, rowHeight);
       }
       context.fillStyle = selected ? headerSelectedColor : headerTextColor;
+      context.font = `bold 12px ${defaultCellFontFamily}`;
       context.fillText(
         `${row}`,
         headerColumnWidth / 2,
@@ -1157,12 +1162,8 @@ export default class WorksheetCanvas {
     this.renderRowHeaders(frozenRows, topLeftCell, bottomRightCell);
 
     // square in the top left corner
-    context.fillStyle = headerGlobalSelectorColor;
+    context.fillStyle = headerBorderColor;
     context.fillRect(0, 0, headerColumnWidth, headerRowHeight);
-
-    // header/sheet borders
-    context.clearRect(0, headerRowHeight, canvas.width, 1);
-    context.clearRect(headerColumnWidth, 0, 1, canvas.height);
 
     // draw activeRanges
     const activeRanges: ColoredFormulaReference[] = [];
