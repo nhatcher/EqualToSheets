@@ -78,14 +78,6 @@
 
 @font-face {
   font-family: 'Inter';
-  src: local('Inter'), local('Inter'),
-    url('./assets/fonts/Inter/Inter-RegularItalic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: 'Inter';
   src: local('Inter'), local('Inter'), url('./assets/fonts/Inter/Inter-Light.woff2') format('woff2');
   font-style: normal;
   font-weight: 300;
