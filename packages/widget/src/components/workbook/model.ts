@@ -113,42 +113,6 @@ interface SheetArea extends Area {
   sheet: number;
 }
 
-interface Color {
-  RGB: string;
-}
-
-interface CellStyleFill {
-  pattern_type: string;
-  fg_color?: Color;
-  bg_color?: Color;
-}
-
-interface CellStyleFont {
-  u: boolean;
-  b: boolean;
-  i: boolean;
-  strike: boolean;
-  sz: number;
-  color: Color;
-  name: string;
-  family: number;
-  scheme: string;
-}
-
-interface BorderItem {
-  style: string;
-  color: Color;
-}
-interface CellStyleBorder {
-  diagonal_up?: boolean;
-  diagonal_down?: boolean;
-  left: BorderItem;
-  right: BorderItem;
-  top: BorderItem;
-  bottom: BorderItem;
-  diagonal: BorderItem;
-}
-
 export type CellStyle = ICell['style'];
 
 interface CellData {
@@ -256,23 +220,11 @@ export default class Model {
   }
 
   getColumnWidth(sheet: number, column: number): number {
-    // TODO: return this.wasm.get_column_width(sheet, column);
-    return 100;
+    return this.workbook.sheets.get(sheet).getColumnWidth(column);
   }
 
   setColumnWidth(sheet: number, column: number, width: number): void {
-    this.history.undo.push([
-      {
-        type: 'set_column_width',
-        sheet,
-        column,
-        newValue: width,
-        oldValue: 100, // TODO: this.wasm.get_column_width(sheet, column),
-      },
-    ]);
-    this.history.redo = [];
-    // TODO:
-    // this.wasm.set_column_width(sheet, column, width);
+    this.workbook.sheets.get(sheet).setColumnWidth(column, width);
     this.notifySubscribers({ type: 'setColumnWidth' });
   }
 
@@ -285,24 +237,12 @@ export default class Model {
     }));
   }
 
-  getRowHeight(sheet: number, rowIndex: number): number {
-    return 20;
-    // TODO:
-    // return this.wasm.get_row_height(sheet, rowIndex);
+  getRowHeight(sheet: number, row: number): number {
+    return this.workbook.sheets.get(sheet).getRowHeight(row);
   }
 
   setRowHeight(sheet: number, row: number, height: number): void {
-    this.history.undo.push([
-      {
-        type: 'set_row_height',
-        sheet,
-        row,
-        newValue: height,
-        oldValue: 20, // TODO: this.wasm.get_row_height(sheet, row),
-      },
-    ]);
-    this.history.redo = [];
-    // this.wasm.set_row_height(sheet, row, height);
+    this.workbook.sheets.get(sheet).setRowHeight(row, height);
     this.notifySubscribers({ type: 'setRowHeight' });
   }
 
@@ -353,36 +293,6 @@ export default class Model {
       }
     }
     this.notifySubscribers({ type: 'setCellsStyle' });
-    // TODO:
-    /*  const diffs: Diff[] = [];
-    if (this.isAreaReadOnly(sheet, area)) {
-      return;
-    }
-    let { rowStart, rowEnd, columnStart, columnEnd } = area;
-    if (rowStart > rowEnd) {
-      [rowStart, rowEnd] = [rowEnd, rowStart];
-    }
-    if (columnStart > columnEnd) {
-      [columnStart, columnEnd] = [columnEnd, columnStart];
-    }
-    for (let row = rowStart; row <= rowEnd; row += 1) {
-      for (let column = columnStart; column <= columnEnd; column += 1) {
-        const styleString = this.getCellStyle(sheet, row, column) ?? 0;
-        const style = JSON.parse(styleString);
-        const newStyle = reducer(style);
-        diffs.push({
-          type: 'set_cell_style',
-          sheet,
-          row,
-          column,
-          newValue: newStyle,
-          oldValue: style,
-        });
-        this.wasm.set_cell_style(sheet, row, column, newStyle);
-      }
-    }
-    this.history.undo.push(diffs);
-    this.history.redo = []; */
   }
 
   setNumberFormat(sheet: number, area: Area, numberFormat: string): void {
