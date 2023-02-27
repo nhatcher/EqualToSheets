@@ -1,8 +1,11 @@
 Could not process completion
 
-Completion:
+PROMPT:
+Use the INVALID() function in calculation.
+
+COMPLETION:
 |=INVALID()|
 
-Error:
+ERROR:
 Generated workbook contains an error
 Sheet1!A1 ('=INVALID()'): Invalid function: INVALID

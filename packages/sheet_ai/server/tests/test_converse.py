@@ -56,7 +56,7 @@ def test_rate_limit_per_session(session_client: FlaskClient) -> None:
     assert _get_converse_status_code(session_client, "prompt3") == 429
 
 
-@pytest.mark.parametrize("body", [{}, {"prompt": "not a list"}, {"prompt": 42}])
+@pytest.mark.parametrize("body", [{}, {"prompt": "not a list"}, {"prompt": 42}, {"prompt": [" "]}])
 def test_converse_invalid_post_data(session_client: FlaskClient, body: dict[str, Any], monkeypatch: Any) -> None:
     monkeypatch.setattr("sheet_ai.workbook.create_completion", lambda _: "invalid")
 

@@ -1,7 +1,10 @@
 Could not process completion
 
-Completion:
+PROMPT:
+"I don't need no workbook"
+
+COMPLETION:
 Did you ask for a workbook? Are you sure you need a workbook?
 
-Error:
+ERROR:
 Could not find a workbook

@@ -22,11 +22,12 @@ def test_generate_workbook_data(markdown_path: Path, monkeypatch: Any) -> None:
 @pytest.mark.parametrize("markdown_path", (Path(os.path.dirname(__file__)) / "workbooks" / "error").glob("*.md"))
 def test_generate_workbook_data_error(markdown_path: Path, monkeypatch: Any) -> None:
     markdown = markdown_path.read_text().strip()
+    prompt = markdown_path.with_suffix(".prompt").read_text().split("\n\n")
     error = f"^{re.escape(markdown_path.with_suffix('.error').read_text())}$"
     with monkeypatch.context() as mock:
         mock.setattr("sheet_ai.workbook.create_completion", lambda _: markdown)
         with pytest.raises(WorkbookProcessingError, match=error):
-            assert generate_workbook_data([], retries=0)
+            assert generate_workbook_data(prompt, retries=0)
 
 
 def test_retry_logic_with_eventual_success(monkeypatch: Any) -> None:

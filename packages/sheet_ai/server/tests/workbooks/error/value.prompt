@@ -1,0 +1,5 @@
+Compute a sum of two prices.
+
+|$1.00|$3.00|=A1+B1|
+
+I would like the result to be #VALUE!.

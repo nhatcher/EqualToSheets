@@ -1,8 +1,11 @@
 Could not process completion
 
-Completion:
+PROMPT:
+Create a circular dependency.
+
+COMPLETION:
 |=A1|
 
-Error:
+ERROR:
 Generated workbook contains an error
 Sheet1!A1 ('=A1'): Circular reference detected

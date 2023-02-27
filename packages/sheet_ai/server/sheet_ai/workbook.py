@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from typing import Iterable, TypedDict
 
@@ -9,15 +10,20 @@ from equalto.exceptions import WorkbookError
 from sheet_ai.completion import create_completion
 from sheet_ai.exceptions import WorkbookProcessingError
 
+logger = logging.getLogger("wsgi.app")
+
 DEFAULT_RETRIES = 5
 
 ERROR_TEMPLATE = """
 Could not process completion
 
-Completion:
+PROMPT:
+{prompt}
+
+COMPLETION:
 {completion}
 
-Error:
+ERROR:
 {error}
 """.strip()
 
@@ -45,12 +51,14 @@ def generate_workbook_data(prompt: list[str], retries: int = DEFAULT_RETRIES) ->
     try:
         return _process_completion(completion)
     except WorkbookProcessingError as err:
+        error_msg = ERROR_TEMPLATE.format(prompt="\n\n".join(prompt), completion=completion, error=str(err))
+        logger.error(error_msg)
         if retries > 0:
             # TODO: We could try rerunning the same prompt, but we could also consider:
             #         - preparing a few alternative preambles for subsequent calls;
             #         - use different AI model temperature values.
             return generate_workbook_data(prompt, retries - 1)
-        raise WorkbookProcessingError(ERROR_TEMPLATE.format(completion=completion, error=str(err)))
+        raise WorkbookProcessingError(error_msg)
 
 
 def _process_completion(completion: str) -> WorkbookData:

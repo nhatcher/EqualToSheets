@@ -16,6 +16,7 @@ MAX_PROMPTS_PER_SESSION = int(os.getenv("MAX_PROMPTS_PER_SESSION", 10))
 SUDO_PASSWORD = os.getenv("SUDO_PASSWORD")
 
 app = Flask(__name__)
+logger = app.logger
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 limiter = Limiter(key_func=get_remote_address, app=app, storage_uri=db.MONGODB_URI)
@@ -62,7 +63,6 @@ def converse() -> WorkbookData:
         try:
             workbook_data = generate_workbook_data(prompt)
         except SheetAIError:
-            app.logger.exception("Workbook Not Found")
             raise abort(404, "Workbook Not Found")
 
     db.save_prompt_response(session_id, prompt, workbook_data)
@@ -76,6 +76,9 @@ def _get_prompt() -> list[str]:
     except (KeyError, ValueError):
         raise abort(400)
     if not isinstance(prompt, list) or not all(isinstance(msg, str) for msg in prompt):
+        raise abort(400)
+    prompt = list(filter(None, map(str.strip, prompt)))
+    if not prompt:
         raise abort(400)
     return prompt
 

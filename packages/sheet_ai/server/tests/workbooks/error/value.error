@@ -1,8 +1,15 @@
 Could not process completion
 
-Completion:
+PROMPT:
+Compute a sum of two prices.
+
+|$1.00|$3.00|=A1+B1|
+
+I would like the result to be #VALUE!.
+
+COMPLETION:
 |foo|$3.00|=A1+B1|
 
-Error:
+ERROR:
 Encountered formula resulting in #VALUE!
 Sheet1!C1=A1+B1
