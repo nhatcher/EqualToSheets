@@ -485,7 +485,20 @@ const ServerMessageBlock = (properties: {
           }
 
           const input = cell['input'];
-          model.setCellValue(0, rowIndex + 1, columnIndex + 1, removeFormatting(`${input}`));
+          model.setCellValue(0, rowIndex + 1, columnIndex + 1, `${input}`);
+
+          if (cell.style?.num_fmt) {
+            model.setNumberFormat(
+              0,
+              {
+                rowStart: rowIndex + 1,
+                rowEnd: rowIndex + 1,
+                columnStart: columnIndex + 1,
+                columnEnd: columnIndex + 1,
+              },
+              cell.style.num_fmt,
+            );
+          }
         }
       }
       setModel(model);
@@ -522,16 +535,6 @@ const ServerMessageBlock = (properties: {
     </SystemMessageThread>
   );
 };
-
-function removeFormatting(text: string): string {
-  if (text.includes('$')) {
-    return text.replace(/[^0-9.-]+/g, '');
-  }
-  if (text.includes('%')) {
-    return text.replace(/[^0-9.-]+/g, '');
-  }
-  return text;
-}
 
 const DownloadButton = styled.button`
   cursor: pointer;

@@ -1,6 +1,6 @@
 export type ServerResponse = {
   input: string | number | boolean;
-  style?: { bold?: boolean };
+  style?: { bold?: boolean; num_fmt?: string };
 }[][];
 
 export type ConversationEntry =
