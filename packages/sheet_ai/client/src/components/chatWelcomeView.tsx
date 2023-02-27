@@ -11,16 +11,14 @@ export function ChatWelcomeView() {
         <OpenAILogo width={30} height={30} />
       </LogosBox>
       <Heading>EqualTo Chat</Heading>
-      <BodyText>Prompt our service and receive a spreadsheet in return:</BodyText>
+      <BodyText>Ask for a spreadsheet and we'll try to create it for you</BodyText>
       <ExampleText>
-        “Create a budget plan for the restoration of a decrepit 19th century home”
+        "Create a detailed project plan for the restoration of a 19th century home."
       </ExampleText>
-      <ExampleText>
-        “Create an ROI calculator for a social media ad for a software company”
-      </ExampleText>
-      <BodyText>Ask follow-up questions to refine your spreadsheet:</BodyText>
-      <ExampleText>“Change the currency to euro”</ExampleText>
-      <ExampleText>“Add a row with the totals”</ExampleText>
+      <ExampleText>"Create a monthly budget for a student starting in university."</ExampleText>
+      <BodyText>Use follow-up questions to refine your spreadsheet</BodyText>
+      <ExampleText>"Change the currency to euro"</ExampleText>
+      <ExampleText>"Add a row with the totals"</ExampleText>
     </Container>
   );
 }
