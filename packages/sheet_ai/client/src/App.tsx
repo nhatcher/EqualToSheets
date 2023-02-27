@@ -343,7 +343,7 @@ function buildRequestData(
   models: Record<string, Workbook.Model>,
 ): string {
   const rawData = conversation.map((entry) => {
-    if (entry.source === 'user') {
+    if (entry.source === 'user' && entry.hasFailed === false) {
       return entry.text;
     }
 
