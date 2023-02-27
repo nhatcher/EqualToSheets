@@ -28,6 +28,7 @@ export const fonts = {
 };
 
 const theme = createTheme({
+  spacing: 5,
   palette: {
     primary: {
       light: '#E8F8E9',

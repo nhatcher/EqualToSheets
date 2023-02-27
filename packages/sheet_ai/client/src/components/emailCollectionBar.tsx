@@ -1,98 +1,60 @@
-import styled from 'styled-components/macro';
-import { Button, TextField } from '@mui/material';
-import { useCallback, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
-
-type MailSubmitState =
-  | { state: 'waiting' }
-  | { state: 'submitting' }
-  | { state: 'success' }
-  | { state: 'error' };
-
-function useEmailSubmit(): {
-  submitState: MailSubmitState;
-  setMail: (mail: string) => void;
-  submitMail: () => void;
-} {
-  const [submitState, setSubmitState] = useState<MailSubmitState>({ state: 'waiting' });
-  const [mail, setMail] = useState('');
-  const submitMail = useCallback(() => {
-    setSubmitState({ state: 'submitting' });
-
-    const simpleEmailRegex = /^[^@\s]+@[^@\s]+$/;
-    const sanitizedMail = mail.trim();
-
-    if (simpleEmailRegex.test(sanitizedMail)) {
-      submitMail(sanitizedMail);
-    } else {
-      setSubmitState({ state: 'error' });
-    }
-
-    async function submitMail(sanitizedMail: string) {
-      try {
-        const response = await fetch('./signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({ email: sanitizedMail }),
-        });
-
-        if (!response.ok) {
-          setSubmitState({ state: 'error' });
-          return;
-        }
-
-        setSubmitState({ state: 'success' });
-      } catch {
-        setSubmitState({ state: 'error' });
-      }
-    }
-  }, [mail]);
-
-  return { submitState, setMail, submitMail };
-}
+import { useState } from 'react';
+import styled from 'styled-components/macro';
+import { Button, SubmitButton } from './buttons';
+import { EmailInput } from './emailInput';
+import { SignupDialog } from './signupDialog';
+import { useEmailSubmit } from './useEmailSubmit';
 
 export function EmailCollectionBar() {
   const { submitState, setMail, submitMail } = useEmailSubmit();
   const formDisabled = submitState.state === 'success' || submitState.state === 'submitting';
 
+  const [signupDialogOpen, setSignupDialogOpen] = useState(false);
+
   return (
     <Container>
       <SpreadsheetsCopy>
-        ✨ <strong>EqualTo Chat</strong> was built with our serverless spreadsheet tech, and
-        leverages <strong>GPT-3</strong> learning models.
+        ✨ Built with our serverless spreadsheet tech EqualTo Sheets, and OpenAI.
       </SpreadsheetsCopy>
       {(submitState.state === 'waiting' ||
         submitState.state === 'submitting' ||
         submitState.state === 'error') && (
-        <InlineSignupForm
-          onSubmit={(event) => {
-            event.preventDefault();
-            submitMail();
-          }}
-        >
-          <EmailInput
-            onChange={(event) => setMail(event.target.value)}
-            disabled={formDisabled}
-            error={submitState.state === 'error'}
-          />
-          <SubmitButton type="submit" disabled={formDisabled}>
-            Get early access
-          </SubmitButton>
-          <ConsentText>
-            By subscribing I consent to receive communications regarding EqualTo's products and
-            services.
-          </ConsentText>
-        </InlineSignupForm>
+        <>
+          <InlineSignupForm
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitMail();
+            }}
+          >
+            <EmailInput
+              onChange={(event) => setMail(event.target.value)}
+              disabled={formDisabled}
+              error={submitState.state === 'error'}
+              $width={300}
+            />
+            <SubmitButton sx={{ ml: 1 }} type="submit" disabled={formDisabled}>
+              Get early access
+            </SubmitButton>
+            <ConsentText>
+              By subscribing I consent to receive communications regarding EqualTo's products and
+              services.
+            </ConsentText>
+          </InlineSignupForm>
+          <MobileSignupContainer>
+            <MobileSignupButton type="button" onClick={() => setSignupDialogOpen(true)}>
+              Join waitlist
+            </MobileSignupButton>
+          </MobileSignupContainer>
+        </>
       )}
       {submitState.state === 'success' && (
         <SuccessMessageBox>
           <CheckCircle />
-          <SuccessText>Thank you for signing up!</SuccessText>
+          <SuccessText>Thank you for joining!</SuccessText>
         </SuccessMessageBox>
       )}
+      <SignupDialog open={signupDialogOpen} onClose={() => setSignupDialogOpen(false)} />
     </Container>
   );
 }
@@ -158,51 +120,22 @@ const SuccessText = styled.div`
   margin-left: 10px;
 `;
 
-const EmailInput = styled(TextField).attrs({
-  name: 'email',
-  placeholder: 'Your email',
-})`
-  .MuiInputBase-root {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 5px;
-    width: 300px;
-  }
-
-  input {
-    box-sizing: border-box;
-    height: 35px;
-    padding: 10px;
-    color: #f1f2f8;
-    font-weight: 400;
-    font-size: 13px;
-    line-height: 16px;
-    &::placeholder {
-      color: #8b8fad;
-    }
+const MobileSignupContainer = styled.div`
+  padding: 0 20px;
+  @media (min-width: 801px) {
+    display: none;
   }
 `;
 
-const SubmitButton = styled(Button)`
-  box-sizing: border-box;
-  height: 35px;
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 5px;
-
-  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);
-  background: #70d379;
-  border: none;
-  border-radius: 5px;
-
-  color: #21243a;
-  font-weight: 500;
-  font-size: 13px;
-  line-height: 16px;
-  letter-spacing: 0;
-  text-transform: none;
-
+const MobileSignupButton = styled(Button)`
+  height: 40px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
   &:hover {
-    background: #59ad60;
-    color: #21243a;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.3);
   }
 `;
