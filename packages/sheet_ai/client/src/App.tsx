@@ -357,7 +357,7 @@ function buildRequestData(
           for (let column = 1; column <= maxColumn; ++column) {
             const cell = model.getUICell(0, row, column);
             const textRepresentation = cell.formula || cell.formattedValue || '';
-            rowData.push(textRepresentation);
+            rowData.push(cell.style.font.bold ? `**${textRepresentation}**` : textRepresentation);
           }
           workbookData.push(rowData);
         }
@@ -371,7 +371,6 @@ function buildRequestData(
     return null;
   });
 
-  console.log('Extracted data: ', rawData);
   return JSON.stringify({ prompt: rawData.filter((entry) => typeof entry === 'string') });
 }
 
