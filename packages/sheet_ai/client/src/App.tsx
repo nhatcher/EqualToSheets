@@ -305,15 +305,60 @@ function AppContent() {
       <DiscussionFooter>
         <PromptEditor onSubmit={handleMessageSend} />
         <LinksFooter>
-          {/* eslint-disable-next-line react/jsx-no-target-blank */}
-          <EqualToFooterLink href="https://www.equalto.com/" target="_blank">
-            equalto.com
-          </EqualToFooterLink>
+          <EqualToLinkContainer>
+            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+            <EqualToFooterLink href="https://www.equalto.com/" target="_blank">
+              equalto.com
+            </EqualToFooterLink>
+            <EqualToLinkDivider />
+          </EqualToLinkContainer>
+          <ConsentFooterText>
+            {'By sending my prompt I consent to the '}
+            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+            <FooterLink href="https://www.equalto.com/privacy-policy" target="_blank">
+              Privacy Policy
+            </FooterLink>
+            {' and '}
+            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+            <FooterLink href="https://www.equalto.com/tos" target="_blank">
+              Terms of Service
+            </FooterLink>
+            {'.'}
+          </ConsentFooterText>
         </LinksFooter>
       </DiscussionFooter>
     </ChatWidget>
   );
 }
+
+const EqualToLinkContainer = styled.span`
+  @media (max-width: 800px) {
+    display: none;
+  }
+`;
+const EqualToLinkDivider = styled.span`
+  display: inline-block;
+  border-right: 1px solid #f1f2f8;
+  height: 10px;
+  margin: 0 10px;
+`;
+
+const ConsentFooterText = styled.span`
+  color: #8b8fad;
+`;
+
+const FooterLink = styled.a`
+  font-weight: 400;
+  font-size: 9px;
+  line-height: 11px;
+  &:link,
+  &:visited,
+  &:hover,
+  &:active {
+    text-decoration: none;
+    color: #5879f0;
+  }
+`;
 
 const EqualToFooterLink = styled.a`
   font-weight: 400;
