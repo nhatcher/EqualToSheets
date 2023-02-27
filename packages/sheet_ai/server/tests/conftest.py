@@ -29,3 +29,8 @@ def patch_mongo(monkeypatch: Any) -> Generator[None, None, None]:
 def reset_rate_limiter_storage() -> Generator[None, None, None]:
     yield
     limiter.reset()
+
+
+@pytest.fixture(autouse=True)
+def set_environ(monkeypatch: Any) -> None:
+    monkeypatch.setenv("GIT_COMMIT", "af7b5cbe5fea4c7b90ba4541643cac087c2277cc")

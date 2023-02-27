@@ -2,6 +2,9 @@ FROM rust:1.66.1-slim
 
 ENV PYTHONUNBUFFERED 1
 
+ARG GIT_COMMIT
+ENV GIT_COMMIT $GIT_COMMIT
+
 WORKDIR /server
 
 RUN apt-get update \

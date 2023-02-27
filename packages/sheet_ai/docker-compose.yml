@@ -5,6 +5,8 @@ services:
     build:
       context: ..
       dockerfile: ./sheet_ai/server/Dockerfile
+      args:
+        - GIT_COMMIT=${GIT_COMMIT}
     volumes:
       - ./server/:/server
     env_file: ./server/wsgi/.env

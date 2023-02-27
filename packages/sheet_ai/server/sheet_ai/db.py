@@ -16,12 +16,6 @@ from sheet_ai.workbook import WorkbookData
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 
-COMPLETION_PARAMETERS = {
-    "model": MODEL,
-    "temperature": TEMPERATURE,
-    "preamble_md5": md5(PREAMBLE.encode("utf-8"), usedforsecurity=False).hexdigest(),
-}
-
 
 @cache
 def _get_db() -> Database[dict[str, Any]]:
@@ -32,7 +26,7 @@ def _get_db() -> Database[dict[str, Any]]:
     db.prompt.create_indexes(
         [
             IndexModel([("session_id", ASCENDING)]),
-            IndexModel([("prompt", ASCENDING), ("completion_parameters", ASCENDING)]),
+            IndexModel([("prompt", ASCENDING), ("cache_key", ASCENDING)]),
         ],
     )
     db.email.create_index("email", unique=True)
@@ -53,7 +47,7 @@ def get_prompt_response(prompt: list[str]) -> WorkbookData | None:
         {
             "prompt": prompt,
             # limit responses to completions using the current settings
-            "completion_parameters": COMPLETION_PARAMETERS,
+            "cache_key": _get_cache_key(),
         },
     )
     if not document:
@@ -67,7 +61,7 @@ def save_prompt_response(session_id: str, prompt: list[str], workbook: WorkbookD
             "session_id": session_id,
             "prompt": prompt,
             "workbook": workbook,
-            "completion_parameters": COMPLETION_PARAMETERS,
+            "cache_key": _get_cache_key(),
         },
         update={"$setOnInsert": {"create_date": datetime.utcnow()}},
         upsert=True,
@@ -87,3 +81,16 @@ def save_email_address(email: str) -> None:
 
 def get_email_addresses() -> list[str]:
     return [doc["email"] for doc in _get_db().email.find({}, {"email": 1}).sort("email")]
+
+
+@cache
+def _get_cache_key() -> dict[str, Any]:
+    commit = os.getenv("GIT_COMMIT")
+    assert commit, "GIT_COMMIT environment variable is not set"
+
+    return {
+        "model": MODEL,
+        "temperature": TEMPERATURE,
+        "preamble_md5": md5(PREAMBLE.encode("utf-8"), usedforsecurity=False).hexdigest(),
+        "commit": commit,
+    }
