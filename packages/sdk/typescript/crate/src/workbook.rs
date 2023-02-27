@@ -379,6 +379,27 @@ impl WasmWorkbook {
         Ok(WasmLocalCellCoordinate { row, column })
     }
 
+    #[wasm_bindgen(js_name = "getExtendedValue")]
+    pub fn get_extended_value(
+        &self,
+        sheet_index: u32,
+        source_row: i32,
+        source_column: i32,
+        target_row: i32,
+        target_column: i32,
+    ) -> Result<String, JsError> {
+        Ok(self
+            .model
+            .extend_to(
+                sheet_index,
+                source_row,
+                source_column,
+                target_row,
+                target_column,
+            )
+            .map_err(WorkbookError::from)?)
+    }
+
     #[wasm_bindgen(js_name = "getCellStyle")]
     pub fn get_cell_style(
         &self,

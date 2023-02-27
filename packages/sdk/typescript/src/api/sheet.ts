@@ -118,6 +118,16 @@ export interface ISheetForUserInterface {
     column: number,
     direction: NavigationDirection,
   ): [number, number];
+  /**
+   * @returns user input value for extend action
+   * from [sourceRow, sourceColumn] to [targetRow, targetColumn]
+   */
+  getExtendedValue(
+    sourceRow: number,
+    sourceColumn: number,
+    targetRow: number,
+    targetColumn: number,
+  ): string;
 }
 
 export class Sheet implements ISheet {
@@ -274,6 +284,25 @@ export class SheetForUserInterface implements ISheetForUserInterface {
       );
 
       return [cell.row, cell.column];
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  getExtendedValue(
+    sourceRow: number,
+    sourceColumn: number,
+    targetRow: number,
+    targetColumn: number,
+  ): string {
+    try {
+      return this._wasmWorkbook.getExtendedValue(
+        this._sheet.index,
+        sourceRow,
+        sourceColumn,
+        targetRow,
+        targetColumn,
+      );
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

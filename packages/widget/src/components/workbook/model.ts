@@ -628,123 +628,105 @@ export default class Model {
     if (this.isCellReadOnly(sheet, row, column)) {
       return;
     }
-    const styleIndex = 0; // TODO: this.wasm.get_cell_style_index(sheet, row, column);
-    this.history.undo.push([
-      {
-        type: 'set_cell_value',
-        sheet,
-        row,
-        column,
-        newStyle: styleIndex,
-        newValue: value,
-        oldValue: this.getFormulaValueOrNull(sheet, row, column),
-        oldStyle: styleIndex,
-      },
-    ]);
-    this.history.redo = [];
+    this.setInput(sheet, row, column, value);
+    this.notifySubscribers({ type: 'setCellValue' });
+  }
+
+  private setInput(sheet: number, row: number, column: number, value: string): void {
     // FIXME: For some reason input doesn't work with formulas.
     if (value.startsWith('=')) {
       this.workbook.cell(sheet, row, column).formula = value;
     } else {
       this.workbook.cell(sheet, row, column).input = value;
     }
-    this.notifySubscribers({ type: 'setCellValue' });
   }
 
-  extendTo(sheet: number, initialArea: Area, extendedArea: Area): void {
+  extendTo(sheet: number, sourceArea: Area, targetArea: Area): void {
+    const sourceRowBoundaries = [sourceArea.rowStart, sourceArea.rowEnd];
+    const sourceColumnBoundaries = [sourceArea.columnStart, sourceArea.columnEnd];
+
+    const [sourceRowStart, sourceRowEnd] = [
+      Math.min(...sourceRowBoundaries),
+      Math.max(...sourceRowBoundaries),
+    ];
+    const [sourceColumnStart, sourceColumnEnd] = [
+      Math.min(...sourceColumnBoundaries),
+      Math.max(...sourceColumnBoundaries),
+    ];
+
+    const shouldReverseRows = sourceRowStart > targetArea.rowStart;
+    const shouldReverseColumns = sourceColumnStart > targetArea.columnStart;
+
+    for (let rowOffset = 0; rowOffset <= targetArea.rowEnd - targetArea.rowStart; rowOffset += 1) {
+      for (
+        let columnOffset = 0;
+        columnOffset <= targetArea.columnEnd - targetArea.columnStart;
+        columnOffset += 1
+      ) {
+        const sourceRowOffset = rowOffset % (sourceRowEnd - sourceRowStart + 1);
+        const sourceColumnOffset = columnOffset % (sourceColumnEnd - sourceColumnStart + 1);
+
+        const sourceRow = !shouldReverseRows
+          ? sourceRowStart + sourceRowOffset
+          : sourceRowEnd - sourceRowOffset;
+
+        const sourceColumn = !shouldReverseColumns
+          ? sourceColumnStart + sourceColumnOffset
+          : sourceColumnEnd - sourceColumnOffset;
+
+        const targetRow = !shouldReverseRows
+          ? targetArea.rowStart + rowOffset
+          : targetArea.rowEnd - rowOffset;
+
+        const targetColumn = !shouldReverseColumns
+          ? targetArea.columnStart + columnOffset
+          : targetArea.columnEnd - columnOffset;
+
+        if (!this.isCellReadOnly(sheet, targetRow, targetColumn)) {
+          this.extendToCell(sheet, sourceRow, sourceColumn, targetRow, targetColumn);
+        }
+      }
+    }
     this.notifySubscribers({ type: 'extendTo' });
-    /* const diffs: Array<Diff> = [];
-    let { rowStart, rowEnd, columnStart, columnEnd } = initialArea;
-    if (rowStart > rowEnd) {
-      [rowStart, rowEnd] = [rowEnd, rowStart];
-    }
-    if (columnStart > columnEnd) {
-      [columnStart, columnEnd] = [columnEnd, columnStart];
-    }
-    if (columnStart === extendedArea.columnStart && columnEnd === extendedArea.columnEnd) {
-      // extend by rows
-      let offsetRow;
-      let startRow;
-      if (rowEnd + 1 === extendedArea.rowStart) {
-        offsetRow = extendedArea.rowStart;
-        startRow = rowStart;
-      } else {
-        offsetRow = extendedArea.rowEnd;
-        startRow = rowEnd;
-      }
+  }
 
-      for (let row = extendedArea.rowStart; row <= extendedArea.rowEnd; row += 1) {
-        for (let column = columnStart; column <= columnEnd; column += 1) {
-          if (!this.isCellReadOnly(sheet, row, column)) {
-            const sourceRow = startRow + ((row - offsetRow) % (rowEnd - rowStart + 1));
-            let value = this.wasm.extend_to(sheet, sourceRow, column, row, column);
-            // We don't copy over read-only styles
-            const oldStyle = this.wasm.get_cell_style_index(sheet, row, column);
-            const newStyle = this.isCellReadOnly(sheet, sourceRow, column)
-              ? oldStyle
-              : this.wasm.get_cell_style_index(sheet, sourceRow, column);
-            if (this.isQuotePrefix(sheet, sourceRow, column) && !value.startsWith("'")) {
-              value = `'${value}`;
-            }
-            diffs.push({
-              type: 'set_cell_value',
-              sheet,
-              row,
-              column,
-              newValue: value,
-              newStyle,
-              oldValue: this.getFormulaValueOrNull(sheet, row, column),
-              oldStyle,
-            });
-            this.wasm.set_input(sheet, row, column, value, newStyle);
-          }
-        }
-      }
-    } else if (rowStart === extendedArea.rowStart && rowEnd === extendedArea.rowEnd) {
-      // extend by columns
-      let offsetColumn;
-      let startColumn;
-      if (columnEnd + 1 === extendedArea.columnStart) {
-        offsetColumn = extendedArea.columnStart;
-        startColumn = columnStart;
-      } else {
-        offsetColumn = extendedArea.columnEnd;
-        startColumn = columnEnd;
-      }
-      for (let row = rowStart; row <= rowEnd; row += 1) {
-        for (let column = extendedArea.columnStart; column <= extendedArea.columnEnd; column += 1) {
-          if (!this.isCellReadOnly(sheet, row, column)) {
-            const sourceColumn =
-              startColumn + ((column - offsetColumn) % (columnEnd - columnStart + 1));
-
-            // We don't copy over read-only styles
-            const oldStyle = this.wasm.get_cell_style_index(sheet, row, column);
-            const newStyle = this.isCellReadOnly(sheet, row, sourceColumn)
-              ? oldStyle
-              : this.wasm.get_cell_style_index(sheet, row, sourceColumn);
-
-            let value = this.wasm.extend_to(sheet, row, sourceColumn, row, column);
-            if (this.isQuotePrefix(sheet, row, sourceColumn) && !value.startsWith("'")) {
-              value = `'${value}`;
-            }
-            diffs.push({
-              type: 'set_cell_value',
-              sheet,
-              row,
-              column,
-              newValue: value,
-              oldValue: this.getFormulaValueOrNull(sheet, row, column),
-              newStyle,
-              oldStyle,
-            });
-            this.wasm.set_input(sheet, row, column, value, newStyle);
-          }
-        }
-      }
-    }
-    this.history.undo.push(diffs);
-    this.history.redo = [];
-    this.wasm.evaluate(); */
+  private extendToCell(
+    sheet: number,
+    sourceRow: number,
+    sourceColumn: number,
+    targetRow: number,
+    targetColumn: number,
+  ) {
+    const extendedValue = this.workbook.sheets
+      .get(sheet)
+      .userInterface.getExtendedValue(sourceRow, sourceColumn, targetRow, targetColumn);
+    this.setInput(sheet, targetRow, targetColumn, extendedValue);
+    const style = this.getCellStyle(sheet, sourceRow, sourceColumn);
+    // TODO: Probably copying style should be supported in the SDK
+    this.setCellsStyle(
+      sheet,
+      {
+        rowStart: targetRow,
+        rowEnd: targetRow,
+        columnStart: targetColumn,
+        columnEnd: targetColumn,
+      },
+      () => ({
+        font: {
+          bold: style.font.bold,
+          italics: style.font.italics,
+          color: style.font.color,
+          underline: style.font.underline,
+          strikethrough: style.font.strikethrough,
+        },
+        fill: {
+          foregroundColor: style.fill.foregroundColor,
+          backgroundColor: style.fill.backgroundColor,
+          patternType: style.fill.patternType,
+        },
+        numberFormat: style.numberFormat,
+      }),
+    );
   }
 
   copy(area: SheetArea): { tsv: string; area: SheetArea; sheetData: SheetData } {
