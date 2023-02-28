@@ -6,6 +6,13 @@ pub const LOCAL_TYPE: &str = "modern"; // or "full"
 pub struct Locale {
     pub dates: Dates,
     pub numbers: NumbersProperties,
+    pub currency: Currency
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Currency {
+    pub iso: String,
+    pub symbol: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -14,6 +21,8 @@ pub struct NumbersProperties {
     pub symbols: NumbersSymbols,
     #[serde(rename = "decimalFormats-numberSystem-latn")]
     pub decimal_formats: DecimalFormats,
+    #[serde(rename = "currencyFormats-numberSystem-latn")]
+    pub currency_formats: CurrencyFormats,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -41,6 +50,25 @@ pub struct NumbersSymbols {
     pub infinity: String,
     pub nan: String,
     pub time_separator: String,
+}
+
+
+
+// See: https://cldr.unicode.org/translation/number-currency-formats/number-and-currency-patterns
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CurrencyFormats {
+    pub standard: String,
+    #[serde(rename = "standard-alphaNextToNumber")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub standard_alpha_next_to_number: Option<String>,
+    #[serde(rename = "standard-noCurrency")]
+    pub standard_no_currency: String,
+    pub accounting: String,
+    #[serde(rename = "accounting-alphaNextToNumber")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accounting_alpha_next_to_number: Option<String>,
+    #[serde(rename = "accounting-noCurrency")]
+    pub accounting_no_currency: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

@@ -327,3 +327,48 @@ fn test_number() {
         Ok(CellValue::Number(3.0))
     );
 }
+
+#[test]
+fn test_currencies_eur_prefix() {
+    let mut model = new_empty_model();
+    model.set_user_input(0, 1, 1, "€100.348".to_string());
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("A1"), "€100.35");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A1"),
+        Ok(CellValue::Number(100.348))
+    );
+}
+
+#[test]
+fn test_currencies_eur_suffix() {
+    let mut model = new_empty_model();
+    model.set_user_input(0, 1, 1, "100.348€".to_string());
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("A1"), "€100.35");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A1"),
+        Ok(CellValue::Number(100.348))
+    );
+}
+
+#[test]
+fn test_sum_function_eur() {
+    let mut model = new_empty_model();
+    model._set("A1", "€100");
+    model._set("A2", "€300");
+
+    model.set_user_input(0, 1, 2, "=SUM(A:A)".to_string());
+    model.set_user_input(0, 2, 2, "=SUM(A1:A2)".to_string());
+    model.set_user_input(0, 3, 2, "=SUM(A1, A2, A3)".to_string());
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("B1"), *"€400");
+    assert_eq!(model._get_text("B2"), *"€400");
+    assert_eq!(model._get_text("B3"), *"€400");
+}

@@ -314,12 +314,16 @@ impl Model {
     }
 
     fn units_fn_currency(&self, _args: &[Node], _cell: &CellReference) -> Option<Units> {
-        // FIXME: The correct formatting should be read from the locale and currency
+        let currency_symbol = &self.locale.currency.symbol;
+        let standard_format = &self.locale.numbers.currency_formats.standard;
+        let num_fmt = standard_format.replace('¤', currency_symbol);
+        // The "space" in the cldr is a weird space.
+        let num_fmt = num_fmt.replace(' ', " ");
         Some(Units::Currency {
-            num_fmt: "$#,##0.00".to_string(),
+            num_fmt,
             group_separator: true,
             precision: 2,
-            currency: "$".to_string(),
+            currency: currency_symbol.to_string(),
         })
     }
 }

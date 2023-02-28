@@ -437,11 +437,10 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
 /// "$ 123,345.678" => (123345.678, "$ #,##0.00")
 /// "30.34%" => (0.3034, "0.00%")
 /// 100€ => 100,
-pub(crate) fn parse_formatted_number(value: &str) -> Result<(f64, Option<String>), String> {
-    let currency = "$";
-    let negative_currency = "-$";
-    let currency_format_standard = "$#,##0";
-    let currency_format_standard_with_decimals = "$#,##0.00";
+pub(crate) fn parse_formatted_number(
+    value: &str,
+    currencies: &[&str],
+) -> Result<(f64, Option<String>), String> {
     let percentage_format_standard = "#,##0%";
     let percentage_format_with_decimals = "#,##0.00%";
     let format_with_thousand_separator = "#,##0";
@@ -454,24 +453,31 @@ pub(crate) fn parse_formatted_number(value: &str) -> Result<(f64, Option<String>
             return Ok((f / 100.0, Some(percentage_format_with_decimals.to_string())));
         }
         return Ok((f / 100.0, Some(percentage_format_standard.to_string())));
-    } else if let Some(p) = value.strip_prefix(negative_currency) {
-        let (f, options) = parse_number(p.trim())?;
-        if options.decimal_digits > 0 {
-            return Ok((-f, Some(currency_format_standard_with_decimals.to_string())));
+    }
+
+    for currency in currencies {
+        let negative_currency = &format!("-{}", currency);
+        let currency_format_standard = &format!("{currency}#,##0");
+        let currency_format_standard_with_decimals = &format!("{currency}#,##0.00");
+        if let Some(p) = value.strip_prefix(negative_currency) {
+            let (f, options) = parse_number(p.trim())?;
+            if options.decimal_digits > 0 {
+                return Ok((-f, Some(currency_format_standard_with_decimals.to_string())));
+            }
+            return Ok((-f, Some(currency_format_standard.to_string())));
+        } else if let Some(p) = value.strip_prefix(currency) {
+            let (f, options) = parse_number(p.trim())?;
+            if options.decimal_digits > 0 {
+                return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
+            }
+            return Ok((f, Some(currency_format_standard.to_string())));
+        } else if let Some(p) = value.strip_suffix(currency) {
+            let (f, options) = parse_number(p.trim())?;
+            if options.decimal_digits > 0 {
+                return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
+            }
+            return Ok((f, Some(currency_format_standard.to_string())));
         }
-        return Ok((-f, Some(currency_format_standard.to_string())));
-    } else if let Some(p) = value.strip_prefix(currency) {
-        let (f, options) = parse_number(p.trim())?;
-        if options.decimal_digits > 0 {
-            return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
-        }
-        return Ok((f, Some(currency_format_standard.to_string())));
-    } else if let Some(p) = value.strip_suffix(currency) {
-        let (f, options) = parse_number(p.trim())?;
-        if options.decimal_digits > 0 {
-            return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
-        }
-        return Ok((f, Some(currency_format_standard.to_string())));
     }
     let (f, options) = parse_number(value)?;
     if options.has_commas {

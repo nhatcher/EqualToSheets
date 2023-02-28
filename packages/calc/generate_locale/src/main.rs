@@ -1,7 +1,7 @@
 use std::fs;
 use std::{collections::HashMap, io::Write, path::PathBuf};
 
-use constants::Locale;
+use constants::{Locale, Currency};
 
 use clap::Parser;
 use numbers::get_numbers_formatting;
@@ -45,7 +45,13 @@ fn main() -> Result<(), String> {
     for locale_id in locales_list {
         let dates = get_dates_formatting(&cldr_dir, &locale_id)?;
         let numbers = get_numbers_formatting(&cldr_dir, &locale_id)?;
-        locales.insert(locale_id, Locale { dates, numbers });
+        // HACK: the currency is not a part of the cldr locale
+        // We just stick here one and make this adaptable in the calc module for now
+        let currency = Currency {
+            iso: "USD".to_string(),
+            symbol: "$".to_string()
+        };
+        locales.insert(locale_id, Locale { dates, numbers, currency });
     }
 
     let s = serde_json::to_string(&locales).or(Err("Failed to stringify data"))?;

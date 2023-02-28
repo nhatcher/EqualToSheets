@@ -26,7 +26,7 @@ use crate::{
     functions::util::compare_values,
     implicit_intersection::implicit_intersection,
     language::{get_language, Language},
-    locale::{get_locale, Locale},
+    locale::{get_locale, Currency, Locale},
     types::*,
     utils as common,
 };
@@ -1033,8 +1033,15 @@ impl Model {
             } else {
                 let worksheets = &mut self.workbook.worksheets;
                 let worksheet = &mut worksheets[sheet as usize];
-                // We try to parse as number
-                if let Ok((v, number_format)) = parse_formatted_number(&value) {
+
+                // The list of currencies is '$', '€' and the local currency
+                let mut currencies = vec!["$", "€"];
+                let currency = &self.locale.currency.symbol;
+                if !currencies.iter().any(|e| e == currency) {
+                    currencies.push(currency);
+                }
+                //  We try to parse as number
+                if let Ok((v, number_format)) = parse_formatted_number(&value, &currencies) {
                     if let Some(num_fmt) = number_format {
                         new_style_index = self
                             .workbook
@@ -1325,6 +1332,26 @@ impl Model {
                 json!({"error": "Error stringifying workbook"}).to_string()
             }
         }
+    }
+
+    pub fn set_currency(&mut self, iso: &str) -> Result<(), &str> {
+        // TODO: Add a full list
+        let symbol = if iso == "USD" {
+            "$"
+        } else if iso == "EUR" {
+            "€"
+        } else if iso == "GBP" {
+            "£"
+        } else if iso == "JPY" {
+            "¥"
+        } else {
+            return Err("Unsupported currency");
+        };
+        self.locale.currency = Currency {
+            symbol: symbol.to_string(),
+            iso: iso.to_string(),
+        };
+        Ok(())
     }
 }
 
