@@ -58,6 +58,7 @@ pub enum Function {
     Sum,
     Sumif,
     Sumifs,
+    Product,
     Choose,
     Column,
     Columns,
@@ -174,12 +175,14 @@ impl Function {
 
             "MAX" => Some(Function::Max),
             "MIN" => Some(Function::Min),
+            "PRODUCT" => Some(Function::Product),
             "ROUND" => Some(Function::Round),
             "ROUNDDOWN" => Some(Function::Rounddown),
             "ROUNDUP" => Some(Function::Roundup),
             "SUM" => Some(Function::Sum),
             "SUMIF" => Some(Function::Sumif),
             "SUMIFS" => Some(Function::Sumifs),
+
             // Lookup and Reference
             "CHOOSE" => Some(Function::Choose),
             "COLUMN" => Some(Function::Column),
@@ -281,6 +284,7 @@ impl fmt::Display for Function {
             Function::Power => write!(f, "POWER"),
             Function::Max => write!(f, "MAX"),
             Function::Min => write!(f, "MIN"),
+            Function::Product => write!(f, "PRODUCT"),
             Function::Round => write!(f, "ROUND"),
             Function::Rounddown => write!(f, "ROUNDDOWN"),
             Function::Roundup => write!(f, "ROUNDUP"),
@@ -394,12 +398,14 @@ impl Model {
 
             Function::Max => self.fn_max(args, cell),
             Function::Min => self.fn_min(args, cell),
+            Function::Product => self.fn_product(args, cell),
             Function::Round => self.fn_round(args, cell),
             Function::Rounddown => self.fn_rounddown(args, cell),
             Function::Roundup => self.fn_roundup(args, cell),
             Function::Sum => self.fn_sum(args, cell),
             Function::Sumif => self.fn_sumif(args, cell),
             Function::Sumifs => self.fn_sumifs(args, cell),
+
             // Lookup and Reference
             Function::Choose => self.fn_choose(args, cell),
             Function::Column => self.fn_column(args, cell),
