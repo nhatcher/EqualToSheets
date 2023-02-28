@@ -34,7 +34,7 @@ export function EmailCollectionBar() {
               $width={300}
             />
             <SubmitButton sx={{ ml: 1 }} type="submit" disabled={formDisabled}>
-              Get early access
+              Join EqualTo Sheets waitlist
             </SubmitButton>
             <ConsentText>
               By subscribing I consent to receive communications regarding EqualTo's products and
@@ -83,7 +83,7 @@ const SpreadsheetsCopy = styled.div`
   font-family: var(--font-family);
   color: #f1f2f8;
   font-weight: 400;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 13px;
 `;
 

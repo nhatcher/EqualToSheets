@@ -5,7 +5,9 @@ export function TopBar() {
   return (
     <Container>
       <LogoBox>
-        <EqualtoLogo height="10px" />
+        <UnstyledLink href="https://www.equalto.com/" target="_blank">
+          <EqualtoLogo height="10px" />
+        </UnstyledLink>
         <Divider />
         <code>Chat</code>
       </LogoBox>
@@ -37,6 +39,15 @@ const Divider = styled.div`
   border-right: 1px solid #f1f2f8;
   height: 12px;
   margin: 0 10px;
+`;
+
+const UnstyledLink = styled.a`
+  :link,
+  :visited,
+  :hover,
+  :active {
+    text-decoration: none;
+  }
 `;
 
 const Link = styled.a`
