@@ -5,6 +5,7 @@ from uuid import uuid4
 from flask import Flask, abort, request, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from whitenoise import WhiteNoise
 
 from sheet_ai import db
 from sheet_ai.exceptions import EmailValidationError, SheetAIError
@@ -17,6 +18,7 @@ SUDO_PASSWORD = os.getenv("SUDO_PASSWORD")
 
 app = Flask(__name__)
 logger = app.logger
+app.wsgi_app = WhiteNoise(app.wsgi_app, root="/static/")  # type: ignore
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 limiter = Limiter(key_func=get_remote_address, app=app, storage_uri=db.MONGODB_URI)

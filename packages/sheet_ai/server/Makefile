@@ -1,10 +1,6 @@
 VENV_NAME?=venv
 LINT_FILES=./sheet_ai ./tests ./wsgi
 
-docker:
-	@docker-compose down --rmi all
-	@GIT_COMMIT=$(shell git rev-parse HEAD) docker-compose up -d --build
-
 venv: clean $(VENV_NAME)/bin/activate
 
 $(VENV_NAME)/bin/activate:
