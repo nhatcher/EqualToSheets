@@ -123,10 +123,16 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
         />
       </Menu.Root>
       <Toolbar.Separator />
-      <Toolbar.Button onClick={() => onToggleFontStyle('bold')} disabled={!canEdit} title="Bold">
+      <Toolbar.Button
+        $selected={cellStyle.font.bold}
+        onClick={() => onToggleFontStyle('bold')}
+        disabled={!canEdit}
+        title="Bold"
+      >
         <BoldIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
       <Toolbar.Button
+        $selected={cellStyle.font.italics}
         type="button"
         onClick={() => onToggleFontStyle('italics')}
         disabled={!canEdit}
@@ -135,6 +141,7 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
         <ItalicIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
       <Toolbar.Button
+        $selected={cellStyle.font.underline}
         onClick={() => onToggleFontStyle('underline')}
         disabled={!canEdit}
         title="Underline"
@@ -142,6 +149,7 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
         <UnderlineIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
       <Toolbar.Button
+        $selected={cellStyle.font.strikethrough}
         onClick={() => onToggleFontStyle('strikethrough')}
         disabled={!canEdit}
         title="Strikethrough"
@@ -169,10 +177,16 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
       </Toolbar.Button>
 
       <Toolbar.Separator />
-      <Toolbar.Button onClick={() => onToggleAlign('left')} disabled={!canEdit} title="Align left">
+      <Toolbar.Button
+        $selected={cellStyle.alignment.horizontalAlignment === 'left'}
+        onClick={() => onToggleAlign('left')}
+        disabled={!canEdit}
+        title="Align left"
+      >
         <AlignLeftIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
       <Toolbar.Button
+        $selected={cellStyle.alignment.horizontalAlignment === 'center'}
         onClick={() => onToggleAlign('center')}
         disabled={!canEdit}
         title="Align center"
@@ -180,6 +194,7 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
         <AlignCenterIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
       <Toolbar.Button
+        $selected={cellStyle.alignment.horizontalAlignment === 'right'}
         onClick={() => onToggleAlign('right')}
         disabled={!canEdit}
         title="Align right"

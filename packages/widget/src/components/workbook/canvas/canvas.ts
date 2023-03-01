@@ -377,10 +377,10 @@ export default class WorksheetCanvas {
         font = `italic ${font}`;
       }
     }
-    let alignment = 'default';
-    // if (style.horizontal_alignment) {
-    //  alignment = style.horizontal_alignment;
-    // }
+    let alignment = 'general';
+    if (style.alignment.horizontalAlignment) {
+      alignment = style.alignment.horizontalAlignment;
+    }
 
     const context = this.ctx;
     context.font = font;
@@ -393,7 +393,7 @@ export default class WorksheetCanvas {
     const { value } = cell;
     const fullText = cell.formattedValue;
     const padding = 4;
-    if (alignment === 'default') {
+    if (alignment === 'general') {
       if (typeof value === 'number') {
         alignment = 'right';
       } else if (typeof value === 'boolean') {

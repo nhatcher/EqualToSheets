@@ -473,6 +473,30 @@ describe('Workbook - Cell operations', () => {
       expect(cell.style.fill.foregroundColor).toEqual('#FF00FF');
     });
 
+    test('can set horizontal alignment', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.alignment.horizontalAlignment = 'centercontinuous';
+      expect(cell.style.alignment.horizontalAlignment).toEqual('centercontinuous');
+    });
+
+    test('can set vertical alignment', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.alignment.verticalAlignment = 'distributed';
+      expect(cell.style.alignment.verticalAlignment).toEqual('distributed');
+    });
+
+    test('can set wrap text', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.style.alignment.wrapText = true;
+      expect(cell.style.alignment.wrapText).toEqual(true);
+    });
+
     test('bulk style update', async () => {
       const { newWorkbook } = await initialize();
       const workbook = newWorkbook();
@@ -494,6 +518,11 @@ describe('Workbook - Cell operations', () => {
           foregroundColor: '#ff00ff',
           backgroundColor: '#00ffff',
         },
+        alignment: {
+          verticalAlignment: 'justify',
+          horizontalAlignment: 'center',
+          wrapText: true,
+        },
       });
 
       expect(cell.style.numberFormat).toEqual('0.00%');
@@ -504,6 +533,9 @@ describe('Workbook - Cell operations', () => {
       expect(cell.style.fill.patternType).toEqual('solid');
       expect(cell.style.fill.foregroundColor).toEqual('#FF00FF');
       expect(cell.style.fill.backgroundColor).toEqual('#00FFFF');
+      expect(cell.style.alignment.horizontalAlignment).toEqual('center');
+      expect(cell.style.alignment.verticalAlignment).toEqual('justify');
+      expect(cell.style.alignment.wrapText).toEqual(true);
     });
   });
 });

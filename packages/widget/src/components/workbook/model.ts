@@ -132,8 +132,6 @@ type StyleReducer = (style: ICell['style']) => Parameters<ICell['style']['bulkUp
 
 type PasteType = 'copy' | 'cut';
 
-type FontStyle = 'underline' | 'italic' | 'bold' | 'strikethrough';
-
 // Replaces all tabs with spaces in a string
 function escapeTabs(s: string): string {
   return s.replace(/\t/g, '  ');
@@ -307,12 +305,19 @@ export default class Model {
     this.setCellsStyle(sheet, area, () => ({ font: { color } }));
   }
 
-  toggleAlign(sheet: number, area: Area, alignment: 'left' | 'center' | 'right'): void {
-    /* this.setCellsStyle(sheet, area, (style) => ({
-      ...style,
-      horizontal_alignment:
-        style.alignment.horizontal_alignment === alignment ? 'default' : alignment,
-    })); */
+  toggleAlign(
+    sheet: number,
+    area: Area,
+    alignment: NonNullable<
+      NonNullable<Parameters<ICell['style']['bulkUpdate']>[0]['alignment']>['horizontalAlignment']
+    >,
+  ): void {
+    this.setCellsStyle(sheet, area, (style) => ({
+      alignment: {
+        horizontalAlignment:
+          style.alignment.horizontalAlignment === alignment ? 'general' : alignment,
+      },
+    }));
   }
 
   toggleFontStyle(sheet: number, area: Area, fontStyle: keyof ICell['style']['font']): void {
@@ -516,15 +521,6 @@ export default class Model {
     }
     for (let row = area.rowStart; row <= area.rowEnd; row += 1) {
       for (let column = area.columnStart; column <= area.columnEnd; column += 1) {
-        /* const oldValue = this.getFormulaValueOrNull(sheet, row, column);
-        diffs.push({
-          type: 'delete_cell',
-          sheet,
-          row,
-          column,
-          oldValue,
-          oldStyle: .get_cell_style_index(sheet, row, column),
-        }); */
         // TODO: A lot of evaluations
         this.workbook.cell(sheet, row, column).value = null;
       }
@@ -626,6 +622,11 @@ export default class Model {
           patternType: style.fill.patternType,
         },
         numberFormat: style.numberFormat,
+        alignment: {
+          horizontalAlignment: style.alignment.horizontalAlignment,
+          verticalAlignment: style.alignment.verticalAlignment,
+          wrapText: style.alignment.wrapText,
+        },
       }),
     );
   }
@@ -927,37 +928,12 @@ export default class Model {
 
   insertRow(sheet: number, row: number): void {
     this.notifySubscribers({ type: 'insertRow' });
-    /* this.wasm.insert_rows(sheet, row, 1);
-    this.history.undo.push([
-      {
-        type: 'insert_row',
-        sheet,
-        row,
-      },
-    ]);
-    this.history.redo = [];
-    this.wasm.evaluate(); */
   }
 
   // We need to delete (and save) the row style
   // We need to delete (and save) the data
   deleteRow(sheet: number, row: number): void {
     this.notifySubscribers({ type: 'deleteRow' });
-    // get old row style, if any
-    // oldRowStyle
-    /* const rowData = this.wasm.get_row_undo_data(sheet, row);
-    const rowHeight = this.wasm.get_row_height(sheet, row);
-    this.wasm.delete_rows(sheet, row, 1);
-    this.history.undo.push([
-      {
-        type: 'delete_row',
-        sheet,
-        row,
-        oldValue: { rowHeight, rowData },
-      },
-    ]);
-    this.history.redo = [];
-    this.wasm.evaluate(); */
   }
 
   saveToXlsx(): Uint8Array {

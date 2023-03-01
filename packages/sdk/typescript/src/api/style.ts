@@ -22,9 +22,22 @@ export interface ICellStyle {
    * Cell fill properties: none, solid background, patterns
    */
   get fill(): IFillStyle;
+
+  /**
+   * Properties related to cell alignment:
+   * - vertical alignment
+   * - horizontal alignment
+   * - wrapping text
+   */
+  get alignment(): IAlignmentStyle;
 }
 
 type CellStyleUpdateValues = {
+  alignment?: {
+    verticalAlignment?: VerticalAlignmentType;
+    horizontalAlignment?: HorizontalAlignmentType;
+    wrapText?: boolean;
+  };
   numberFormat?: string;
   font?: {
     color?: string;
@@ -122,19 +135,34 @@ export type RawBorderStyle = {
   color?: string;
 };
 
+/** 18.18.40 ST_HorizontalAlignment (Horizontal Alignment Type) */
+export type HorizontalAlignmentType =
+  | 'center'
+  | 'centercontinuous'
+  | 'distributed'
+  | 'fill'
+  | 'general'
+  | 'justify'
+  | 'left'
+  | 'right';
+
+/** 18.18.88 ST_VerticalAlignment (Vertical Alignment Types) */
+export type VerticalAlignmentType = 'bottom' | 'center' | 'distributed' | 'justify' | 'top';
+
+export interface IAlignmentStyle {
+  get verticalAlignment(): VerticalAlignmentType;
+  set verticalAlignment(verticalAlignment: VerticalAlignmentType);
+  get horizontalAlignment(): HorizontalAlignmentType;
+  set horizontalAlignment(horizontalAlignment: HorizontalAlignmentType);
+  get wrapText(): boolean;
+  set wrapText(wrapText: boolean);
+}
+
 export type RawCellStyle = {
-  alignment: {
-    vertical_alignment?:
-      | 'center'
-      | 'centercontinuous'
-      | 'distributed'
-      | 'fill'
-      | 'general'
-      | 'justify'
-      | 'left'
-      | 'right';
-    horizontal_alignment?: 'bottom' | 'center' | 'distributed' | 'justify' | 'top';
-    wrap_text: boolean;
+  alignment?: {
+    vertical?: VerticalAlignmentType;
+    horizontal?: HorizontalAlignmentType;
+    wrap_text?: boolean;
   };
   num_fmt: string;
   fill: {
@@ -171,6 +199,7 @@ export class CellStyleManager implements ICellStyle {
   private _styleSnapshot: RawCellStyle;
   private readonly _fontStyleManager: FontStyleManager;
   private readonly _fillStyleManager: FillStyleManager;
+  private readonly _alignmentStyleManager: AlignmentStyleManager;
 
   constructor(wasmWorkbook: WasmWorkbook, cell: Cell, style: RawCellStyle) {
     this._wasmWorkbook = wasmWorkbook;
@@ -178,6 +207,7 @@ export class CellStyleManager implements ICellStyle {
     this._styleSnapshot = style;
     this._fontStyleManager = new FontStyleManager(this);
     this._fillStyleManager = new FillStyleManager(this);
+    this._alignmentStyleManager = new AlignmentStyleManager(this);
   }
 
   _getStyleSnapshot(): RawCellStyle {
@@ -186,6 +216,15 @@ export class CellStyleManager implements ICellStyle {
 
   bulkUpdate(update: CellStyleUpdateValues): void {
     const newStyle = { ...this._styleSnapshot };
+
+    if (update.alignment) {
+      newStyle.alignment = { ...(newStyle.alignment ?? {}) };
+      newStyle.alignment.wrap_text = update.alignment.wrapText ?? newStyle.alignment.wrap_text;
+      newStyle.alignment.horizontal =
+        update.alignment.horizontalAlignment ?? newStyle.alignment.horizontal;
+      newStyle.alignment.vertical =
+        update.alignment.verticalAlignment ?? newStyle.alignment.vertical;
+    }
 
     if (update.numberFormat) {
       newStyle.num_fmt = update.numberFormat;
@@ -245,6 +284,10 @@ export class CellStyleManager implements ICellStyle {
 
   get fill(): IFillStyle {
     return this._fillStyleManager;
+  }
+
+  get alignment(): IAlignmentStyle {
+    return this._alignmentStyleManager;
   }
 }
 
@@ -340,6 +383,41 @@ export class FillStyleManager implements IFillStyle {
   set backgroundColor(backgroundColor: string) {
     this._styleManager.bulkUpdate({
       fill: { backgroundColor },
+    });
+  }
+}
+
+export class AlignmentStyleManager implements IAlignmentStyle {
+  private readonly _styleManager: CellStyleManager;
+
+  constructor(styleManager: CellStyleManager) {
+    this._styleManager = styleManager;
+  }
+
+  get verticalAlignment(): VerticalAlignmentType {
+    return this._styleManager._getStyleSnapshot().alignment?.vertical ?? 'top';
+  }
+  set verticalAlignment(verticalAlignment: VerticalAlignmentType) {
+    this._styleManager.bulkUpdate({
+      alignment: { verticalAlignment },
+    });
+  }
+
+  get horizontalAlignment(): HorizontalAlignmentType {
+    return this._styleManager._getStyleSnapshot().alignment?.horizontal ?? 'general';
+  }
+  set horizontalAlignment(horizontalAlignment: HorizontalAlignmentType) {
+    this._styleManager.bulkUpdate({
+      alignment: { horizontalAlignment },
+    });
+  }
+
+  get wrapText(): boolean {
+    return this._styleManager._getStyleSnapshot().alignment?.wrap_text ?? false;
+  }
+  set wrapText(wrapText: boolean) {
+    this._styleManager.bulkUpdate({
+      alignment: { wrapText },
     });
   }
 }
