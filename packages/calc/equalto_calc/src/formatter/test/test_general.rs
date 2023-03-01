@@ -1,8 +1,9 @@
 #![allow(clippy::unwrap_used)]
 
-use super::format::format_number;
-
-use crate::locale::{get_locale, Locale};
+use crate::{
+    formatter::format::format_number,
+    locale::{get_locale, Locale},
+};
 
 fn get_default_locale() -> &'static Locale {
     get_locale("en").unwrap()
@@ -146,6 +147,7 @@ fn test_percent_correct_rounding() {
 fn test_scientific() {
     let locale = get_default_locale();
     assert_eq!(format_number(2.5e-14, "0.00E+0", locale).text, "2.50E-14");
+    assert_eq!(format_number(3e-4, "0.00E+00", locale).text, "3.00E-04");
 }
 
 #[test]

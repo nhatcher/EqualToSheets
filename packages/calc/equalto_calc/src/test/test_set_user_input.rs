@@ -14,6 +14,8 @@ fn test_currencies() {
     model.set_user_input(0, 3, 1, "100$".to_string());
     model.set_user_input(0, 3, 2, "=ISNUMBER(A3)".to_string());
 
+    model.set_user_input(0, 4, 1, "3.1415926$".to_string());
+
     model.evaluate();
 
     // two decimal rounded up
@@ -31,9 +33,29 @@ fn test_currencies() {
     );
     assert_eq!(model._get_text("B2"), *"TRUE");
 
-    // Dollar is on the left
-    assert_eq!(model._get_text("A3"), "$100");
+    // Dollar is on the right
+    assert_eq!(model._get_text("A3"), "100$");
     assert_eq!(model._get_text("B3"), *"TRUE");
+
+    assert_eq!(model._get_text("A4"), "3.14$");
+}
+
+#[test]
+fn scientific() {
+    let mut model = new_empty_model();
+    model.set_user_input(0, 1, 1, "3e-4".to_string());
+    model.set_user_input(0, 2, 1, "5e-4$".to_string());
+    model.set_user_input(0, 3, 1, "6e-4%".to_string());
+
+    model.evaluate();
+
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A1"),
+        Ok(CellValue::Number(0.0003))
+    );
+    assert_eq!(model._get_text("Sheet1!A1"), "3.00E-04");
+    assert_eq!(model._get_text("Sheet1!A2"), "5.00E-04");
+    assert_eq!(model._get_text("Sheet1!A3"), "6.00E-06");
 }
 
 #[test]
@@ -123,6 +145,14 @@ fn test_negative_numbers() {
 fn test_negative_currencies() {
     let mut model = new_empty_model();
     model.set_user_input(0, 1, 1, "-$100".to_string());
+    model.set_user_input(0, 2, 1, "-$99.123".to_string());
+    // This is valid!
+    model.set_user_input(0, 3, 1, "$-345".to_string());
+
+    model.set_user_input(0, 1, 2, "-200$".to_string());
+    model.set_user_input(0, 2, 2, "-92.689$".to_string());
+    // This is valid!
+    model.set_user_input(0, 3, 2, "-22$".to_string());
 
     model.evaluate();
 
@@ -131,6 +161,12 @@ fn test_negative_currencies() {
         Ok(CellValue::Number(-100.0))
     );
     assert_eq!(model._get_text("A1"), *"-$100");
+    assert_eq!(model._get_text("A2"), *"-$99.12");
+    assert_eq!(model._get_text("A3"), *"-$345");
+
+    assert_eq!(model._get_text("B1"), *"-200$");
+    assert_eq!(model._get_text("B2"), *"-92.69$");
+    assert_eq!(model._get_text("B3"), *"-22$");
 }
 
 #[test]
@@ -346,13 +382,64 @@ fn test_currencies_eur_prefix() {
 fn test_currencies_eur_suffix() {
     let mut model = new_empty_model();
     model.set_user_input(0, 1, 1, "100.348€".to_string());
+    model.set_user_input(0, 2, 1, "25€".to_string());
+
+    // negatives
+    model.set_user_input(0, 1, 2, "-123.348€".to_string());
+    model.set_user_input(0, 2, 2, "-42€".to_string());
+
+    // with a space
+    model.set_user_input(0, 1, 3, "101.348 €".to_string());
+    model.set_user_input(0, 2, 3, "26 €".to_string());
+
+    model.set_user_input(0, 1, 4, "-12.348 €".to_string());
+    model.set_user_input(0, 2, 4, "-45 €".to_string());
 
     model.evaluate();
 
-    assert_eq!(model._get_text("A1"), "€100.35");
+    assert_eq!(model._get_text("A1"), "100.35€");
     assert_eq!(
         model.get_cell_value_by_ref("Sheet1!A1"),
         Ok(CellValue::Number(100.348))
+    );
+    assert_eq!(model._get_text("A2"), "25€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A2"),
+        Ok(CellValue::Number(25.0))
+    );
+
+    assert_eq!(model._get_text("B1"), "-123.35€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!B1"),
+        Ok(CellValue::Number(-123.348))
+    );
+    assert_eq!(model._get_text("B2"), "-42€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!B2"),
+        Ok(CellValue::Number(-42.0))
+    );
+
+    // with a space
+    assert_eq!(model._get_text("C1"), "101.35€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!C1"),
+        Ok(CellValue::Number(101.348))
+    );
+    assert_eq!(model._get_text("C2"), "26€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!C2"),
+        Ok(CellValue::Number(26.0))
+    );
+
+    assert_eq!(model._get_text("D1"), "-12.35€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!D1"),
+        Ok(CellValue::Number(-12.348))
+    );
+    assert_eq!(model._get_text("D2"), "-45€");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!D2"),
+        Ok(CellValue::Number(-45.0))
     );
 }
 

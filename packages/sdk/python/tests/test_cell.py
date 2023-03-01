@@ -186,7 +186,7 @@ def test_bool_value_error(cell: Cell, value: Any, error: str) -> None:
         ("4.2", 4.2, None, "general"),
         ("7", 7, None, "general"),
         ("=2+2*2", 6, "=2+2*2", "general"),
-        ("2.2032E+13", 2.2032e13, None, "general"),
+        ("2.20E+13", 2.2e13, None, "0.00E+00"),
         ("$3.00", 3, None, "$#,##0.00"),
         ("$14,999.99", 14999.99, None, "$#,##0.00"),
         ("1,000.00", 1000, None, "#,##0.00"),

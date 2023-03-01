@@ -264,6 +264,7 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
                     let exponent = value_abs.log10().floor();
                     exponent_part = format!("{}", exponent.abs()).chars().collect();
                     value /= 10.0_f64.powf(exponent);
+                    value = to_precision(value, 15);
                     value_abs = value.abs();
                 }
             }
@@ -428,71 +429,83 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
     }
 }
 
-// FIXME: Right now the locale does not include a currency
-// The problem is that https://github.com/unicode-org/cldr-json does NOT include a currency
-// It does include all the names for currencies in the language
-// and the formatting of those currencies in that language
-
 /// Parses a formatted number, returning the numeric value together with the format
-/// "$ 123,345.678" => (123345.678, "$ #,##0.00")
+/// Uses heuristics to guess the format string
+/// "$ 123,345.678" => (123345.678, "$#,##0.00")
 /// "30.34%" => (0.3034, "0.00%")
-/// 100€ => 100,
+/// 100€ => (100, "100€")
 pub(crate) fn parse_formatted_number(
     value: &str,
     currencies: &[&str],
 ) -> Result<(f64, Option<String>), String> {
-    let percentage_format_standard = "#,##0%";
-    let percentage_format_with_decimals = "#,##0.00%";
-    let format_with_thousand_separator = "#,##0";
-    let format_with_thousand_separator_and_decimals = "#,##0.00";
     let value = value.trim();
+    let scientific_format = "0.00E+00";
+
+    // Check if it is a percentage
     if let Some(p) = value.strip_suffix('%') {
         let (f, options) = parse_number(p.trim())?;
+        if options.is_scientific {
+            return Ok((f / 100.0, Some(scientific_format.to_string())));
+        }
         // We ignore the separator
         if options.decimal_digits > 0 {
-            return Ok((f / 100.0, Some(percentage_format_with_decimals.to_string())));
+            // Percentage format with decimals
+            return Ok((f / 100.0, Some("#,##0.00%".to_string())));
         }
-        return Ok((f / 100.0, Some(percentage_format_standard.to_string())));
+        // Percentage format standard
+        return Ok((f / 100.0, Some("#,##0%".to_string())));
     }
 
+    // check if it is a currency in currencies
     for currency in currencies {
-        let negative_currency = &format!("-{}", currency);
-        let currency_format_standard = &format!("{currency}#,##0");
-        let currency_format_standard_with_decimals = &format!("{currency}#,##0.00");
-        if let Some(p) = value.strip_prefix(negative_currency) {
+        if let Some(p) = value.strip_prefix(&format!("-{}", currency)) {
             let (f, options) = parse_number(p.trim())?;
-            if options.decimal_digits > 0 {
-                return Ok((-f, Some(currency_format_standard_with_decimals.to_string())));
+            if options.is_scientific {
+                return Ok((f, Some(scientific_format.to_string())));
             }
-            return Ok((-f, Some(currency_format_standard.to_string())));
+            if options.decimal_digits > 0 {
+                return Ok((-f, Some(format!("{currency}#,##0.00"))));
+            }
+            return Ok((-f, Some(format!("{currency}#,##0"))));
         } else if let Some(p) = value.strip_prefix(currency) {
             let (f, options) = parse_number(p.trim())?;
-            if options.decimal_digits > 0 {
-                return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
+            if options.is_scientific {
+                return Ok((f, Some(scientific_format.to_string())));
             }
-            return Ok((f, Some(currency_format_standard.to_string())));
+            if options.decimal_digits > 0 {
+                return Ok((f, Some(format!("{currency}#,##0.00"))));
+            }
+            return Ok((f, Some(format!("{currency}#,##0"))));
         } else if let Some(p) = value.strip_suffix(currency) {
             let (f, options) = parse_number(p.trim())?;
-            if options.decimal_digits > 0 {
-                return Ok((f, Some(currency_format_standard_with_decimals.to_string())));
+            if options.is_scientific {
+                return Ok((f, Some(scientific_format.to_string())));
             }
-            return Ok((f, Some(currency_format_standard.to_string())));
+            if options.decimal_digits > 0 {
+                let currency_format = &format!("#,##0.00{currency}");
+                return Ok((f, Some(currency_format.to_string())));
+            }
+            let currency_format = &format!("#,##0{currency}");
+            return Ok((f, Some(currency_format.to_string())));
         }
     }
+
+    // Lastly we check if it is a number
     let (f, options) = parse_number(value)?;
+    if options.is_scientific {
+        return Ok((f, Some(scientific_format.to_string())));
+    }
     if options.has_commas {
         if options.decimal_digits > 0 {
-            return Ok((
-                f,
-                Some(format_with_thousand_separator_and_decimals.to_string()),
-            ));
+            // group separator and two decimal points
+            return Ok((f, Some("#,##0.00".to_string())));
         }
-        return Ok((f, Some(format_with_thousand_separator.to_string())));
+        // Group separator and no decimal points
+        return Ok((f, Some("#,##0".to_string())));
     }
     Ok((f, None))
 }
 
-#[allow(dead_code)]
 struct NumberOptions {
     has_commas: bool,
     is_scientific: bool,
