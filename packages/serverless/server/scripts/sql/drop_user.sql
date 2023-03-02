@@ -1,1 +1,0 @@
-DROP USER IF EXISTS serverless_admin;

@@ -1,1 +1,0 @@
-CREATE USER serverless_admin PASSWORD 'local-password-ag3F5721jda71eh#!r6!3';

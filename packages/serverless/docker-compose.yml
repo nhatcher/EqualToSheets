@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: ./serverless/server/Dockerfile
+    volumes:
+      - ./server/:/server
+    env_file: ./server/server/.env
+    restart: always
+    ports:
+      - "127.0.0.1:5000:5000"
+    depends_on:
+      - database
+    networks:
+      - backend
+  database:
+    image: postgres:15
+    volumes:
+      - /var/lib/postgresql/data
+    env_file: ./server/server/.env
+    ports:
+      - 5432:5432
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge

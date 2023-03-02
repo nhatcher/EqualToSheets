@@ -50,3 +50,6 @@ terraform.tfstate.*.backup
 
 # Coverage
 .coverage
+
+# Django
+staticfiles/

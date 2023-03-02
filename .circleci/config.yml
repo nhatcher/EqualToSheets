@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   docker: circleci/docker@1.0.0
+  heroku: circleci/heroku@2.0
 workflows:
   test-build-deploy:
     jobs:
@@ -10,6 +11,16 @@ workflows:
       - test-typescript-sdk
       - test-widget
       - test-sheet-ai-server
+      - test-serverless
+      - deploy-serverless:
+          filters:
+            branches:
+              only:
+                - deployment/serverless-sheets
+          context:
+            - serverless
+          requires:
+            - test-serverless
 
 jobs:
   test-calc:
@@ -205,3 +216,37 @@ jobs:
           name: Run tests
           command: make tests
           working_directory: ./packages/sheet_ai/server
+
+  test-serverless:
+    machine:
+      image: ubuntu-2004:2022.10.1
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Build docker containers
+          command: ./scripts/build.sh
+          working_directory: ./packages/serverless/server
+      - run:
+          name: Run linter
+          command: ./scripts/lint.sh
+          working_directory: ./packages/serverless/server
+      - run:
+          name: Run server tests
+          command: ./scripts/django_tests.sh
+          working_directory: ./packages/serverless/server
+
+  deploy-serverless:
+    machine:
+      image: ubuntu-2004:2022.10.1
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - heroku/install
+      - run:
+          command: heroku container:login
+      - run:
+          command: heroku container:push web --app serverless-sheets --context-path ../..
+          working_directory: ./packages/serverless/server
+      - heroku/release-docker-image:
+          app-name: serverless-sheets

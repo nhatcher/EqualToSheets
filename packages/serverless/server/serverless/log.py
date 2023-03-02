@@ -1,9 +1,10 @@
 import sys
 
 
-def error(message):
+def error(message: str) -> None:
     print(message, file=sys.stderr)
 
-def info(message):
+
+def info(message: str) -> None:
     # print(message, file=sys.stderr)
     pass

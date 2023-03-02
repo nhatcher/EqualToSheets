@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Workbook
+from serverless.models import Workbook
 
 # Register your models here.
 

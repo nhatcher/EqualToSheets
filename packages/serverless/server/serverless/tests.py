@@ -1,29 +1,29 @@
-
 from collections import namedtuple
+from typing import Any
 
 from django.test import RequestFactory, TestCase
 from django.utils.http import urlencode
 
-from .log import error, info
-from .models import License, LicenseDomain, Workbook
-from .schema import schema
-from .util import is_license_key_valid_for_host
-from .views import activate_license_key, send_license_key
+from serverless.log import info
+from serverless.models import License, LicenseDomain, Workbook
+from serverless.schema import schema
+from serverless.util import is_license_key_valid_for_host
+from serverless.views import activate_license_key, send_license_key
 
 
-def graphql_query(query, origin, license_key=None):
-    info("graphql_query(): query=%s"%query)
+def graphql_query(query: str, origin: str, license_key: str | None = None) -> dict[str, Any]:
+    info("graphql_query(): query=%s" % query)
     context = namedtuple("context", ["META"])
     context.META = {"HTTP_ORIGIN": origin}
     if license_key is not None:
-        context.META["HTTP_AUTHORIZATION"] = "Bearer %s"%str(license_key)
+        context.META["HTTP_AUTHORIZATION"] = "Bearer %s" % str(license_key)
 
-    info("graphql_query(): context.META=%s"%context.META)
+    info("graphql_query(): context.META=%s" % context.META)
     graphql_results = schema.execute(query, context_value=context, variable_values=None)
     return {"data": graphql_results.data}
 
 
-def _create_workbook(license) -> Workbook:
+def _create_workbook(license: License) -> Workbook:
     data = graphql_query(
         """
         mutation {
@@ -33,48 +33,55 @@ def _create_workbook(license) -> Workbook:
         }
         """,
         "example.com",
-        license.key
+        license.key,
     )
     return Workbook.objects.get(id=data["data"]["create_workbook"]["workbook"]["id"])
+
+
 class SimpleTest(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         # Every test needs access to the request factory.
         self.factory = RequestFactory()
 
-    def test_send_license_key_invalid(self):
+    def test_send_license_key_invalid(self) -> None:
         # email & domains missing
-        request = self.factory.get("/send-license-key")
+        request = self.factory.post("/send-license-key")
         response = send_license_key(request)
         self.assertEqual(response.status_code, 400)
 
         # email missing
-        request = self.factory.get("/send-license-key?domains=example.com")
+        request = self.factory.post("/send-license-key?domains=example.com")
         response = send_license_key(request)
         self.assertEqual(response.status_code, 400)
 
         # domain missing
-        request = self.factory.get("/send-license-key?%s"%urlencode({"email": "joe@example.com"}))
+        request = self.factory.post("/send-license-key?%s" % urlencode({"email": "joe@example.com"}))
         response = send_license_key(request)
         self.assertEqual(response.status_code, 400)
 
         # domain missing
-        request = self.factory.get("/send-license-key?%s"%urlencode({"email": "joe@example.com", "domains": ""}))
+        request = self.factory.post("/send-license-key?%s" % urlencode({"email": "joe@example.com", "domains": ""}))
         response = send_license_key(request)
         self.assertEqual(response.status_code, 400)
 
-
-    def test_send_license_key(self):
+    def test_send_license_key(self) -> None:
         self.assertEqual(License.objects.count(), 0)
 
-        request = self.factory.get("/send-license-key?%s"%urlencode({"email": "joe@example.com", "domains": "example.com,example2.com,*.example3.com"}))
+        request = self.factory.post(
+            "/send-license-key?%s"
+            % urlencode(
+                {
+                    "email": "joe@example.com",
+                    "domains": "example.com,example2.com,*.example3.com",
+                },
+            ),
+        )
         response = send_license_key(request, _send_email=False)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(License.objects.count(), 1)
         self.assertListEqual(
             list(License.objects.values_list("email", "email_verified")),
-            [
-                ("joe@example.com", False)
-            ]
+            [("joe@example.com", False)],
         )
         license = License.objects.get()
         self.assertCountEqual(
@@ -83,56 +90,40 @@ class SimpleTest(TestCase):
                 (license.id, "example.com"),
                 (license.id, "example2.com"),
                 (license.id, "*.example3.com"),
-            ]
+            ],
         )
 
         # license email not verified, so license not activate
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "example.com:443")
-        )
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "example2.com:443")
-        )
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "sub.example3.com:443")
-        )
+        self.assertFalse(is_license_key_valid_for_host(license.key, "example.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "example2.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example3.com:443"))
         # these aren't valid, regardless of license activation
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "other.com:443")
-        )
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "sub.example.com:443")
-        )
+        self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
 
         # verify email address, activating license
-        request = self.factory.get("/activate-license-key/%s/"%license.id)
+        request = self.factory.get("/activate-license-key/%s/" % license.id)
         response = activate_license_key(request, license.id)
         self.assertEqual(response.status_code, 200)
         license.refresh_from_db()
         self.assertTrue(license.email_verified)
 
         # license email verified, so license not activate
-        self.assertTrue(
-            is_license_key_valid_for_host(license.key, "example.com:443")
-        )
-        self.assertTrue(
-            is_license_key_valid_for_host(license.key, "example2.com:443")
-        )
-        self.assertTrue(
-            is_license_key_valid_for_host(license.key, "sub.example3.com:443")
-        )
+        self.assertTrue(is_license_key_valid_for_host(license.key, "example.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, "example2.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, "sub.example3.com:443"))
         # these aren't valid, regardless of license activation
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "other.com:443")
-        )
-        self.assertFalse(
-            is_license_key_valid_for_host(license.key, "sub.example.com:443")
-        )
+        self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
 
-    def _create_verified_license(self, email="joe@example.com", domains="example.com,example2.com,*.example3.com"):
+    def _create_verified_license(
+        self,
+        email: str = "joe@example.com",
+        domains: str = "example.com,example2.com,*.example3.com",
+    ) -> License:
         before_license_ids = list(License.objects.values_list("id", flat=True))
-        request = self.factory.get("/send-license-key?%s"%urlencode({"email": email, "domains": domains}))
-        response = send_license_key(request, _send_email=False)
+        request = self.factory.post("/send-license-key?%s" % urlencode({"email": email, "domains": domains}))
+        send_license_key(request, _send_email=False)
         after_license_ids = License.objects.values_list("id", flat=True)
         new_license_ids = list(set(after_license_ids).difference(before_license_ids))
         assert len(new_license_ids) == 1
@@ -141,21 +132,20 @@ class SimpleTest(TestCase):
         license.save()
         return license
 
-    def test_query_workbooks(self):
+    def test_query_workbooks(self) -> None:
         license = self._create_verified_license()
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license.key),
-            {"data": {"workbooks":[]}}
+            {"data": {"workbooks": []}},
         )
 
         workbook = _create_workbook(license)
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license.key),
-            {"data": {"workbooks":[{"id": str(workbook.id)}]}}
+            {"data": {"workbooks": [{"id": str(workbook.id)}]}},
         )
 
-
-    def test_query_workbook(self):
+    def test_query_workbook(self) -> None:
         license = self._create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(
@@ -165,11 +155,12 @@ class SimpleTest(TestCase):
                     workbook(workbookId:"%s") {
                       id
                     }
-                }"""%workbook.id,
+                }"""
+                % workbook.id,
                 "example.com",
-                license.key
+                license.key,
             ),
-            {"data": {"workbook":{"id": str(workbook.id)}}}
+            {"data": {"workbook": {"id": str(workbook.id)}}},
         )
 
         # bob can't access joe's workbook
@@ -181,37 +172,37 @@ class SimpleTest(TestCase):
                     workbook(workbookId:"%s") {
                       id
                     }
-                }"""%workbook.id,
+                }"""
+                % workbook.id,
                 "example.com",
-                license2.key
+                license2.key,
             ),
-            {"data": {"workbook":None}}
+            {"data": {"workbook": None}},
         )
 
-    def test_query_workbooks_multiple_users(self):
+    def test_query_workbooks_multiple_users(self) -> None:
         license1 = self._create_verified_license(email="joe@example.com")
         license2 = self._create_verified_license(email="joe2@example.com")
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license1.key),
-            {"data": {"workbooks":[]}}
+            {"data": {"workbooks": []}},
         )
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license2.key),
-            {"data": {"workbooks":[]}}
+            {"data": {"workbooks": []}},
         )
-
 
         workbook = _create_workbook(license1)
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license1.key),
-            {"data": {"workbooks":[{"id": str(workbook.id)}]}}
+            {"data": {"workbooks": [{"id": str(workbook.id)}]}},
         )
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license2.key),
-            {"data": {"workbooks":[]}}
+            {"data": {"workbooks": []}},
         )
 
-    def test_create_workbook(self):
+    def test_create_workbook(self) -> None:
         self.assertEqual(Workbook.objects.count(), 0)
         license = self._create_verified_license()
         data = graphql_query(
@@ -223,16 +214,16 @@ class SimpleTest(TestCase):
             }
             """,
             "example.com",
-            license.key
+            license.key,
         )
         self.assertCountEqual(
             data["data"]["create_workbook"]["workbook"].keys(),
-            ["revision", "id", "workbookJson"]
+            ["revision", "id", "workbookJson"],
         )
         self.assertEqual(Workbook.objects.count(), 1)
         self.assertEqual(Workbook.objects.get().license, license)
 
-    def test_create_workbook_unlicensed_domain(self):
+    def test_create_workbook_unlicensed_domain(self) -> None:
         self.assertEqual(Workbook.objects.count(), 0)
         license = self._create_verified_license()
         data = graphql_query(
@@ -244,16 +235,12 @@ class SimpleTest(TestCase):
             }
             """,
             "not-licensed.com",
-            license.key
+            license.key,
         )
-        self.assertEqual(
-            data["data"]["create_workbook"],
-            None
-        )
+        self.assertEqual(data["data"]["create_workbook"], None)
         self.assertEqual(Workbook.objects.count(), 0)
 
-
-    def test_set_cell_input(self):
+    def test_set_cell_input(self) -> None:
         license = self._create_verified_license(email="joe@example.com")
         workbook = _create_workbook(license)
 
@@ -265,13 +252,12 @@ class SimpleTest(TestCase):
                     workbook{ id }
                 }
             }
-            """%str(workbook.id),
+            """
+            % str(workbook.id),
             "example.com",
-            license.key
+            license.key,
         )
-        self.assertEqual(
-            data["data"]["set_cell_input"]["workbook"]["id"], str(workbook.id)
-        )
+        self.assertEqual(data["data"]["set_cell_input"]["workbook"]["id"], str(workbook.id))
 
         # confirm that "other" license can't modify the workbook
         license_other = self._create_verified_license(email="other@example.com")
@@ -282,13 +268,14 @@ class SimpleTest(TestCase):
                     workbook{ id }
                 }
             }
-            """%str(workbook.id),
+            """
+            % str(workbook.id),
             "example.com",
-            license_other.key
+            license_other.key,
         )
         self.assertIsNone(data["data"]["set_cell_input"])
 
-    def test_save_workbook(self):
+    def test_save_workbook(self) -> None:
         license = self._create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(workbook.revision, 1)
@@ -300,23 +287,21 @@ class SimpleTest(TestCase):
                     revision
                 }
             }
-            """%str(workbook.id),
+            """
+            % str(workbook.id),
             "example.com",
-            license.key
+            license.key,
         )
-        self.assertEqual(
-            data["data"]["save_workbook"],
-            {"revision": 2}
-        )
+        self.assertEqual(data["data"]["save_workbook"], {"revision": 2})
         workbook.refresh_from_db()
         self.assertEqual(workbook.revision, 2)
         self.assertEqual(workbook.workbook_json, "{ }")
 
-    def test_save_workbook_invalid_license(self):
+    def test_save_workbook_invalid_license(self) -> None:
         license = self._create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(workbook.revision, 1)
-        
+
         license2 = self._create_verified_license(email="bob@example.com")
         data = graphql_query(
             """
@@ -325,18 +310,16 @@ class SimpleTest(TestCase):
                     revision
                 }
             }
-            """%str(workbook.id),
+            """
+            % str(workbook.id),
             "example.com",
-            license2.key
+            license2.key,
         )
-        self.assertEqual(
-            data["data"]["save_workbook"],
-            None
-        )
+        self.assertEqual(data["data"]["save_workbook"], None)
         workbook.refresh_from_db()
         self.assertEqual(workbook.revision, 1)
 
-    def test_save_workbook_unlicensed_domain(self):
+    def test_save_workbook_unlicensed_domain(self) -> None:
         license = self._create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(workbook.revision, 1)
@@ -348,14 +331,11 @@ class SimpleTest(TestCase):
                     revision
                 }
             }
-            """%str(workbook.id),
+            """
+            % str(workbook.id),
             "not-licensed.com",
-            license.key
+            license.key,
         )
-        self.assertEqual(
-            data["data"]["save_workbook"],
-            None
-        )
+        self.assertEqual(data["data"]["save_workbook"], None)
         workbook.refresh_from_db()
         self.assertEqual(workbook.revision, 1)
-

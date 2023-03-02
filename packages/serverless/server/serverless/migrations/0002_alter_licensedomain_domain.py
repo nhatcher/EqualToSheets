@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('serverless', '0001_initial'),
+        ("serverless", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='licensedomain',
-            name='domain',
+            model_name="licensedomain",
+            name="domain",
             field=models.CharField(max_length=256),
         ),
     ]

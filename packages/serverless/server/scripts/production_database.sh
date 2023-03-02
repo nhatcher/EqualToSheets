@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
 
+# TODO: Update this script so that it works properly in the container
+
 # Restores database from production locally, running local migrations
 
 # drop existing serverless database / user

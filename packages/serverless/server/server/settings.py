@@ -12,13 +12,14 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 
 import os
 from pathlib import Path
+from typing import Any
 
 import dj_database_url
-from django.test.runner import DiscoverRunner
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+TEST = "DJANGO_TESTS" in os.environ
 
 IS_HEROKU = "DYNO" in os.environ
 
@@ -26,10 +27,7 @@ IS_HEROKU = "DYNO" in os.environ
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "CHANGE_ME!!!! (P.S. the SECRET_KEY environment variable will be used, if set, instead)."
-
-if 'SECRET_KEY' in os.environ:
-    SECRET_KEY = os.environ["SECRET_KEY"]
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 
 # Generally avoid wildcards(*). However since Heroku router provides hostname validation it is ok
@@ -39,8 +37,7 @@ else:
     ALLOWED_HOSTS = []
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if not IS_HEROKU:
-    DEBUG = True
+DEBUG = not TEST and os.environ.get("DEBUG", "").lower() == "true"
 
 # Application definition
 
@@ -53,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "serverless",
     "graphene_django",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -66,7 +64,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "django_project.urls"
+ROOT_URLCONF = "server.urls"
 
 TEMPLATES = [
     {
@@ -79,9 +77,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ]
+            ],
         },
-    }
+    },
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -90,47 +88,29 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.equalto.com",
 ]
 
-WSGI_APPLICATION = "django_project.wsgi.application"
+WSGI_APPLICATION = "server.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 MAX_CONN_AGE = 600
+SSL_REQUIRE = not DEBUG and not TEST
 
-# default config for local deployments
-# You need to manually create the database, user and set the password before
-# installing the app. Run the script scripts/clean_database.sh.
-
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'serverless',
-        'USER': 'serverless_admin',
-        'PASSWORD': 'local-password-ag3F5721jda71eh#!r6!3',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+# Configure Django for DATABASE_URL environment variable.
+DATABASES: dict[str, Any] = {
+    "default": dj_database_url.config(
+        conn_max_age=MAX_CONN_AGE,
+        ssl_require=SSL_REQUIRE,
+    ),
 }
-
-if "DATABASE_URL" in os.environ:
-    # Configure Django for DATABASE_URL environment variable.
-    DATABASES["default"] = dj_database_url.config(
-        conn_max_age=MAX_CONN_AGE, ssl_require=True)
-
-    # Enable test database if found in CI environment.
-    if "CI" in os.environ:
-        DATABASES["default"]["TEST"] = DATABASES["default"]
 
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -159,22 +139,7 @@ STATIC_URL = "static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
-# Test Runner Config
-class HerokuDiscoverRunner(DiscoverRunner):
-    """Test Runner for Heroku CI, which provides a database for you.
-    This requires you to set the TEST database (done for you by settings().)"""
-
-    def setup_databases(self, **kwargs):
-        self.keepdb = True
-        return super(HerokuDiscoverRunner, self).setup_databases(**kwargs)
-
-
-# Use HerokuDiscoverRunner on Heroku CI
-if "CI" in os.environ:
-    TEST_RUNNER = "django_project.settings.HerokuDiscoverRunner"
-
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

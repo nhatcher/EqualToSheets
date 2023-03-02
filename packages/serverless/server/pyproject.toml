@@ -1,0 +1,50 @@
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+
+
+[tool.isort]
+line_length = 120
+include_trailing_comma = true
+multi_line_output = 3
+default_section = "THIRDPARTY"
+
+
+[tool.mypy]
+python_version = "3.11"
+allow_redefinition = false
+check_untyped_defs = true
+disallow_untyped_decorators = true
+disallow_any_generics = true
+disallow_untyped_calls = false
+disallow_untyped_defs = true
+ignore_errors = false
+ignore_missing_imports = true
+implicit_reexport = false
+local_partial_types = true
+strict_optional = true
+strict_equality = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unreachable = true
+warn_no_return = true
+exclude = ["migrations/*"]

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sudo su -c psql postgres
+docker-compose exec database psql serverless -U postgres
