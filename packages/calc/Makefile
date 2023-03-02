@@ -9,7 +9,7 @@ clean:
 lint:
 	cargo fmt -- --check
 	# TODO: disallow expect(), unwrap() and panic() via `-D clippy::expect_used -D clippy::unwrap_used -D clippy::panic
-	cargo clippy --all-targets --all-features -- -D warnings -A clippy::upper_case_acronyms
+	cargo clippy --all-targets --all-features -- -D warnings
 
 format:
 	cargo fmt

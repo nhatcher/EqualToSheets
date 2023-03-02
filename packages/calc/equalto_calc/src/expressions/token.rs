@@ -1,13 +1,12 @@
 use std::fmt;
 
-use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::language::Language;
 
 use super::{lexer::LexerError, types::ParsedReference};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum OpCompare {
     LessThan,
     GreaterThan,
@@ -30,7 +29,7 @@ impl fmt::Display for OpCompare {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum OpUnary {
     Minus,
     Percentage,
@@ -45,7 +44,7 @@ impl fmt::Display for OpUnary {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum OpSum {
     Add,
     Minus,
@@ -60,7 +59,7 @@ impl fmt::Display for OpSum {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum OpProduct {
     Times,
     Divide,
@@ -194,40 +193,39 @@ pub fn is_english_error_string(name: &str) -> bool {
     names.iter().any(|e| *e == name)
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-#[serde(tag = "type", content = "data")]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
-    ILLEGAL(LexerError),
+    Illegal(LexerError),
     EOF,
-    IDENT(String),      // abc123
-    STRING(String),     // "A season"
-    NUMBER(f64),        // 123.4
-    BOOLEAN(bool),      // TRUE | FALSE
-    ERROR(Error),       // #VALUE!
-    COMPARE(OpCompare), // <,>, ...
-    SUM(OpSum),         // +,-
-    PRODUCT(OpProduct), // *,/
-    POWER,              // ^
-    LPAREN,             // (
-    RPAREN,             // )
-    COLON,              // :
-    SEMICOLON,          // ;
-    LBRACKET,           // [
-    RBRACKET,           // ]
-    LBRACE,             // {
-    RBRACE,             // }
-    COMMA,              // ,
-    BANG,               // !
-    PERCENT,            // %
-    AND,                // &
-    REFERENCE {
+    Ident(String),      // abc123
+    String(String),     // "A season"
+    Number(f64),        // 123.4
+    Boolean(bool),      // TRUE | FALSE
+    Error(Error),       // #VALUE!
+    Compare(OpCompare), // <,>, ...
+    Addition(OpSum),    // +,-
+    Product(OpProduct), // *,/
+    Power,              // ^
+    LeftParenthesis,    // (
+    RightParenthesis,   // )
+    Colon,              // :
+    Semicolon,          // ;
+    LeftBracket,        // [
+    RightBracket,       // ]
+    LeftBrace,          // {
+    RightBrace,         // }
+    Comma,              // ,
+    Bang,               // !
+    Percent,            // %
+    And,                // &
+    Reference {
         sheet: Option<String>,
         row: i32,
         column: i32,
         absolute_column: bool,
         absolute_row: bool,
     },
-    RANGE {
+    Range {
         sheet: Option<String>,
         left: ParsedReference,
         right: ParsedReference,
@@ -238,30 +236,30 @@ impl fmt::Display for TokenType {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         use self::TokenType::*;
         match self {
-            ILLEGAL(_) => write!(fmt, "Illegal"),
+            Illegal(_) => write!(fmt, "Illegal"),
             EOF => write!(fmt, ""),
-            IDENT(value) => write!(fmt, "{}", value),
-            STRING(value) => write!(fmt, "\"{}\"", value),
-            NUMBER(value) => write!(fmt, "{}", value),
-            BOOLEAN(value) => write!(fmt, "{}", value),
-            ERROR(value) => write!(fmt, "{}", value),
-            COMPARE(value) => write!(fmt, "{}", value),
-            SUM(value) => write!(fmt, "{}", value),
-            PRODUCT(value) => write!(fmt, "{}", value),
-            POWER => write!(fmt, "^"),
-            LPAREN => write!(fmt, "("),
-            RPAREN => write!(fmt, ")"),
-            COLON => write!(fmt, ":"),
-            SEMICOLON => write!(fmt, ";"),
-            LBRACKET => write!(fmt, "["),
-            RBRACKET => write!(fmt, "]"),
-            LBRACE => write!(fmt, "{{"),
-            RBRACE => write!(fmt, "}}"),
-            COMMA => write!(fmt, ","),
-            BANG => write!(fmt, "!"),
-            PERCENT => write!(fmt, "%"),
-            AND => write!(fmt, "&"),
-            REFERENCE {
+            Ident(value) => write!(fmt, "{}", value),
+            String(value) => write!(fmt, "\"{}\"", value),
+            Number(value) => write!(fmt, "{}", value),
+            Boolean(value) => write!(fmt, "{}", value),
+            Error(value) => write!(fmt, "{}", value),
+            Compare(value) => write!(fmt, "{}", value),
+            Addition(value) => write!(fmt, "{}", value),
+            Product(value) => write!(fmt, "{}", value),
+            Power => write!(fmt, "^"),
+            LeftParenthesis => write!(fmt, "("),
+            RightParenthesis => write!(fmt, ")"),
+            Colon => write!(fmt, ":"),
+            Semicolon => write!(fmt, ";"),
+            LeftBracket => write!(fmt, "["),
+            RightBracket => write!(fmt, "]"),
+            LeftBrace => write!(fmt, "{{"),
+            RightBrace => write!(fmt, "}}"),
+            Comma => write!(fmt, ","),
+            Bang => write!(fmt, "!"),
+            Percent => write!(fmt, "%"),
+            And => write!(fmt, "&"),
+            Reference {
                 sheet,
                 row,
                 column,
@@ -283,7 +281,7 @@ impl fmt::Display for TokenType {
                     None => write!(fmt, "{}{}", column, row),
                 }
             }
-            RANGE { sheet, left, right } => {
+            Range { sheet, left, right } => {
                 let row_left_data = if left.absolute_row {
                     format!("{}", left.row)
                 } else {
@@ -325,30 +323,30 @@ impl fmt::Display for TokenType {
 pub fn index(token: &TokenType) -> u32 {
     use self::TokenType::*;
     match token {
-        ILLEGAL(..) => 1,
+        Illegal(..) => 1,
         EOF => 2,
-        IDENT(..) => 3,
-        STRING(..) => 4,
-        NUMBER(..) => 6,
-        BOOLEAN(..) => 7,
-        ERROR(..) => 8,
-        SUM(..) => 9,
-        PRODUCT(..) => 10,
-        POWER => 14,
-        LPAREN => 15,
-        RPAREN => 16,
-        COLON => 17,
-        SEMICOLON => 18,
-        LBRACKET => 19,
-        RBRACKET => 20,
-        LBRACE => 21,
-        RBRACE => 22,
-        COMMA => 23,
-        BANG => 24,
-        PERCENT => 30,
-        AND => 31,
-        REFERENCE { .. } => 34,
-        RANGE { .. } => 35,
-        COMPARE(..) => 37,
+        Ident(..) => 3,
+        String(..) => 4,
+        Number(..) => 6,
+        Boolean(..) => 7,
+        Error(..) => 8,
+        Addition(..) => 9,
+        Product(..) => 10,
+        Power => 14,
+        LeftParenthesis => 15,
+        RightParenthesis => 16,
+        Colon => 17,
+        Semicolon => 18,
+        LeftBracket => 19,
+        RightBracket => 20,
+        LeftBrace => 21,
+        RightBrace => 22,
+        Comma => 23,
+        Bang => 24,
+        Percent => 30,
+        And => 31,
+        Reference { .. } => 34,
+        Range { .. } => 35,
+        Compare(..) => 37,
     }
 }

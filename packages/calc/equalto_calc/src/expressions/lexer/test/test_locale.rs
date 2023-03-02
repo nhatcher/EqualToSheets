@@ -18,22 +18,22 @@ fn new_language_lexer(formula: &str, locale: &str, language: &str) -> Lexer {
 #[test]
 fn test_german_locale() {
     let mut lx = new_language_lexer("2,34e-3", "de", "en");
-    assert_eq!(lx.next_token(), TokenType::NUMBER(2.34e-3));
+    assert_eq!(lx.next_token(), TokenType::Number(2.34e-3));
     assert_eq!(lx.next_token(), TokenType::EOF);
 }
 
 #[test]
 fn test_german_locale_does_not_parse() {
     let mut lx = new_language_lexer("2.34e-3", "de", "en");
-    assert_eq!(lx.next_token(), TokenType::NUMBER(2.0));
-    assert!(matches!(lx.next_token(), TokenType::ILLEGAL { .. }));
+    assert_eq!(lx.next_token(), TokenType::Number(2.0));
+    assert!(matches!(lx.next_token(), TokenType::Illegal { .. }));
     assert_eq!(lx.next_token(), TokenType::EOF);
 }
 
 #[test]
 fn test_english_locale() {
     let mut lx = new_language_lexer("2.34e-3", "en", "en");
-    assert_eq!(lx.next_token(), TokenType::NUMBER(2.34e-3));
+    assert_eq!(lx.next_token(), TokenType::Number(2.34e-3));
     assert_eq!(lx.next_token(), TokenType::EOF);
 }
 
@@ -41,8 +41,8 @@ fn test_english_locale() {
 fn test_english_locale_does_not_parse() {
     // a comma is a separator
     let mut lx = new_language_lexer("2,34e-3", "en", "en");
-    assert_eq!(lx.next_token(), TokenType::NUMBER(2.0));
-    assert_eq!(lx.next_token(), TokenType::COMMA);
-    assert_eq!(lx.next_token(), TokenType::NUMBER(34e-3));
+    assert_eq!(lx.next_token(), TokenType::Number(2.0));
+    assert_eq!(lx.next_token(), TokenType::Comma);
+    assert_eq!(lx.next_token(), TokenType::Number(34e-3));
     assert_eq!(lx.next_token(), TokenType::EOF);
 }

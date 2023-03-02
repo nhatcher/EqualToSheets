@@ -45,7 +45,7 @@ impl ParsedReference {
         }
 
         match reference_token {
-            TokenType::REFERENCE {
+            TokenType::Reference {
                 sheet: sheet_name,
                 column: column_id,
                 row: row_id,
@@ -77,7 +77,7 @@ impl ParsedReference {
                     column: column_id,
                 }))
             }
-            TokenType::RANGE {
+            TokenType::Range {
                 sheet: sheet_name,
                 left,
                 right,

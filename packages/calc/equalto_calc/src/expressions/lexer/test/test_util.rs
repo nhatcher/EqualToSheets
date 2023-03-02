@@ -26,76 +26,76 @@ fn test_get_tokens() {
 fn test_simple_tokens() {
     assert_eq!(
         get_tokens_types("()"),
-        vec![TokenType::LPAREN, TokenType::RPAREN]
+        vec![TokenType::LeftParenthesis, TokenType::RightParenthesis]
     );
     assert_eq!(
         get_tokens_types("{}"),
-        vec![TokenType::LBRACE, TokenType::RBRACE]
+        vec![TokenType::LeftBrace, TokenType::RightBrace]
     );
     assert_eq!(
         get_tokens_types("[]"),
-        vec![TokenType::LBRACKET, TokenType::RBRACKET]
+        vec![TokenType::LeftBracket, TokenType::RightBracket]
     );
-    assert_eq!(get_tokens_types("&"), vec![TokenType::AND]);
+    assert_eq!(get_tokens_types("&"), vec![TokenType::And]);
     assert_eq!(
         get_tokens_types("<"),
-        vec![TokenType::COMPARE(OpCompare::LessThan)]
+        vec![TokenType::Compare(OpCompare::LessThan)]
     );
     assert_eq!(
         get_tokens_types(">"),
-        vec![TokenType::COMPARE(OpCompare::GreaterThan)]
+        vec![TokenType::Compare(OpCompare::GreaterThan)]
     );
     assert_eq!(
         get_tokens_types("<="),
-        vec![TokenType::COMPARE(OpCompare::LessOrEqualThan)]
+        vec![TokenType::Compare(OpCompare::LessOrEqualThan)]
     );
     assert_eq!(
         get_tokens_types(">="),
-        vec![TokenType::COMPARE(OpCompare::GreaterOrEqualThan)]
+        vec![TokenType::Compare(OpCompare::GreaterOrEqualThan)]
     );
     assert_eq!(
         get_tokens_types("IF"),
-        vec![TokenType::IDENT("IF".to_owned())]
+        vec![TokenType::Ident("IF".to_owned())]
     );
-    assert_eq!(get_tokens_types("45"), vec![TokenType::NUMBER(45.0)]);
+    assert_eq!(get_tokens_types("45"), vec![TokenType::Number(45.0)]);
     // The lexer parses this as two tokens
     assert_eq!(
         get_tokens_types("-45"),
-        vec![TokenType::SUM(OpSum::Minus), TokenType::NUMBER(45.0)]
+        vec![TokenType::Addition(OpSum::Minus), TokenType::Number(45.0)]
     );
     assert_eq!(
         get_tokens_types("23.45e-2"),
-        vec![TokenType::NUMBER(23.45e-2)]
+        vec![TokenType::Number(23.45e-2)]
     );
     assert_eq!(
         get_tokens_types("4-3"),
         vec![
-            TokenType::NUMBER(4.0),
-            TokenType::SUM(OpSum::Minus),
-            TokenType::NUMBER(3.0)
+            TokenType::Number(4.0),
+            TokenType::Addition(OpSum::Minus),
+            TokenType::Number(3.0)
         ]
     );
-    assert_eq!(get_tokens_types("True"), vec![TokenType::BOOLEAN(true)]);
-    assert_eq!(get_tokens_types("FALSE"), vec![TokenType::BOOLEAN(false)]);
+    assert_eq!(get_tokens_types("True"), vec![TokenType::Boolean(true)]);
+    assert_eq!(get_tokens_types("FALSE"), vec![TokenType::Boolean(false)]);
     assert_eq!(
         get_tokens_types("2,3.5"),
         vec![
-            TokenType::NUMBER(2.0),
-            TokenType::COMMA,
-            TokenType::NUMBER(3.5)
+            TokenType::Number(2.0),
+            TokenType::Comma,
+            TokenType::Number(3.5)
         ]
     );
     assert_eq!(
         get_tokens_types("2.4;3.5"),
         vec![
-            TokenType::NUMBER(2.4),
-            TokenType::SEMICOLON,
-            TokenType::NUMBER(3.5)
+            TokenType::Number(2.4),
+            TokenType::Semicolon,
+            TokenType::Number(3.5)
         ]
     );
     assert_eq!(
         get_tokens_types("AB34"),
-        vec![TokenType::REFERENCE {
+        vec![TokenType::Reference {
             sheet: None,
             row: 34,
             column: 28,
@@ -105,7 +105,7 @@ fn test_simple_tokens() {
     );
     assert_eq!(
         get_tokens_types("$A3"),
-        vec![TokenType::REFERENCE {
+        vec![TokenType::Reference {
             sheet: None,
             row: 3,
             column: 1,
@@ -115,7 +115,7 @@ fn test_simple_tokens() {
     );
     assert_eq!(
         get_tokens_types("AB$34"),
-        vec![TokenType::REFERENCE {
+        vec![TokenType::Reference {
             sheet: None,
             row: 34,
             column: 28,
@@ -125,7 +125,7 @@ fn test_simple_tokens() {
     );
     assert_eq!(
         get_tokens_types("$AB$34"),
-        vec![TokenType::REFERENCE {
+        vec![TokenType::Reference {
             sheet: None,
             row: 34,
             column: 28,
@@ -135,7 +135,7 @@ fn test_simple_tokens() {
     );
     assert_eq!(
         get_tokens_types("'My House'!AB34"),
-        vec![TokenType::REFERENCE {
+        vec![TokenType::Reference {
             sheet: Some("My House".to_string()),
             row: 34,
             column: 28,

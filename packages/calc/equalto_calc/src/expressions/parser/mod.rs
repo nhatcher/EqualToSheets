@@ -34,10 +34,10 @@ use crate::locale::get_locale;
 use super::lexer;
 use super::token;
 use super::token::OpUnary;
+use super::token::TokenType;
 use super::types::*;
 
 use token::OpCompare;
-use token::TokenType::*;
 
 pub mod move_formula;
 pub mod stringify;
@@ -204,7 +204,7 @@ impl Parser {
             return t;
         }
         let mut next_token = self.lexer.peek_token();
-        while let COMPARE(op) = next_token {
+        while let TokenType::Compare(op) = next_token {
             self.lexer.advance_token();
             let p = self.parse_concat();
             if let Node::ParseErrorKind { .. } = p {
@@ -226,7 +226,7 @@ impl Parser {
             return t;
         }
         let mut next_token = self.lexer.peek_token();
-        while next_token == AND {
+        while next_token == TokenType::And {
             self.lexer.advance_token();
             let p = self.parse_term();
             if let Node::ParseErrorKind { .. } = p {
@@ -247,7 +247,7 @@ impl Parser {
             return t;
         }
         let mut next_token = self.lexer.peek_token();
-        while let SUM(op) = next_token {
+        while let TokenType::Addition(op) = next_token {
             self.lexer.advance_token();
             let p = self.parse_factor();
             if let Node::ParseErrorKind { .. } = p {
@@ -270,7 +270,7 @@ impl Parser {
             return t;
         }
         let mut next_token = self.lexer.peek_token();
-        while let PRODUCT(op) = next_token {
+        while let TokenType::Product(op) = next_token {
             self.lexer.advance_token();
             let p = self.parse_prod();
             if let Node::ParseErrorKind { .. } = p {
@@ -292,7 +292,7 @@ impl Parser {
             return t;
         }
         let mut next_token = self.lexer.peek_token();
-        while next_token == POWER {
+        while next_token == TokenType::Power {
             self.lexer.advance_token();
             let p = self.parse_power();
             if let Node::ParseErrorKind { .. } = p {
@@ -310,7 +310,7 @@ impl Parser {
     fn parse_power(&mut self) -> Node {
         let mut next_token = self.lexer.peek_token();
         let mut sign = 1;
-        while let SUM(op) = next_token {
+        while let TokenType::Addition(op) = next_token {
             self.lexer.advance_token();
             if op == token::OpSum::Minus {
                 sign = -sign;
@@ -329,7 +329,7 @@ impl Parser {
             }
         }
         next_token = self.lexer.peek_token();
-        while next_token == PERCENT {
+        while next_token == TokenType::Percent {
             self.lexer.advance_token();
             t = Node::UnaryKind {
                 kind: token::OpUnary::Percentage,
@@ -346,7 +346,7 @@ impl Parser {
             return t;
         }
         let next_token = self.lexer.peek_token();
-        if next_token == COLON {
+        if next_token == TokenType::Colon {
             self.lexer.advance_token();
             let p = self.parse_primary();
             if let Node::ParseErrorKind { .. } = p {
@@ -363,13 +363,13 @@ impl Parser {
     fn parse_primary(&mut self) -> Node {
         let next_token = self.lexer.next_token();
         match next_token {
-            LPAREN => {
+            TokenType::LeftParenthesis => {
                 let t = self.parse_expr();
                 if let Node::ParseErrorKind { .. } = t {
                     return t;
                 }
 
-                if let Err(err) = self.lexer.expect(RPAREN) {
+                if let Err(err) = self.lexer.expect(TokenType::RightParenthesis) {
                     return Node::ParseErrorKind {
                         formula: self.lexer.get_formula(),
                         position: err.position,
@@ -378,16 +378,16 @@ impl Parser {
                 }
                 t
             }
-            NUMBER(s) => Node::NumberKind(s),
-            STRING(s) => Node::StringKind(s),
-            LBRACE => {
+            TokenType::Number(s) => Node::NumberKind(s),
+            TokenType::String(s) => Node::StringKind(s),
+            TokenType::LeftBrace => {
                 let t = self.parse_expr();
                 if let Node::ParseErrorKind { .. } = t {
                     return t;
                 }
                 let mut next_token = self.lexer.peek_token();
                 let mut args: Vec<Node> = vec![t];
-                while next_token == SEMICOLON {
+                while next_token == TokenType::Semicolon {
                     self.lexer.advance_token();
                     let p = self.parse_expr();
                     if let Node::ParseErrorKind { .. } = p {
@@ -396,7 +396,7 @@ impl Parser {
                     next_token = self.lexer.peek_token();
                     args.push(p);
                 }
-                if let Err(err) = self.lexer.expect(RBRACE) {
+                if let Err(err) = self.lexer.expect(TokenType::RightBrace) {
                     return Node::ParseErrorKind {
                         formula: self.lexer.get_formula(),
                         position: err.position,
@@ -405,7 +405,7 @@ impl Parser {
                 }
                 Node::ArrayKind(args)
             }
-            REFERENCE {
+            TokenType::Reference {
                 sheet,
                 row,
                 column,
@@ -455,7 +455,7 @@ impl Parser {
                     },
                 }
             }
-            RANGE { sheet, left, right } => {
+            TokenType::Range { sheet, left, right } => {
                 let context = match &self.context {
                     Some(c) => c,
                     None => {
@@ -528,16 +528,16 @@ impl Parser {
                     },
                 }
             }
-            IDENT(name) => {
+            TokenType::Ident(name) => {
                 let next_token = self.lexer.peek_token();
-                if next_token == LPAREN {
+                if next_token == TokenType::LeftParenthesis {
                     // It's a function call "SUM(.."
                     self.lexer.advance_token();
                     let args = match self.parse_function_args() {
                         Ok(s) => s,
                         Err(e) => return e,
                     };
-                    if let Err(err) = self.lexer.expect(RPAREN) {
+                    if let Err(err) = self.lexer.expect(TokenType::RightParenthesis) {
                         return Node::ParseErrorKind {
                             formula: self.lexer.get_formula(),
                             position: err.position,
@@ -555,19 +555,19 @@ impl Parser {
                 }
                 Node::VariableKind(name)
             }
-            ERROR(kind) => Node::ErrorKind(kind),
-            ILLEGAL(error) => Node::ParseErrorKind {
+            TokenType::Error(kind) => Node::ErrorKind(kind),
+            TokenType::Illegal(error) => Node::ParseErrorKind {
                 formula: self.lexer.get_formula(),
                 position: error.position,
                 message: error.message,
             },
-            EOF => Node::ParseErrorKind {
+            TokenType::EOF => Node::ParseErrorKind {
                 formula: self.lexer.get_formula(),
                 position: 0,
                 message: "Unexpected end of input.".to_string(),
             },
-            BOOLEAN(value) => Node::BooleanKind(value),
-            COMPARE(_) => {
+            TokenType::Boolean(value) => Node::BooleanKind(value),
+            TokenType::Compare(_) => {
                 // A primary Node cannot start with an operator
                 Node::ParseErrorKind {
                     formula: self.lexer.get_formula(),
@@ -575,7 +575,7 @@ impl Parser {
                     message: "Unexpected token: 'COMPARE'".to_string(),
                 }
             }
-            SUM(_) => {
+            TokenType::Addition(_) => {
                 // A primary Node cannot start with an operator
                 Node::ParseErrorKind {
                     formula: self.lexer.get_formula(),
@@ -583,7 +583,7 @@ impl Parser {
                     message: "Unexpected token: 'SUM'".to_string(),
                 }
             }
-            PRODUCT(_) => {
+            TokenType::Product(_) => {
                 // A primary Node cannot start with an operator
                 Node::ParseErrorKind {
                     formula: self.lexer.get_formula(),
@@ -591,7 +591,7 @@ impl Parser {
                     message: "Unexpected token: 'PRODUCT'".to_string(),
                 }
             }
-            POWER => {
+            TokenType::Power => {
                 // A primary Node cannot start with an operator
                 Node::ParseErrorKind {
                     formula: self.lexer.get_formula(),
@@ -599,14 +599,20 @@ impl Parser {
                     message: "Unexpected token: 'POWER'".to_string(),
                 }
             }
-            RPAREN | RBRACKET | COLON | SEMICOLON | RBRACE | COMMA | BANG | AND | PERCENT => {
-                Node::ParseErrorKind {
-                    formula: self.lexer.get_formula(),
-                    position: 0,
-                    message: format!("Unexpected token: '{}'", next_token),
-                }
-            }
-            LBRACKET => Node::ParseErrorKind {
+            TokenType::RightParenthesis
+            | TokenType::RightBracket
+            | TokenType::Colon
+            | TokenType::Semicolon
+            | TokenType::RightBrace
+            | TokenType::Comma
+            | TokenType::Bang
+            | TokenType::And
+            | TokenType::Percent => Node::ParseErrorKind {
+                formula: self.lexer.get_formula(),
+                position: 0,
+                message: format!("Unexpected token: '{}'", next_token),
+            },
+            TokenType::LeftBracket => Node::ParseErrorKind {
                 formula: self.lexer.get_formula(),
                 position: 0,
                 message: "Unexpected token: '['".to_string(),
@@ -617,10 +623,10 @@ impl Parser {
     fn parse_function_args(&mut self) -> Result<Vec<Node>, Node> {
         let mut args: Vec<Node> = Vec::new();
         let mut next_token = self.lexer.peek_token();
-        if next_token == RPAREN {
+        if next_token == TokenType::RightParenthesis {
             return Ok(args);
         }
-        if self.lexer.peek_token() == COMMA {
+        if self.lexer.peek_token() == TokenType::Comma {
             args.push(Node::EmptyArgKind);
         } else {
             let t = self.parse_expr();
@@ -630,11 +636,11 @@ impl Parser {
             args.push(t);
         }
         next_token = self.lexer.peek_token();
-        while next_token == COMMA {
+        while next_token == TokenType::Comma {
             self.lexer.advance_token();
-            if self.lexer.peek_token() == COMMA {
+            if self.lexer.peek_token() == TokenType::Comma {
                 args.push(Node::EmptyArgKind);
-                next_token = COMMA;
+                next_token = TokenType::Comma;
             } else {
                 let p = self.parse_expr();
                 if let Node::ParseErrorKind { .. } = p {

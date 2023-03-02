@@ -1,16 +1,32 @@
-//! A tokenizer for Excel formulas.
+//! A tokenizer for spreadsheet formulas.
 //!
 //! This is meant to feed a formula parser.
 //!
 //! You will need to instantiate it with a language and a locale.
 //!
 //! It supports two working modes:
-//! 1. A1 reference Mode
+//!
+//! 1. A1 or display mode
 //!    This is for user formulas. References are like `D4`, `D$4` or `F5:T10`
-//! 2. R1C1.
+//! 2. R1C1, internal or runtime mode
 //!    A reference like R1C1 refers to $A$1 and R3C4 to $D$4
 //!    R[2]C[5] refers to a cell two rows below and five columns to the right
-//!    This is used internally.
+//!    It uses the 'en' locale and language.
+//!    This is used internally at runtime.
+//!
+//! Formulas look different in different locales:
+//!
+//! =IF(A1, B1, NA()) versus =IF(A1; B1; NA())
+//!
+//! Also numbers are different:
+//!
+//! 1,123.45 versus 1.123,45
+//!
+//! The names of the errors and functions are different in different languages,
+//! but they stay the same in different locales.
+//!
+//! Note that in EqualTo if you are using a locale different from 'en' or a language different from 'en'
+//! you will still need the 'en' locale and language because formulas are stored in that language and locale
 //!
 //! # Examples:
 //! ```
@@ -25,8 +41,6 @@
 //! assert_eq!(lexer.next_token(), TokenType::COMPARE(OpCompare::Equal));
 //! assert!(matches!(lexer.next_token(), TokenType::REFERENCE { .. }));
 //! ```
-
-use serde::{Deserialize, Serialize};
 
 use crate::expressions::token::{OpCompare, OpProduct, OpSum};
 
@@ -44,7 +58,7 @@ mod test;
 
 mod ranges;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LexerError {
     pub position: usize,
     pub message: String,
@@ -59,7 +73,6 @@ pub enum LexerMode {
 }
 
 /// Tokenize an input
-
 #[derive(Clone)]
 pub struct Lexer {
     position: usize,
@@ -156,73 +169,73 @@ impl Lexer {
         match self.read_next_char() {
             Some(char) => {
                 match char {
-                    '+' => TokenType::SUM(OpSum::Add),
-                    '-' => TokenType::SUM(OpSum::Minus),
-                    '*' => TokenType::PRODUCT(OpProduct::Times),
-                    '/' => TokenType::PRODUCT(OpProduct::Divide),
-                    '(' => TokenType::LPAREN,
-                    ')' => TokenType::RPAREN,
-                    '=' => TokenType::COMPARE(OpCompare::Equal),
-                    '{' => TokenType::LBRACE,
-                    '}' => TokenType::RBRACE,
-                    '[' => TokenType::LBRACKET,
-                    ']' => TokenType::RBRACKET,
-                    ':' => TokenType::COLON,
-                    ';' => TokenType::SEMICOLON,
+                    '+' => TokenType::Addition(OpSum::Add),
+                    '-' => TokenType::Addition(OpSum::Minus),
+                    '*' => TokenType::Product(OpProduct::Times),
+                    '/' => TokenType::Product(OpProduct::Divide),
+                    '(' => TokenType::LeftParenthesis,
+                    ')' => TokenType::RightParenthesis,
+                    '=' => TokenType::Compare(OpCompare::Equal),
+                    '{' => TokenType::LeftBrace,
+                    '}' => TokenType::RightBrace,
+                    '[' => TokenType::LeftBracket,
+                    ']' => TokenType::RightBracket,
+                    ':' => TokenType::Colon,
+                    ';' => TokenType::Semicolon,
                     ',' => {
                         if self.locale.numbers.symbols.decimal == "," {
                             match self.consume_number(',') {
-                                Ok(number) => TokenType::NUMBER(number),
-                                Err(error) => TokenType::ILLEGAL(error),
+                                Ok(number) => TokenType::Number(number),
+                                Err(error) => TokenType::Illegal(error),
                             }
                         } else {
-                            TokenType::COMMA
+                            TokenType::Comma
                         }
                     }
                     '.' => {
                         if self.locale.numbers.symbols.decimal == "." {
                             match self.consume_number('.') {
-                                Ok(number) => TokenType::NUMBER(number),
-                                Err(error) => TokenType::ILLEGAL(error),
+                                Ok(number) => TokenType::Number(number),
+                                Err(error) => TokenType::Illegal(error),
                             }
                         } else {
                             // There is no TokenType::PERIOD
-                            TokenType::ILLEGAL(self.set_error("Expecting a number", self.position))
+                            TokenType::Illegal(self.set_error("Expecting a number", self.position))
                         }
                     }
-                    '!' => TokenType::BANG,
-                    '^' => TokenType::POWER,
-                    '%' => TokenType::PERCENT,
-                    '&' => TokenType::AND,
+                    '!' => TokenType::Bang,
+                    '^' => TokenType::Power,
+                    '%' => TokenType::Percent,
+                    '&' => TokenType::And,
                     '$' => self.consume_absolute_reference(),
                     '<' => {
                         let next_token = self.peek_char();
                         if next_token == Some('=') {
                             self.position += 1;
-                            TokenType::COMPARE(OpCompare::LessOrEqualThan)
+                            TokenType::Compare(OpCompare::LessOrEqualThan)
                         } else if next_token == Some('>') {
                             self.position += 1;
-                            TokenType::COMPARE(OpCompare::NonEqual)
+                            TokenType::Compare(OpCompare::NonEqual)
                         } else {
-                            TokenType::COMPARE(OpCompare::LessThan)
+                            TokenType::Compare(OpCompare::LessThan)
                         }
                     }
                     '>' => {
                         if self.peek_char() == Some('=') {
                             self.position += 1;
-                            TokenType::COMPARE(OpCompare::GreaterOrEqualThan)
+                            TokenType::Compare(OpCompare::GreaterOrEqualThan)
                         } else {
-                            TokenType::COMPARE(OpCompare::GreaterThan)
+                            TokenType::Compare(OpCompare::GreaterThan)
                         }
                     }
                     '#' => self.consume_error(),
-                    '"' => TokenType::STRING(self.consume_string()),
+                    '"' => TokenType::String(self.consume_string()),
                     '\'' => self.consume_quoted_sheet_reference(),
                     '0'..='9' => {
                         let position = self.position - 1;
                         match self.consume_number(char) {
                             Ok(number) => {
-                                if self.peek_token() == TokenType::COLON
+                                if self.peek_token() == TokenType::Colon
                                     && self.mode == LexerMode::A1
                                 {
                                     // Its a row range  3:5
@@ -232,13 +245,13 @@ impl Lexer {
                                     match self.consume_range_a1() {
                                         Ok(ParsedRange { left, right }) => {
                                             if let Some(right) = right {
-                                                TokenType::RANGE {
+                                                TokenType::Range {
                                                     sheet: None,
                                                     left,
                                                     right,
                                                 }
                                             } else {
-                                                TokenType::ILLEGAL(
+                                                TokenType::Illegal(
                                                     self.set_error("Expecting row range", position),
                                                 )
                                             }
@@ -248,17 +261,17 @@ impl Lexer {
                                             //   * 'Sheet 1'!3.4:5
                                             //   * 'Sheet 1'!3:A2
                                             //   * 'Sheet 1'!3:
-                                            TokenType::ILLEGAL(error)
+                                            TokenType::Illegal(error)
                                         }
                                     }
                                 } else {
-                                    TokenType::NUMBER(number)
+                                    TokenType::Number(number)
                                 }
                             }
                             Err(error) => {
                                 // tried to read a number but failed
                                 self.position = self.len;
-                                TokenType::ILLEGAL(error)
+                                TokenType::Illegal(error)
                             }
                         }
                     }
@@ -288,9 +301,9 @@ impl Lexer {
                             }
                             let name_upper = name.to_ascii_uppercase();
                             if name_upper == self.language.booleans.true_value {
-                                return TokenType::BOOLEAN(true);
+                                return TokenType::Boolean(true);
                             } else if name_upper == self.language.booleans.false_value {
-                                return TokenType::BOOLEAN(false);
+                                return TokenType::Boolean(false);
                             }
                             if self.mode == LexerMode::A1 {
                                 if utils::parse_reference_a1(&name_upper).is_some()
@@ -301,13 +314,13 @@ impl Lexer {
                                     match self.consume_range_a1() {
                                         Ok(ParsedRange { left, right }) => {
                                             if let Some(right) = right {
-                                                return TokenType::RANGE {
+                                                return TokenType::Range {
                                                     sheet: None,
                                                     left,
                                                     right,
                                                 };
                                             } else {
-                                                return TokenType::REFERENCE {
+                                                return TokenType::Reference {
                                                     sheet: None,
                                                     column: left.column,
                                                     row: left.row,
@@ -318,13 +331,13 @@ impl Lexer {
                                         }
                                         Err(error) => {
                                             self.position = self.len;
-                                            return TokenType::ILLEGAL(error);
+                                            return TokenType::Illegal(error);
                                         }
                                     }
                                 } else if utils::is_valid_identifier(&name) {
-                                    return TokenType::IDENT(name);
+                                    return TokenType::Ident(name);
                                 } else {
-                                    return TokenType::ILLEGAL(
+                                    return TokenType::Illegal(
                                         self.set_error("Invalid identifier (A1)", self.position),
                                     );
                                 }
@@ -338,10 +351,10 @@ impl Lexer {
                                         if pos > self.position {
                                             self.position = pos;
                                             if utils::is_valid_identifier(&name) {
-                                                return TokenType::IDENT(name);
+                                                return TokenType::Ident(name);
                                             } else {
                                                 self.position = self.len;
-                                                return TokenType::ILLEGAL(
+                                                return TokenType::Illegal(
                                                     self.set_error(
                                                         "Invalid identifier (R1C1)",
                                                         pos,
@@ -350,13 +363,13 @@ impl Lexer {
                                             }
                                         }
                                         if let Some(right) = right {
-                                            return TokenType::RANGE {
+                                            return TokenType::Range {
                                                 sheet: None,
                                                 left,
                                                 right,
                                             };
                                         } else {
-                                            return TokenType::REFERENCE {
+                                            return TokenType::Reference {
                                                 sheet: None,
                                                 column: left.column,
                                                 row: left.row,
@@ -368,9 +381,9 @@ impl Lexer {
                                     Err(error) => {
                                         self.position = pos;
                                         if utils::is_valid_identifier(&name) {
-                                            return TokenType::IDENT(name);
+                                            return TokenType::Ident(name);
                                         } else {
-                                            return TokenType::ILLEGAL(self.set_error(
+                                            return TokenType::Illegal(self.set_error(
                                                 "Invalid identifier (R1C1)",
                                                 error.position,
                                             ));
@@ -379,7 +392,7 @@ impl Lexer {
                                 }
                             }
                         }
-                        TokenType::ILLEGAL(self.set_error("Unknown error", self.position))
+                        TokenType::Illegal(self.set_error("Unknown error", self.position))
                     }
                 }
             }
@@ -605,39 +618,39 @@ impl Lexer {
         let rest_of_formula: String = self.chars[self.position - 1..self.len].iter().collect();
         if rest_of_formula.starts_with(&errors.ref_value) {
             self.position += errors.ref_value.chars().count() - 1;
-            return TokenType::ERROR(Error::REF);
+            return TokenType::Error(Error::REF);
         } else if rest_of_formula.starts_with(&errors.name) {
             self.position += errors.name.chars().count() - 1;
-            return TokenType::ERROR(Error::NAME);
+            return TokenType::Error(Error::NAME);
         } else if rest_of_formula.starts_with(&errors.value) {
             self.position += errors.value.chars().count() - 1;
-            return TokenType::ERROR(Error::VALUE);
+            return TokenType::Error(Error::VALUE);
         } else if rest_of_formula.starts_with(&errors.div) {
             self.position += errors.div.chars().count() - 1;
-            return TokenType::ERROR(Error::DIV);
+            return TokenType::Error(Error::DIV);
         } else if rest_of_formula.starts_with(&errors.na) {
             self.position += errors.na.chars().count() - 1;
-            return TokenType::ERROR(Error::NA);
+            return TokenType::Error(Error::NA);
         } else if rest_of_formula.starts_with(&errors.num) {
             self.position += errors.num.chars().count() - 1;
-            return TokenType::ERROR(Error::NUM);
+            return TokenType::Error(Error::NUM);
         } else if rest_of_formula.starts_with(&errors.error) {
             self.position += errors.error.chars().count() - 1;
-            return TokenType::ERROR(Error::ERROR);
+            return TokenType::Error(Error::ERROR);
         } else if rest_of_formula.starts_with(&errors.nimpl) {
             self.position += errors.nimpl.chars().count() - 1;
-            return TokenType::ERROR(Error::NIMPL);
+            return TokenType::Error(Error::NIMPL);
         } else if rest_of_formula.starts_with(&errors.spill) {
             self.position += errors.spill.chars().count() - 1;
-            return TokenType::ERROR(Error::SPILL);
+            return TokenType::Error(Error::SPILL);
         } else if rest_of_formula.starts_with(&errors.calc) {
             self.position += errors.calc.chars().count() - 1;
-            return TokenType::ERROR(Error::CALC);
+            return TokenType::Error(Error::CALC);
         } else if rest_of_formula.starts_with(&errors.circ) {
             self.position += errors.circ.chars().count() - 1;
-            return TokenType::ERROR(Error::CIRC);
+            return TokenType::Error(Error::CIRC);
         }
-        TokenType::ILLEGAL(self.set_error("Invalid error.", self.position))
+        TokenType::Illegal(self.set_error("Invalid error.", self.position))
     }
 
     fn consume_whitespace(&mut self) {
@@ -657,7 +670,7 @@ impl Lexer {
         // This is an absolute reference.
         // $A$4
         if self.mode == LexerMode::R1C1 {
-            return TokenType::ILLEGAL(
+            return TokenType::Illegal(
                 self.set_error("Cannot parse A1 reference in R1C1 mode", self.position),
             );
         }
@@ -671,11 +684,11 @@ impl Lexer {
         let sheet_name = match self.consume_single_quote_string() {
             Ok(v) => v,
             Err(error) => {
-                return TokenType::ILLEGAL(error);
+                return TokenType::Illegal(error);
             }
         };
-        if self.next_token() != TokenType::BANG {
-            return TokenType::ILLEGAL(self.set_error("Expected '!'", self.position));
+        if self.next_token() != TokenType::Bang {
+            return TokenType::Illegal(self.set_error("Expected '!'", self.position));
         }
         self.consume_range(Some(sheet_name))
     }
@@ -689,9 +702,9 @@ impl Lexer {
         match m {
             Ok(ParsedRange { left, right }) => {
                 if let Some(right) = right {
-                    TokenType::RANGE { sheet, left, right }
+                    TokenType::Range { sheet, left, right }
                 } else {
-                    TokenType::REFERENCE {
+                    TokenType::Reference {
                         sheet,
                         column: left.column,
                         row: left.row,
@@ -700,7 +713,7 @@ impl Lexer {
                     }
                 }
             }
-            Err(error) => TokenType::ILLEGAL(error),
+            Err(error) => TokenType::Illegal(error),
         }
     }
 }
