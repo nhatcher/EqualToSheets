@@ -38,7 +38,7 @@ impl Model {
         self._get_formula_opt(cell).is_some()
     }
     pub fn _get_formula(&self, cell: &str) -> String {
-        self._get_formula_opt(cell).unwrap()
+        self._get_formula_opt(cell).unwrap_or_default()
     }
     fn _get_formula_opt(&self, cell: &str) -> Option<String> {
         let cell_reference = self._parse_reference(cell);

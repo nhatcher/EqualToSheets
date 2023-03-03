@@ -9,7 +9,7 @@ import Editor from './editor';
 import { outlineBackgroundColor, outlineColor } from './constants';
 import { defaultSheetState } from './useWorkbookReducer';
 import useScrollSync from './useScrollSync';
-import RowContextMenuContent from './rowContextMenuContent';
+import { RowContextMenuContent, ColumnContextMenuContent } from './contextMenuContent';
 import { isInReferenceMode } from './formulas';
 import { useWorkbookContext } from './workbookContext';
 
@@ -47,7 +47,8 @@ const Workbook: FunctionComponent<{
   const extendToOutline = useRef<HTMLDivElement>(null);
   const columnResizeGuide = useRef<HTMLDivElement>(null);
   const rowResizeGuide = useRef<HTMLDivElement>(null);
-  const contextMenuAnchorElement = useRef<HTMLDivElement>(null);
+  const rowContextMenuAnchorElement = useRef<HTMLDivElement>(null);
+  const columnContextMenuAnchorElement = useRef<HTMLDivElement>(null);
   const columnHeaders = useRef<HTMLDivElement>(null);
 
   const resizeSpacer = useCallback((options: { deltaWidth: number; deltaHeight: number }): void => {
@@ -61,16 +62,6 @@ const Workbook: FunctionComponent<{
       spacerElement.current.style.height = `${newSpacerHeight}px`;
     }
   }, []);
-
-  const onInsertRow = (row: number): void => {
-    model?.insertRow(selectedSheet, row);
-    setIsRowContextMenuOpen(false);
-  };
-
-  const onDeleteRow = (row: number): void => {
-    model?.deleteRow(selectedSheet, row);
-    setIsRowContextMenuOpen(false);
-  };
 
   const onColumnWidthChange = useCallback(
     (sheet: number, column: number, width: number): void => {
@@ -148,6 +139,39 @@ const Workbook: FunctionComponent<{
     [model],
   );
 
+  const onInsertRow = (row: number): void => {
+    model?.insertRow(selectedSheet, row);
+    setIsRowContextMenuOpen(false);
+  };
+
+  const onDeleteRow = (row: number): void => {
+    model?.deleteRow(selectedSheet, row);
+    setIsRowContextMenuOpen(false);
+  };
+
+  const [isColumnContextMenuOpen, setIsColumnContextMenuOpen] = useState(false);
+  const [columnContextMenu, setColumnContextMenu] = useState(0);
+  const onColumnContextMenu = useCallback(
+    (column: number): void => {
+      if (!model) {
+        return;
+      }
+      setIsColumnContextMenuOpen(true);
+      setColumnContextMenu(column);
+    },
+    [model],
+  );
+
+  const onInsertColumn = (column: number): void => {
+    model?.insertColumn(selectedSheet, column);
+    setIsColumnContextMenuOpen(false);
+  };
+
+  const onDeleteColumn = (column: number): void => {
+    model?.deleteColumn(selectedSheet, column);
+    setIsColumnContextMenuOpen(false);
+  };
+
   const { onPointerMove, onPointerDown, onPointerHandleDown, onPointerUp, onContextMenu } =
     usePointer({
       onAreaSelected: editorActions.onAreaSelected,
@@ -158,8 +182,10 @@ const Workbook: FunctionComponent<{
       canvasElement,
       worksheetElement,
       worksheetCanvas,
-      contextMenuAnchorElement,
+      rowContextMenuAnchorElement,
+      columnContextMenuAnchorElement,
       onRowContextMenu,
+      onColumnContextMenu,
     });
 
   // Init canvas
@@ -334,16 +360,31 @@ const Workbook: FunctionComponent<{
       </SheetCanvasWrapper>
       <Menu.Root open={isRowContextMenuOpen} onOpenChange={setIsRowContextMenuOpen}>
         <Menu.Trigger asChild>
-          <ContextMenuAnchorElement ref={contextMenuAnchorElement} />
+          <ContextMenuAnchorElement ref={rowContextMenuAnchorElement} />
         </Menu.Trigger>
         <RowContextMenuContent
           isMenuOpen={isRowContextMenuOpen}
           row={rowContextMenu}
-          anchorEl={contextMenuAnchorElement.current}
+          anchorEl={rowContextMenuAnchorElement.current}
           onDeleteRow={onDeleteRow}
           onInsertRow={onInsertRow}
           onClose={(): void => {
             setIsRowContextMenuOpen(false);
+          }}
+        />
+      </Menu.Root>
+      <Menu.Root open={isColumnContextMenuOpen} onOpenChange={setIsColumnContextMenuOpen}>
+        <Menu.Trigger asChild>
+          <ContextMenuAnchorElement ref={columnContextMenuAnchorElement} />
+        </Menu.Trigger>
+        <ColumnContextMenuContent
+          isMenuOpen={isColumnContextMenuOpen}
+          column={columnContextMenu}
+          anchorEl={columnContextMenuAnchorElement.current}
+          onDeleteColumn={onDeleteColumn}
+          onInsertColumn={onInsertColumn}
+          onClose={(): void => {
+            setIsColumnContextMenuOpen(false);
           }}
         />
       </Menu.Root>

@@ -425,6 +425,90 @@ describe('Worksheet', () => {
     expect(sheet.getColumnWidth(3)).toEqual(100);
   });
 
+  test('can insert columns', async () => {
+    const { newWorkbook } = await initialize();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+
+    sheet.cell('A2').formula = '=A1';
+    sheet.cell('B2').formula = '=B1';
+    sheet.cell('C2').formula = '=A1';
+
+    sheet.insertColumns(2, 2);
+
+    expect(sheet.cell('A2').formula).toEqual('=A1');
+
+    expect(sheet.cell('B2').formula).toEqual(null);
+    expect(sheet.cell('C2').formula).toEqual(null);
+
+    expect(sheet.cell('D2').formula).toEqual('=D1');
+    expect(sheet.cell('E2').formula).toEqual('=A1');
+  });
+
+  test('can delete columns', async () => {
+    const { newWorkbook } = await initialize();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+
+    sheet.cell('A2').formula = '=A1';
+    sheet.cell('B2').formula = '=B1';
+    sheet.cell('C2').formula = '=C1';
+    sheet.cell('D2').formula = '=D1';
+    sheet.cell('E2').formula = '=A1';
+
+    sheet.deleteColumns(2, 2);
+
+    expect(sheet.cell('A2').formula).toEqual('=A1');
+
+    expect(sheet.cell('B2').formula).toEqual('=B1');
+    expect(sheet.cell('C2').formula).toEqual('=A1');
+
+    expect(sheet.cell('D2').formula).toEqual(null);
+    expect(sheet.cell('E2').formula).toEqual(null);
+  });
+
+  test('can insert rows', async () => {
+    const { newWorkbook } = await initialize();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+
+    sheet.cell('B1').formula = '=A1';
+    sheet.cell('B2').formula = '=A2';
+    sheet.cell('B3').formula = '=A1';
+
+    sheet.insertRows(2, 2);
+
+    expect(sheet.cell('B1').formula).toEqual('=A1');
+
+    expect(sheet.cell('B2').formula).toEqual(null);
+    expect(sheet.cell('B3').formula).toEqual(null);
+
+    expect(sheet.cell('B4').formula).toEqual('=A4');
+    expect(sheet.cell('B5').formula).toEqual('=A1');
+  });
+
+  test('can delete rows', async () => {
+    const { newWorkbook } = await initialize();
+    const workbook = newWorkbook();
+    const sheet = workbook.sheets.get('Sheet1');
+
+    sheet.cell('B1').formula = '=A1';
+    sheet.cell('B2').formula = '=A2';
+    sheet.cell('B3').formula = '=A3';
+    sheet.cell('B4').formula = '=A4';
+    sheet.cell('B5').formula = '=A1';
+
+    sheet.deleteRows(2, 2);
+
+    expect(sheet.cell('B1').formula).toEqual('=A1');
+
+    expect(sheet.cell('B2').formula).toEqual('=A2');
+    expect(sheet.cell('B3').formula).toEqual('=A1');
+
+    expect(sheet.cell('B4').formula).toEqual(null);
+    expect(sheet.cell('B5').formula).toEqual(null);
+  });
+
   describe('dimensions', () => {
     test('calculates dimension of empty sheet', async () => {
       const { newWorkbook } = await initialize();

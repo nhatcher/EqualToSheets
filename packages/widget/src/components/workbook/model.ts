@@ -776,12 +776,26 @@ export default class Model {
   }
 
   insertRow(sheet: number, row: number): void {
+    this.workbook.sheets.get(sheet).insertRows(row, 1);
     this.notifySubscribers({ type: 'insertRow' });
   }
 
   // We need to delete (and save) the row style
   // We need to delete (and save) the data
   deleteRow(sheet: number, row: number): void {
+    this.workbook.sheets.get(sheet).deleteRows(row, 1);
+    this.notifySubscribers({ type: 'deleteRow' });
+  }
+
+  insertColumn(sheet: number, column: number): void {
+    this.workbook.sheets.get(sheet).insertColumns(column, 1);
+    this.notifySubscribers({ type: 'insertRow' });
+  }
+
+  // We need to delete (and save) the column style
+  // We need to delete (and save) the data
+  deleteColumn(sheet: number, column: number): void {
+    this.workbook.sheets.get(sheet).deleteColumns(column, 1);
     this.notifySubscribers({ type: 'deleteRow' });
   }
 

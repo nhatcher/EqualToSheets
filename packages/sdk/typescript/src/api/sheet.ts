@@ -84,6 +84,12 @@ export interface ISheet {
     maxColumn: number;
   };
 
+  insertRows(row: number, rowCount: number): void;
+  deleteRows(row: number, rowCount: number): void;
+
+  insertColumns(column: number, columnCount: number): void;
+  deleteColumns(column: number, columnCount: number): void;
+
   /**
    * Returns sub-interface providing features useful when implementing user interface
    * on top of the workbook.
@@ -251,6 +257,42 @@ export class Sheet implements ISheet {
       };
       wasmSheetDimensions.free();
       return sheetDimensions;
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  insertRows(row: number, rowCount: number): void {
+    try {
+      this._wasmWorkbook.insertRows(this.index, row, rowCount);
+      this._wasmWorkbook.evaluate();
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  deleteRows(row: number, rowCount: number): void {
+    try {
+      this._wasmWorkbook.deleteRows(this.index, row, rowCount);
+      this._wasmWorkbook.evaluate();
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  insertColumns(column: number, columnCount: number): void {
+    try {
+      this._wasmWorkbook.insertColumns(this.index, column, columnCount);
+      this._wasmWorkbook.evaluate();
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  deleteColumns(column: number, columnCount: number): void {
+    try {
+      this._wasmWorkbook.deleteColumns(this.index, column, columnCount);
+      this._wasmWorkbook.evaluate();
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

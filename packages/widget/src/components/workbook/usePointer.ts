@@ -6,13 +6,15 @@ interface PointerSettings {
   canvasElement: RefObject<HTMLCanvasElement>;
   worksheetCanvas: RefObject<WorksheetCanvas | null>;
   worksheetElement: RefObject<HTMLDivElement>;
-  contextMenuAnchorElement: RefObject<HTMLDivElement>;
+  rowContextMenuAnchorElement: RefObject<HTMLDivElement>;
+  columnContextMenuAnchorElement: RefObject<HTMLDivElement>;
   onPointerDownAtCell: (cell: Cell, event: React.MouseEvent) => void;
   onPointerMoveToCell: (cell: Cell) => void;
   onAreaSelected: (area: Area, border: Border) => void;
   onExtendToCell: (cell: Cell) => void;
   onExtendToEnd: () => void;
   onRowContextMenu: (row: number) => void;
+  onColumnContextMenu: (column: number) => void;
 }
 
 interface PointerEvents {
@@ -36,7 +38,9 @@ const usePointer = (options: PointerSettings): PointerEvents => {
         worksheetElement,
         worksheetCanvas,
         onRowContextMenu,
-        contextMenuAnchorElement,
+        rowContextMenuAnchorElement,
+        onColumnContextMenu,
+        columnContextMenuAnchorElement,
       } = options;
       const worksheet = worksheetCanvas.current;
       const canvas = canvasElement.current;
@@ -48,19 +52,39 @@ const usePointer = (options: PointerSettings): PointerEvents => {
       const canvasRect = canvas.getBoundingClientRect();
       x -= canvasRect.x;
       y -= canvasRect.y;
+      const menuAnchorOffsetY = 10;
       if (x > 0 && x < headerColumnWidth && y > headerRowHeight && y < canvasRect.height) {
         // Click on a row number
         const cell = worksheet.getCellByCoordinates(headerColumnWidth, y);
         if (cell) {
           event.preventDefault();
           event.stopPropagation();
-          if (contextMenuAnchorElement.current) {
+          if (rowContextMenuAnchorElement.current) {
             const scrollPosition = worksheet.getScrollPosition();
-            contextMenuAnchorElement.current.style.left = `${x + scrollPosition.left}px`;
-            contextMenuAnchorElement.current.style.top = `${y + scrollPosition.top}px`;
+            rowContextMenuAnchorElement.current.style.left = `${x + scrollPosition.left}px`;
+            rowContextMenuAnchorElement.current.style.top = `${
+              y + scrollPosition.top + menuAnchorOffsetY
+            }px`;
           }
           options.onPointerDownAtCell(cell, event);
           onRowContextMenu(cell.row);
+        }
+      }
+      if (x > headerColumnWidth && x < canvas.width && y > 0 && y < headerRowHeight) {
+        // Click on a column number
+        const cell = worksheet.getCellByCoordinates(x, headerRowHeight);
+        if (cell) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (columnContextMenuAnchorElement.current) {
+            const scrollPosition = worksheet.getScrollPosition();
+            columnContextMenuAnchorElement.current.style.left = `${x + scrollPosition.left}px`;
+            columnContextMenuAnchorElement.current.style.top = `${
+              y + scrollPosition.top + menuAnchorOffsetY
+            }px`;
+          }
+          options.onPointerDownAtCell(cell, event);
+          onColumnContextMenu(cell.column);
         }
       }
     },

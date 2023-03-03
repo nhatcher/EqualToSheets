@@ -3,16 +3,14 @@ import * as Menu from 'src/components/uiKit/menu';
 import styled from 'styled-components';
 import { fonts } from 'src/theme';
 
-type RowContextMenuProps = {
+export const RowContextMenuContent: FunctionComponent<{
   isMenuOpen: boolean;
   row: number;
   onInsertRow: (insertBeforeRow: number) => void;
   onDeleteRow: (row: number) => void;
   onClose: () => void;
   anchorEl: HTMLDivElement | null;
-};
-
-const RowContextMenuContent: FunctionComponent<RowContextMenuProps> = (properties) => {
+}> = (properties) => {
   const { onDeleteRow, onInsertRow, row } = properties;
 
   return (
@@ -43,7 +41,43 @@ const RowContextMenuContent: FunctionComponent<RowContextMenuProps> = (propertie
   );
 };
 
-export default RowContextMenuContent;
+export const ColumnContextMenuContent: FunctionComponent<{
+  isMenuOpen: boolean;
+  column: number;
+  onInsertColumn: (insertBeforeColumn: number) => void;
+  onDeleteColumn: (column: number) => void;
+  onClose: () => void;
+  anchorEl: HTMLDivElement | null;
+}> = (properties) => {
+  const { onDeleteColumn, onInsertColumn, column } = properties;
+
+  return (
+    <StyledMenuContent>
+      <StyledMenuItem
+        onClick={(): void => {
+          onInsertColumn(column);
+        }}
+      >
+        {'Insert column before'}
+      </StyledMenuItem>
+      <StyledMenuItem
+        onClick={(): void => {
+          onInsertColumn(column + 1);
+        }}
+      >
+        {'Insert column after'}
+      </StyledMenuItem>
+      <StyledMenuDivider />
+      <StyledMenuItem
+        onClick={(): void => {
+          onDeleteColumn(column);
+        }}
+      >
+        {'Delete column'}
+      </StyledMenuItem>
+    </StyledMenuContent>
+  );
+};
 
 const StyledMenuItem = styled(Menu.Item)`
   font-size: 14px;

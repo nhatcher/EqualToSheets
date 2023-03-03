@@ -15,6 +15,7 @@ pub mod worksheet;
 
 mod functions;
 
+mod actions;
 mod cast;
 mod constants;
 mod styles;
