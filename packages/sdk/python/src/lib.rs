@@ -171,6 +171,10 @@ impl PyModel {
     pub fn save_to_xlsx(&self, file: &str) -> PyResult<()> {
         save_to_xlsx(&self.model, file).map_err(|e| WorkbookError::new_err(e.to_string()))
     }
+
+    pub fn to_json(&self) -> PyResult<String> {
+        Ok(self.model.to_json_str())
+    }
 }
 
 impl WorkbookError {
@@ -185,6 +189,13 @@ pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> 
         model: load_model_from_xlsx(file_path, locale, tz)
             .map_err(WorkbookError::from_xlsx_error)?,
     })
+}
+
+#[pyfunction]
+pub fn load_json(workbook_json: &str) -> PyResult<PyModel> {
+    let env = Environment::default();
+    let model = Model::from_json(workbook_json, env).map_err(WorkbookError::new_err)?;
+    Ok(PyModel { model })
 }
 
 #[pyfunction]
@@ -211,6 +222,7 @@ fn _equalto(py: Python, m: &PyModule) -> PyResult<()> {
     // PyModel
     m.add_function(wrap_pyfunction!(create, m)?).unwrap();
     m.add_function(wrap_pyfunction!(load_excel, m)?).unwrap();
+    m.add_function(wrap_pyfunction!(load_json, m)?).unwrap();
 
     // utils
     m.add_function(wrap_pyfunction!(number_to_column, m)?)

@@ -17,6 +17,10 @@ def load(workbook_path: str) -> Workbook:
     return Workbook(model)
 
 
+def loads(workbook_json: str) -> Workbook:
+    return Workbook(_equalto.load_json(workbook_json))
+
+
 def new(*, timezone: tzinfo | None = None) -> Workbook:
     """Create a new workbook."""
     return Workbook(_equalto.create("workbook", "en", str(timezone or _get_local_tz())))

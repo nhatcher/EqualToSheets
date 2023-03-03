@@ -54,3 +54,7 @@ class Workbook:
             self._model.save_to_xlsx(file)
         else:
             raise NotImplementedError(f"Exporting to {ext} files is not supported yet.")
+
+    @property
+    def json(self) -> str:
+        return self._model.to_json()
