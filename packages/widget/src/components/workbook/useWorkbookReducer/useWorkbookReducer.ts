@@ -85,11 +85,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
     case WorkbookActionType.EDIT_KEY_PRESS_START: {
       const { selectedSheet, selectedCell } = state;
-      const model = state.modelRef.current;
-      const { row, column } = selectedCell;
-      if (!action.payload.forceEdit && model.isCellReadOnly(selectedSheet, row, column)) {
-        return state;
-      }
       const { initText } = action.payload;
 
       return {
@@ -114,9 +109,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         return state;
       }
       const { row, column } = selectedCell;
-      if (model.isCellReadOnly(selectedSheet, row, column)) {
-        return state;
-      }
       let text = model.getFormulaOrValue(selectedSheet, row, column);
       if (!action.payload.ignoreQuotePrefix && model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
@@ -145,9 +137,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       // Start completely new edit
       const { selectedCell, selectedSheet } = state;
       const { row, column } = selectedCell;
-      if (model.isCellReadOnly(selectedSheet, row, column)) {
-        return state;
-      }
       let text = model.getFormulaOrValue(selectedSheet, row, column);
       if (model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;

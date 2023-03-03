@@ -781,8 +781,8 @@ impl Model {
     /// moves the value in area from source to target.
     pub fn move_cell_value_to_area(
         &mut self,
-        source: &CellReferenceIndex,
         value: &str,
+        source: &CellReferenceIndex,
         target: &CellReferenceIndex,
         area: &Area,
     ) -> Result<String, String> {
@@ -858,18 +858,13 @@ impl Model {
     }
 
     /// 'Extends' value from cell [sheet, row, column] to [target_row, target_column]
-    pub fn extend_formula_to(
-        &mut self,
-        source: &CellReferenceIndex,
+    pub fn extend_copied_value(
+        &mut self, // FIXME: weird that it must be mutable
         value: &str,
+        source_sheet_name: &str,
+        source: &CellReferenceIndex,
         target: &CellReferenceIndex,
     ) -> Result<String, String> {
-        let source_sheet_name = match self.workbook.worksheets.get(source.sheet as usize) {
-            Some(ws) => ws.get_name(),
-            None => {
-                return Err("Invalid worksheet index".to_owned());
-            }
-        };
         let target_sheet_name = match self.workbook.worksheets.get(target.sheet as usize) {
             Some(ws) => ws.get_name(),
             None => {
@@ -878,7 +873,7 @@ impl Model {
         };
         if let Some(formula_str) = value.strip_prefix('=') {
             let cell_reference = CellReferenceRC {
-                sheet: source_sheet_name,
+                sheet: source_sheet_name.to_string(),
                 row: source.row,
                 column: source.column,
             };

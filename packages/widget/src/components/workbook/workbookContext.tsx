@@ -21,6 +21,7 @@ import { useCalcModule } from './useCalcModule';
 import useKeyboardNavigation from './useKeyboardNavigation';
 import useWorkbookActions, { WorkbookActions } from './useWorkbookActions';
 import useWorkbookReducer, { WorkbookState } from './useWorkbookReducer';
+import { onCopy, onPaste, onCut } from './clipboard';
 
 // TODO: it would be easier to use if model couldn't be null
 const WorkbookContext = createContext<
@@ -106,7 +107,7 @@ export const Root: FunctionComponent<{
     root: rootRef,
   });
 
-  const { selectedSheet, selectedArea, extendToArea, cellEditing } = editorState;
+  const { selectedSheet, selectedCell, selectedArea, extendToArea, cellEditing } = editorState;
   const onExtendToEnd = useCallback(() => {
     if (!model || !extendToArea) {
       return;
@@ -174,6 +175,9 @@ export const Root: FunctionComponent<{
           // prevents the browser menu
           event.preventDefault();
         }}
+        onCopy={onCopy(model, selectedSheet, selectedArea)}
+        onPaste={onPaste(model, selectedSheet, selectedCell, selectedArea)}
+        onCut={onCut(model, selectedSheet, selectedArea)}
       >
         {properties.children}
       </WorkbookContainer>

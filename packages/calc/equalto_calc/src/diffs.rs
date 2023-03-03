@@ -1,0 +1,115 @@
+use crate::{
+    expressions::{
+        parser::{move_formula::ref_is_in_area, stringify::to_string, walk::forward_references},
+        types::{Area, CellReferenceIndex, CellReferenceRC},
+    },
+    model::Model,
+};
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(untagged, deny_unknown_fields)]
+pub enum CellValue {
+    Value(String),
+    None,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Diff {
+    #[serde(rename_all = "camelCase")]
+    SetCellValue {
+        sheet: u32,
+        column: i32,
+        row: i32,
+        new_value: CellValue,
+        new_style: i32,
+        old_value: CellValue,
+        old_style: i32,
+    },
+    // TODO: Rest of the diffs
+}
+
+impl Model {
+    pub fn forward_references(
+        &mut self,
+        source_area: &Area,
+        target: &CellReferenceIndex,
+    ) -> Result<Vec<Diff>, String> {
+        let mut diff_list: Vec<Diff> = Vec::new();
+        let target_area = &Area {
+            sheet: target.sheet,
+            row: target.row,
+            column: target.column,
+            width: source_area.width,
+            height: source_area.height,
+        };
+        // Walk over every formula
+        let cells = self.get_all_cells();
+        for cell in cells {
+            if let Some(f) = self
+                .workbook
+                .worksheet(cell.index)
+                .expect("Worksheet must exist")
+                .cell(cell.row, cell.column)
+                .expect("Cell must exist")
+                .get_formula()
+            {
+                let sheet = cell.index;
+                let row = cell.row;
+                let column = cell.column;
+
+                // If cell is in the source or target area, skip
+                if ref_is_in_area(sheet, row, column, source_area)
+                    || ref_is_in_area(sheet, row, column, target_area)
+                {
+                    continue;
+                }
+
+                // Get the formula
+                // Get a copy of the AST
+                let node = &mut self.parsed_formulas[sheet as usize][f as usize].clone();
+                let cell_reference = CellReferenceRC {
+                    sheet: self.workbook.worksheets[sheet as usize].get_name(),
+                    column: cell.column,
+                    row: cell.row,
+                };
+                let context = CellReferenceIndex { sheet, column, row };
+                let formula = to_string(node, &cell_reference);
+                let target_sheet_name = &self.workbook.worksheets[target.sheet as usize].name;
+                forward_references(
+                    node,
+                    &context,
+                    source_area,
+                    target.sheet,
+                    target_sheet_name,
+                    target.row,
+                    target.column,
+                );
+
+                // If the string representation of the formula has changed update the cell
+                let updated_formula = to_string(node, &cell_reference);
+                if formula != updated_formula {
+                    self.update_cell_with_formula(
+                        sheet,
+                        row,
+                        column,
+                        format!("={updated_formula}"),
+                    )?;
+                    // Update the diff list
+                    let style = self.get_cell_style_index(sheet, row, column);
+                    diff_list.push(Diff::SetCellValue {
+                        sheet,
+                        column,
+                        row,
+                        new_value: CellValue::Value(format!("={}", updated_formula)),
+                        new_style: style,
+                        old_value: CellValue::Value(format!("={}", formula)),
+                        old_style: style,
+                    });
+                }
+            }
+        }
+        Ok(diff_list)
+    }
+}

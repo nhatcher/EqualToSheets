@@ -19,6 +19,7 @@ mod cast;
 mod constants;
 mod styles;
 
+mod diffs;
 mod implicit_intersection;
 
 mod units;

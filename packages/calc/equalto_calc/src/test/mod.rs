@@ -18,6 +18,7 @@ mod test_fn_minifs;
 mod test_fn_product;
 mod test_fn_sum;
 mod test_fn_sumifs;
+mod test_forward_references;
 mod test_frozen_rows_columns;
 mod test_general;
 mod test_metadata;

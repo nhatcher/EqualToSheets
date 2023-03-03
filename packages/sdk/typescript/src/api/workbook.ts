@@ -1,5 +1,5 @@
 import { IWorkbookSheets, WorkbookSheets } from './workbookSheets';
-import { WasmWorkbook } from '../__generated_pkg/equalto_wasm';
+import { WasmWorkbook, WasmArea, WasmCellReferenceIndex } from '../__generated_pkg/equalto_wasm';
 import { ICell } from './cell';
 import { parseCellReference } from '../utils';
 import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
@@ -26,6 +26,20 @@ export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
   return new Workbook(wasmWorkbook);
 }
 
+type CellReference = {
+  sheet: number;
+  row: number;
+  column: number;
+};
+
+type Area = {
+  sheet: number;
+  row: number;
+  column: number;
+  width: number;
+  height: number;
+};
+
 export interface IWorkbook {
   get sheets(): IWorkbookSheets;
   /**
@@ -46,6 +60,44 @@ export interface IWorkbook {
    * @returns Uint8Buffer containing XLSX data.
    */
   saveToXlsx(): Uint8Array;
+  /**
+   * Used for getting target value if value was copied.
+   * All references are extended from source to target.
+   * @param value - copied value.
+   * @param source_sheet_name - sheet name of the source cell
+   * @param source - cell reference of source cell
+   * @param target - cell reference of target cell
+   * @returns Copied value extended to a target cell in a form of user input. Use cell.input to set.
+   */
+  getCopiedValueExtended(
+    value: string,
+    source_sheet_name: string,
+    source: CellReference,
+    target: CellReference,
+  ): string;
+  /**
+   * Used for getting target value if value was cut.
+   * If formula is referencing source_area, it needs to be moved to target_area.
+   * Other references stay they same.
+   * @param value - cut value.
+   * @param source - cell reference of source cell.
+   * @param target - cell reference of target cell.
+   * @param source_area - source area - we don't move references to given area
+   * @returns Cut value moved to a target cell in a form of user input. Use cell.input to set.
+   */
+  getCutValueMoved(
+    value: string,
+    source: CellReference,
+    target: CellReference,
+    source_area: Area,
+  ): string;
+
+  /**
+   * Used for forwarding references from cut source_area to pasted target.
+   * @param source_area - area that was cut.
+   * @param target - target cell where it was pasted.
+   */
+  forwardReferences(source_area: Area, target: CellReference): void;
 }
 
 export class Workbook implements IWorkbook {
@@ -94,5 +146,61 @@ export class Workbook implements IWorkbook {
 
   saveToXlsx(): Uint8Array {
     return this._wasmWorkbook.saveToMemory();
+  }
+
+  getCopiedValueExtended(
+    value: string,
+    source_sheet_name: string,
+    source: CellReference,
+    target: CellReference,
+  ): string {
+    try {
+      return this._wasmWorkbook.getCopiedValueExtended(
+        value,
+        source_sheet_name,
+        Workbook.cellReferenceToWasm(source),
+        Workbook.cellReferenceToWasm(target),
+      );
+    } catch (e) {
+      throw wrapWebAssemblyError(e);
+    }
+  }
+
+  getCutValueMoved(
+    value: string,
+    source: CellReference,
+    target: CellReference,
+    sourceArea: Area,
+  ): string {
+    try {
+      return this._wasmWorkbook.getCutValueMoved(
+        value,
+        Workbook.cellReferenceToWasm(source),
+        Workbook.cellReferenceToWasm(target),
+        Workbook.areaToWasm(sourceArea),
+      );
+    } catch (e) {
+      throw wrapWebAssemblyError(e);
+    }
+  }
+
+  forwardReferences(sourceArea: Area, target: CellReference): void {
+    try {
+      this._wasmWorkbook.forwardReferences(
+        Workbook.areaToWasm(sourceArea),
+        Workbook.cellReferenceToWasm(target),
+      );
+      this._wasmWorkbook.evaluate();
+    } catch (e) {
+      throw wrapWebAssemblyError(e);
+    }
+  }
+
+  private static cellReferenceToWasm(cell: CellReference) {
+    return new WasmCellReferenceIndex(cell.sheet, cell.row, cell.column);
+  }
+
+  private static areaToWasm(area: Area) {
+    return new WasmArea(area.sheet, area.row, area.column, area.width, area.height);
   }
 }

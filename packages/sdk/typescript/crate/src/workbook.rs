@@ -5,6 +5,7 @@ use wasm_bindgen::{
 
 use equalto_calc::{
     cell::CellValue,
+    expressions::types::{Area, CellReferenceIndex},
     model::{Environment, Model},
     worksheet::NavigationDirection,
 };
@@ -38,6 +39,66 @@ impl From<WasmNavigationDirection> for NavigationDirection {
             WasmNavigationDirection::Right => NavigationDirection::Right,
             WasmNavigationDirection::Up => NavigationDirection::Up,
             WasmNavigationDirection::Down => NavigationDirection::Down,
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub struct WasmCellReferenceIndex {
+    pub sheet: u32,
+    pub row: i32,
+    pub column: i32,
+}
+
+#[wasm_bindgen]
+impl WasmCellReferenceIndex {
+    #[wasm_bindgen(constructor)]
+    pub fn new(sheet: u32, row: i32, column: i32) -> Self {
+        Self { sheet, row, column }
+    }
+}
+
+impl From<WasmCellReferenceIndex> for CellReferenceIndex {
+    fn from(value: WasmCellReferenceIndex) -> Self {
+        CellReferenceIndex {
+            sheet: value.sheet,
+            row: value.row,
+            column: value.column,
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub struct WasmArea {
+    pub sheet: u32,
+    pub row: i32,
+    pub column: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+#[wasm_bindgen]
+impl WasmArea {
+    #[wasm_bindgen(constructor)]
+    pub fn new(sheet: u32, row: i32, column: i32, width: i32, height: i32) -> Self {
+        Self {
+            sheet,
+            row,
+            column,
+            width,
+            height,
+        }
+    }
+}
+
+impl From<WasmArea> for Area {
+    fn from(value: WasmArea) -> Self {
+        Area {
+            sheet: value.sheet,
+            row: value.row,
+            column: value.column,
+            width: value.width,
+            height: value.height,
         }
     }
 }
@@ -398,6 +459,46 @@ impl WasmWorkbook {
                 target_column,
             )
             .map_err(WorkbookError::from)?)
+    }
+
+    #[wasm_bindgen(js_name = "getCopiedValueExtended")]
+    pub fn get_copied_value_extended(
+        &mut self,
+        value: &str,
+        source_sheet_name: &str,
+        source: WasmCellReferenceIndex,
+        target: WasmCellReferenceIndex,
+    ) -> Result<String, JsError> {
+        Ok(self
+            .model
+            .extend_copied_value(value, source_sheet_name, &source.into(), &target.into())
+            .map_err(WorkbookError::from)?)
+    }
+
+    #[wasm_bindgen(js_name = "getCutValueMoved")]
+    pub fn get_cut_value_moved(
+        &mut self,
+        value: &str,
+        source: WasmCellReferenceIndex,
+        target: WasmCellReferenceIndex,
+        source_area: WasmArea,
+    ) -> Result<String, JsError> {
+        Ok(self
+            .model
+            .move_cell_value_to_area(value, &source.into(), &target.into(), &source_area.into())
+            .map_err(WorkbookError::from)?)
+    }
+
+    #[wasm_bindgen(js_name = "forwardReferences")]
+    pub fn forward_references(
+        &mut self,
+        source_area: WasmArea,
+        target: WasmCellReferenceIndex,
+    ) -> Result<(), JsError> {
+        self.model
+            .forward_references(&source_area.into(), &target.into())
+            .map_err(WorkbookError::from)?;
+        Ok(())
     }
 
     #[wasm_bindgen(js_name = "getCellStyle")]

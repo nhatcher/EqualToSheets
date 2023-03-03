@@ -27,7 +27,7 @@ fn test_move_formula() {
         width: 1,
         height: 1,
     };
-    let t = model.move_cell_value_to_area(source, value, target, area);
+    let t = model.move_cell_value_to_area(value, source, target, area);
     assert!(t.is_ok());
     assert_eq!(t.unwrap(), "=A2+3");
 
@@ -39,7 +39,7 @@ fn test_move_formula() {
         width: 2,
         height: 2,
     };
-    let t = model.move_cell_value_to_area(source, value, target, area);
+    let t = model.move_cell_value_to_area(value, source, target, area);
     assert!(t.is_ok());
     assert_eq!(t.unwrap(), "=J11+3");
 }
@@ -71,7 +71,7 @@ fn test_move_formula_wrong_args() {
             width: 1,
             height: 1,
         };
-        let t = model.move_cell_value_to_area(source, value, target, area);
+        let t = model.move_cell_value_to_area(value, source, target, area);
         assert_eq!(
             t,
             Err("Source and area are in different sheets".to_string())
@@ -87,7 +87,7 @@ fn test_move_formula_wrong_args() {
             width: 5,
             height: 5,
         };
-        let t = model.move_cell_value_to_area(source, value, target, area);
+        let t = model.move_cell_value_to_area(value, source, target, area);
         assert_eq!(t, Err("Source is outside the area".to_string()));
     }
 
@@ -99,7 +99,7 @@ fn test_move_formula_wrong_args() {
             width: 5,
             height: 2,
         };
-        let t = model.move_cell_value_to_area(source, value, target, area);
+        let t = model.move_cell_value_to_area(value, source, target, area);
         assert_eq!(t, Err("Source is outside the area".to_string()));
     }
 
@@ -111,19 +111,19 @@ fn test_move_formula_wrong_args() {
             width: 20,
             height: 5,
         };
-        let t = model.move_cell_value_to_area(source, value, target, area);
+        let t = model.move_cell_value_to_area(value, source, target, area);
         assert_eq!(t, Err("Source is outside the area".to_string()));
     }
 
     // Invalid sheet indexes
     assert_eq!(
         model.move_cell_value_to_area(
+            value,
             &CellReferenceIndex {
                 sheet: 0,
                 row: 1,
                 column: 4,
             },
-            value,
             &CellReferenceIndex {
                 sheet: 16,
                 row: 1,
@@ -141,12 +141,12 @@ fn test_move_formula_wrong_args() {
     );
     assert_eq!(
         model.move_cell_value_to_area(
+            value,
             &CellReferenceIndex {
                 sheet: 3,
                 column: 1,
                 row: 1,
             },
-            value,
             target,
             &Area {
                 sheet: 3,
@@ -181,48 +181,48 @@ fn test_move_formula_rectangle() {
     };
     assert!(model
         .move_cell_value_to_area(
+            value,
             &CellReferenceIndex {
                 sheet: 0,
                 column: 3,
                 row: 1,
             },
-            value,
             target,
             area
         )
         .is_err());
     assert!(model
         .move_cell_value_to_area(
+            value,
             &CellReferenceIndex {
                 sheet: 0,
                 column: 2,
                 row: 1,
             },
-            value,
             target,
             area
         )
         .is_ok());
     assert!(model
         .move_cell_value_to_area(
+            value,
             &CellReferenceIndex {
                 sheet: 0,
                 column: 1,
                 row: 20,
             },
-            value,
             target,
             area
         )
         .is_ok());
     assert!(model
         .move_cell_value_to_area(
+            value,
             &CellReferenceIndex {
                 sheet: 0,
                 column: 1,
                 row: 21,
             },
-            value,
             target,
             area
         )

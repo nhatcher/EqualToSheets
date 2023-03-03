@@ -28,6 +28,7 @@ import Model from '../model';
 
 export type ToolbarProps = {
   className?: string;
+  disabled?: boolean;
   'data-testid'?: string;
 };
 
@@ -46,7 +47,7 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
     return null;
   }
 
-  const canEdit = !model.isCellReadOnly(selectedSheet, selectedCell.row, selectedCell.column);
+  const canEdit = !properties.disabled;
   const cellStyle = model.getCellStyle(selectedSheet, selectedCell.row, selectedCell.column);
   const fontColor = cellStyle.font.color;
   const fillColor = cellStyle.fill.foregroundColor;
