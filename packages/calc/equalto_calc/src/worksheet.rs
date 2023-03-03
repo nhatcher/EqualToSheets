@@ -83,8 +83,8 @@ impl Worksheet {
         0
     }
 
-    fn get_style(&mut self, row: i32, column: i32) -> i32 {
-        match self.sheet_data.get_mut(&row) {
+    pub fn get_style(&self, row: i32, column: i32) -> i32 {
+        match self.sheet_data.get(&row) {
             Some(column_data) => match column_data.get(&column) {
                 Some(cell) => cell.get_style(),
                 None => self.get_row_column_style(row, column),

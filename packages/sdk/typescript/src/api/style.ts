@@ -1,6 +1,6 @@
 import { CalcError, wrapWebAssemblyError } from 'src/errors';
 import { WasmWorkbook } from 'src/__generated_pkg/equalto_wasm';
-import { Cell } from './cell';
+import { Cell, ICell } from './cell';
 
 export interface ICellStyle {
   /**
@@ -8,6 +8,17 @@ export interface ICellStyle {
    * performance is important.
    */
   bulkUpdate(update: CellStyleUpdateValues): void;
+
+  /**
+   * @returns Snapshot of current cell style.
+   *
+   * Snapshot is a plain object and changes to it's structure are not reflected
+   * unless applied back using `bulkUpdate`.
+   *
+   * If you want to copy a style from a cell to cell, prefer `style` setter
+   * on `ICell`.
+   */
+  getSnapshot(): CellStyleSnapshot;
 
   get numberFormat(): string;
   set numberFormat(numberFormat: string);
@@ -32,25 +43,29 @@ export interface ICellStyle {
   get alignment(): IAlignmentStyle;
 }
 
-type CellStyleUpdateValues = {
-  alignment?: {
-    verticalAlignment?: VerticalAlignmentType;
-    horizontalAlignment?: HorizontalAlignmentType;
-    wrapText?: boolean;
+export type CellStyleSnapshot = {
+  alignment: {
+    verticalAlignment: VerticalAlignmentType;
+    horizontalAlignment: HorizontalAlignmentType;
+    wrapText: boolean;
   };
-  numberFormat?: string;
-  font?: {
-    color?: string;
-    bold?: boolean;
-    italics?: boolean;
-    underline?: boolean;
-    strikethrough?: boolean;
+  numberFormat: string;
+  font: {
+    color: string;
+    bold: boolean;
+    italics: boolean;
+    underline: boolean;
+    strikethrough: boolean;
   };
-  fill?: {
-    patternType?: PatternType;
-    foregroundColor?: string;
+  fill: {
+    patternType: PatternType;
+    foregroundColor: string;
     backgroundColor?: string;
   };
+};
+
+export type CellStyleUpdateValues = {
+  [K in keyof CellStyleSnapshot]?: Partial<CellStyleSnapshot[K]>;
 };
 
 export interface IFontStyle {
@@ -214,6 +229,10 @@ export class CellStyleManager implements ICellStyle {
     return this._styleSnapshot;
   }
 
+  _getCell(): ICell {
+    return this._cell;
+  }
+
   bulkUpdate(update: CellStyleUpdateValues): void {
     const newStyle = { ...this._styleSnapshot };
 
@@ -266,6 +285,39 @@ export class CellStyleManager implements ICellStyle {
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }
+  }
+
+  getSnapshot(): CellStyleSnapshot {
+    const snapshot = this._styleSnapshot;
+
+    const alignment: CellStyleSnapshot['alignment'] = {
+      verticalAlignment: snapshot.alignment?.vertical ?? 'top',
+      horizontalAlignment: snapshot.alignment?.horizontal ?? 'general',
+      wrapText: snapshot.alignment?.wrap_text ?? false,
+    };
+
+    const numberFormat: CellStyleSnapshot['numberFormat'] = snapshot.num_fmt;
+
+    const font: CellStyleSnapshot['font'] = {
+      bold: snapshot.font.b ?? false,
+      italics: snapshot.font.i ?? false,
+      strikethrough: snapshot.font.strike ?? false,
+      underline: snapshot.font.u ?? false,
+      color: snapshot.font.color ?? '#000000',
+    };
+
+    const fill: CellStyleSnapshot['fill'] = {
+      patternType: snapshot.fill.pattern_type,
+      foregroundColor: snapshot.fill.fg_color ?? '#FFFFFF',
+      backgroundColor: snapshot.fill.bg_color ?? '#FFFFFF',
+    };
+
+    return {
+      alignment,
+      numberFormat,
+      font,
+      fill,
+    };
   }
 
   get numberFormat(): string {

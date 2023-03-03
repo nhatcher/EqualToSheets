@@ -4,7 +4,7 @@
   "description": "",
   "private": "true",
   "scripts": {
-    "reinstall-sheets": "rm -rf node_modules/@equalto && npm install",
+    "reinstall": "rm -rf node_modules/@equalto-software && npm install",
     "test": "jest"
   },
   "keywords": [],

@@ -225,6 +225,23 @@ impl Model {
         Ok(())
     }
 
+    pub fn copy_cell_style(
+        &mut self,
+        source_cell: (u32, i32, i32),
+        destination_cell: (u32, i32, i32),
+    ) -> Result<(), String> {
+        let source_style_index = self
+            .workbook
+            .worksheet(source_cell.0)?
+            .get_style(source_cell.1, source_cell.2);
+
+        self.workbook
+            .worksheet_mut(destination_cell.0)?
+            .set_cell_style(destination_cell.1, destination_cell.2, source_style_index);
+
+        Ok(())
+    }
+
     /// Sets the style "style_name" in cell
     pub fn set_cell_style_by_name(
         &mut self,

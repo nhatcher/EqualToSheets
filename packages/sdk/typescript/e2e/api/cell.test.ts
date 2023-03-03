@@ -1,4 +1,4 @@
-import { initialize, CalcError } from '@equalto-software/calc';
+import { initialize, CalcError, CellStyleSnapshot } from '@equalto-software/calc';
 import { readFileSync } from 'fs';
 
 describe('Workbook - Cell operations', () => {
@@ -495,6 +495,112 @@ describe('Workbook - Cell operations', () => {
       const cell = workbook.sheets.get(0).cell('A1');
       cell.style.alignment.wrapText = true;
       expect(cell.style.alignment.wrapText).toEqual(true);
+    });
+
+    test('can copy style between cells', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+
+      const cellA1 = workbook.sheets.get(0).cell('A1');
+      cellA1.style.bulkUpdate({
+        numberFormat: '0.0%',
+        fill: {
+          patternType: 'solid',
+          foregroundColor: '#ff00ff',
+        },
+        alignment: {
+          wrapText: true,
+          verticalAlignment: 'center',
+          horizontalAlignment: 'center',
+        },
+        font: {
+          bold: true,
+          italics: false,
+          color: '#ff0000',
+          strikethrough: false,
+          underline: true,
+        },
+      });
+
+      cellA1.value = 16.4567;
+      expect(cellA1.formattedValue).toEqual('1645.7%');
+
+      const cellB2 = workbook.sheets.get(0).cell('B2');
+      cellB2.value = 1.23456;
+
+      expect(cellB2.formattedValue).toEqual('1.23456');
+      expect(cellB2.style.numberFormat).toEqual('general');
+      expect(cellB2.style.fill.foregroundColor).toEqual('#FFFFFF');
+      expect(cellB2.style.alignment.verticalAlignment).toEqual('top');
+      expect(cellB2.style.font.bold).toBe(false);
+
+      cellB2.style = cellA1.style;
+
+      expect(cellB2.formattedValue).toEqual('123.5%');
+      expect(cellB2.style.numberFormat).toEqual('0.0%');
+      expect(cellB2.style.fill.foregroundColor).toEqual('#FF00FF');
+      expect(cellB2.style.alignment.verticalAlignment).toEqual('center');
+      expect(cellB2.style.font.bold).toBe(true);
+
+      cellB2.style.numberFormat = '0.00';
+      expect(cellA1.formattedValue).toEqual('1645.7%');
+      expect(cellB2.formattedValue).toEqual('1.23');
+    });
+
+    test('can save style snapshots - default style', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      expect(cell.style.getSnapshot()).toEqual({
+        alignment: {
+          horizontalAlignment: 'general',
+          verticalAlignment: 'top',
+          wrapText: false,
+        },
+        numberFormat: 'general',
+        fill: {
+          backgroundColor: '#FFFFFF',
+          foregroundColor: '#FFFFFF',
+          patternType: 'none',
+        },
+        font: {
+          bold: false,
+          color: '#000000',
+          italics: false,
+          strikethrough: false,
+          underline: false,
+        },
+      });
+    });
+
+    test('can save style snapshots - fully updated style', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+
+      const snapshotForUpdate: CellStyleSnapshot = {
+        alignment: {
+          horizontalAlignment: 'center',
+          verticalAlignment: 'center',
+          wrapText: true,
+        },
+        numberFormat: '#.000',
+        fill: {
+          patternType: 'solid',
+          backgroundColor: '#FF00FF',
+          foregroundColor: '#00FF00',
+        },
+        font: {
+          bold: true,
+          italics: true,
+          strikethrough: true,
+          underline: true,
+          color: '#FF0F0F',
+        },
+      };
+
+      cell.style.bulkUpdate(snapshotForUpdate);
+      expect(cell.style.getSnapshot()).toEqual(snapshotForUpdate);
     });
 
     test('bulk style update', async () => {

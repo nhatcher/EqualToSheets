@@ -7,6 +7,11 @@ import { CellStyleManager, ICellStyle, RawCellStyle } from './style';
 
 export interface ICell {
   /**
+   * @returns Sheet that cell is in.
+   */
+  get sheet(): ISheet;
+
+  /**
    * @returns Row index, count starts from 1.
    */
   get row(): number;
@@ -73,6 +78,13 @@ export interface ICell {
   delete(): void;
 
   get style(): ICellStyle;
+
+  /**
+   * Sets the cell style to style of another cell.
+   *
+   * Only styles returned by cells should be passed in here.
+   */
+  set style(cellStyle: ICellStyle);
 }
 
 export class Cell implements ICell {
@@ -248,6 +260,26 @@ export class Cell implements ICell {
         this._wasmWorkbook.getCellStyle(this._sheet.index, this._row, this._column),
       ) as RawCellStyle;
       return new CellStyleManager(this._wasmWorkbook, this, rawStyle);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  set style(cellStyle: ICellStyle) {
+    if (!(cellStyle instanceof CellStyleManager)) {
+      throw new Error('Provided cell style is not style returned by EqualTo API.');
+    }
+    const sourceCell = cellStyle._getCell();
+    const destinationCell = this;
+    try {
+      this._wasmWorkbook.copyCellStyle(
+        sourceCell.sheet.index,
+        sourceCell.row,
+        sourceCell.column,
+        destinationCell.sheet.index,
+        destinationCell.row,
+        destinationCell.column,
+      );
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

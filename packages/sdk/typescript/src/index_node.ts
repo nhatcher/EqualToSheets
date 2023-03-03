@@ -8,6 +8,8 @@ export type {
   ISheet,
   ICell,
   ICellStyle,
+  CellStyleSnapshot,
+  CellStyleUpdateValues,
   NavigationDirection,
   FormulaToken,
 } from './core';

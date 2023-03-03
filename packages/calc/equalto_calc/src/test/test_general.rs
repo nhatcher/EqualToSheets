@@ -208,6 +208,29 @@ fn test_set_cell_style() {
 }
 
 #[test]
+fn test_copy_cell_style() {
+    let mut model = new_empty_model();
+
+    let mut style = model.get_style_for_cell(0, 1, 1);
+    style.font.b = true;
+    assert!(model.set_cell_style(0, 1, 1, &style).is_ok());
+
+    let mut style = model.get_style_for_cell(0, 1, 2);
+    style.font.i = true;
+    assert!(model.set_cell_style(0, 1, 2, &style).is_ok());
+
+    assert!(model.copy_cell_style((0, 1, 1), (0, 1, 2)).is_ok());
+
+    let style = model.get_style_for_cell(0, 1, 1);
+    assert!(style.font.b);
+    assert!(!style.font.i);
+
+    let style = model.get_style_for_cell(0, 1, 2);
+    assert!(style.font.b);
+    assert!(!style.font.i);
+}
+
+#[test]
 fn test_get_cell_style_index() {
     let mut model = new_empty_model();
 

@@ -535,7 +535,27 @@ impl WasmWorkbook {
             .map_err(WorkbookError::from)
             .map_err(JsError::from)
     }
-}
 
-#[wasm_bindgen]
-struct WasmCellStyleAssignment {}
+    #[wasm_bindgen(js_name = "copyCellStyle")]
+    pub fn copy_cell_style(
+        &mut self,
+        source_sheet_index: u32,
+        source_row: i32,
+        source_column: i32,
+        destination_sheet_index: u32,
+        destination_source_row: i32,
+        destination_source_column: i32,
+    ) -> Result<(), JsError> {
+        self.model
+            .copy_cell_style(
+                (source_sheet_index, source_row, source_column),
+                (
+                    destination_sheet_index,
+                    destination_source_row,
+                    destination_source_column,
+                ),
+            )
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
+}
