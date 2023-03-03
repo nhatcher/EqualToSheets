@@ -1,7 +1,13 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { FormulaToken, ICell, IWorkbook, NavigationDirection } from '@equalto-software/calc';
+import {
+  CellStyleSnapshot,
+  FormulaToken,
+  ICell,
+  IWorkbook,
+  NavigationDirection,
+} from '@equalto-software/calc';
 import Papa from 'papaparse';
 import { TabsInput } from './components/navigation/common';
 import { workbookLastColumn, workbookLastRow } from './constants';
@@ -115,8 +121,8 @@ interface SheetArea extends Area {
 export type CellStyle = ICell['style'];
 
 interface CellData {
-  value: string | null;
-  style: ICell['style'] | null;
+  value: string;
+  style: CellStyleSnapshot;
 }
 
 interface RowData {
@@ -137,24 +143,6 @@ type PasteType = 'copy' | 'cut';
 // Replaces all tabs with spaces in a string
 function escapeTabs(s: string): string {
   return s.replace(/\t/g, '  ');
-}
-
-function getValueFromSheetData(sheetData: SheetData, row: number, column: number): CellData {
-  const rowData = sheetData.data[row];
-  if (!rowData) {
-    return {
-      style: null,
-      value: '',
-    };
-  }
-  const cellData = rowData[column];
-  if (!cellData) {
-    return {
-      style: null,
-      value: '',
-    };
-  }
-  return cellData;
 }
 
 function isCellInArea(sheet: number, row: number, column: number, area: SheetArea): boolean {
@@ -244,11 +232,6 @@ export default class Model {
   setRowHeight(sheet: number, row: number, height: number): void {
     this.workbook.sheets.get(sheet).setRowHeight(row, height);
     this.notifySubscribers({ type: 'setRowHeight' });
-  }
-
-  getTextAt(sheet: number, row: number, column: number): string {
-    const cell = this.workbook.cell(sheet, row, column);
-    return cell.formula ?? `${cell.value ?? ''}`;
   }
 
   getUICell(sheet: number, row: number, column: number): ICell {
@@ -564,47 +547,15 @@ export default class Model {
     targetRow: number,
     targetColumn: number,
   ) {
+    const sourceCell = this.workbook.cell(sheet, sourceRow, sourceColumn);
+    const targetCell = this.workbook.cell(sheet, targetRow, targetColumn);
+
     const extendedValue = this.workbook.sheets
       .get(sheet)
       .userInterface.getExtendedValue(sourceRow, sourceColumn, targetRow, targetColumn);
-    this.workbook.cell(sheet, targetRow, targetColumn).input = extendedValue;
-    const style = this.getCellStyle(sheet, sourceRow, sourceColumn);
-    // TODO: Probably copying style should be supported in the SDK
-    this.setCellsStyle(
-      sheet,
-      {
-        rowStart: targetRow,
-        rowEnd: targetRow,
-        columnStart: targetColumn,
-        columnEnd: targetColumn,
-      },
-      () => ({
-        font: {
-          bold: style.font.bold,
-          italics: style.font.italics,
-          color: style.font.color,
-          underline: style.font.underline,
-          strikethrough: style.font.strikethrough,
-        },
-        fill: {
-          foregroundColor: style.fill.foregroundColor,
-          backgroundColor: style.fill.backgroundColor,
-          patternType: style.fill.patternType,
-        },
-        numberFormat: style.numberFormat,
-        alignment: {
-          horizontalAlignment: style.alignment.horizontalAlignment,
-          verticalAlignment: style.alignment.verticalAlignment,
-          wrapText: style.alignment.wrapText,
-        },
-      }),
-    );
-  }
 
-  getFormulaValueOrNull(sheet: number, row: number, column: number): string | null {
-    // FIXME: We need cell.input getter
-    const cell = this.workbook.cell(sheet, row, column);
-    return cell.formula ?? String(cell.value ?? '');
+    targetCell.input = extendedValue;
+    targetCell.style = sourceCell.style;
   }
 
   getFrozenRowsCount(sheet: number): number {
@@ -641,12 +592,12 @@ export default class Model {
       sheetData.data[row] = {};
 
       for (let column = columnStart; column <= columnEnd; column += 1) {
-        const value = this.getFormulaValueOrNull(sheet, row, column); // FIXME
-        const text = this.getTextAt(sheet, row, column);
-        const style = null; // this.getCellStyle(sheet, row, column); // TODO: stringify
+        const cell = this.workbook.cell(sheet, row, column);
+        const value = cell.formula ?? `${cell.value ?? ''}`;
+        const style = this.getCellStyle(sheet, row, column).getSnapshot();
 
         sheetData.data[row][column] = { value, style };
-        tsvRow.push(escapeTabs(text));
+        tsvRow.push(escapeTabs(value));
       }
 
       tsv.push(tsvRow.join('\t'));
@@ -669,12 +620,12 @@ export default class Model {
 
     for (let row = source.rowStart; row <= source.rowEnd; row += 1) {
       for (let column = source.columnStart; column <= source.columnEnd; column += 1) {
-        const cellData = getValueFromSheetData(sheetData, row, column);
+        const cellData = sheetData.data[row][column];
         const targetRow = row + deltaRow;
         const targetColumn = column + deltaColumn;
 
         const cell = this.workbook.cell(target.sheet, targetRow, targetColumn);
-        // cell.style = cellData.style;
+        cell.style.bulkUpdate(cellData.style);
 
         if (cellData.value === null) {
           cell.input = '';

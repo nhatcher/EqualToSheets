@@ -30,7 +30,6 @@ export const frozenSeparatorWidth = 3;
 interface WorkbookSettings {
   getRowHeight: (row: number) => number;
   getColumnWidth: (column: number) => number;
-  getTextAt: (row: number, column: number) => string;
   getUICell: (row: number, column: number) => ICell;
   getCellStyle: (row: number, column: number) => CellStyle;
   getFrozenColumnsCount: () => number;
@@ -122,7 +121,6 @@ export default class WorksheetCanvas {
     this.workbook = {
       getRowHeight: (row): number => model.getRowHeight(this.selectedSheet, row),
       getColumnWidth: (column): number => model.getColumnWidth(this.selectedSheet, column),
-      getTextAt: (row, column): string => model.getTextAt(this.selectedSheet, row, column),
       getUICell: (row, column): ICell => model.getUICell(this.selectedSheet, row, column),
       getCellStyle: (row, column): CellStyle => model.getCellStyle(this.selectedSheet, row, column),
       getFrozenColumnsCount: (): number => model.getFrozenColumnsCount(this.selectedSheet),
