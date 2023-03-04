@@ -9,6 +9,7 @@ use crate::{
 pub(crate) mod binary_search;
 mod date_and_time;
 mod financial;
+mod financial_util;
 mod information;
 mod logical;
 mod lookup_and_reference;
@@ -115,6 +116,11 @@ pub enum Function {
     Fv,
     Ipmt,
     Ppmt,
+    Mirr,
+    Irr,
+    Xirr,
+    Npv,
+    Xnpv,
 }
 
 impl Function {
@@ -245,6 +251,11 @@ impl Function {
             "FV" => Some(Function::Fv),
             "PPMT" => Some(Function::Ppmt),
             "IPMT" => Some(Function::Ipmt),
+            "NPV" => Some(Function::Npv),
+            "XNPV" => Some(Function::Xnpv),
+            "MIRR" => Some(Function::Mirr),
+            "IRR" => Some(Function::Irr),
+            "XIRR" => Some(Function::Xirr),
             _ => None,
         }
     }
@@ -347,6 +358,11 @@ impl fmt::Display for Function {
             Function::Fv => write!(f, "FV"),
             Function::Ppmt => write!(f, "PPMT"),
             Function::Ipmt => write!(f, "IPMT"),
+            Function::Npv => write!(f, "NPV"),
+            Function::Mirr => write!(f, "MIRR"),
+            Function::Irr => write!(f, "IRR"),
+            Function::Xirr => write!(f, "XIRR"),
+            Function::Xnpv => write!(f, "XNPV"),
         }
     }
 }
@@ -468,6 +484,11 @@ impl Model {
             Function::Fv => self.fn_fv(args, cell),
             Function::Ppmt => self.fn_ppmt(args, cell),
             Function::Ipmt => self.fn_ipmt(args, cell),
+            Function::Npv => self.fn_npv(args, cell),
+            Function::Mirr => self.fn_mirr(args, cell),
+            Function::Irr => self.fn_irr(args, cell),
+            Function::Xirr => self.fn_xirr(args, cell),
+            Function::Xnpv => self.fn_xnpv(args, cell),
         }
     }
 }

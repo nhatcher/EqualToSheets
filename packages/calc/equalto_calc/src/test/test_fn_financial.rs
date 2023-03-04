@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 
-use crate::test::util::new_empty_model;
+use crate::{cell::CellValue, test::util::new_empty_model};
 
 #[test]
 fn test_fn_arguments() {
@@ -68,4 +68,76 @@ fn test_fn_impmt_ppmt_arguments() {
     assert_eq!(model._get_text("B1"), *"#ERROR!");
     assert_eq!(model._get_text("B2"), *"#ERROR!");
     assert_eq!(model._get_text("B3"), *"#ERROR!");
+}
+
+#[test]
+fn test_fn_irr_npv_arguments() {
+    let mut model = new_empty_model();
+    model._set("A1", "=NPV()");
+    model._set("A2", "=NPV(1,1)");
+
+    model._set("C1", "-2"); // v0
+    model._set("C2", "5"); // v1
+    model._set("B1", "=IRR()");
+    model._set("B3", "=IRR(1, 2, 3, 4)");
+    // r such that v0 + v1/(1+r) = 0
+    // r = -v1/v0 - 1
+    model._set("B4", "=IRR(C1:C2)");
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("A1"), *"#ERROR!");
+    assert_eq!(model._get_text("A2"), *"$0.50");
+
+    assert_eq!(model._get_text("B1"), *"#ERROR!");
+    assert_eq!(model._get_text("B3"), *"#ERROR!");
+    // r = 5/2-1 = 1.5
+    assert_eq!(model._get_text("B4"), *"150%");
+}
+
+#[test]
+fn test_fn_mirr() {
+    let mut model = new_empty_model();
+    model._set("A2", "-120000");
+    model._set("A3", "39000");
+    model._set("A4", "30000");
+    model._set("A5", "21000");
+    model._set("A6", "37000");
+    model._set("A7", "46000");
+    model._set("A8", "0.1");
+    model._set("A9", "0.12");
+
+    model._set("B1", "=MIRR(A2:A7, A8, A9)");
+    model._set("B2", "=MIRR(A2:A5, A8, A9)");
+
+    model.evaluate();
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!B1"),
+        Ok(CellValue::Number(0.1260941303659051))
+    );
+    assert_eq!(model._get_text("B1"), "13%");
+    assert_eq!(model._get_text("B2"), "-5%");
+}
+
+#[test]
+fn test_fn_mirr_div_0() {
+    // This test produces #DIV/0! in Excel (but it is incorrect)
+    let mut model = new_empty_model();
+    model._set("A2", "-30");
+    model._set("A3", "-20");
+    model._set("A4", "-10");
+    model._set("A5", "5");
+    model._set("A6", "5");
+    model._set("A7", "5");
+    model._set("A8", "-1");
+    model._set("A9", "2");
+
+    model._set("B1", "=MIRR(A2:A7, A8, A9)");
+
+    model.evaluate();
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!B1"),
+        Ok(CellValue::Number(-1.0))
+    );
+    assert_eq!(model._get_text("B1"), "-100%");
 }

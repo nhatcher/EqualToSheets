@@ -38,8 +38,8 @@
 //! let locale = get_locale("en").unwrap();
 //! let language = get_language("en").unwrap();
 //! let mut lexer = Lexer::new("=A1*SUM(Sheet2!C3:D5)", LexerMode::A1, &locale, &language);
-//! assert_eq!(lexer.next_token(), TokenType::COMPARE(OpCompare::Equal));
-//! assert!(matches!(lexer.next_token(), TokenType::REFERENCE { .. }));
+//! assert_eq!(lexer.next_token(), TokenType::Compare(OpCompare::Equal));
+//! assert!(matches!(lexer.next_token(), TokenType::Reference { .. }));
 //! ```
 
 use crate::expressions::token::{OpCompare, OpProduct, OpSum};

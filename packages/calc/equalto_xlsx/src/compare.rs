@@ -23,7 +23,11 @@ pub struct Diff {
     pub reason: String,
 }
 
+// FIXME: We need to increase precision and eps in general
+// Maybe we can add some info to the cell we are computing (compare this cell with lower precision)
 const PRECISION: usize = 10;
+const EPS: f64 = 5e-7;
+// const EPS: f64 = f64::EPSILON;
 
 /// Compares two Models in the internal representation and returns a list of differences
 pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
@@ -64,8 +68,7 @@ pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
                 Cell::CellFormulaNumber { v: value1, .. },
                 Cell::CellFormulaNumber { v: value2, .. },
             ) => {
-                if (to_precision(*value1, PRECISION) - to_precision(*value2, PRECISION)).abs()
-                    > f64::EPSILON
+                if (to_precision(*value1, PRECISION) - to_precision(*value2, PRECISION)).abs() > EPS
                 {
                     diffs.push(Diff {
                         sheet_name: ws1[cell.index as usize].clone(),

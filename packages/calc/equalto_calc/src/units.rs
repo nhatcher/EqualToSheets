@@ -301,6 +301,9 @@ impl Model {
             Function::Average => self.units_fn_sum_like(args, cell),
             Function::Pmt => self.units_fn_currency(args, cell),
             Function::Nper => self.units_fn_currency(args, cell),
+            Function::Npv => self.units_fn_currency(args, cell),
+            Function::Irr => self.units_fn_percentage(args, cell),
+            Function::Mirr => self.units_fn_percentage(args, cell),
             _ => None,
         }
     }
@@ -324,6 +327,14 @@ impl Model {
             group_separator: true,
             precision: 2,
             currency: currency_symbol.to_string(),
+        })
+    }
+
+    fn units_fn_percentage(&self, _args: &[Node], _cell: &CellReference) -> Option<Units> {
+        Some(Units::Percentage {
+            group_separator: false,
+            precision: 0,
+            num_fmt: "0%".to_string(),
         })
     }
 }

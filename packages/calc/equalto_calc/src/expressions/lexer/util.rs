@@ -25,7 +25,7 @@ pub struct MarkedToken {
 ///
 /// let marked_tokens = get_tokens("A1+1");
 /// let first_t = MarkedToken {
-///     token: TokenType::REFERENCE {
+///     token: TokenType::Reference {
 ///         sheet: None,
 ///         row: 1,
 ///         column: 1,
@@ -36,12 +36,12 @@ pub struct MarkedToken {
 ///     end: 2,
 /// };
 /// let second_t = MarkedToken {
-///     token: TokenType::SUM(OpSum::Add),
+///     token: TokenType::Addition(OpSum::Add),
 ///     start:2,
 ///     end: 3
 /// };
 /// let third_t = MarkedToken {
-///     token: TokenType::NUMBER(1.0),
+///     token: TokenType::Number(1.0),
 ///     start:3,
 ///     end: 4
 /// };
