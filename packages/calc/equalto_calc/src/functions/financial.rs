@@ -1127,4 +1127,70 @@ impl Model {
         }
         CalcResult::Number(result)
     }
+
+    // ISPMT(rate, per, nper, pv)
+    // Formula is:
+    // $$pv*rate*\left(\frac{per}{nper}-1\right)$$
+    pub(crate) fn fn_ispmt(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 4 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let rate = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let per = match self.get_number(&args[1], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let nper = match self.get_number(&args[2], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let pv = match self.get_number(&args[3], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        if nper == 0.0 {
+            return CalcResult::new_error(Error::DIV, cell, "Division by 0".to_string());
+        }
+        CalcResult::Number(pv * rate * (per / nper - 1.0))
+    }
+
+    // RRI(nper, pv, fv)
+    // Formula is
+    // $$ \left(\frac{fv}{pv}\right)^{\frac{1}{nper}}-1  $$
+    pub(crate) fn fn_rri(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 3 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let nper = match self.get_number(&args[0], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let pv = match self.get_number(&args[1], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        let fv = match self.get_number(&args[2], cell) {
+            Ok(f) => f,
+            Err(s) => return s,
+        };
+        if nper <= 0.0 {
+            return CalcResult::new_error(Error::NUM, cell, "nper should be >0".to_string());
+        }
+        if pv == 0.0 {
+            // Note error is NUM not DIV/0 also bellow
+            return CalcResult::new_error(Error::NUM, cell, "Division by 0".to_string());
+        }
+        let result = (fv / pv).powf(1.0 / nper) - 1.0;
+        if result.is_infinite() {
+            return CalcResult::new_error(Error::NUM, cell, "Division by 0".to_string());
+        }
+        if result.is_nan() {
+            return CalcResult::new_error(Error::NUM, cell, "Invalid data for RRI".to_string());
+        }
+
+        CalcResult::Number(result)
+    }
 }

@@ -127,6 +127,8 @@ pub enum Function {
     Xirr,
     Npv,
     Xnpv,
+    Ispmt,
+    Rri,
 }
 
 impl Function {
@@ -144,6 +146,7 @@ impl Function {
             Function::Textbefore => "_xlfn.TEXTBEFORE".to_string(),
             Function::Textafter => "_xlfn.TEXTAFTER".to_string(),
             Function::Textjoin => "_xlfn.TEXTJOIN".to_string(),
+            Function::Rri => "_xlfn.RRI".to_string(),
             _ => self.to_string(),
         }
     }
@@ -270,6 +273,8 @@ impl Function {
             "MIRR" => Some(Function::Mirr),
             "IRR" => Some(Function::Irr),
             "XIRR" => Some(Function::Xirr),
+            "ISPMT" => Some(Function::Ispmt),
+            "RRI" | "_XLFN.RRI" => Some(Function::Rri),
             _ => None,
         }
     }
@@ -382,6 +387,8 @@ impl fmt::Display for Function {
             Function::Textbefore => write!(f, "TEXTBEFORE"),
             Function::Textjoin => write!(f, "TEXTJOIN"),
             Function::Substitute => write!(f, "SUBSTITUTE"),
+            Function::Ispmt => write!(f, "ISPMT"),
+            Function::Rri => write!(f, "RRI"),
         }
     }
 }
@@ -513,6 +520,8 @@ impl Model {
             Function::Textbefore => self.fn_textbefore(args, cell),
             Function::Textjoin => self.fn_textjoin(args, cell),
             Function::Substitute => self.fn_substitute(args, cell),
+            Function::Ispmt => self.fn_ispmt(args, cell),
+            Function::Rri => self.fn_rri(args, cell),
         }
     }
 }

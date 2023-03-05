@@ -141,3 +141,40 @@ fn test_fn_mirr_div_0() {
     );
     assert_eq!(model._get_text("B1"), "-100%");
 }
+
+#[test]
+fn test_fn_ispmt() {
+    let mut model = new_empty_model();
+    model._set("A1", "1"); // rate
+    model._set("A2", "2"); // per
+    model._set("A3", "5"); // nper
+    model._set("A4", "4"); // pv
+
+    model._set("B1", "=ISPMT(A1, A2, A3, A4)");
+    model._set("B2", "=ISPMT(A1, A2, A3, A4, 1)");
+    model._set("B3", "=ISPMT(A1, A2, A3)");
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("B1"), "-2.4");
+    assert_eq!(model._get_text("B2"), *"#ERROR!");
+    assert_eq!(model._get_text("B3"), *"#ERROR!");
+}
+
+#[test]
+fn test_fn_rri() {
+    let mut model = new_empty_model();
+    model._set("A1", "1"); // nper
+    model._set("A2", "2"); // pv
+    model._set("A3", "3"); // fv
+
+    model._set("B1", "=RRI(A1, A2, A3)");
+    model._set("B2", "=RRI(A1, A2)");
+    model._set("B3", "=RRI(A1, A2, A3, 1)");
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("B1"), "0.5");
+    assert_eq!(model._get_text("B2"), *"#ERROR!");
+    assert_eq!(model._get_text("B3"), *"#ERROR!");
+}
