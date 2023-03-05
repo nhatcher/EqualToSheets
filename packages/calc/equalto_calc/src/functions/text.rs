@@ -1,12 +1,16 @@
 use crate::{
     calc_result::{CalcResult, CellReference},
+    constants::{LAST_COLUMN, LAST_ROW},
     expressions::parser::Node,
     expressions::token::Error,
     formatter::format::format_number,
     model::Model,
 };
 
-use super::util::from_wildcard_to_regex;
+use super::{
+    text_util::{substitute, text_after, text_before, Case},
+    util::from_wildcard_to_regex,
+};
 
 /// Finds the first instance of 'search_for' in text starting at char index start
 fn find(search_for: &str, text: &str, start: usize) -> Option<i32> {
@@ -603,5 +607,396 @@ impl Model {
             }
         }
         CalcResult::String(result)
+    }
+
+    // REPT(text, number_times)
+    pub(crate) fn fn_rept(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 2 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let text = match self.get_string(&args[0], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let number_times = match self.get_number(&args[1], cell) {
+            Ok(f) => f.floor() as i32,
+            Err(s) => return s,
+        };
+        let text_len = text.len() as i32;
+
+        // We normally don't follow Excel's sometimes archaic size's restrictions
+        // But this might be a security issue
+        if text_len * number_times > 32767 {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "number times too high".to_string(),
+            };
+        }
+        if number_times < 0 {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "number times too high".to_string(),
+            };
+        }
+        if number_times == 0 {
+            return CalcResult::String("".to_string());
+        }
+        CalcResult::String(text.repeat(number_times as usize))
+    }
+
+    // TEXTAFTER(text, delimiter, [instance_num], [match_mode], [match_end], [if_not_found])
+    pub(crate) fn fn_textafter(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let arg_count = args.len();
+        if !(2..=6).contains(&arg_count) {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let text = match self.get_string(&args[0], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let delimiter = match self.get_string(&args[1], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let instance_num = if arg_count > 2 {
+            match self.get_number(&args[2], cell) {
+                Ok(f) => f.floor() as i32,
+                Err(s) => return s,
+            }
+        } else {
+            1
+        };
+        let match_mode = if arg_count > 3 {
+            match self.get_number(&args[3], cell) {
+                Ok(f) => {
+                    if f == 0.0 {
+                        Case::Sensitive
+                    } else {
+                        Case::Insensitive
+                    }
+                }
+                Err(s) => return s,
+            }
+        } else {
+            Case::Sensitive
+        };
+
+        let match_end = if arg_count > 4 {
+            match self.get_number(&args[4], cell) {
+                Ok(f) => f,
+                Err(s) => return s,
+            }
+        } else {
+            // disabled by default
+            // the delimiter is specified in the formula
+            0.0
+        };
+        if instance_num == 0 {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "instance_num must be <> 0".to_string(),
+            };
+        }
+        if delimiter.len() > text.len() {
+            // so this is fun(!)
+            // if the function was provided with two arguments is a #VALUE!
+            // if it had more is a #N/A (irrespective of their values)
+            if arg_count > 2 {
+                return CalcResult::Error {
+                    error: Error::VALUE,
+                    origin: cell,
+                    message: "The delimiter is longer than the text is trying to match".to_string(),
+                };
+            } else {
+                return CalcResult::Error {
+                    error: Error::NA,
+                    origin: cell,
+                    message: "The delimiter is longer than the text is trying to match".to_string(),
+                };
+            }
+        }
+        if match_end != 0.0 && match_end != 1.0 {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "argument must be 0 or 1".to_string(),
+            };
+        };
+        match text_after(&text, &delimiter, instance_num, match_mode) {
+            Some(s) => CalcResult::String(s),
+            None => {
+                if match_end == 1.0 {
+                    if instance_num == 1 {
+                        return CalcResult::String("".to_string());
+                    } else if instance_num == -1 {
+                        return CalcResult::String(text);
+                    }
+                }
+                if arg_count == 6 {
+                    // An empty cell is converted to empty string (not 0)
+                    match self.evaluate_node_in_context(&args[5], cell) {
+                        CalcResult::EmptyCell => CalcResult::String("".to_string()),
+                        result => result,
+                    }
+                } else {
+                    CalcResult::Error {
+                        error: Error::NA,
+                        origin: cell,
+                        message: "Value not found".to_string(),
+                    }
+                }
+            }
+        }
+    }
+
+    pub(crate) fn fn_textbefore(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let arg_count = args.len();
+        if !(2..=6).contains(&arg_count) {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let text = match self.get_string(&args[0], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let delimiter = match self.get_string(&args[1], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let instance_num = if arg_count > 2 {
+            match self.get_number(&args[2], cell) {
+                Ok(f) => f.floor() as i32,
+                Err(s) => return s,
+            }
+        } else {
+            1
+        };
+        let match_mode = if arg_count > 3 {
+            match self.get_number(&args[3], cell) {
+                Ok(f) => {
+                    if f == 0.0 {
+                        Case::Sensitive
+                    } else {
+                        Case::Insensitive
+                    }
+                }
+                Err(s) => return s,
+            }
+        } else {
+            Case::Sensitive
+        };
+
+        let match_end = if arg_count > 4 {
+            match self.get_number(&args[4], cell) {
+                Ok(f) => f,
+                Err(s) => return s,
+            }
+        } else {
+            // disabled by default
+            // the delimiter is specified in the formula
+            0.0
+        };
+        if instance_num == 0 {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "instance_num must be <> 0".to_string(),
+            };
+        }
+        if delimiter.len() > text.len() {
+            // so this is fun(!)
+            // if the function was provided with two arguments is a #VALUE!
+            // if it had more is a #N/A (irrespective of their values)
+            if arg_count > 2 {
+                return CalcResult::Error {
+                    error: Error::VALUE,
+                    origin: cell,
+                    message: "The delimiter is longer than the text is trying to match".to_string(),
+                };
+            } else {
+                return CalcResult::Error {
+                    error: Error::NA,
+                    origin: cell,
+                    message: "The delimiter is longer than the text is trying to match".to_string(),
+                };
+            }
+        }
+        if match_end != 0.0 && match_end != 1.0 {
+            return CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "argument must be 0 or 1".to_string(),
+            };
+        };
+        match text_before(&text, &delimiter, instance_num, match_mode) {
+            Some(s) => CalcResult::String(s),
+            None => {
+                if match_end == 1.0 {
+                    if instance_num == -1 {
+                        return CalcResult::String("".to_string());
+                    } else if instance_num == 1 {
+                        return CalcResult::String(text);
+                    }
+                }
+                if arg_count == 6 {
+                    // An empty cell is converted to empty string (not 0)
+                    match self.evaluate_node_in_context(&args[5], cell) {
+                        CalcResult::EmptyCell => CalcResult::String("".to_string()),
+                        result => result,
+                    }
+                } else {
+                    CalcResult::Error {
+                        error: Error::NA,
+                        origin: cell,
+                        message: "Value not found".to_string(),
+                    }
+                }
+            }
+        }
+    }
+
+    // TEXTJOIN(delimiter, ignore_empty, text1, [text2], …)
+    pub(crate) fn fn_textjoin(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let arg_count = args.len();
+        if arg_count < 3 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let delimiter = match self.get_string(&args[0], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let ignore_empty = match self.get_boolean(&args[1], cell) {
+            Ok(b) => b,
+            Err(error) => return error,
+        };
+        let mut values = Vec::new();
+        for arg in &args[2..] {
+            match self.evaluate_node_in_context(arg, cell) {
+                CalcResult::Number(value) => values.push(format!("{value}")),
+                CalcResult::Range { left, right } => {
+                    if left.sheet != right.sheet {
+                        return CalcResult::new_error(
+                            Error::VALUE,
+                            cell,
+                            "Ranges are in different sheets".to_string(),
+                        );
+                    }
+                    let row1 = left.row;
+                    let mut row2 = right.row;
+                    let column1 = left.column;
+                    let mut column2 = right.column;
+                    if row1 == 1 && row2 == LAST_ROW {
+                        row2 = self
+                            .workbook
+                            .worksheet(left.sheet)
+                            .expect("Sheet expected during evaluation.")
+                            .dimension()
+                            .max_row;
+                    }
+                    if column1 == 1 && column2 == LAST_COLUMN {
+                        column2 = self
+                            .workbook
+                            .worksheet(left.sheet)
+                            .expect("Sheet expected during evaluation.")
+                            .dimension()
+                            .max_column;
+                    }
+                    for row in row1..row2 + 1 {
+                        for column in column1..(column2 + 1) {
+                            match self.evaluate_cell(CellReference {
+                                sheet: left.sheet,
+                                row,
+                                column,
+                            }) {
+                                CalcResult::Number(value) => {
+                                    values.push(format!("{value}"));
+                                }
+                                CalcResult::String(value) => values.push(value),
+                                CalcResult::Boolean(value) => {
+                                    if value {
+                                        values.push("TRUE".to_string())
+                                    } else {
+                                        values.push("FALSE".to_string())
+                                    }
+                                }
+                                CalcResult::EmptyCell => {
+                                    if !ignore_empty {
+                                        values.push("".to_string())
+                                    }
+                                }
+                                error @ CalcResult::Error { .. } => return error,
+                                CalcResult::EmptyArg | CalcResult::Range { .. } => {}
+                            }
+                        }
+                    }
+                }
+                error @ CalcResult::Error { .. } => return error,
+                CalcResult::String(value) => values.push(value),
+                CalcResult::Boolean(value) => {
+                    if value {
+                        values.push("TRUE".to_string())
+                    } else {
+                        values.push("FALSE".to_string())
+                    }
+                }
+                CalcResult::EmptyCell => {
+                    if !ignore_empty {
+                        values.push("".to_string())
+                    }
+                }
+                CalcResult::EmptyArg => {}
+            };
+        }
+        let result = values.join(&delimiter);
+        CalcResult::String(result)
+    }
+
+    // SUBSTITUTE(text, old_text, new_text, [instance_num])
+    pub(crate) fn fn_substitute(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let arg_count = args.len();
+        if !(2..=4).contains(&arg_count) {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let text = match self.get_string(&args[0], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let old_text = match self.get_string(&args[1], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let new_text = match self.get_string(&args[2], cell) {
+            Ok(s) => s,
+            Err(error) => return error,
+        };
+        let instance_num = if arg_count > 3 {
+            match self.get_number(&args[3], cell) {
+                Ok(f) => Some(f.floor() as i32),
+                Err(s) => return s,
+            }
+        } else {
+            // means every instance is replaced
+            None
+        };
+        if let Some(num) = instance_num {
+            if num < 1 {
+                return CalcResult::Error {
+                    error: Error::VALUE,
+                    origin: cell,
+                    message: "Invalid value".to_string(),
+                };
+            }
+            if old_text.is_empty() {
+                return CalcResult::String(text);
+            }
+            CalcResult::String(substitute(&text, &old_text, &new_text, num))
+        } else {
+            if old_text.is_empty() {
+                return CalcResult::String(text);
+            }
+            CalcResult::String(text.replace(&old_text, &new_text))
+        }
     }
 }

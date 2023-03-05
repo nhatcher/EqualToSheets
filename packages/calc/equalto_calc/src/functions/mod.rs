@@ -16,6 +16,7 @@ mod lookup_and_reference;
 mod mathematical;
 mod statistical;
 mod text;
+mod text_util;
 pub(crate) mod util;
 mod xlookup;
 
@@ -84,6 +85,11 @@ pub enum Function {
     Text,
     Trim,
     Upper,
+    Rept,
+    Textafter,
+    Textbefore,
+    Textjoin,
+    Substitute,
     Isnumber,
     Isnontext,
     Istext,
@@ -135,26 +141,28 @@ impl Function {
             Function::Switch => "_xlfn.SWITCH".to_string(),
             Function::Xlookup => "_xlfn.XLOOKUP".to_string(),
             Function::Xor => "_xlfn.XOR".to_string(),
+            Function::Textbefore => "_xlfn.TEXTBEFORE".to_string(),
+            Function::Textafter => "_xlfn.TEXTAFTER".to_string(),
+            Function::Textjoin => "_xlfn.TEXTJOIN".to_string(),
             _ => self.to_string(),
         }
     }
 
     /// Gets the function from the name.
-    /// Note that in Excel any function could be prefixed by `_xlfn.`
+    /// Note that in Excel some (modern) functions are prefixed by `_xlfn.`
     pub fn get_function(name: &str) -> Option<Function> {
-        let upper_case_name = name.to_ascii_uppercase();
-        match upper_case_name.trim_start_matches("_XLFN.") {
+        match name.to_ascii_uppercase().as_str() {
             "AND" => Some(Function::And),
             "FALSE" => Some(Function::False),
             "IF" => Some(Function::If),
             "IFERROR" => Some(Function::Iferror),
-            "IFNA" => Some(Function::Ifna),
-            "IFS" => Some(Function::Ifs),
+            "IFNA" | "_XLFN.IFNA" => Some(Function::Ifna),
+            "IFS" | "_XLFN.IFS" => Some(Function::Ifs),
             "NOT" => Some(Function::Not),
             "OR" => Some(Function::Or),
-            "SWITCH" => Some(Function::Switch),
+            "SWITCH" | "_XLFN.SWITCH" => Some(Function::Switch),
             "TRUE" => Some(Function::True),
-            "XOR" => Some(Function::Xor),
+            "XOR" | "_XLFN.XOR" => Some(Function::Xor),
 
             "SIN" => Some(Function::Sin),
             "COS" => Some(Function::Cos),
@@ -202,9 +210,9 @@ impl Function {
             "ROW" => Some(Function::Row),
             "ROWS" => Some(Function::Rows),
             "VLOOKUP" => Some(Function::Vlookup),
-            "XLOOKUP" => Some(Function::Xlookup),
+            "XLOOKUP" | "_XLFN.XLOOKUP" => Some(Function::Xlookup),
 
-            "CONCAT" => Some(Function::Concat),
+            "CONCAT" | "_XLFN.CONCAT" => Some(Function::Concat),
             "FIND" => Some(Function::Find),
             "LEFT" => Some(Function::Left),
             "LEN" => Some(Function::Len),
@@ -215,6 +223,12 @@ impl Function {
             "TEXT" => Some(Function::Text),
             "TRIM" => Some(Function::Trim),
             "UPPER" => Some(Function::Upper),
+
+            "REPT" => Some(Function::Rept),
+            "TEXTAFTER" | "_XLFN.TEXTAFTER" => Some(Function::Textafter),
+            "TEXTBEFORE" | "_XLFN.TEXTBEFORE" => Some(Function::Textbefore),
+            "TEXTJOIN" | "_XLFN.TEXTJOIN" => Some(Function::Textjoin),
+            "SUBSTITUTE" => Some(Function::Substitute),
 
             "ISNUMBER" => Some(Function::Isnumber),
             "ISNONTEXT" => Some(Function::Isnontext),
@@ -235,8 +249,8 @@ impl Function {
             "COUNTBLANK" => Some(Function::Countblank),
             "COUNTIF" => Some(Function::Countif),
             "COUNTIFS" => Some(Function::Countifs),
-            "MAXIFS" => Some(Function::Maxifs),
-            "MINIFS" => Some(Function::Minifs),
+            "MAXIFS" | "_XLFN.MAXIFS" => Some(Function::Maxifs),
+            "MINIFS" | "_XLFN.MINIFS" => Some(Function::Minifs),
             // Date and Time
             "YEAR" => Some(Function::Year),
             "DAY" => Some(Function::Day),
@@ -363,6 +377,11 @@ impl fmt::Display for Function {
             Function::Irr => write!(f, "IRR"),
             Function::Xirr => write!(f, "XIRR"),
             Function::Xnpv => write!(f, "XNPV"),
+            Function::Rept => write!(f, "REPT"),
+            Function::Textafter => write!(f, "TEXTAFTER"),
+            Function::Textbefore => write!(f, "TEXTBEFORE"),
+            Function::Textjoin => write!(f, "TEXTJOIN"),
+            Function::Substitute => write!(f, "SUBSTITUTE"),
         }
     }
 }
@@ -489,6 +508,11 @@ impl Model {
             Function::Irr => self.fn_irr(args, cell),
             Function::Xirr => self.fn_xirr(args, cell),
             Function::Xnpv => self.fn_xnpv(args, cell),
+            Function::Rept => self.fn_rept(args, cell),
+            Function::Textafter => self.fn_textafter(args, cell),
+            Function::Textbefore => self.fn_textbefore(args, cell),
+            Function::Textjoin => self.fn_textjoin(args, cell),
+            Function::Substitute => self.fn_substitute(args, cell),
         }
     }
 }

@@ -27,4 +27,3 @@ fn test_fn_sqrtpi_arguments() {
     assert_eq!(model._get_text("A1"), *"#ERROR!");
     assert_eq!(model._get_text("A2"), *"#ERROR!");
 }
-
