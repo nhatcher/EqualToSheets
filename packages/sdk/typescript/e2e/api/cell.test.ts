@@ -643,5 +643,53 @@ describe('Workbook - Cell operations', () => {
       expect(cell.style.alignment.verticalAlignment).toEqual('justify');
       expect(cell.style.alignment.wrapText).toEqual(true);
     });
+
+    test.each<string>(['0', '1', '=3', '=1 + 1', 'true'])(
+      'has quote prefix - string values that need prefix (value: "%s")',
+      async (input) => {
+        const { newWorkbook } = await initialize();
+        const workbook = newWorkbook();
+        const cell = workbook.sheets.get(0).cell('A1');
+        cell.value = input;
+        expect(cell.value).toEqual(input);
+        expect(cell.style.hasQuotePrefix).toBe(true);
+      },
+    );
+
+    test.each<string>(['', 'text', 'hello world', '1 + 1', 'A1'])(
+      'has quote prefix - string values that DO NOT need prefix (value: "%s")',
+      async (input) => {
+        const { newWorkbook } = await initialize();
+        const workbook = newWorkbook();
+        const cell = workbook.sheets.get(0).cell('A1');
+        cell.value = input;
+        expect(cell.value).toEqual(input);
+        expect(cell.style.hasQuotePrefix).toBe(false);
+      },
+    );
+
+    test.each<[string, number | boolean]>([
+      ['0', 0],
+      ['1', 1],
+      ['1.2', 1.2],
+      ['true', true],
+      ['false', false],
+    ])('has quote prefix - non-string values do not need prefix (value: %s)', async (_, input) => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.value = input;
+      expect(cell.value).toEqual(input);
+      expect(cell.style.hasQuotePrefix).toBe(false);
+    });
+
+    test('has quote prefix - date values do not need prefix', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const cell = workbook.sheets.get(0).cell('A1');
+      cell.value = new Date('2020-04-14T00:00:00.000Z');
+      expect(cell.value).toEqual(43935);
+      expect(cell.style.hasQuotePrefix).toBe(false);
+    });
   });
 });

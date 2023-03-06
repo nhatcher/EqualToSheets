@@ -41,6 +41,14 @@ export interface ICellStyle {
    * - wrapping text
    */
   get alignment(): IAlignmentStyle;
+
+  /**
+   * When a string is assigned to a cell, sometimes it needs to be prefixed with a quote
+   * to ensure it's interpreted as string, not number / formula / etc.
+   * For example if you assign "5", or "=1+1" as string, it needs to be prefixed with a quote.
+   * It's done automatically, and this method provides a way to query that has happened.
+   */
+  get hasQuotePrefix(): boolean;
 }
 
 export type CellStyleSnapshot = {
@@ -340,6 +348,10 @@ export class CellStyleManager implements ICellStyle {
 
   get alignment(): IAlignmentStyle {
     return this._alignmentStyleManager;
+  }
+
+  get hasQuotePrefix(): boolean {
+    return this._styleSnapshot.quote_prefix;
   }
 }
 
