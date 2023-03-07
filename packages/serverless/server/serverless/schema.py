@@ -255,6 +255,70 @@ class SetCellInput(graphene.Mutation):
         return SetCellInput(workbook=workbook)
 
 
+class CreateSheet(graphene.Mutation):
+    class Arguments:
+        workbook_id = graphene.String(required=True)
+        sheet_name = graphene.String()
+
+    workbook = graphene.Field(Workbook, required=True)
+    sheet = graphene.Field(Sheet, required=True)
+
+    @classmethod
+    @validate_license_for_workbook_mutation
+    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_name: str | None = None) -> Self:
+        workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
+
+        calc_sheet = workbook.calc.sheets.add(sheet_name)
+
+        workbook.workbook_json = workbook.calc.json
+        workbook.revision += 1
+        workbook.save(update_fields=["workbook_json", "revision"])
+        return cls(workbook=workbook, sheet=Sheet(calc_sheet=calc_sheet))
+
+
+class DeleteSheet(graphene.Mutation):
+    class Arguments:
+        workbook_id = graphene.String(required=True)
+        sheet_id = graphene.Int(required=True)
+
+    workbook = graphene.Field(Workbook, required=True)
+
+    @classmethod
+    @validate_license_for_workbook_mutation
+    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_id: int) -> Self:
+        workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
+
+        workbook.calc.sheets._get_sheet(sheet_id).delete()  # noqa: WPS437
+
+        workbook.workbook_json = workbook.calc.json
+        workbook.revision += 1
+        workbook.save(update_fields=["workbook_json", "revision"])
+        return cls(workbook=workbook)
+
+
+class RenameSheet(graphene.Mutation):
+    class Arguments:
+        workbook_id = graphene.String(required=True)
+        sheet_id = graphene.Int(required=True)
+        new_name = graphene.String(required=True)
+
+    workbook = graphene.Field(Workbook, required=True)
+    sheet = graphene.Field(Sheet, required=True)
+
+    @classmethod
+    @validate_license_for_workbook_mutation
+    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_id: int, new_name: str) -> Self:
+        workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
+
+        calc_sheet = workbook.calc.sheets._get_sheet(sheet_id)  # noqa: WPS437
+        calc_sheet.name = new_name
+
+        workbook.workbook_json = workbook.calc.json
+        workbook.revision += 1
+        workbook.save(update_fields=["workbook_json", "revision"])
+        return cls(workbook=workbook, sheet=Sheet(calc_sheet=calc_sheet))
+
+
 class CreateWorkbook(graphene.Mutation):
     # The class attributes define the response of the mutation
     workbook = graphene.Field(Workbook, required=True)
@@ -282,6 +346,9 @@ class Mutation(graphene.ObjectType):
     save_workbook = SaveWorkbook.Field()
     create_workbook = CreateWorkbook.Field()
     set_cell_input = SetCellInput.Field()
+    create_sheet = CreateSheet.Field()
+    delete_sheet = DeleteSheet.Field()
+    rename_sheet = RenameSheet.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

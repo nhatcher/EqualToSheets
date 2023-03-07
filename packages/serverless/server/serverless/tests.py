@@ -4,6 +4,7 @@ from typing import Any
 import equalto
 from django.test import RequestFactory, TestCase
 from django.utils.http import urlencode
+from graphql import GraphQLError
 
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
@@ -623,3 +624,286 @@ class SimpleTest(TestCase):
                 ),
                 {"data": {"workbook": {"sheet": None}}},
             )
+
+    def test_create_sheet(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation CreateSheets($workbook_id: String!) {
+                createSheet(workbookId: $workbook_id) { sheet { id } }
+                output: createSheet(workbookId: $workbook_id, sheetName: "Analytics") {
+                    sheet {
+                        id
+                        name
+                    }
+                    workbook {
+                        sheets {
+                            id
+                            name
+                        }
+                    }
+                }
+            }""",
+            "example.com",
+            license.key,
+            {"workbook_id": str(workbook.id)},
+        )
+
+        self.assertEqual(
+            response["data"]["output"],
+            {
+                "sheet": {"id": 4, "name": "Analytics"},
+                "workbook": {
+                    "sheets": [
+                        {"id": 1, "name": "Calculation"},
+                        {"id": 2, "name": "Data"},
+                        {"id": 3, "name": "Sheet1"},  # new sheet using the default name
+                        {"id": 4, "name": "Analytics"},
+                    ],
+                },
+            },
+        )
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 3)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data", "Sheet1", "Analytics"],
+        )
+
+    def test_create_sheet_name_in_use(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Sheet": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        with self.assertRaisesMessage(GraphQLError, "A worksheet already exists with that name"):
+            graphql_query(
+                """
+                mutation CreateSheets($workbook_id: String!) {
+                    createSheet(workbookId: $workbook_id, sheetName: "Sheet") {
+                        sheet {
+                            id
+                        }
+                    }
+                }""",
+                "example.com",
+                license.key,
+                {"workbook_id": str(workbook.id)},
+            )
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Sheet"],
+        )
+
+    def test_create_sheet_invalid_license(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation CreateSheets($workbook_id: String!) {
+                output: createSheet(workbookId: $workbook_id, sheetName: "Analytics") {
+                    sheet {
+                        id
+                        name
+                    }
+                }
+            }""",
+            "example.com",
+            self._create_verified_license("bob@example.com").key,
+            {"workbook_id": str(workbook.id)},
+            suppress_errors=True,
+        )
+
+        self.assertIsNone(response["data"]["output"])
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data"],
+        )
+
+    def test_delete_sheet(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation DeleteSheet($workbook_id: String!) {
+                output: deleteSheet(workbookId: $workbook_id, sheetId: 1) {
+                    workbook {
+                        sheets {
+                            id
+                            name
+                        }
+                    }
+                }
+            }""",
+            "example.com",
+            license.key,
+            {"workbook_id": str(workbook.id)},
+        )
+
+        self.assertEqual(
+            response["data"]["output"],
+            {
+                "workbook": {
+                    "sheets": [
+                        {"id": 2, "name": "Data"},
+                    ],
+                },
+            },
+        )
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 2)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Data"],
+        )
+
+    def test_delete_sheet_invalid_license(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation DeleteSheet($workbook_id: String!) {
+                output: deleteSheet(workbookId: $workbook_id, sheetId: 1) {
+                    workbook {
+                        sheets {
+                            id
+                            name
+                        }
+                    }
+                }
+            }""",
+            "example.com",
+            self._create_verified_license("bob@example.com").key,
+            {"workbook_id": str(workbook.id)},
+            suppress_errors=True,
+        )
+
+        self.assertIsNone(response["data"]["output"])
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data"],
+        )
+
+    def test_rename_sheet(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation RenameSheet($workbook_id: String!) {
+                output: renameSheet(workbookId: $workbook_id, sheetId: 1, newName: "Analytics") {
+                    sheet {
+                        id
+                        name
+                    }
+                    workbook {
+                        sheets {
+                            id
+                            name
+                        }
+                    }
+                }
+            }""",
+            "example.com",
+            license.key,
+            {"workbook_id": str(workbook.id)},
+        )
+
+        self.assertEqual(
+            response["data"]["output"],
+            {
+                "sheet": {"id": 1, "name": "Analytics"},
+                "workbook": {
+                    "sheets": [
+                        {"id": 1, "name": "Analytics"},
+                        {"id": 2, "name": "Data"},
+                    ],
+                },
+            },
+        )
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 2)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Analytics", "Data"],
+        )
+
+    def test_rename_sheet_name_in_use(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        with self.assertRaisesMessage(GraphQLError, "Sheet already exists: 'Data'"):
+            graphql_query(
+                """
+                mutation RenameSheet($workbook_id: String!) {
+                    renameSheet(workbookId: $workbook_id, sheetId: 1, newName: "Data") {
+                        sheet {
+                            id
+                        }
+                    }
+                }""",
+                "example.com",
+                license.key,
+                {"workbook_id": str(workbook.id)},
+            )
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data"],
+        )
+
+    def test_rename_sheet_invalid_license(self) -> None:
+        license = self._create_verified_license()
+        workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation RenameSheet($workbook_id: String!) {
+                output: renameSheet(workbookId: $workbook_id, sheetId: 1, newName: "Analytics") {
+                    workbook {
+                        sheets {
+                            id
+                            name
+                        }
+                    }
+                }
+            }""",
+            "example.com",
+            self._create_verified_license("bob@example.com").key,
+            {"workbook_id": str(workbook.id)},
+            suppress_errors=True,
+        )
+
+        self.assertIsNone(response["data"]["output"])
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data"],
+        )
