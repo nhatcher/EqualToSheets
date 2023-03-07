@@ -1,7 +1,9 @@
 import uuid
 
+import equalto.workbook
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 
 def get_default_workbook() -> str:
@@ -46,3 +48,7 @@ class Workbook(models.Model):
     revision = models.IntegerField(default=1, null=False)
     create_datetime = models.DateTimeField(default=timezone.now, null=False)
     modify_datetime = models.DateTimeField(default=timezone.now, null=False)
+
+    @cached_property
+    def calc(self) -> equalto.workbook.Workbook:
+        return equalto.loads(self.workbook_json)

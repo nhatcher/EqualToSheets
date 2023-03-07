@@ -1,5 +1,9 @@
 from typing import Any, Callable, Iterable, Self
 
+import equalto.cell
+import equalto.exceptions
+import equalto.sheet
+import equalto.workbook
 import graphene
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
@@ -55,20 +59,63 @@ def validate_license_for_workbook_query(graphql_fn: Callable[..., Any]) -> Calla
     return fn
 
 
-class Cell(graphene.ObjectType):
+CellType = graphene.Enum.from_enum(equalto.cell.CellType)
+
+
+class CellValue(graphene.ObjectType):
     text = graphene.String()
     number = graphene.Float()
-    format = graphene.String()
     boolean = graphene.Boolean()
-    type = graphene.String()
+
+
+class Cell(graphene.ObjectType):
+    def __init__(self, calc_cell: equalto.cell.Cell) -> None:
+        self._calc_cell = calc_cell
+
+    formatted_value = graphene.String(required=True)
+    value = graphene.Field(CellValue, required=True)
+    format = graphene.String(required=True)
+    type = graphene.Field(CellType, required=True)
     formula = graphene.String()
+
+    def resolve_formatted_value(self, info: graphene.ResolveInfo) -> str:
+        return str(self._calc_cell)
+
+    def resolve_value(self, info: graphene.ResolveInfo) -> CellValue:
+        value = self._calc_cell.value
+        if isinstance(value, bool):
+            return CellValue(boolean=value)
+        elif isinstance(value, (int, float)):
+            return CellValue(number=float(value))
+        elif isinstance(value, str):
+            return CellValue(text=value)
+        else:
+            raise Exception(f"Unrecognized {type(value)=}")
+
+    def resolve_format(self, info: graphene.ResolveInfo) -> str:
+        return self._calc_cell.style.format
+
+    def resolve_type(self, info: graphene.ResolveInfo) -> equalto.cell.CellType:
+        return self._calc_cell.type
+
+    def resolve_formula(self, info: graphene.ResolveInfo) -> str | None:
+        return self._calc_cell.formula
 
 
 class Sheet(graphene.ObjectType):
-    name = graphene.String()
-    id = graphene.String()
+    def __init__(self, calc_sheet: equalto.sheet.Sheet) -> None:
+        self._calc_sheet = calc_sheet
 
-    cell = graphene.Field(Cell, ref=graphene.String(), row=graphene.Int(), col=graphene.Int())
+    name = graphene.String()
+    id = graphene.Int()
+
+    def resolve_name(self, info: graphene.ResolveInfo) -> str:
+        return self._calc_sheet.name
+
+    def resolve_id(self, info: graphene.ResolveInfo) -> int:
+        return self._calc_sheet.sheet_id
+
+    cell = graphene.Field(Cell, required=True, ref=graphene.String(), row=graphene.Int(), col=graphene.Int())
 
     def resolve_cell(
         self,
@@ -78,25 +125,9 @@ class Sheet(graphene.ObjectType):
         col: int | None = None,
     ) -> Cell:
         if ref is not None and row is None and col is None:
-            # resolving ref (eg "A1")
-            # TODO: extract from workbook json
-            return Cell(
-                text="$1.23",
-                number=1.234,
-                format="$#,##0.00",
-                boolean=None,
-                type="float",
-            )
+            return Cell(calc_cell=self._calc_sheet[ref])
         elif ref is None and row is not None and col is not None:
-            # resolving row/col
-            # TODO: extract from workbook JSON
-            return Cell(
-                text="$1.23",
-                number=1.234,
-                format="$#,##0.00",
-                boolean=None,
-                type="float",
-            )
+            return Cell(calc_cell=self._calc_sheet.cell(row, col))
         else:
             log.error("ERROR - ref/row/col")
             raise GraphQLError("ERROR - ref/row/col")
@@ -113,26 +144,21 @@ class Workbook(DjangoObjectType):
             "revision",
         )
 
-    sheet = graphene.Field(Sheet, sheet_id=graphene.String(), name=graphene.String())
+    sheet = graphene.Field(Sheet, sheet_id=graphene.Int(), name=graphene.String())
     sheets = graphene.List(Sheet)
 
-    def resolve_sheet(self, info: graphene.ResolveInfo, sheet_id: str | None = None, name: str | None = None) -> Sheet:
+    def resolve_sheet(self, info: graphene.ResolveInfo, sheet_id: int | None = None, name: str | None = None) -> Sheet:
         if sheet_id is not None and name is None:
-            return Sheet(name="Sheet1", id=sheet_id)
+            return Sheet(calc_sheet=self.calc.sheets._get_sheet(sheet_id))  # noqa: WPS437
         elif sheet_id is None and name is not None:
-            return Sheet(name=name, id="id-1234-56")
+            return Sheet(calc_sheet=self.calc.sheets[name])
         else:
             log.error("ERROR - name/id")
             raise Exception("ERROR - name/id")
 
     def resolve_sheets(self, info: graphene.ResolveInfo) -> Iterable[Sheet]:
         log.info("Origin: %s" % info.context.META.get("Origin"))
-        # TODO: read from workbook JSON
-        return [
-            Sheet(name="Sheet1", id="id-1"),
-            Sheet(name="Sheet1", id="id-2"),
-            Sheet(name="Sheet1", id="id-3"),
-        ]
+        yield from (Sheet(calc_sheet=sheet) for sheet in self.calc.sheets)
 
 
 class Query(graphene.ObjectType):
@@ -162,13 +188,17 @@ class SaveWorkbook(graphene.Mutation):
         root: Any,
         info: graphene.ResolveInfo,
         workbook_id: str,
-        workbook_json: dict[str, Any],
+        workbook_json: str,
     ) -> Self:
-        # TODO: validate the JSON
-        workbook = models.Workbook.objects.get(id=workbook_id)
-        workbook.workbook_json = workbook_json
+        workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
+
+        try:
+            workbook.workbook_json = equalto.loads(workbook_json).json
+        except equalto.exceptions.WorkbookError:
+            raise GraphQLError("Could not parse workbook JSON")
+
         workbook.revision += 1
-        workbook.save()
+        workbook.save(update_fields=["workbook_json", "revision"])
 
         return SaveWorkbook(revision=workbook.revision)
 
@@ -177,7 +207,7 @@ class SetCellInput(graphene.Mutation):
     # simulates entering text in the spreadsheet widget
     class Arguments:
         workbook_id = graphene.String(required=True)
-        sheet_id = graphene.String()
+        sheet_id = graphene.Int()
         sheet_name = graphene.String()
         ref = graphene.String()
         row = graphene.Int()
@@ -185,7 +215,7 @@ class SetCellInput(graphene.Mutation):
 
         input = graphene.String(required=True)
 
-    workbook = graphene.Field(Workbook)
+    workbook = graphene.Field(Workbook, required=True)
 
     @classmethod
     @validate_license_for_workbook_mutation
@@ -195,22 +225,33 @@ class SetCellInput(graphene.Mutation):
         info: graphene.ResolveInfo,
         workbook_id: str,
         input: str,
-        sheet_id: str | None = None,
+        sheet_id: int | None = None,
         sheet_name: str | None = None,
         ref: str | None = None,
         row: int | None = None,
         col: int | None = None,
     ) -> Self:
-        # sheet_id XOR sheet_name must be specified
-        assert (sheet_id is None and sheet_name is not None) or (sheet_id is not None and sheet_name is None)
-        # ref XOR (row, col) must be specified
-        assert (ref is None and row is not None and col is not None) or (
-            ref is not None and row is None and col is None
-        )
-        workbook = models.Workbook.objects.get(id=workbook_id)
-        # TODO - modify workbook data and reeval workbook
+        workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
+
+        if sheet_name is not None:
+            assert sheet_id is None
+            sheet = workbook.calc.sheets[sheet_name]
+        else:
+            assert sheet_id is not None
+            sheet = workbook.calc.sheets._get_sheet(sheet_id)  # noqa: WPS437
+
+        if ref is not None:
+            assert row is None and col is None
+            cell = sheet[ref]
+        else:
+            assert row is not None and col is not None
+            cell = sheet.cell(row, col)
+
+        cell.set_user_input(input)
+
+        workbook.workbook_json = workbook.calc.json
         workbook.revision += 1
-        workbook.save()
+        workbook.save(update_fields=["workbook_json", "revision"])
         return SetCellInput(workbook=workbook)
 
 

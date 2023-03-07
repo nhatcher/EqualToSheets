@@ -41,6 +41,8 @@ class Sheet:
         self[key].delete()
 
     def cell(self, row: int, column: int) -> Cell:
+        if row < 1 or column < 1:
+            raise WorkbookError("invalid cell index")
         key = (row, column)
         if key not in self._cell_cache:
             self._cell_cache[key] = Cell(sheet=self, row=row, column=column)

@@ -160,6 +160,19 @@ def test_get_sheet_cell_by_index(empty_workbook: Workbook, sheet: Sheet) -> None
     assert empty_workbook[reference].value == 3
 
 
+@pytest.mark.parametrize(
+    "row, column",
+    [
+        (1, 0),
+        (0, 1),
+        (-1, 1),
+    ],
+)
+def test_get_sheet_cell_by_invalid_index(sheet: Sheet, row: int, column: int) -> None:
+    with pytest.raises(WorkbookError, match="invalid cell index"):
+        sheet.cell(row, column)
+
+
 def test_add_sheet(empty_workbook: Workbook) -> None:
     sheet = empty_workbook.sheets.add("New Sheet")
     assert sheet.name == "New Sheet"
