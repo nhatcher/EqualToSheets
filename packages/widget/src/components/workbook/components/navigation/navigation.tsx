@@ -70,6 +70,7 @@ const Navigation: FunctionComponent<NavigationProps> = (properties) => {
 };
 
 const NavigationContainer = styled.div`
+  border-top: 1px solid ${palette.grays.gray2};
   flex-shrink: 0;
   display: flex;
   flex-direction: row;

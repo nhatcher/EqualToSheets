@@ -202,7 +202,18 @@ const useWorkbookActions = (
         type: WorkbookActionType.EDIT_END,
         payload: { deltaRow, deltaColumn, canvasRef: worksheetCanvas },
       });
-      rootElement.current?.focus();
+      if (rootElement.current) {
+        rootElement.current?.focus();
+        // HACK: We need to select something inside the root for onCopy to work
+        const selection = window.getSelection();
+        if (selection) {
+          selection.empty();
+          const range = new Range();
+          range.setStart(rootElement.current.firstChild as Node, 0);
+          range.setEnd(rootElement.current.firstChild as Node, 0);
+          selection.addRange(range);
+        }
+      }
     },
     [dispatch, rootElement, worksheetCanvas],
   );

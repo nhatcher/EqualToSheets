@@ -159,8 +159,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       const { sheetStates } = state;
       const model = state.modelRef.current;
       const tabs = model.getTabs();
-      /**
-       * FIXME: Sheet state should be saved when it's modified not when sheet is changed
       if (tabs[state.selectedSheet]) {
         sheetStates[tabs[state.selectedSheet].sheet_id] = {
           scrollPosition: { ...state.scrollPosition },
@@ -169,7 +167,6 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
           extendToArea: state.extendToArea && { ...state.extendToArea },
         };
       }
-        */
       let { sheet } = action.payload;
 
       // In case the sheet does not exist anymore (i.e. has been deleted)

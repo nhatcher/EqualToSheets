@@ -16,7 +16,6 @@ export enum EditorPageTestId {
 }
 
 const Editor: FunctionComponent<{
-  display: boolean;
   onReferencesChanged: (references: ColoredFormulaReference[]) => void;
 }> = (properties) => {
   const { onReferencesChanged } = properties;
@@ -38,7 +37,7 @@ const Editor: FunctionComponent<{
 
   const formulaReferences = getReferencesFromFormula(
     text,
-    selectedSheet,
+    cellEditing?.sheet ?? selectedSheet,
     model?.getTabs().map((tab) => tab.name) ?? [],
     model?.getTokens ?? (() => []),
   );
@@ -70,16 +69,20 @@ const Editor: FunctionComponent<{
     editorActions.onEditEnd(text, delta);
   };
 
+  const { text: initialText, focus } = cellEditing ?? {};
   useEffect(() => {
-    if (cellEditing) {
-      setText(cellEditing.text);
-      if (cellEditing.focus === FocusType.Cell) {
+    setText(initialText ?? '');
+  }, [initialText]);
+
+  useEffect(() => {
+    if (focus) {
+      if (focus === FocusType.Cell) {
         cellInput.current?.focus();
       } else {
         formulaBarInput.current?.focus();
       }
     }
-  }, [cellEditing, cellInput, formulaBarInput]);
+  }, [cellInput, focus, formulaBarInput]);
 
   const cellEditorKeyDown = useEditorKeyDown({
     onEditEnd,
@@ -88,24 +91,24 @@ const Editor: FunctionComponent<{
     mode: cellEditing?.text === cellInput.current?.value ? 'init' : 'edit',
   });
 
+  const displayCellEditor = !!cellEditing && cellEditing.sheet === selectedSheet;
+
   return (
     <>
-      <CellEditorContainer $display={properties.display}>
+      <CellEditorContainer $display={displayCellEditor}>
         <MaskContainer ref={cellInputMask}>{styledFormula}</MaskContainer>
-        {properties.display ? (
-          <input
-            ref={cellInput}
-            spellCheck="false"
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={cellEditorKeyDown}
-            onScroll={() => {
-              if (cellInputMask.current && cellInput.current) {
-                cellInputMask.current.style.left = `-${cellInput.current.scrollLeft}px`;
-              }
-            }}
-          />
-        ) : null}
+        <input
+          ref={cellInput}
+          spellCheck="false"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={cellEditorKeyDown}
+          onScroll={() => {
+            if (cellInputMask.current && cellInput.current) {
+              cellInputMask.current.style.left = `-${cellInput.current.scrollLeft}px`;
+            }
+          }}
+        />
       </CellEditorContainer>
       {formulaBarEditor.current
         ? createPortal(

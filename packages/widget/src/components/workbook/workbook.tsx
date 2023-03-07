@@ -342,7 +342,6 @@ const Workbook: FunctionComponent<{
           onPaste={stopPropagationIfEditing}
         >
           <Editor
-            display={!!cellEditing}
             onReferencesChanged={(references) => {
               if (worksheetCanvas.current) {
                 worksheetCanvas.current.activeRanges = references;
