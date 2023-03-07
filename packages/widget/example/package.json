@@ -22,7 +22,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "reinstall": "rm -rf ./node_modules/@equalto-software && rm -rf ./node_modules/.cache && npm i"
+    "reinstall": "rm -rf ./node_modules/@equalto-software && rm -rf ./node_modules/.cache && npm i",
+    "start-clean": "cd .. && npm run build-full && cd example && npm run start"
   },
   "eslintConfig": {
     "extends": [
