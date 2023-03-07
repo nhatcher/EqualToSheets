@@ -304,6 +304,15 @@ impl Model {
             Function::Npv => self.units_fn_currency(args, cell),
             Function::Irr => self.units_fn_percentage(args, cell),
             Function::Mirr => self.units_fn_percentage(args, cell),
+            Function::Sln => self.units_fn_currency(args, cell),
+            Function::Syd => self.units_fn_currency(args, cell),
+            Function::Db => self.units_fn_currency(args, cell),
+            Function::Ddb => self.units_fn_currency(args, cell),
+            Function::Cumipmt => self.units_fn_currency(args, cell),
+            Function::Cumprinc => self.units_fn_currency(args, cell),
+            Function::Tbilleq => self.units_fn_percentage_2(args, cell),
+            Function::Tbillprice => self.units_fn_currency(args, cell),
+            Function::Tbillyield => self.units_fn_percentage_2(args, cell),
             _ => None,
         }
     }
@@ -335,6 +344,14 @@ impl Model {
             group_separator: false,
             precision: 0,
             num_fmt: "0%".to_string(),
+        })
+    }
+
+    fn units_fn_percentage_2(&self, _args: &[Node], _cell: &CellReference) -> Option<Units> {
+        Some(Units::Percentage {
+            group_separator: false,
+            precision: 2,
+            num_fmt: "0.00%".to_string(),
         })
     }
 }

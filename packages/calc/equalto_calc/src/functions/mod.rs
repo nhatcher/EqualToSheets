@@ -129,6 +129,25 @@ pub enum Function {
     Xnpv,
     Ispmt,
     Rri,
+
+    Sln,
+    Syd,
+    Nominal,
+    Effect,
+    Pduration,
+
+    Tbillyield,
+    Tbillprice,
+    Tbilleq,
+
+    Dollarde,
+    Dollarfr,
+
+    Ddb,
+    Db,
+
+    Cumprinc,
+    Cumipmt,
 }
 
 impl Function {
@@ -147,6 +166,7 @@ impl Function {
             Function::Textafter => "_xlfn.TEXTAFTER".to_string(),
             Function::Textjoin => "_xlfn.TEXTJOIN".to_string(),
             Function::Rri => "_xlfn.RRI".to_string(),
+            Function::Pduration => "_xlfn.PDURATION".to_string(),
             _ => self.to_string(),
         }
     }
@@ -275,6 +295,25 @@ impl Function {
             "XIRR" => Some(Function::Xirr),
             "ISPMT" => Some(Function::Ispmt),
             "RRI" | "_XLFN.RRI" => Some(Function::Rri),
+
+            "SLN" => Some(Function::Sln),
+            "SYD" => Some(Function::Syd),
+            "NOMINAL" => Some(Function::Nominal),
+            "EFFECT" => Some(Function::Effect),
+            "PDURATION" | "_XLFN.PDURATION" => Some(Function::Pduration),
+
+            "TBILLYIELD" => Some(Function::Tbillyield),
+            "TBILLPRICE" => Some(Function::Tbillprice),
+            "TBILLEQ" => Some(Function::Tbilleq),
+
+            "DOLLARDE" => Some(Function::Dollarde),
+            "DOLLARFR" => Some(Function::Dollarfr),
+
+            "DDB" => Some(Function::Ddb),
+            "DB" => Some(Function::Db),
+
+            "CUMPRINC" => Some(Function::Cumprinc),
+            "CUMIPMT" => Some(Function::Cumipmt),
             _ => None,
         }
     }
@@ -389,6 +428,20 @@ impl fmt::Display for Function {
             Function::Substitute => write!(f, "SUBSTITUTE"),
             Function::Ispmt => write!(f, "ISPMT"),
             Function::Rri => write!(f, "RRI"),
+            Function::Sln => write!(f, "SLN"),
+            Function::Syd => write!(f, "SYD"),
+            Function::Nominal => write!(f, "NOMINAL"),
+            Function::Effect => write!(f, "EFFECT"),
+            Function::Pduration => write!(f, "PDURATION"),
+            Function::Tbillyield => write!(f, "TBILLYIELD"),
+            Function::Tbillprice => write!(f, "TBILLPRICE"),
+            Function::Tbilleq => write!(f, "TBILLEQ"),
+            Function::Dollarde => write!(f, "DOLLARDE"),
+            Function::Dollarfr => write!(f, "DOLLARFR"),
+            Function::Ddb => write!(f, "DDB"),
+            Function::Db => write!(f, "DB"),
+            Function::Cumprinc => write!(f, "CUMPRINC"),
+            Function::Cumipmt => write!(f, "CUMIPMT"),
         }
     }
 }
@@ -522,6 +575,20 @@ impl Model {
             Function::Substitute => self.fn_substitute(args, cell),
             Function::Ispmt => self.fn_ispmt(args, cell),
             Function::Rri => self.fn_rri(args, cell),
+            Function::Sln => self.fn_sln(args, cell),
+            Function::Syd => self.fn_syd(args, cell),
+            Function::Nominal => self.fn_nominal(args, cell),
+            Function::Effect => self.fn_effect(args, cell),
+            Function::Pduration => self.fn_pduration(args, cell),
+            Function::Tbillyield => self.fn_tbillyield(args, cell),
+            Function::Tbillprice => self.fn_tbillprice(args, cell),
+            Function::Tbilleq => self.fn_tbilleq(args, cell),
+            Function::Dollarde => self.fn_dollarde(args, cell),
+            Function::Dollarfr => self.fn_dollarfr(args, cell),
+            Function::Ddb => self.fn_ddb(args, cell),
+            Function::Db => self.fn_db(args, cell),
+            Function::Cumprinc => self.fn_cumprinc(args, cell),
+            Function::Cumipmt => self.fn_cumipmt(args, cell),
         }
     }
 }

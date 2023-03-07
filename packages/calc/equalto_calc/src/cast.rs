@@ -55,6 +55,22 @@ impl Model {
         }
     }
 
+    pub(crate) fn get_number_no_bools(
+        &mut self,
+        node: &Node,
+        cell: CellReference,
+    ) -> Result<f64, CalcResult> {
+        let result = self.evaluate_node_in_context(node, cell);
+        if matches!(result, CalcResult::Boolean(_)) {
+            return Err(CalcResult::new_error(
+                Error::VALUE,
+                cell,
+                "Expecting number".to_string(),
+            ));
+        }
+        self.cast_to_number(result, cell)
+    }
+
     pub(crate) fn get_string(
         &mut self,
         node: &Node,
