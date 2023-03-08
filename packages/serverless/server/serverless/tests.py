@@ -2,14 +2,16 @@ import json
 from asyncio import sleep
 from collections import namedtuple
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import equalto
 from asgiref.sync import sync_to_async
 from django.db import transaction
-from django.test import AsyncClient, RequestFactory, TestCase, TransactionTestCase
+from django.test import AsyncClient, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.utils.http import urlencode
 from graphql import GraphQLError
 
+from serverless.email import LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
@@ -78,7 +80,7 @@ def _create_verified_license(
 ) -> License:
     before_license_ids = list(License.objects.values_list("id", flat=True))
     request = RequestFactory().post("/send-license-key?%s" % urlencode({"email": email, "domains": domains}))
-    send_license_key(request, _send_email=False)
+    send_license_key(request)
     after_license_ids = License.objects.values_list("id", flat=True)
     new_license_ids = list(set(after_license_ids).difference(before_license_ids))
     assert len(new_license_ids) == 1
@@ -104,7 +106,10 @@ class SimpleTest(TestCase):
         response = send_license_key(request)
         self.assertEqual(response.status_code, 400)
 
-    def test_send_license_key_without_domain(self) -> None:
+    @override_settings(ALLOW_ONLY_EMPLOYEE_EMAILS=False)
+    @override_settings(SERVER="https://www.equalto.com/serverless")
+    @patch("serverless.email._send_email")
+    def test_send_license_key_without_domain(self, mock_send_email: MagicMock) -> None:
         # For the beta we're not going to require that users specify domains for their
         # license. And in the situation where no domain is specified, all domains will be allowed.
         # When we move to v1.0, we'll require that users specify the domains on which they
@@ -119,6 +124,28 @@ class SimpleTest(TestCase):
         self.assertEqual(LicenseDomain.objects.filter(license=license).count(), 0)
 
         self.assertFalse(license.email_verified)
+
+        # activation email should be dispatched
+        mock_send_email.assert_called_once()
+        args, _ = mock_send_email.call_args
+        message = args[0].get()
+        self.assertEqual(
+            message,
+            {
+                "from": {"name": "EqualTo", "email": "no-reply@equalto.com"},
+                "personalizations": [
+                    {
+                        "to": [{"email": "joe@example.com"}],
+                        "dynamic_template_data": {
+                            "emailVerificationURL": (
+                                f"https://www.equalto.com/serverless/#/license/activate/{license.id}"
+                            ),
+                        },
+                    },
+                ],
+                "template_id": LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID,
+            },
+        )
 
         # license email not verified, so license not activate
         self.assertFalse(is_license_key_valid_for_host(license.key, "example.com:443"))
@@ -188,7 +215,7 @@ class SimpleTest(TestCase):
                 },
             ),
         )
-        response = send_license_key(request, _send_email=False)
+        response = send_license_key(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(License.objects.count(), 1)
         self.assertListEqual(

@@ -8,5 +8,6 @@ gunicorn~=20.1.0
 isort
 mypy
 psycopg2~=2.9.5
+sendgrid~=6.9.7
 wemake-python-styleguide
 whitenoise~=6.3.0

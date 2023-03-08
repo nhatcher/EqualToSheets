@@ -141,10 +141,14 @@ pygments==2.14.0
     # via
     #   flake8-rst-docstrings
     #   wemake-python-styleguide
+python-http-client==3.3.7
+    # via sendgrid
 pyyaml==6.0
     # via bandit
 restructuredtext-lint==1.4.0
     # via flake8-rst-docstrings
+sendgrid==6.9.7
+    # via -r requirements.in
 six==1.16.0
     # via promise
 smmap==5.0.0
@@ -153,6 +157,8 @@ snowballstemmer==2.2.0
     # via pydocstyle
 sqlparse==0.4.3
     # via django
+starkbank-ecdsa==2.2.0
+    # via sendgrid
 stevedore==5.0.0
     # via bandit
 text-unidecode==1.3

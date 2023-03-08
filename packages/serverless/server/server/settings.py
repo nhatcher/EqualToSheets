@@ -21,6 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEST = "DJANGO_TESTS" in os.environ
 
+SERVER = os.environ["SERVER"]
+
 IS_HEROKU = "DYNO" in os.environ
 
 # Quick-start development settings - unsuitable for production
@@ -28,7 +30,6 @@ IS_HEROKU = "DYNO" in os.environ
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["SECRET_KEY"]
-
 
 # Generally avoid wildcards(*). However since Heroku router provides hostname validation it is ok
 if IS_HEROKU:
@@ -38,6 +39,13 @@ else:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not TEST and os.environ.get("DEBUG", "").lower() == "true"
+
+# Email sending service
+
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+
+EMPLOYEE_EMAIL_PATTERN = "^.*@equalto.com$"
+ALLOW_ONLY_EMPLOYEE_EMAILS = os.environ.get("ALLOW_ONLY_EMPLOYEE_EMAILS", "true").lower() != "false"
 
 # Application definition
 

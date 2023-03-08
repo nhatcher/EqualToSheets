@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404
 from graphene_django.views import GraphQLView
 
 from server import settings
+from serverless.email import send_license_activation_email
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
@@ -28,7 +29,7 @@ def index(request: HttpRequest) -> HttpResponse:
     return HttpResponse("Hello from Python! %s, Workbooks.count: %s" % (equalto.__version__, Workbook.objects.count()))
 
 
-def send_license_key(request: HttpRequest, _send_email: bool = True) -> HttpResponse:
+def send_license_key(request: HttpRequest) -> HttpResponse:
     info("send_license_key(): headers=%s" % request.headers)
     if not settings.DEBUG and request.method != "POST":
         return HttpResponseNotAllowed("405: Method not allowed.")
@@ -54,7 +55,7 @@ def send_license_key(request: HttpRequest, _send_email: bool = True) -> HttpResp
     activation_url = "http://localhost:5000/activate-license-key/%s/" % license.id
     info("activation_url=%s" % activation_url)
 
-    # TODO: send email with newly created license for activation (click on verification link)
+    send_license_activation_email(license)
 
     return JsonResponse({"license_id": str(license.id), "license_key": str(license.key)})
 
