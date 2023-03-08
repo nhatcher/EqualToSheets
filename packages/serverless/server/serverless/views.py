@@ -25,12 +25,10 @@ def send_license_key(request: HttpRequest, _send_email: bool = True) -> HttpResp
         return HttpResponseBadRequest("You must specify the 'email' field.")
     if License.objects.filter(email=email).exists():
         return HttpResponseBadRequest("License key already created for '%s'." % email)
-    domain_csv = request.POST.get("domains", None) or request.GET.get("domains", None)
-    if domain_csv is None:
-        return HttpResponseBadRequest("You must specify the 'domains' field.")
+    domain_csv = request.POST.get("domains", "") or request.GET.get("domains", "")
+    # WARNING: during the beta, if a license has 0 domains, then the license key will work on all domains
+    # TODO: post-beta, we'll require that a license key requires one or more domains
     domains = list(filter(lambda s: s != "", map(lambda s: s.strip(), domain_csv.split(","))))
-    if len(domains) == 0:
-        return HttpResponseBadRequest("You must specify at least one domain from which you intend to access EqualTo.")
 
     # create license & license domains
     license = License(email=email)

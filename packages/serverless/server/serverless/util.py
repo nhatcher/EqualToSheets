@@ -17,9 +17,14 @@ def is_license_key_valid_for_host(license_key: str, host: str) -> bool:
     license = License.objects.get(key=license_key)
     info("got license for %s, host=%s, email_verified=%s" % (license.email, host, license.email_verified))
     return license.email_verified and (
-        # exact mach
-        LicenseDomain.objects.filter(license=license, domain=domain).exists()
-        or
-        # parent with wild card
-        LicenseDomain.objects.filter(license=license, domain=parent_wild_card).exists()
+        # WARNING: during the beta, if a license has 0 domains then it works on all domains
+        # TODO: remove this after the beta
+        LicenseDomain.objects.filter(license=license).count() == 0
+        or (
+            # exact mach
+            LicenseDomain.objects.filter(license=license, domain=domain).exists()
+            or
+            # parent with wild card
+            LicenseDomain.objects.filter(license=license, domain=parent_wild_card).exists()
+        )
     )

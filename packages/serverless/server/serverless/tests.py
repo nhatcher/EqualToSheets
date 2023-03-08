@@ -83,15 +83,51 @@ class SimpleTest(TestCase):
         response = send_license_key(request)
         self.assertEqual(response.status_code, 400)
 
+    def test_send_license_key_without_domain(self) -> None:
+        # For the beta we're not going to require that users specify domains for their
+        # license. And in the situation where no domain is specified, all domains will be allowed.
+        # When we move to v1.0, we'll require that users specify the domains on which they
+        # want to use their license key.
+
         # domain missing
         request = self.factory.post("/send-license-key?%s" % urlencode({"email": "joe@example.com"}))
         response = send_license_key(request)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
 
-        # domain missing
-        request = self.factory.post("/send-license-key?%s" % urlencode({"email": "joe@example.com", "domains": ""}))
+        license = License.objects.get()
+        self.assertEqual(LicenseDomain.objects.filter(license=license).count(), 0)
+
+        self.assertFalse(license.email_verified)
+
+        # license email not verified, so license not activate
+        self.assertFalse(is_license_key_valid_for_host(license.key, "example.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "example2.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example3.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
+
+        # verify email address, activating license
+        request = self.factory.get("/activate-license-key/%s/" % license.id)
+        response = activate_license_key(request, license.id)
+        self.assertEqual(response.status_code, 200)
+        license.refresh_from_db()
+        self.assertTrue(license.email_verified)
+
+        # license activated, should work on all domains since no LicenseDomain records
+        # are associated with the license
+        self.assertTrue(is_license_key_valid_for_host(license.key, "example.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, "example2.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, "sub.example3.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, "other.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
+
+        # domain parameter specified as the empty string
+        request = self.factory.post("/send-license-key?%s" % urlencode({"email": "joe2@example.com", "domains": ""}))
         response = send_license_key(request)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
+        license2 = License.objects.get(email="joe2@example.com")
+        self.assertFalse(license2.email_verified)
+        self.assertEqual(LicenseDomain.objects.filter(license=license2).count(), 0)
 
     def test_send_license_key(self) -> None:
         self.assertEqual(License.objects.count(), 0)
