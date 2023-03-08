@@ -1,8 +1,12 @@
+import json
+from asyncio import sleep
 from collections import namedtuple
 from typing import Any
 
 import equalto
-from django.test import RequestFactory, TestCase
+from asgiref.sync import sync_to_async
+from django.db import transaction
+from django.test import AsyncClient, RequestFactory, TestCase, TransactionTestCase
 from django.utils.http import urlencode
 from graphql import GraphQLError
 
@@ -13,6 +17,7 @@ from serverless.util import is_license_key_valid_for_host
 from serverless.views import activate_license_key, send_license_key
 
 
+@transaction.atomic
 def graphql_query(
     query: str,
     origin: str,
@@ -65,6 +70,22 @@ def _set_workbook_data(workbook: Workbook, workbook_data: dict[str, Any]) -> Non
 
     workbook.workbook_json = wb.json
     workbook.save()
+
+
+def _create_verified_license(
+    email: str = "joe@example.com",
+    domains: str = "example.com,example2.com,*.example3.com",
+) -> License:
+    before_license_ids = list(License.objects.values_list("id", flat=True))
+    request = RequestFactory().post("/send-license-key?%s" % urlencode({"email": email, "domains": domains}))
+    send_license_key(request, _send_email=False)
+    after_license_ids = License.objects.values_list("id", flat=True)
+    new_license_ids = list(set(after_license_ids).difference(before_license_ids))
+    assert len(new_license_ids) == 1
+    license = License.objects.get(id=new_license_ids[0])
+    license.email_verified = True
+    license.save()
+    return license
 
 
 class SimpleTest(TestCase):
@@ -181,24 +202,8 @@ class SimpleTest(TestCase):
         self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
         self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
 
-    def _create_verified_license(
-        self,
-        email: str = "joe@example.com",
-        domains: str = "example.com,example2.com,*.example3.com",
-    ) -> License:
-        before_license_ids = list(License.objects.values_list("id", flat=True))
-        request = self.factory.post("/send-license-key?%s" % urlencode({"email": email, "domains": domains}))
-        send_license_key(request, _send_email=False)
-        after_license_ids = License.objects.values_list("id", flat=True)
-        new_license_ids = list(set(after_license_ids).difference(before_license_ids))
-        assert len(new_license_ids) == 1
-        license = License.objects.get(id=new_license_ids[0])
-        license.email_verified = True
-        license.save()
-        return license
-
     def test_query_workbooks(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license.key),
             {"data": {"workbooks": []}},
@@ -211,7 +216,7 @@ class SimpleTest(TestCase):
         )
 
     def test_query_workbook(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(
             graphql_query(
@@ -229,7 +234,7 @@ class SimpleTest(TestCase):
         )
 
         # bob can't access joe's workbook
-        license2 = self._create_verified_license(email="bob@example.com")
+        license2 = _create_verified_license(email="bob@example.com")
         self.assertEqual(
             graphql_query(
                 """
@@ -247,8 +252,8 @@ class SimpleTest(TestCase):
         )
 
     def test_query_workbooks_multiple_users(self) -> None:
-        license1 = self._create_verified_license(email="joe@example.com")
-        license2 = self._create_verified_license(email="joe2@example.com")
+        license1 = _create_verified_license(email="joe@example.com")
+        license2 = _create_verified_license(email="joe2@example.com")
         self.assertEqual(
             graphql_query("query {workbooks{id}}", "example.com", license1.key),
             {"data": {"workbooks": []}},
@@ -270,7 +275,7 @@ class SimpleTest(TestCase):
 
     def test_create_workbook(self) -> None:
         self.assertEqual(Workbook.objects.count(), 0)
-        license = self._create_verified_license()
+        license = _create_verified_license()
         data = graphql_query(
             """
             mutation {
@@ -291,7 +296,7 @@ class SimpleTest(TestCase):
 
     def test_create_workbook_unlicensed_domain(self) -> None:
         self.assertEqual(Workbook.objects.count(), 0)
-        license = self._create_verified_license()
+        license = _create_verified_license()
         data = graphql_query(
             """
             mutation {
@@ -308,7 +313,7 @@ class SimpleTest(TestCase):
         self.assertEqual(Workbook.objects.count(), 0)
 
     def test_set_cell_input(self) -> None:
-        license = self._create_verified_license(email="joe@example.com")
+        license = _create_verified_license(email="joe@example.com")
         workbook = _create_workbook(license)
 
         data = graphql_query(
@@ -353,7 +358,7 @@ class SimpleTest(TestCase):
         self.assertEqual(workbook.calc.sheets[0]["B1"].value, 5)
 
         # confirm that "other" license can't modify the workbook
-        license_other = self._create_verified_license(email="other@example.com")
+        license_other = _create_verified_license(email="other@example.com")
         data = graphql_query(
             """
             mutation {
@@ -370,7 +375,7 @@ class SimpleTest(TestCase):
         self.assertIsNone(data["data"]["set_cell_input"])
 
     def test_save_workbook(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(workbook.revision, 1)
 
@@ -395,7 +400,7 @@ class SimpleTest(TestCase):
         self.assertEqual(workbook.workbook_json, new_json)
 
     def test_save_workbook_invalid_json(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license)
         old_workbook_json = workbook.workbook_json
 
@@ -419,11 +424,11 @@ class SimpleTest(TestCase):
         self.assertEqual(workbook.workbook_json, old_workbook_json)
 
     def test_save_workbook_invalid_license(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(workbook.revision, 1)
 
-        license2 = self._create_verified_license(email="bob@example.com")
+        license2 = _create_verified_license(email="bob@example.com")
         data = graphql_query(
             """
             mutation {
@@ -442,7 +447,7 @@ class SimpleTest(TestCase):
         self.assertEqual(workbook.revision, 1)
 
     def test_save_workbook_unlicensed_domain(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license)
         self.assertEqual(workbook.revision, 1)
 
@@ -464,7 +469,7 @@ class SimpleTest(TestCase):
         self.assertEqual(workbook.revision, 1)
 
     def test_query_workbook_sheets(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
 
         self.assertEqual(
@@ -495,7 +500,7 @@ class SimpleTest(TestCase):
         )
 
     def test_query_workbook_sheet(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"FirstSheet": {}, "Calculation": {}, "Data": {}, "LastSheet": {}})
 
         self.assertEqual(
@@ -528,7 +533,7 @@ class SimpleTest(TestCase):
         )
 
     def test_query_cell(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Sheet": {"A1": "$2.50", "A2": "foobar", "A3": "true", "A4": "=2+2*2"}})
 
         self.assertEqual(
@@ -662,7 +667,7 @@ class SimpleTest(TestCase):
             )
 
     def test_create_sheet(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -711,7 +716,7 @@ class SimpleTest(TestCase):
         )
 
     def test_create_sheet_name_in_use(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Sheet": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -738,7 +743,7 @@ class SimpleTest(TestCase):
         )
 
     def test_create_sheet_invalid_license(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -753,7 +758,7 @@ class SimpleTest(TestCase):
                 }
             }""",
             "example.com",
-            self._create_verified_license("bob@example.com").key,
+            _create_verified_license("bob@example.com").key,
             {"workbook_id": str(workbook.id)},
             suppress_errors=True,
         )
@@ -768,7 +773,7 @@ class SimpleTest(TestCase):
         )
 
     def test_delete_sheet(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -808,7 +813,7 @@ class SimpleTest(TestCase):
         )
 
     def test_delete_sheet_invalid_license(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -825,7 +830,7 @@ class SimpleTest(TestCase):
                 }
             }""",
             "example.com",
-            self._create_verified_license("bob@example.com").key,
+            _create_verified_license("bob@example.com").key,
             {"workbook_id": str(workbook.id)},
             suppress_errors=True,
         )
@@ -840,7 +845,7 @@ class SimpleTest(TestCase):
         )
 
     def test_rename_sheet(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -886,7 +891,7 @@ class SimpleTest(TestCase):
         )
 
     def test_rename_sheet_name_in_use(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -913,7 +918,7 @@ class SimpleTest(TestCase):
         )
 
     def test_rename_sheet_invalid_license(self) -> None:
-        license = self._create_verified_license()
+        license = _create_verified_license()
         workbook = _create_workbook(license, {"Calculation": {}, "Data": {}})
         self.assertEqual(workbook.revision, 1)
 
@@ -930,7 +935,7 @@ class SimpleTest(TestCase):
                 }
             }""",
             "example.com",
-            self._create_verified_license("bob@example.com").key,
+            _create_verified_license("bob@example.com").key,
             {"workbook_id": str(workbook.id)},
             suppress_errors=True,
         )
@@ -943,3 +948,67 @@ class SimpleTest(TestCase):
             [sheet.name for sheet in workbook.calc.sheets],
             ["Calculation", "Data"],
         )
+
+
+class GetUpdatedWorkbookTests(TransactionTestCase):
+    def setUp(self) -> None:
+        self.license = _create_verified_license()
+        self.workbook = _create_workbook(self.license, {"Sheet": {"A1": "42"}})
+
+    async def test_get_updated_workbook(self) -> None:
+        self.assertEqual(self.workbook.revision, 1)
+
+        request = AsyncClient().get(
+            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}/",
+            AUTHORIZATION=f"Bearer {self.license.key}",
+        )
+
+        # let's wait a second so that the previous connection can attempt to pull the updated workbook at least once
+        # (a newer version doesn't exist at this stage)
+        await sleep(1)
+
+        # update the workbook
+        await sync_to_async(
+            lambda: graphql_query(
+                """
+                mutation SetCellWorkbook($workbook_id: String!) {
+                    setCellInput(workbookId: $workbook_id, sheetName: "Sheet", ref: "A1", input: "$2.50") {
+                        workbook { id }
+                    }
+                }
+                """,
+                "example.com",
+                self.license.key,
+                {"workbook_id": str(self.workbook.id)},
+            ),
+        )()
+
+        response = await request
+        self.assertEqual(response.status_code, 200)
+
+        # confirm that the response contains the new version of the workbook
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data["revision"], 2)
+
+        wb = equalto.loads(response_data["workbook_json"])
+        self.assertEqual(str(wb["Sheet!A1"]), "$2.50")
+
+    def test_missing_license(self) -> None:
+        response = self.client.get(f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}/")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.content, b"Invalid license")
+
+    def test_invalid_license_for_workbook(self) -> None:
+        response = self.client.get(
+            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}/",
+            HTTP_AUTHORIZATION=f"Bearer {_create_verified_license(email='bob@example.com').key}",
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b"Requested workbook does not exist")
+
+    def test_invalid_revision(self) -> None:
+        response = self.client.get(
+            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision + 1}/",
+            HTTP_AUTHORIZATION=f"Bearer {self.license.key}",
+        )
+        self.assertEqual(response.status_code, 400)

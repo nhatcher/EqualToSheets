@@ -2,6 +2,7 @@ import os
 
 bind = f"0.0.0.0:{os.getenv('PORT')}"
 workers = 4
+threads = 8
 timeout = 600
 reload = os.environ.get("DEBUG", "").lower() == "true"
 disable_redirect_access_to_syslog = True

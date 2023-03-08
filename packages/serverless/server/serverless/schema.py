@@ -9,23 +9,11 @@ from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 
 from serverless import log, models
-from serverless.util import is_license_key_valid_for_host
-
-
-def get_license(info: graphene.ResolveInfo) -> models.License:
-    auth = info.context.META.get("HTTP_AUTHORIZATION", None)
-    if auth is None or auth[:7] != "Bearer ":
-        raise GraphQLError("Invalid license key")
-    license_key = auth[7:]
-    qs_license = models.License.objects.filter(key=license_key)
-    if qs_license.count() == 1:
-        return qs_license.get()
-    log.error("Could not find license for license key %s, qs_license.count()=%s" % (license_key, qs_license.count()))
-    raise GraphQLError("Invalid license key")
+from serverless.util import get_license, is_license_key_valid_for_host
 
 
 def _validate_license_for_workbook(info: graphene.ResolveInfo, workbook_id: str) -> None:
-    license = get_license(info)
+    license = get_license(info.context.META)
     workbook = models.Workbook.objects.get(id=workbook_id)
     if workbook.license != license:
         log.error("User %s cannot access workbook %s" % (license.email, workbook))
@@ -170,7 +158,7 @@ class Query(graphene.ObjectType):
         return models.Workbook.objects.get(id=workbook_id)
 
     def resolve_workbooks(self, info: graphene.ResolveInfo) -> Iterable[models.Workbook]:
-        license = get_license(info)
+        license = get_license(info.context.META)
         return models.Workbook.objects.filter(license=license)
 
 
@@ -327,7 +315,7 @@ class CreateWorkbook(graphene.Mutation):
     def mutate(cls, root: Any, info: graphene.ResolveInfo) -> Self:
         log.info("MUTATE CREATE WORKBOOK")
         # The /graphiql client doesn't seem to be inserting the Authorization header
-        license = get_license(info)
+        license = get_license(info.context.META)
         origin = info.context.META.get("HTTP_ORIGIN")
         log.info(
             "CreateWorkbook: auth=%s, license=%s, origin=%s"

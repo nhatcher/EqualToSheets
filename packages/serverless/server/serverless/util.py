@@ -1,5 +1,24 @@
-from serverless.log import info
+from typing import Any
+
+from serverless.log import error, info
 from serverless.models import License, LicenseDomain
+
+
+class LicenseKeyError(Exception):
+    """A problem with the license key."""
+
+
+def get_license(http_meta: dict[str, Any]) -> License:
+    auth = http_meta.get("HTTP_AUTHORIZATION", None)
+    if auth is None or auth[:7] != "Bearer ":
+        raise LicenseKeyError("Invalid license key")
+    license_key = auth[7:]
+    qs_license = License.objects.filter(key=license_key)
+    try:
+        return qs_license.get()
+    except (License.DoesNotExist, License.MultipleObjectsReturned):
+        error(f"Could not find license for license key {license_key}, {qs_license.count()=}")
+        raise LicenseKeyError("Invalid license key")
 
 
 def is_license_key_valid_for_host(license_key: str, host: str) -> bool:

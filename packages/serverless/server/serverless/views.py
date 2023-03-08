@@ -1,13 +1,25 @@
+from asyncio import sleep
 from typing import Any
 
 import equalto
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
+from asgiref.sync import sync_to_async
+from django.db import transaction
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseNotAllowed,
+    HttpResponseNotFound,
+    JsonResponse,
+)
 from graphene_django.views import GraphQLView
 
 from server import settings
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
+from serverless.util import LicenseKeyError, get_license
 
 
 # Create your views here.
@@ -60,3 +72,41 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
 
 def graphql_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
     return GraphQLView.as_view(graphiql=True, schema=schema)(request, *args, **kwargs)
+
+
+@transaction.non_atomic_requests
+async def get_updated_workbook(request: HttpRequest, workbook_id: str, revision: int) -> HttpResponse:
+    # TODO: Long poll design isn't the best but should be sufficient for the beta.
+    try:
+        license = await sync_to_async(lambda: get_license(request.META))()
+    except LicenseKeyError:
+        return HttpResponseForbidden("Invalid license")
+
+    try:
+        workbook = await Workbook.objects.aget(id=workbook_id, license=license)
+    except Workbook.DoesNotExist:
+        return HttpResponseNotFound("Requested workbook does not exist")
+
+    if workbook.revision < revision:
+        # the client's version is newer, that doesn't seem right
+        return HttpResponseBadRequest()
+
+    # TODO: We should check the license settings against the request HOST but we're skipping that in the beta.
+
+    for _ in range(50):  # 50 attempts, one connection is open for up to ~10s
+        workbook = await _get_updated_workbook(workbook_id, revision)
+        if workbook is not None:
+            return JsonResponse(workbook)
+        await sleep(0.2)
+
+    return HttpResponse(status=408)  # timeout
+
+
+async def _get_updated_workbook(workbook_id: str, revision: int) -> dict[str, Any] | None:
+    workbook = await Workbook.objects.filter(id=workbook_id, revision__gt=revision).order_by("revision").alast()
+    if workbook is None:
+        return None
+    return {
+        "revision": workbook.revision,
+        "workbook_json": workbook.workbook_json,
+    }

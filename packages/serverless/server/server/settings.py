@@ -97,6 +97,8 @@ WSGI_APPLICATION = "server.wsgi.application"
 MAX_CONN_AGE = 600
 SSL_REQUIRE = not DEBUG and not TEST
 
+ATOMIC_REQUESTS = True
+
 # Configure Django for DATABASE_URL environment variable.
 DATABASES: dict[str, Any] = {
     "default": dj_database_url.config(
