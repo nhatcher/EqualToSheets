@@ -58,7 +58,6 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -80,12 +79,6 @@ TEMPLATES = [
             ],
         },
     },
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost",
-    "https://serverless-sheets.herokuapp.com",
-    "https://www.equalto.com",
 ]
 
 WSGI_APPLICATION = "server.wsgi.application"
