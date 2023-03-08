@@ -127,12 +127,26 @@ class SimpleTest(TestCase):
         self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
         self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
 
+        # there shouldn't be any workbooks linked to that license at this point
+        self.assertFalse(Workbook.objects.filter(license=license).exists())
+
         # verify email address, activating license
         request = self.factory.get("/activate-license-key/%s/" % license.id)
         response = activate_license_key(request, license.id)
         self.assertEqual(response.status_code, 200)
         license.refresh_from_db()
         self.assertTrue(license.email_verified)
+
+        self.assertTrue(Workbook.objects.filter(license=license).exists())
+        workbook = Workbook.objects.get(license=license)
+
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                "license_key": str(license.key),
+                "workbook_id": str(workbook.id),
+            },
+        )
 
         # license activated, should work on all domains since no LicenseDomain records
         # are associated with the license
@@ -149,6 +163,18 @@ class SimpleTest(TestCase):
         license2 = License.objects.get(email="joe2@example.com")
         self.assertFalse(license2.email_verified)
         self.assertEqual(LicenseDomain.objects.filter(license=license2).count(), 0)
+
+        # calling the endpoint again should be a noop
+        request = self.factory.get("/activate-license-key/%s/" % license.id)
+        response = activate_license_key(request, license.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {
+                "license_key": str(license.key),
+                "workbook_id": str(workbook.id),
+            },
+        )
 
     def test_send_license_key(self) -> None:
         self.assertEqual(License.objects.count(), 0)

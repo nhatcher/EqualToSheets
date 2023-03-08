@@ -13,6 +13,7 @@ from django.http import (
     HttpResponseNotFound,
     JsonResponse,
 )
+from django.shortcuts import get_object_or_404
 from graphene_django.views import GraphQLView
 
 from server import settings
@@ -52,22 +53,24 @@ def send_license_key(request: HttpRequest, _send_email: bool = True) -> HttpResp
     info("license_id=%s, license key=%s" % (license.id, license.key))
     activation_url = "http://localhost:5000/activate-license-key/%s/" % license.id
     info("activation_url=%s" % activation_url)
-    # TODO:
-    #   0. Create License and LicenseDomains records
-    #   1. send email with newly created license for activation (click on verification link)
-    #   2. display instructions ("check email")
 
-    return HttpResponse(
-        'License key created: <a href="/activate-license-key/%s">activate %s</a>' % (license.id, license.key),
-    )
+    # TODO: send email with newly created license for activation (click on verification link)
+
+    return JsonResponse({"license_id": str(license.id), "license_key": str(license.key)})
 
 
 def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
-    license = License.objects.get(id=license_id)
+    license = get_object_or_404(License, id=license_id)
+
     license.email_verified = True
     license.save()
 
-    return HttpResponse("Your license key: %s. Code samples: ..." % license.key)
+    workbook = Workbook.objects.filter(license=license).order_by("create_datetime").first()
+    if workbook is None:
+        # create a new workbook which can be used in the sample snippet
+        workbook = Workbook.objects.create(license=license)
+
+    return JsonResponse({"license_key": str(license.key), "workbook_id": str(workbook.id)})
 
 
 def graphql_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
