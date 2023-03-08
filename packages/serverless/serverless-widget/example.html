@@ -1,0 +1,11 @@
+<html>
+  <body>
+    <div id="workbook-slot"></div>
+
+    <script src="./dist/umd/index.js"></script>
+    <script>
+      EqualToServerless.setLicenseKey('my-license-key');
+      EqualToServerless.load('my-workbook-id', document.getElementById('workbook-slot'));
+    </script>
+  </body>
+</html>
