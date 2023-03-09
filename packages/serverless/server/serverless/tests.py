@@ -1012,7 +1012,7 @@ class GetUpdatedWorkbookTests(TransactionTestCase):
         self.assertEqual(self.workbook.revision, 1)
 
         request = AsyncClient().get(
-            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}/",
+            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}",
             AUTHORIZATION=f"Bearer {self.license.key}",
         )
 
@@ -1047,13 +1047,13 @@ class GetUpdatedWorkbookTests(TransactionTestCase):
         self.assertEqual(str(wb["Sheet!A1"]), "$2.50")
 
     def test_missing_license(self) -> None:
-        response = self.client.get(f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}/")
+        response = self.client.get(f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}")
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.content, b"Invalid license")
 
     def test_invalid_license_for_workbook(self) -> None:
         response = self.client.get(
-            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}/",
+            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision}",
             HTTP_AUTHORIZATION=f"Bearer {_create_verified_license(email='bob@example.com').key}",
         )
         self.assertEqual(response.status_code, 404)
@@ -1061,7 +1061,7 @@ class GetUpdatedWorkbookTests(TransactionTestCase):
 
     def test_invalid_revision(self) -> None:
         response = self.client.get(
-            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision + 1}/",
+            f"/get-updated-workbook/{self.workbook.id}/{self.workbook.revision + 1}",
             HTTP_AUTHORIZATION=f"Bearer {self.license.key}",
         )
         self.assertEqual(response.status_code, 400)

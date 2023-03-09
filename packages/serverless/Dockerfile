@@ -14,10 +14,17 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 RUN apt-get install -y nodejs
 RUN npm install -g npm@9.2.0
+RUN /packages/sdk/typescript/util/install-wasm-pack.sh
+
+RUN mkdir /static
+
+# build the widget
+RUN cd /packages/serverless/serverless-widget && npm run build-full
+RUN mkdir /static/widget
+RUN cp -r /packages/serverless/serverless-widget/dist/umd/index.js /static/widget/
 
 # build the client
 RUN cd /packages/serverless/client && npm install && npm run build
-RUN mkdir /static
 RUN cp -r /packages/serverless/client/build /static/client
 RUN find /static/client -type f -regex ".*.map" | xargs rm
 

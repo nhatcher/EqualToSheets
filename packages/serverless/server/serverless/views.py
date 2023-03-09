@@ -1,7 +1,6 @@
 from asyncio import sleep
 from typing import Any
 
-import equalto
 from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.http import (
@@ -22,11 +21,6 @@ from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
 from serverless.util import LicenseKeyError, get_license
-
-
-# Create your views here.
-def index(request: HttpRequest) -> HttpResponse:
-    return HttpResponse("Hello from Python! %s, Workbooks.count: %s" % (equalto.__version__, Workbook.objects.count()))
 
 
 def send_license_key(request: HttpRequest) -> HttpResponse:
