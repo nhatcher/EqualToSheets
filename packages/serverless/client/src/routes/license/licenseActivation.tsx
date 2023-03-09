@@ -30,19 +30,19 @@ export const LicenseActivationPage = () => {
 const getSnippet = (
   licenseKey: LicenseKey,
   workbookId: string,
-) => `<script language="text/javascript" src="https://sheets.equalto.com/static/v1/equalto.js"/>
-<script language="text/javascript">
+) => `<script src="https://www.equalto.com/serverless/static/v1/equalto.js"></script>
+<script>
   // Sets the Authorization: Bearer <key> http header
   // For production use, use a proxy instead of exposing this
   // in your client code
-  equalto.set_license_key({
-    licenseKey: "${licenseKey}"
-  });
+  EqualToServerless.setLicenseKey(
+    "${licenseKey}"
+  );
   // Insert spreadsheet widget into the DOM
-  equalto.load({
-    workbookId: "${workbookId}",
-    elementId: "workbook-div"
-  });
+  EqualToServerless.load(
+    "${workbookId}",
+    document.getElementById("workbook-slot")
+  );
 </script>
 `;
 
