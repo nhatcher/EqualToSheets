@@ -24,7 +24,7 @@ services:
       - /data/db
     env_file: ./server/wsgi/.env
     ports:
-      - '27017:27017'
+      - "27017:27017"
     networks:
       - backend
 

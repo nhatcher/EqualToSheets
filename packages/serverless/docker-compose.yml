@@ -4,7 +4,7 @@ services:
   server:
     build:
       context: ..
-      dockerfile: ./serverless/server/Dockerfile
+      dockerfile: ./serverless/Dockerfile
     volumes:
       - ./server/:/server
     env_file: ./server/server/.env
@@ -21,7 +21,7 @@ services:
       - /var/lib/postgresql/data
     env_file: ./server/server/.env
     ports:
-      - 5432:5432
+      - "5432:5432"
     networks:
       - backend
 

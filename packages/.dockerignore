@@ -5,3 +5,4 @@
 **/venv
 **/__generated_pkg
 **/static
+**/staticfiles

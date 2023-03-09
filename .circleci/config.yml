@@ -246,7 +246,7 @@ jobs:
       - run:
           command: heroku container:login
       - run:
-          command: heroku container:push web --app serverless-sheets --context-path ../..
-          working_directory: ./packages/serverless/server
+          command: heroku container:push web --app serverless-sheets --context-path ..
+          working_directory: ./packages/serverless
       - heroku/release-docker-image:
           app-name: serverless-sheets

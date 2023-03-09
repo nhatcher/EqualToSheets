@@ -29,6 +29,7 @@
   "scripts": {
     "start": "craco start",
     "test": "craco test",
+    "build": "craco build",
     "prettier": "prettier --write ."
   },
   "eslintConfig": {
