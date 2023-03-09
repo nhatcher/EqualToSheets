@@ -24,6 +24,8 @@ module.exports = {
     '@typescript-eslint/no-use-before-define': 'off',
     // we always want to have an option to have only named exports
     'import/prefer-default-export': 'off',
+    // we don't want to enforce a maximum number of classes per file
+    'max-classes-per-file': 'off',
     // airbnb rule, but allows for 'for ... of ...' syntax
     'no-restricted-syntax': [
       'error',

@@ -67,10 +67,10 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
   // We need to rerender if something changes anyway.
   return (
     <ToolbarRoot data-testid={properties['data-testid']}>
-      <Toolbar.Button onClick={model.undo} disabled={!model.canUndo()} title="Undo">
+      <Toolbar.Button onClick={() => model.undo()} disabled={!model.canUndo()} title="Undo">
         <UndoIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
-      <Toolbar.Button onClick={model.redo} disabled={!model.canRedo()} title="Redo">
+      <Toolbar.Button onClick={() => model.redo()} disabled={!model.canRedo()} title="Redo">
         <RedoIcon size={TOOLBAR_ICON_SIZE} />
       </Toolbar.Button>
       <Toolbar.Separator />

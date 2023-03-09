@@ -1,117 +1,35 @@
-/* eslint-disable class-methods-use-this */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import {
   CellStyleSnapshot,
   FormulaToken,
   ICell,
+  ISheet,
   IWorkbook,
   NavigationDirection,
 } from '@equalto-software/calc';
 import Papa from 'papaparse';
 import { TabsInput } from './components/navigation/common';
 import { workbookLastColumn, workbookLastRow } from './constants';
+import {
+  ActionHistory,
+  AddBlankSheetAction,
+  DeleteColumnAction,
+  DeleteRowAction,
+  DeleteSheetAction,
+  IAction,
+  InsertColumnAction,
+  InsertRowAction,
+  RenameSheetAction,
+  SetCellStyleAction,
+  SetCellValueAction,
+  SetColumnWidthAction,
+  SetRowHeightAction,
+} from './history';
+import { IModel, StyleReducer } from './types';
 import { Area, Cell, NavigationKey } from './util';
-
-export enum ValueType {
-  Boolean = 'boolean',
-  Number = 'number',
-  Text = 'text',
-}
-
-export type ExcelValue = string | number | boolean;
 
 interface ModelSettings {
   workbook: IWorkbook;
   getTokens: (formula: string) => FormulaToken[];
-}
-
-interface RowDiff {
-  rowHeight: number;
-  rowData: string;
-}
-
-interface SetColumnWidthDiff {
-  type: 'set_column_width';
-  sheet: number;
-  column: number;
-  newValue: number;
-  oldValue: number;
-}
-
-interface SetRowHeightDiff {
-  type: 'set_row_height';
-  sheet: number;
-  row: number;
-  newValue: number;
-  oldValue: number;
-}
-
-export type CellValue = string | number | boolean | Date | null;
-
-interface SetCellValueDiff {
-  type: 'set_cell_value';
-  sheet: number;
-  column: number;
-  row: number;
-  newValue: CellValue;
-  newStyle: number;
-  oldValue: CellValue;
-  oldStyle: number;
-}
-
-interface DeleteCellDiff {
-  type: 'delete_cell';
-  sheet: number;
-  column: number;
-  row: number;
-  oldValue: CellValue;
-  oldStyle: number;
-}
-
-interface RemoveCellDiff {
-  type: 'remove_cell';
-  sheet: number;
-  column: number;
-  row: number;
-  oldValue: CellValue;
-  oldStyle: number;
-}
-
-interface SetCellStyleDiff {
-  type: 'set_cell_style';
-  sheet: number;
-  column: number;
-  row: number;
-  oldValue: CellStyle;
-  newValue: CellStyle;
-}
-
-interface InsertRowDiff {
-  type: 'insert_row';
-  sheet: number;
-  row: number;
-}
-
-interface DeleteRowDiff {
-  type: 'delete_row';
-  sheet: number;
-  row: number;
-  oldValue: RowDiff;
-}
-
-type Diff =
-  | SetCellValueDiff
-  | SetColumnWidthDiff
-  | SetRowHeightDiff
-  | DeleteCellDiff
-  | RemoveCellDiff
-  | SetCellStyleDiff
-  | InsertRowDiff
-  | DeleteRowDiff;
-
-function assertUnreachable(value: never): never {
-  throw new Error(`Unreachable value ${value}`);
 }
 
 interface SheetArea extends Area {
@@ -135,8 +53,6 @@ interface SheetData {
     [row: number]: RowData;
   };
 }
-
-type StyleReducer = (style: ICell['style']) => Parameters<ICell['style']['bulkUpdate']>[0];
 
 type PasteType = 'copy' | 'cut';
 
@@ -163,10 +79,12 @@ export type Change = {
 };
 type Subscriber = (change: Change) => void;
 
-export default class Model {
+// FIXME: We should use IDs instead of sheet indexes
+
+export default class Model implements IModel {
   getTokens: (formula: string) => FormulaToken[];
 
-  private history: { undo: Diff[][]; redo: Diff[][] };
+  private history: ActionHistory;
 
   private workbook: IWorkbook;
 
@@ -177,10 +95,7 @@ export default class Model {
   constructor(options: ModelSettings) {
     this.workbook = options.workbook;
     this.getTokens = options.getTokens;
-    this.history = {
-      undo: [],
-      redo: [],
-    };
+    this.history = new ActionHistory();
   }
 
   subscribe(subscriber: Subscriber): number {
@@ -202,6 +117,7 @@ export default class Model {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSheetColor(sheet: number, color: string): void {
     // TODO: this.wasm.set_sheet_color(sheet, color);
     this.notifySubscribers({ type: 'setSheetColor' });
@@ -212,7 +128,13 @@ export default class Model {
   }
 
   setColumnWidth(sheet: number, column: number, width: number): void {
+    const oldWidth = this.getColumnWidth(sheet, column);
+
     this.workbook.sheets.get(sheet).setColumnWidth(column, width);
+
+    const newWidth = this.getColumnWidth(sheet, column);
+    this.history.push([new SetColumnWidthAction(this, sheet, column, oldWidth, newWidth)]);
+
     this.notifySubscribers({ type: 'setColumnWidth' });
   }
 
@@ -230,7 +152,13 @@ export default class Model {
   }
 
   setRowHeight(sheet: number, row: number, height: number): void {
+    const oldHeight = this.getRowHeight(sheet, row);
+
     this.workbook.sheets.get(sheet).setRowHeight(row, height);
+
+    const newHeight = this.getRowHeight(sheet, row);
+    this.history.push([new SetRowHeightAction(this, sheet, row, oldHeight, newHeight)]);
+
     this.notifySubscribers({ type: 'setRowHeight' });
   }
 
@@ -246,22 +174,37 @@ export default class Model {
     return this.workbook.sheets.get(sheet).cell(row, column).style;
   }
 
-  addBlankSheet(): void {
-    this.workbook.sheets.add();
+  addBlankSheet(): ISheet {
+    const sheet = this.workbook.sheets.add();
+
+    this.history.push([new AddBlankSheetAction(this, sheet.index)]);
     this.notifySubscribers({ type: 'addBlankSheet' });
+
+    return sheet;
   }
 
   renameSheet(sheet: number, newName: string): void {
-    this.workbook.sheets.get(sheet).name = newName;
+    const worksheet = this.workbook.sheets.get(sheet);
+    const oldName = worksheet.name;
+
+    worksheet.name = newName;
+
+    this.history.push([new RenameSheetAction(this, sheet, newName, oldName)]);
     this.notifySubscribers({ type: 'renameSheet' });
   }
 
   deleteSheet(sheet: number): void {
-    this.workbook.sheets.get(sheet).delete();
+    const worksheet = this.workbook.sheets.get(sheet);
+    const { name } = worksheet;
+
+    worksheet.delete();
+
+    this.history.push([new DeleteSheetAction(this, sheet, name)]);
     this.notifySubscribers({ type: 'deleteSheet' });
   }
 
   setCellsStyle(sheet: number, area: Area, reducer: StyleReducer): void {
+    const actions: IAction[] = [];
     let { rowStart, rowEnd, columnStart, columnEnd } = area;
     if (rowStart > rowEnd) {
       [rowStart, rowEnd] = [rowEnd, rowStart];
@@ -272,9 +215,15 @@ export default class Model {
     for (let row = rowStart; row <= rowEnd; row += 1) {
       for (let column = columnStart; column <= columnEnd; column += 1) {
         const cell = this.workbook.sheets.get(sheet).cell(row, column);
+        const oldStyle = cell.style.getSnapshot();
+
         cell.style.bulkUpdate(reducer(cell.style));
+
+        const newStyle = cell.style.getSnapshot();
+        actions.push(new SetCellStyleAction(this, { sheet, row, column }, newStyle, oldStyle));
       }
     }
+    this.history.push(actions);
     this.notifySubscribers({ type: 'setCellsStyle' });
   }
 
@@ -314,9 +263,7 @@ export default class Model {
   }
 
   isQuotePrefix(sheet: number, row: number, column: number): boolean {
-    const style = this.getCellStyle(sheet, row, column);
-    // FIXME
-    return false;
+    return this.getCellStyle(sheet, row, column).hasQuotePrefix;
   }
 
   getFormulaOrValue(sheet: number, row: number, column: number): string {
@@ -328,172 +275,72 @@ export default class Model {
     return this.workbook.cell(sheet, row, column).formula !== null;
   }
 
+  enableHistory() {
+    this.history.enable();
+  }
+
+  disableHistory() {
+    this.history.disable();
+  }
+
   canUndo(): boolean {
-    return this.history.undo.length > 0;
+    return this.history.canUndo();
   }
 
   undo(): void {
-    /* const diffs = this.history.undo.pop();
-    if (!diffs) {
-      return;
-    }
-    const { workbook } = this;
-    this.history.redo.push(diffs);
-    let forceEvaluate = false;
-    for (const diff of diffs) {
-      switch (diff.type) {
-        case 'set_cell_value': {
-          if (diff.oldValue !== null) {
-            wasm.set_input(diff.sheet, diff.row, diff.column, diff.oldValue, diff.oldStyle);
-          } else {
-            wasm.set_input(diff.sheet, diff.row, diff.column, '', diff.oldStyle);
-            wasm.delete_cell(diff.sheet, diff.row, diff.column);
-          }
-          forceEvaluate = true;
-          break;
-        }
-        case 'set_column_width': {
-          wasm.set_column_width(diff.sheet, diff.column, diff.oldValue);
-          break;
-        }
-        case 'set_row_height': {
-          wasm.set_row_height(diff.sheet, diff.row, diff.oldValue);
-          break;
-        }
-        case 'delete_cell': {
-          if (diff.oldValue !== null) {
-            wasm.set_input(diff.sheet, diff.row, diff.column, diff.oldValue, diff.oldStyle);
-            forceEvaluate = true;
-          }
-          break;
-        }
-        case 'remove_cell': {
-          if (diff.oldValue !== null) {
-            wasm.set_input(diff.sheet, diff.row, diff.column, diff.oldValue, diff.oldStyle);
-            forceEvaluate = true;
-          } else {
-            wasm.set_input(diff.sheet, diff.row, diff.column, '', diff.oldStyle);
-            wasm.delete_cell(diff.sheet, diff.row, diff.column);
-          }
-          break;
-        }
-        case 'set_cell_style': {
-          wasm.set_cell_style(diff.sheet, diff.row, diff.column, diff.oldValue);
-          break;
-        }
-        case 'insert_row': {
-          wasm.delete_rows(diff.sheet, diff.row, 1);
-          forceEvaluate = true;
-          break;
-        }
-        case 'delete_row': {
-          wasm.insert_rows(diff.sheet, diff.row, 1);
-          const { rowData, rowHeight } = diff.oldValue;
-          wasm.set_row_height(diff.sheet, diff.row, rowHeight);
-          wasm.set_row_undo_data(diff.sheet, diff.row, rowData);
-          forceEvaluate = true;
-          break;
-        }
-        /* istanbul ignore next */
-    /* default: {
-          const unrecognized: never = diff;
-          throw new Error(`Unrecognized diff type - ${unrecognized}}.`);
-        }
-      }
-    }
-    if (forceEvaluate) {
-      wasm.evaluate();
-    } */
+    this.history.undo();
   }
 
   canRedo(): boolean {
-    return this.history.redo.length > 0;
+    return this.history.canRedo();
   }
 
   redo(): void {
-    /* const diffs = this.history.redo.pop();
-    if (!diffs) {
-      return;
+    this.history.redo();
+  }
+
+  private static getInputValue(cell: ICell): string | null {
+    const oldValue = cell.formula ?? cell.value;
+    if (oldValue === null) {
+      return null;
     }
-    const { wasm } = this;
-    this.history.undo.push(diffs);
-    let forceEvaluate = false;
-    for (const diff of diffs) {
-      switch (diff.type) {
-        case 'set_cell_value': {
-          if (diff.newValue !== null) {
-            wasm.set_input(diff.sheet, diff.row, diff.column, diff.newValue, diff.newStyle);
-          } else {
-            // we need to set the style
-            wasm.set_input(diff.sheet, diff.row, diff.column, '', diff.newStyle);
-            wasm.delete_cell(diff.sheet, diff.row, diff.column);
-          }
-          forceEvaluate = true;
-          break;
-        }
-        case 'set_column_width': {
-          wasm.set_column_width(diff.sheet, diff.column, diff.newValue);
-          break;
-        }
-        case 'set_row_height': {
-          wasm.set_row_height(diff.sheet, diff.row, diff.newValue);
-          break;
-        }
-        case 'delete_cell': {
-          wasm.delete_cell(diff.sheet, diff.row, diff.column);
-          forceEvaluate = true;
-          break;
-        }
-        case 'remove_cell': {
-          wasm.remove_cell(diff.sheet, diff.row, diff.column);
-          forceEvaluate = true;
-          break;
-        }
-        case 'set_cell_style': {
-          wasm.set_cell_style(diff.sheet, diff.row, diff.column, diff.newValue);
-          break;
-        }
-        case 'insert_row': {
-          wasm.insert_rows(diff.sheet, diff.row, 1);
-          forceEvaluate = true;
-          break;
-        }
-        case 'delete_row': {
-          wasm.delete_rows(diff.sheet, diff.row, 1);
-          forceEvaluate = true;
-          break;
-        }
-        /* istanbul ignore next */
-    /* default: {
-          const unrecognized: never = diff;
-          throw new Error(`Unrecognized diff type - ${unrecognized}}.`);
-        }
-      }
-    }
-    if (forceEvaluate) {
-      wasm.evaluate();
-    } */
+    return `${oldValue}`;
   }
 
   deleteCells(sheet: number, area: Area): void {
-    const diffs: Diff[] = [];
+    const actions: IAction[] = [];
+
     for (let row = area.rowStart; row <= area.rowEnd; row += 1) {
       for (let column = area.columnStart; column <= area.columnEnd; column += 1) {
+        const cell = this.workbook.cell(sheet, row, column);
+        const oldValue = Model.getInputValue(cell);
+        const oldStyle = cell.style.getSnapshot();
+
         // TODO: A lot of evaluations
         this.workbook.cell(sheet, row, column).value = null;
+        actions.push(
+          new SetCellValueAction(this, { sheet, row, column }, null, oldValue),
+          new SetCellStyleAction(this, { sheet, row, column }, null, oldStyle),
+        );
       }
     }
-    this.history.undo.push(diffs);
-    this.history.redo = [];
+
+    this.history.push(actions);
     this.notifySubscribers({ type: 'deleteCells' });
   }
 
   setCellValue(sheet: number, row: number, column: number, value: string): void {
-    this.workbook.cell(sheet, row, column).input = value;
+    const cell = this.workbook.cell(sheet, row, column);
+    const oldValue = Model.getInputValue(cell);
+
+    cell.input = value;
+    this.history.push([new SetCellValueAction(this, { sheet, row, column }, value, oldValue)]);
     this.notifySubscribers({ type: 'setCellValue' });
   }
 
   extendTo(sheet: number, sourceArea: Area, targetArea: Area): void {
+    const actions: IAction[] = [];
+
     const sourceRowBoundaries = [sourceArea.rowStart, sourceArea.rowEnd];
     const sourceColumnBoundaries = [sourceArea.columnStart, sourceArea.columnEnd];
 
@@ -534,9 +381,31 @@ export default class Model {
           ? targetArea.columnStart + columnOffset
           : targetArea.columnEnd - columnOffset;
 
+        const cell = this.workbook.cell(sheet, targetRow, targetColumn);
+        const oldValue = Model.getInputValue(cell);
+        const oldStyle = cell.style.getSnapshot();
+
         this.extendToCell(sheet, sourceRow, sourceColumn, targetRow, targetColumn);
+
+        const newValue = Model.getInputValue(cell);
+        const newStyle = cell.style.getSnapshot();
+        actions.push(
+          new SetCellValueAction(
+            this,
+            { sheet, row: targetRow, column: targetColumn },
+            newValue,
+            oldValue,
+          ),
+          new SetCellStyleAction(
+            this,
+            { sheet, row: targetRow, column: targetColumn },
+            newStyle,
+            oldStyle,
+          ),
+        );
       }
     }
+    this.history.push(actions);
     this.notifySubscribers({ type: 'extendTo' });
   }
 
@@ -558,26 +427,14 @@ export default class Model {
     targetCell.style = sourceCell.style;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
   getFrozenRowsCount(sheet: number): number {
     return 0;
-    /*
-    const result = this.wasm.get_frozen_rows(sheet);
-    if (!result.success) {
-      return 0;
-    }
-    return result.value;
-    */
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
   getFrozenColumnsCount(sheet: number): number {
     return 0;
-    /*
-    const result = this.wasm.get_frozen_columns(sheet);
-    if (!result.success) {
-      return 0;
-    }
-    return result.value;
-    */
   }
 
   copy(area: SheetArea): { tsv: string; area: SheetArea; sheetData: SheetData } {
@@ -607,6 +464,7 @@ export default class Model {
 
   // This takes care of _internal_ paste, that is copy/paste within the application
   paste(source: SheetArea, target: SheetArea, sheetData: SheetData, type: PasteType): void {
+    const actions: IAction[] = [];
     const sourceArea = {
       sheet: source.sheet,
       row: source.rowStart,
@@ -625,14 +483,17 @@ export default class Model {
         const targetColumn = column + deltaColumn;
 
         const cell = this.workbook.cell(target.sheet, targetRow, targetColumn);
-        cell.style.bulkUpdate(cellData.style);
+        const oldValue = Model.getInputValue(cell);
+        const oldStyle = cell.style.getSnapshot();
+        const newStyle = cellData.style;
+        let newValue;
 
         if (cellData.value === null) {
-          cell.input = '';
+          newValue = '';
         } else {
           switch (type) {
             case 'copy': {
-              cell.input = this.workbook.getCopiedValueExtended(
+              newValue = this.workbook.getCopiedValueExtended(
                 cellData.value,
                 sheetData.sheetName,
                 { sheet: source.sheet, row, column },
@@ -641,7 +502,7 @@ export default class Model {
               break;
             }
             case 'cut': {
-              cell.input = this.workbook.getCutValueMoved(
+              newValue = this.workbook.getCutValueMoved(
                 cellData.value,
                 { sheet: source.sheet, row, column },
                 { sheet: target.sheet, row: targetRow, column: targetColumn },
@@ -656,6 +517,25 @@ export default class Model {
             }
           }
         }
+
+        cell.input = newValue;
+        cell.style.bulkUpdate(newStyle);
+
+        // TODO: Maybe way to stage actions?
+        actions.push(
+          new SetCellValueAction(
+            this,
+            { sheet: target.sheet, row: targetRow, column: targetColumn },
+            newValue,
+            oldValue,
+          ),
+          new SetCellStyleAction(
+            this,
+            { sheet: target.sheet, row: targetRow, column: targetColumn },
+            cellData.style,
+            oldStyle,
+          ),
+        );
       }
     }
 
@@ -668,24 +548,38 @@ export default class Model {
         columnEnd: target.columnStart + source.columnEnd - source.columnStart,
       };
       // remove all cells that are not in the paste area
+      const { sheet } = source;
       for (let row = source.rowStart; row <= source.rowEnd; row += 1) {
         for (let column = source.columnStart; column <= source.columnEnd; column += 1) {
           if (!isCellInArea(source.sheet, row, column, targetArea)) {
-            this.workbook.cell(source.sheet, row, column).delete();
+            // FIXME: Should be able to reuse this.deleteCells
+            const cell = this.workbook.cell(sheet, row, column);
+            const oldValue = Model.getInputValue(cell);
+            const oldStyle = cell.style.getSnapshot();
+
+            // TODO: A lot of evaluations
+            this.workbook.cell(sheet, row, column).value = null;
+            actions.push(
+              new SetCellValueAction(this, { sheet, row, column }, null, oldValue),
+              new SetCellStyleAction(this, { sheet, row, column }, null, oldStyle),
+            );
           }
         }
       }
       // Change all formulas that pointed to the old area to the new area
+      // TODO: paste - we need forwardReferences diff getter
       this.workbook.forwardReferences(sourceArea, {
         sheet: target.sheet,
         row: target.rowStart,
         column: target.columnStart,
       });
     }
+    this.history.push(actions);
     this.notifySubscribers({ type: 'paste' });
   }
 
   pasteText(sheet: number, target: Cell, value: string): void {
+    const actions: IAction[] = [];
     const parsedData = Papa.parse(value, { delimiter: '\t', header: false });
     const data = parsedData.data as string[][];
 
@@ -696,9 +590,20 @@ export default class Model {
       for (let deltaColumn = 0; deltaColumn < line.length; deltaColumn += 1) {
         const newValue = line[deltaColumn].trim();
         const targetColumn = target.column + deltaColumn;
-        this.workbook.cell(sheet, targetRow, targetColumn).input = newValue;
+        const cell = this.workbook.cell(sheet, targetRow, targetColumn);
+        const oldValue = Model.getInputValue(cell);
+        cell.input = newValue;
+        actions.push(
+          new SetCellValueAction(
+            this,
+            { sheet, row: targetRow, column: targetColumn },
+            newValue,
+            oldValue,
+          ),
+        );
       }
     }
+    this.history.push(actions);
     this.notifySubscribers({ type: 'pasteText' });
   }
 
@@ -728,26 +633,36 @@ export default class Model {
 
   insertRow(sheet: number, row: number): void {
     this.workbook.sheets.get(sheet).insertRows(row, 1);
+
+    this.history.push([new InsertRowAction(this, sheet, row)]);
     this.notifySubscribers({ type: 'insertRow' });
   }
 
   // We need to delete (and save) the row style
   // We need to delete (and save) the data
   deleteRow(sheet: number, row: number): void {
+    const height = this.getRowHeight(sheet, row);
     this.workbook.sheets.get(sheet).deleteRows(row, 1);
+
+    this.history.push([new DeleteRowAction(this, sheet, row, height)]);
     this.notifySubscribers({ type: 'deleteRow' });
   }
 
   insertColumn(sheet: number, column: number): void {
     this.workbook.sheets.get(sheet).insertColumns(column, 1);
+
+    this.history.push([new InsertColumnAction(this, sheet, column)]);
     this.notifySubscribers({ type: 'insertRow' });
   }
 
   // We need to delete (and save) the column style
   // We need to delete (and save) the data
   deleteColumn(sheet: number, column: number): void {
+    const width = this.getColumnWidth(sheet, column);
     this.workbook.sheets.get(sheet).deleteColumns(column, 1);
-    this.notifySubscribers({ type: 'deleteRow' });
+
+    this.history.push([new DeleteColumnAction(this, sheet, column, width)]);
+    this.notifySubscribers({ type: 'deleteColumn' });
   }
 
   saveToXlsx(): Uint8Array {
