@@ -14,7 +14,7 @@ from graphql import GraphQLError
 from serverless.email import LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
-from serverless.schema import schema
+from serverless.schema import MAX_WORKBOOK_INPUT_SIZE, MAX_WORKBOOK_JSON_SIZE, MAX_WORKBOOKS_PER_LICENSE, schema
 from serverless.util import is_license_key_valid_for_host
 from serverless.views import activate_license_key, send_license_key
 
@@ -365,6 +365,29 @@ class SimpleTest(TestCase):
         self.assertEqual(data["data"]["create_workbook"], None)
         self.assertEqual(Workbook.objects.count(), 0)
 
+    def test_create_too_many_workbooks(self) -> None:
+        license = _create_verified_license()
+        self.assertEqual(Workbook.objects.count(), 0)
+        for _ in range(MAX_WORKBOOKS_PER_LICENSE):
+            _create_workbook(license)
+        self.assertEqual(Workbook.objects.count(), MAX_WORKBOOKS_PER_LICENSE)
+        with self.assertRaisesMessage(
+            GraphQLError,
+            "You cannot create more than %s workbooks with this license key." % MAX_WORKBOOKS_PER_LICENSE,
+        ):
+            graphql_query(
+                """
+                mutation {
+                    create_workbook: createWorkbook {
+                        workbook{revision, id, workbookJson}
+                    }
+                }
+                """,
+                "example.com",
+                license.key,
+            )
+        self.assertEqual(Workbook.objects.count(), MAX_WORKBOOKS_PER_LICENSE)
+
     def test_set_cell_input(self) -> None:
         license = _create_verified_license(email="joe@example.com")
         workbook = _create_workbook(license)
@@ -427,6 +450,40 @@ class SimpleTest(TestCase):
         )
         self.assertIsNone(data["data"]["set_cell_input"])
 
+    def test_set_cell_input_too_large(self) -> None:
+        license = _create_verified_license(email="joe@example.com")
+        workbook = _create_workbook(license)
+
+        # this should work, we're right up to the limit
+        graphql_query(
+            """
+            mutation SetCellInput($workbook_id: String!) {
+                setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "%s") { workbook { revision } }
+            }
+            """
+            % (" " * (MAX_WORKBOOK_INPUT_SIZE)),
+            "example.com",
+            license.key,
+            {"workbook_id": str(workbook.id)},
+        )
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 2)
+
+        with self.assertRaisesMessage(GraphQLError, "Workbook input too large"):
+            graphql_query(
+                """
+                mutation SetCellInput($workbook_id: String!) {
+                    setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "%s") { workbook { id } }
+                }
+                """
+                % (" " * (MAX_WORKBOOK_INPUT_SIZE + 1)),
+                "example.com",
+                license.key,
+                {"workbook_id": str(workbook.id)},
+            )
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 2)
+
     def test_save_workbook(self) -> None:
         license = _create_verified_license()
         workbook = _create_workbook(license)
@@ -475,6 +532,32 @@ class SimpleTest(TestCase):
         workbook.refresh_from_db()
         self.assertEqual(workbook.revision, 1)
         self.assertEqual(workbook.workbook_json, old_workbook_json)
+
+    def test_save_workbook_json_too_large(self) -> None:
+        license = _create_verified_license()
+        workbook = _create_workbook(license)
+        self.assertEqual(workbook.revision, 1)
+
+        new_workbook_data = json.loads(equalto.new().json)
+        # We store a large string in metadata.application to ensure the JSON exceeds the
+        # MAX_WORKBOOK_JSON_SIZE.
+        new_workbook_data["metadata"]["application"] = "Very Large Name: %s" % (" " * MAX_WORKBOOK_JSON_SIZE)
+        with self.assertRaisesMessage(GraphQLError, "Workbook JSON too large"):
+            graphql_query(
+                """
+                mutation SaveWorkbook($workbook_json: String!) {
+                    save_workbook: saveWorkbook(workbookId: "%s", workbookJson: $workbook_json) {
+                        revision
+                    }
+                }
+                """
+                % str(workbook.id),
+                "example.com",
+                license.key,
+                {"workbook_json": json.dumps(new_workbook_data)},
+            )
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
 
     def test_save_workbook_invalid_license(self) -> None:
         license = _create_verified_license()

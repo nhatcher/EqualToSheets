@@ -11,6 +11,12 @@ from graphql import GraphQLError
 from serverless import log, models
 from serverless.util import get_license, is_license_key_valid_for_host
 
+MAX_WORKBOOKS_PER_LICENSE = 1000
+# 10Mb limit for the beta
+MAX_WORKBOOK_JSON_SIZE = 10 * 1024 * 1024
+# The max length of the input value assigned to a cell
+MAX_WORKBOOK_INPUT_SIZE = 512
+
 
 def _validate_license_for_workbook(info: graphene.ResolveInfo, workbook_id: str) -> None:
     license = get_license(info.context.META)
@@ -178,6 +184,9 @@ class SaveWorkbook(graphene.Mutation):
         workbook_id: str,
         workbook_json: str,
     ) -> Self:
+        if len(workbook_json) > MAX_WORKBOOK_JSON_SIZE:
+            raise GraphQLError("Workbook JSON too large")
+
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
         try:
@@ -219,6 +228,9 @@ class SetCellInput(graphene.Mutation):
         row: int | None = None,
         col: int | None = None,
     ) -> Self:
+        if len(input) > MAX_WORKBOOK_INPUT_SIZE:
+            raise GraphQLError("Workbook input too large")
+
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
         if sheet_name is not None:
@@ -324,6 +336,15 @@ class CreateWorkbook(graphene.Mutation):
         if not is_license_key_valid_for_host(license.key, origin):
             log.error("License key %s is not valid for %s." % (license.key, origin))
             raise GraphQLError("Invalid license key")
+        if models.Workbook.objects.filter(license=license).count() >= MAX_WORKBOOKS_PER_LICENSE:
+            log.error(
+                "License key cannot be used to create any more workbooks (MAX_WORKBOOKS_PER_LICENSE=%s)"
+                % MAX_WORKBOOKS_PER_LICENSE,
+            )
+            raise GraphQLError(
+                "You cannot create more than %s workbooks with this license key." % MAX_WORKBOOKS_PER_LICENSE,
+            )
+
         workbook = models.Workbook(license=license)
         workbook.save()
         # Notice we return an instance of this mutation
