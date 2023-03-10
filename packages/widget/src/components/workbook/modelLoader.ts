@@ -9,9 +9,10 @@ export interface CalcModule {
 export async function getModule(): Promise<CalcModule> {
   const module = await initialize();
   const getTokens = module.utils.getFormulaTokens;
+  const workbookFromJson = module.loadWorkbookFromJson;
   function newEmpty(): Model {
     const workbook = module.newWorkbook();
-    return new Model({ workbook, getTokens });
+    return new Model({ workbook, getTokens, workbookFromJson });
   }
 
   return {

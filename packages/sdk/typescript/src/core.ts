@@ -1,5 +1,10 @@
 import init from './__generated_pkg/equalto_wasm';
-import { IWorkbook, newWorkbook, loadWorkbookFromMemory } from './api/workbook';
+import {
+  IWorkbook,
+  newWorkbook,
+  loadWorkbookFromMemory,
+  loadWorkbookFromJson,
+} from './api/workbook';
 import './dayjsConfig';
 import { getFormulaTokens } from './api/utils';
 
@@ -23,6 +28,7 @@ export const setDefaultWasmInit = (newDefault: typeof defaultWasmInit) => {
 type SheetsApi = {
   newWorkbook(): IWorkbook;
   loadWorkbookFromMemory(data: Uint8Array): IWorkbook;
+  loadWorkbookFromJson(workbookJson: string): IWorkbook;
   utils: {
     getFormulaTokens: typeof getFormulaTokens;
   };
@@ -42,6 +48,7 @@ export async function initialize(): Promise<SheetsApi> {
   return {
     newWorkbook,
     loadWorkbookFromMemory,
+    loadWorkbookFromJson,
     utils: {
       getFormulaTokens,
     },

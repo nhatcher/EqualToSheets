@@ -1,2 +1,3 @@
 export { setLicenseKey } from './license';
-export { load } from './load';
+export { setGraphqlEndpoint, setSyncEndpoint } from './domain';
+export { load, WorkbookComponent as Workbook } from './load';

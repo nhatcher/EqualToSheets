@@ -1,11 +1,17 @@
 <html>
-  <body>
-    <div id="workbook-slot"></div>
 
-    <script src="./dist/umd/index.js"></script>
-    <script>
-      EqualToServerless.setLicenseKey('my-license-key');
-      EqualToServerless.load('my-workbook-id', document.getElementById('workbook-slot'));
-    </script>
-  </body>
+<body style="padding: 50px;">
+  <div id="workbook-slot"></div>
+
+  <script src="./dist/umd/index.js"></script>
+  <script>
+    // Needed for running example locally
+    EqualToServerless.setGraphqlEndpoint('http://127.0.0.1:5000/graphql');
+    EqualToServerless.setSyncEndpoint('http://127.0.0.1:5000/get-updated-workbook');
+
+    EqualToServerless.setLicenseKey('00000000-0000-0000-0000-000000000000');
+    EqualToServerless.load('00000000-0000-0000-0000-000000000000', document.getElementById('workbook-slot'));
+  </script>
+</body>
+
 </html>

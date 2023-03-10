@@ -19,6 +19,7 @@ RUN /packages/sdk/typescript/util/install-wasm-pack.sh
 RUN mkdir /static
 
 # build the widget
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN cd /packages/serverless/serverless-widget && npm run build-full
 RUN mkdir /static/widget
 RUN cp -r /packages/serverless/serverless-widget/dist/umd/index.js /static/widget/

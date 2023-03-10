@@ -26,6 +26,17 @@ export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
   return new Workbook(wasmWorkbook);
 }
 
+export function loadWorkbookFromJson(workbookJson: string): IWorkbook {
+  let wasmWorkbook;
+  try {
+    wasmWorkbook = WasmWorkbook.loadFromJson(workbookJson);
+  } catch (error) {
+    throw wrapWebAssemblyError(error);
+  }
+
+  return new Workbook(wasmWorkbook);
+}
+
 type CellReference = {
   sheet: number;
   row: number;
@@ -60,6 +71,10 @@ export interface IWorkbook {
    * @returns Uint8Buffer containing XLSX data.
    */
   saveToXlsx(): Uint8Array;
+  /**
+   * @returns string with json representation of the workbook.
+   */
+  toJson(): string;
   /**
    * Used for getting target value if value was copied.
    * All references are extended from source to target.
@@ -146,6 +161,10 @@ export class Workbook implements IWorkbook {
 
   saveToXlsx(): Uint8Array {
     return this._wasmWorkbook.saveToMemory();
+  }
+
+  toJson(): string {
+    return this._wasmWorkbook.toJson();
   }
 
   getCopiedValueExtended(

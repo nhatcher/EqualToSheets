@@ -52,7 +52,7 @@ export default [
   {
     input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],
-    external: ['react', 'react/jsx-runtime'],
+    external: ['react', 'react/jsx-runtime', /\.css$/],
     plugins: [dts()],
   },
 ];

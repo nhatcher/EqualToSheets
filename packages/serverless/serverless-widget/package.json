@@ -8,6 +8,7 @@
   "type": "module",
   "main": "index.js",
   "dependencies": {
+    "@apollo/client": "^3.7.10",
     "@babel/core": "^7.20.12",
     "@babel/preset-react": "^7.18.6",
     "@babel/runtime": "^7.20.7",
@@ -37,6 +38,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-react": "^7.32.1",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "graphql": "^16.6.0",
     "prettier": "2.8.3",
     "react": "^18.2.0",
     "rollup": "^3.10.0",
@@ -55,5 +57,8 @@
     "build-full": "npm run reinstall && npm run build",
     "rollup": "rollup --config",
     "build": "rm -rf dist && npm run rollup"
+  },
+  "devDependencies": {
+    "@types/node": "^18.14.6"
   }
 }

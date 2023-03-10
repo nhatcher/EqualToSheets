@@ -14,5 +14,7 @@
     "jsx": "react-jsx",
     "baseUrl": "."
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

@@ -30,6 +30,7 @@ import { Area, Cell, NavigationKey } from './util';
 interface ModelSettings {
   workbook: IWorkbook;
   getTokens: (formula: string) => FormulaToken[];
+  workbookFromJson: (workbookJson: string) => IWorkbook;
 }
 
 interface SheetArea extends Area {
@@ -84,6 +85,8 @@ type Subscriber = (change: Change) => void;
 export default class Model implements IModel {
   getTokens: (formula: string) => FormulaToken[];
 
+  private workbookFromJson: (workbookJson: string) => IWorkbook;
+
   private history: ActionHistory;
 
   private workbook: IWorkbook;
@@ -94,8 +97,14 @@ export default class Model implements IModel {
 
   constructor(options: ModelSettings) {
     this.workbook = options.workbook;
-    this.getTokens = options.getTokens;
     this.history = new ActionHistory();
+    this.getTokens = options.getTokens;
+    this.workbookFromJson = options.workbookFromJson;
+  }
+
+  replaceWithJson(workbookJson: string) {
+    this.workbook = this.workbookFromJson(workbookJson);
+    this.notifySubscribers({ type: 'replaceWithJson' });
   }
 
   subscribe(subscriber: Subscriber): number {
@@ -667,5 +676,9 @@ export default class Model implements IModel {
 
   saveToXlsx(): Uint8Array {
     return this.workbook.saveToXlsx();
+  }
+
+  toJson(): string {
+    return this.workbook.toJson();
   }
 }

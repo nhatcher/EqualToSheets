@@ -143,6 +143,13 @@ impl WasmWorkbook {
         Ok(WasmWorkbook { model })
     }
 
+    #[wasm_bindgen(js_name=loadFromJson)]
+    pub fn load_from_json(workbook_json: &str) -> Result<WasmWorkbook, JsError> {
+        let env = Environment::default();
+        let model = Model::from_json(workbook_json, env).map_err(WorkbookError::from)?;
+        Ok(WasmWorkbook { model })
+    }
+
     #[wasm_bindgen(js_name=saveToMemory)]
     #[cfg(feature = "xlsx")]
     pub fn save_xlsx_to_memory(&self) -> Result<js_sys::Uint8Array, JsError> {
@@ -609,5 +616,10 @@ impl WasmWorkbook {
             )
             .map_err(WorkbookError::from)
             .map_err(JsError::from)
+    }
+
+    #[wasm_bindgen(js_name = "toJson")]
+    pub fn to_json(&self) -> Result<String, JsError> {
+        Ok(self.model.to_json_str())
     }
 }
