@@ -473,6 +473,18 @@ impl Model {
         if let Some(f) = cell.get_formula() {
             match result {
                 CalcResult::Number(value) => {
+                    // safety belt
+                    if value.is_nan() || value.is_infinite() {
+                        // This should never happen, is there a way we can log this events?
+                        return self.set_cell_value(
+                            cell_reference,
+                            &CalcResult::Error {
+                                error: Error::NUM,
+                                origin: cell_reference,
+                                message: "".to_string(),
+                            },
+                        );
+                    }
                     *self.workbook.worksheets[sheet as usize]
                         .sheet_data
                         .get_mut(&row)

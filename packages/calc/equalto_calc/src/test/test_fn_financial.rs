@@ -457,3 +457,14 @@ fn fn_cumprinc() {
     assert_eq!(model._get_text("C1"), *"#ERROR!");
     assert_eq!(model._get_text("C2"), *"#ERROR!");
 }
+
+#[test]
+fn fn_db_misc() {
+    let mut model = new_empty_model();
+
+    model._set("B1", "=DB(0,10,1,2,2)");
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("B1"), "$0.00");
+}

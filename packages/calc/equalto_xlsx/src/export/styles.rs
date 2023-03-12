@@ -14,7 +14,7 @@ fn get_fonts_xml(styles: &Styles) -> String {
         } else {
             "".to_string()
         };
-        let name = format!("<name val=\"{}\"/>", font.name);
+        let name = format!("<name val=\"{}\"/>", escape_xml(&font.name));
         let bold = if font.b { "<b/>" } else { "" };
         let italic = if font.i { "<i/>" } else { "" };
         let underline = if font.u { "<u/>" } else { "" };

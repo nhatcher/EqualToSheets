@@ -1,9 +1,8 @@
 use std::path::Path;
 
+use equalto_calc::cell::CellValue;
 use equalto_calc::types::*;
-use equalto_calc::{
-    expressions::utils::number_to_column, model::Model, number_format::to_precision,
-};
+use equalto_calc::{expressions::utils::number_to_column, model::Model};
 
 use crate::export::save_to_xlsx;
 use crate::import::load_model_from_xlsx;
@@ -23,12 +22,21 @@ pub struct Diff {
     pub reason: String,
 }
 
-// FIXME: We need to increase precision and eps in general
-// Maybe we can add some info to the cell we are computing (compare this cell with lower precision)
-const PRECISION: usize = 10;
-const EPS: f64 = 5e-7;
+// TODO use f64::EPSILON
+const EPS: f64 = 5e-8;
 // const EPS: f64 = f64::EPSILON;
 
+fn numbers_are_close(x: f64, y: f64, eps: f64) -> bool {
+    let norm = (x * x + y * y).sqrt();
+    if norm == 0.0 {
+        return true;
+    }
+    let d = f64::abs(x - y);
+    if d < eps {
+        return true;
+    }
+    d / norm < eps
+}
 /// Compares two Models in the internal representation and returns a list of differences
 pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
     let ws1 = model1.workbook.get_worksheet_names();
@@ -38,6 +46,11 @@ pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
             message: "Different number of sheets".to_string(),
         });
     }
+    let eps = if let Ok(CellValue::Number(v)) = model1.get_cell_value_by_ref("METADATA!A1") {
+        v
+    } else {
+        EPS
+    };
     let mut diffs = Vec::new();
     let cells = model1.get_all_cells();
     for cell in cells {
@@ -68,8 +81,7 @@ pub fn compare(model1: &Model, model2: &Model) -> CompareResult<Vec<Diff>> {
                 Cell::CellFormulaNumber { v: value1, .. },
                 Cell::CellFormulaNumber { v: value2, .. },
             ) => {
-                if (to_precision(*value1, PRECISION) - to_precision(*value2, PRECISION)).abs() > EPS
-                {
+                if !numbers_are_close(*value1, *value2, eps) {
                     diffs.push(Diff {
                         sheet_name: ws1[cell.index as usize].clone(),
                         row,

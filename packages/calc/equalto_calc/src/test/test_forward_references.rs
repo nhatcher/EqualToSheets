@@ -101,7 +101,6 @@ fn test_different_sheet() {
             column: target_column,
         },
     );
-    println!("{:?}", result);
     assert!(result.is_ok());
     model.evaluate();
 

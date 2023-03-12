@@ -1853,7 +1853,9 @@ impl Model {
         {
             return CalcResult::new_error(Error::NUM, cell, "invalid parameters".to_string());
         };
-
+        if cost == 0.0 {
+            return CalcResult::Number(0.0);
+        }
         // rounded to three decimal places
         // FIXME: We should have utilities for this (see to_precision)
         let rate = f64::round((1.0 - f64::powf(salvage / cost, 1.0 / life)) * 1000.0) / 1000.0;
