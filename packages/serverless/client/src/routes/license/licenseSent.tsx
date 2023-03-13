@@ -1,20 +1,33 @@
 import styled from 'styled-components/macro';
-import { Box } from './common';
+import { DualBox, LeftSide, RightSide, Subtitle, VideoPlaceholder, HeadingText as LeftHeadingText } from './common';
 import { ReactComponent as SentSvg } from './sent.svg';
 
 export const LicenseSentPage = () => {
   return (
-    <Box $maxWidth={360}>
-      <SentSvg />
-      <HeadingText>
-        Thank you
-        <br />
-        for signing up!
-      </HeadingText>
-      <Text>
-        You should receive an email shortly, to verify your account and activate your license.
-      </Text>
-    </Box>
+    <DualBox>
+      <LeftSide>
+        <LeftHeadingText>
+          Get your <em>EqualTo Sheets</em> license key
+        </LeftHeadingText>
+        <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
+        <VideoPlaceholder>VIDEO</VideoPlaceholder>
+      </LeftSide>
+      <RightSide>
+        <div />
+        <Container>
+          <SentSvg viewBox='0 0 330 230' width={280} />
+          <HeadingText>
+            Thank you
+            <br />
+            for signing up!
+          </HeadingText>
+          <Text>
+            You should receive an email shortly, to verify your account and activate your license.
+          </Text>
+        </Container>
+        <div />
+      </RightSide>
+    </DualBox>
   );
 };
 
@@ -32,4 +45,10 @@ const Text = styled.p`
   line-height: 17px;
   text-align: center;
   color: #b4b7d1;
+`;
+
+const Container = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 `;
