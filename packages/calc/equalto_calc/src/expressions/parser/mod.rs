@@ -642,6 +642,9 @@ impl Parser {
             if self.lexer.peek_token() == TokenType::Comma {
                 args.push(Node::EmptyArgKind);
                 next_token = TokenType::Comma;
+            } else if self.lexer.peek_token() == TokenType::RightParenthesis {
+                args.push(Node::EmptyArgKind);
+                return Ok(args);
             } else {
                 let p = self.parse_expr();
                 if let Node::ParseErrorKind { .. } = p {
