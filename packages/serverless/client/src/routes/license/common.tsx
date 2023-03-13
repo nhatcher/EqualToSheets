@@ -38,6 +38,7 @@ export const DualBox = styled.div`
   @media (max-width: 768px) {
     display: flex;
     flex-direction: column-reverse;
+    border: none;
   }
 `;
 
