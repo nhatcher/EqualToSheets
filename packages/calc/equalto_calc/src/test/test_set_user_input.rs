@@ -459,3 +459,17 @@ fn test_sum_function_eur() {
     assert_eq!(model._get_text("B2"), *"€400");
     assert_eq!(model._get_text("B3"), *"€400");
 }
+
+#[test]
+fn input_dates() {
+    let mut model = new_empty_model();
+    model.set_user_input(0, 1, 1, "3/4/2025".to_string());
+
+    model.evaluate();
+
+    assert_eq!(model._get_text("A1"), "3/4/2025");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A1"),
+        Ok(CellValue::Number(45750.0))
+    );
+}

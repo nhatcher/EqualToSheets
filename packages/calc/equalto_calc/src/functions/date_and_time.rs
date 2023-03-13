@@ -1,7 +1,7 @@
 use chrono::Datelike;
 use chrono::Months;
-use chrono::NaiveDate;
 
+use crate::formatter::dates::date_to_serial_number;
 use crate::{
     calc_result::{CalcResult, CellReference},
     constants::EXCEL_DATE_BASE,
@@ -108,17 +108,14 @@ impl Model {
             }
             Err(s) => return s,
         };
-        let serial_number = match NaiveDate::from_ymd_opt(year, month, day) {
-            Some(native_date) => native_date.num_days_from_ce() - EXCEL_DATE_BASE,
-            None => {
-                return CalcResult::Error {
-                    error: Error::NUM,
-                    origin: cell,
-                    message: "Out of range parameters for date".to_string(),
-                };
-            }
-        };
-        CalcResult::Number(serial_number as f64)
+        match date_to_serial_number(day, month, year) {
+            Ok(serial_number) => CalcResult::Number(serial_number as f64),
+            Err(message) => CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message,
+            },
+        }
     }
 
     pub(crate) fn fn_year(&mut self, args: &[Node], cell: CellReference) -> CalcResult {

@@ -3,7 +3,7 @@ use chrono::Datelike;
 use crate::{locale::Locale, number_format::to_precision};
 
 use super::{
-    dates::from_excel_date,
+    dates::{date_to_serial_number, from_excel_date},
     parser::{ParsePart, Parser, TextToken},
 };
 
@@ -429,6 +429,158 @@ pub fn format_number(value_original: f64, format: &str, locale: &Locale) -> Form
     }
 }
 
+fn parse_day(day_str: &str) -> Result<(u32, String), String> {
+    let bytes = day_str.bytes();
+    let bytes_len = bytes.len();
+    if bytes_len <= 2 {
+        match day_str.parse::<u32>() {
+            Ok(y) => {
+                if bytes_len == 2 {
+                    return Ok((y, "dd".to_string()));
+                } else {
+                    return Ok((y, "d".to_string()));
+                }
+            }
+            Err(_) => return Err("Not a valid year".to_string()),
+        }
+    }
+    Err("Not a valid day".to_string())
+}
+
+fn parse_month(month_str: &str) -> Result<(u32, String), String> {
+    let bytes = month_str.bytes();
+    let bytes_len = bytes.len();
+    if bytes_len <= 2 {
+        match month_str.parse::<u32>() {
+            Ok(y) => {
+                if bytes_len == 2 {
+                    return Ok((y, "mm".to_string()));
+                } else {
+                    return Ok((y, "m".to_string()));
+                }
+            }
+            Err(_) => return Err("Not a valid year".to_string()),
+        }
+    }
+    let month_names_short = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec",
+    ];
+    let month_names_long = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+    if let Some(m) = month_names_short.iter().position(|&r| r == month_str) {
+        return Ok((m as u32 + 1, "mmm".to_string()));
+    }
+    if let Some(m) = month_names_long.iter().position(|&r| r == month_str) {
+        return Ok((m as u32 + 1, "mmmm".to_string()));
+    }
+    Err("Not a valid day".to_string())
+}
+
+fn parse_year(year_str: &str) -> Result<(i32, String), String> {
+    // year is either 2 digits or 4 digits
+    // 23 -> 2023
+    // 75 -> 1975
+    // 30 is the split number (yeah, that's not going to be a problem any time soon)
+    // 30 => 1930
+    // 29 => 2029
+    let bytes = year_str.bytes();
+    let bytes_len = bytes.len();
+    if bytes_len != 2 && bytes_len != 4 {
+        return Err("Not a valid year".to_string());
+    }
+    match year_str.parse::<i32>() {
+        Ok(y) => {
+            if y < 30 {
+                Ok((2000 + y, "yy".to_string()))
+            } else if y < 100 {
+                Ok((1900 + y, "yy".to_string()))
+            } else {
+                Ok((y, "yyyy".to_string()))
+            }
+        }
+        Err(_) => Err("Not a valid year".to_string()),
+    }
+}
+
+// Check if it is a date. Other spreadsheet engines support a wide variety of dates formats
+// Here we support a small subset of them.
+//
+// The grammar is:
+//
+// date -> long_date | short_date | iso-date
+// short_date -> month separator year
+// long_date -> day separator month separator year
+// iso_date -> long_year separator number_month separator number_day
+// separator -> "/" | "-"
+// day -> number | padded number
+// month -> number_month | name_month
+// number_month -> number | padded number |
+// name_month -> short name | full name
+// year -> short_year | long year
+//
+// NOTE 1: The separator has to be the same
+// NOTE 2: In some engines "2/3" is implemented ad "2/March of the present year"
+// NOTE 3: I did not implement the "short date"
+fn parse_date(value: &str) -> Result<(i32, String), String> {
+    let separator = if value.contains('/') {
+        '/'
+    } else if value.contains('-') {
+        '-'
+    } else {
+        return Err("Not a valid date".to_string());
+    };
+
+    let parts: Vec<&str> = value.split(separator).collect();
+    let mut is_iso_date = false;
+    let (day_str, month_str, year_str) = if parts.len() == 3 {
+        if parts[0].len() == 4 {
+            // ISO date  yyyy-mm-dd
+            if !parts[1].chars().all(char::is_numeric) {
+                return Err("Not a valid date".to_string());
+            }
+            if !parts[2].chars().all(char::is_numeric) {
+                return Err("Not a valid date".to_string());
+            }
+            is_iso_date = true;
+            (parts[2], parts[1], parts[0])
+        } else {
+            (parts[0], parts[1], parts[2])
+        }
+    } else {
+        return Err("Not a valid date".to_string());
+    };
+    let (day, day_format) = parse_day(day_str)?;
+    let (month, month_format) = parse_month(month_str)?;
+    let (year, year_format) = parse_year(year_str)?;
+    let serial_number = match date_to_serial_number(day, month, year) {
+        Ok(n) => n,
+        Err(_) => return Err("Not a valid date".to_string()),
+    };
+    if is_iso_date {
+        Ok((
+            serial_number,
+            format!("yyyy{separator}{month_format}{separator}{day_format}"),
+        ))
+    } else {
+        Ok((
+            serial_number,
+            format!("{day_format}{separator}{month_format}{separator}{year_format}"),
+        ))
+    }
+}
+
 /// Parses a formatted number, returning the numeric value together with the format
 /// Uses heuristics to guess the format string
 /// "$ 123,345.678" => (123345.678, "$#,##0.00")
@@ -488,6 +640,10 @@ pub(crate) fn parse_formatted_number(
             let currency_format = &format!("#,##0{currency}");
             return Ok((f, Some(currency_format.to_string())));
         }
+    }
+
+    if let Ok((serial_number, format)) = parse_date(value) {
+        return Ok((serial_number as f64, Some(format)));
     }
 
     // Lastly we check if it is a number

@@ -3,7 +3,7 @@ use crate::{
     constants::{LAST_COLUMN, LAST_ROW},
     expressions::parser::Node,
     expressions::token::Error,
-    formatter::format::format_number,
+    formatter::format::{format_number, parse_formatted_number},
     model::Model,
     number_format::to_precision,
 };
@@ -1022,6 +1022,7 @@ impl Model {
         }
         let result1 = &self.evaluate_node_in_context(&args[0], cell);
         let result2 = &self.evaluate_node_in_context(&args[1], cell);
+        // FIXME: Implicit intersection
         if let (CalcResult::Number(number1), CalcResult::Number(number2)) = (result1, result2) {
             // In Excel two numbers are the same if they are the same up to 15 digits.
             CalcResult::Boolean(to_precision(*number1, 15) == to_precision(*number2, 15))
@@ -1036,5 +1037,68 @@ impl Model {
             };
             CalcResult::Boolean(string1 == string2)
         }
+    }
+    // VALUE(text)
+    pub(crate) fn fn_value(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 1 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        match self.evaluate_node_in_context(&args[0], cell) {
+            CalcResult::String(text) => {
+                let currencies = vec!["$", "€"];
+                if let Ok((value, _)) = parse_formatted_number(&text, &currencies) {
+                    return CalcResult::Number(value);
+                };
+                CalcResult::Error {
+                    error: Error::VALUE,
+                    origin: cell,
+                    message: "Invalid number".to_string(),
+                }
+            }
+            CalcResult::Number(f) => CalcResult::Number(f),
+            CalcResult::Boolean(_) => CalcResult::Error {
+                error: Error::VALUE,
+                origin: cell,
+                message: "Invalid number".to_string(),
+            },
+            error @ CalcResult::Error { .. } => error,
+            CalcResult::Range { .. } => {
+                // TODO Implicit Intersection
+                CalcResult::Error {
+                    error: Error::VALUE,
+                    origin: cell,
+                    message: "Invalid number".to_string(),
+                }
+            }
+            CalcResult::EmptyCell | CalcResult::EmptyArg => CalcResult::Number(0.0),
+        }
+    }
+
+    pub(crate) fn fn_t(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 1 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        // FIXME: Implicit intersection
+        let result = self.evaluate_node_in_context(&args[0], cell);
+        match result {
+            CalcResult::String(_) => result,
+            error @ CalcResult::Error { .. } => error,
+            _ => CalcResult::String("".to_string()),
+        }
+    }
+
+    // VALUETOTEXT(value)
+    pub(crate) fn fn_valuetotext(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 1 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let text = match self.get_string(&args[0], cell) {
+            Ok(s) => s,
+            Err(error) => match error {
+                CalcResult::Error { error, .. } => error.to_string(),
+                _ => "".to_string(),
+            },
+        };
+        CalcResult::String(text)
     }
 }

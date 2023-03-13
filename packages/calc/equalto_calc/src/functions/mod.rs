@@ -78,6 +78,9 @@ pub enum Function {
     Concat,
     Concatenate,
     Exact,
+    Value,
+    T,
+    Valuetotext,
     Find,
     Left,
     Len,
@@ -248,6 +251,7 @@ impl Function {
             Function::Imsec => "_xlfn.IMSEC".to_string(),
             Function::ErfcPrecise => "_xlfn.ERFC.PRECISE".to_string(),
             Function::ErfPrecise => "_xlfn.ERF.PRECISE".to_string(),
+            Function::Valuetotext => "_xlfn.VALUETOTEXT".to_string(),
             _ => self.to_string(),
         }
     }
@@ -318,6 +322,9 @@ impl Function {
 
             "CONCATENATE" => Some(Function::Concatenate),
             "EXACT" => Some(Function::Exact),
+            "VALUE" => Some(Function::Value),
+            "T" => Some(Function::T),
+            "VALUETOTEXT" | "_XLFN.VALUETOTEXT" => Some(Function::Valuetotext),
             "CONCAT" | "_XLFN.CONCAT" => Some(Function::Concat),
             "FIND" => Some(Function::Find),
             "LEFT" => Some(Function::Left),
@@ -513,6 +520,9 @@ impl fmt::Display for Function {
             Function::Xlookup => write!(f, "XLOOKUP"),
             Function::Concatenate => write!(f, "CONCATENATE"),
             Function::Exact => write!(f, "EXACT"),
+            Function::Value => write!(f, "VALUE"),
+            Function::T => write!(f, "T"),
+            Function::Valuetotext => write!(f, "VALUETOTEXT"),
             Function::Concat => write!(f, "CONCAT"),
             Function::Find => write!(f, "FIND"),
             Function::Left => write!(f, "LEFT"),
@@ -712,6 +722,9 @@ impl Model {
             // Text
             Function::Concatenate => self.fn_concatenate(args, cell),
             Function::Exact => self.fn_exact(args, cell),
+            Function::Value => self.fn_value(args, cell),
+            Function::T => self.fn_t(args, cell),
+            Function::Valuetotext => self.fn_valuetotext(args, cell),
             Function::Concat => self.fn_concat(args, cell),
             Function::Find => self.fn_find(args, cell),
             Function::Left => self.fn_left(args, cell),

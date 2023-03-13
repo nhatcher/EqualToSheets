@@ -147,3 +147,48 @@ fn errors() {
 fn errors_wrong_currency() {
     assert_eq!(parse("123€", &["$"]), Err(PARSE_ERROR_MSG.to_string()));
 }
+
+#[test]
+fn long_dates() {
+    assert_eq!(
+        parse("02/03/2024", &["$"]),
+        Ok((45353.0, Some("dd/mm/yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("02/3/2024", &["$"]),
+        Ok((45353.0, Some("dd/m/yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("02/Mar/2024", &["$"]),
+        Ok((45353.0, Some("dd/mmm/yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("02/March/2024", &["$"]),
+        Ok((45353.0, Some("dd/mmmm/yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("2/3/24", &["$"]),
+        Ok((45353.0, Some("d/m/yy".to_string())))
+    );
+
+    assert_eq!(
+        parse("10-02-1975", &["$"]),
+        Ok((27435.0, Some("dd-mm-yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("10-2-1975", &["$"]),
+        Ok((27435.0, Some("dd-m-yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("10-Feb-1975", &["$"]),
+        Ok((27435.0, Some("dd-mmm-yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("10-February-1975", &["$"]),
+        Ok((27435.0, Some("dd-mmmm-yyyy".to_string())))
+    );
+    assert_eq!(
+        parse("10-2-75", &["$"]),
+        Ok((27435.0, Some("dd-m-yy".to_string())))
+    );
+}
