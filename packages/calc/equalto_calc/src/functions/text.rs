@@ -5,6 +5,7 @@ use crate::{
     expressions::token::Error,
     formatter::format::format_number,
     model::Model,
+    number_format::to_precision,
 };
 
 use super::{
@@ -997,6 +998,43 @@ impl Model {
                 return CalcResult::String(text);
             }
             CalcResult::String(text.replace(&old_text, &new_text))
+        }
+    }
+    pub(crate) fn fn_concatenate(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let arg_count = args.len();
+        if arg_count == 0 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let mut text_array = Vec::new();
+        for arg in args {
+            let text = match self.get_string(arg, cell) {
+                Ok(s) => s,
+                Err(error) => return error,
+            };
+            text_array.push(text)
+        }
+        CalcResult::String(text_array.join(""))
+    }
+
+    pub(crate) fn fn_exact(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 2 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let result1 = &self.evaluate_node_in_context(&args[0], cell);
+        let result2 = &self.evaluate_node_in_context(&args[1], cell);
+        if let (CalcResult::Number(number1), CalcResult::Number(number2)) = (result1, result2) {
+            // In Excel two numbers are the same if they are the same up to 15 digits.
+            CalcResult::Boolean(to_precision(*number1, 15) == to_precision(*number2, 15))
+        } else {
+            let string1 = match self.cast_to_string(result1.clone(), cell) {
+                Ok(s) => s,
+                Err(error) => return error,
+            };
+            let string2 = match self.cast_to_string(result2.clone(), cell) {
+                Ok(s) => s,
+                Err(error) => return error,
+            };
+            CalcResult::Boolean(string1 == string2)
         }
     }
 }

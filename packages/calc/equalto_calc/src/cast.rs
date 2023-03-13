@@ -80,11 +80,13 @@ impl Model {
         self.cast_to_string(result, cell)
     }
 
-    fn cast_to_string(
+    pub(crate) fn cast_to_string(
         &mut self,
         result: CalcResult,
         cell: CellReference,
     ) -> Result<String, CalcResult> {
+        // FIXME: I think when casting a number we should convert it to_precision(x, 15)
+        // See function Exact
         match result {
             CalcResult::Number(f) => Ok(format!("{}", f)),
             CalcResult::String(s) => Ok(s),
