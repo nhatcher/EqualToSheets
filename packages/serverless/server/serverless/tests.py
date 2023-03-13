@@ -154,6 +154,7 @@ class SimpleTest(TestCase):
         self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example3.com:443"))
         self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
         self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, None))
 
         # there shouldn't be any workbooks linked to that license at this point
         self.assertFalse(Workbook.objects.filter(license=license).exists())
@@ -183,6 +184,7 @@ class SimpleTest(TestCase):
         self.assertTrue(is_license_key_valid_for_host(license.key, "sub.example3.com:443"))
         self.assertTrue(is_license_key_valid_for_host(license.key, "other.com:443"))
         self.assertTrue(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
+        self.assertTrue(is_license_key_valid_for_host(license.key, None))
 
         # domain parameter specified as the empty string
         request = self.factory.post("/send-license-key?%s" % urlencode({"email": "joe2@example.com", "domains": ""}))
@@ -337,6 +339,7 @@ class SimpleTest(TestCase):
         # these aren't valid, regardless of license activation
         self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
         self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, None))
 
         # verify email address, activating license
         request = self.factory.get("/activate-license-key/%s/" % license.id)
@@ -352,6 +355,7 @@ class SimpleTest(TestCase):
         # these aren't valid, regardless of license activation
         self.assertFalse(is_license_key_valid_for_host(license.key, "other.com:443"))
         self.assertFalse(is_license_key_valid_for_host(license.key, "sub.example.com:443"))
+        self.assertFalse(is_license_key_valid_for_host(license.key, None))
 
     def test_query_workbooks(self) -> None:
         license = _create_verified_license()

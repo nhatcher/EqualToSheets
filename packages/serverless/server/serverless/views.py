@@ -75,7 +75,6 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
 # Note that you can manually trigger an upload using curl as follows:
 #   $ curl -F xlsx-file=@/path/to/file.xlsx
 #           -H "Authorization: Bearer <license key>"
-#           -H "Origin: http://localhost:5000"
 #           http://localhost:5000/create-workbook-from-xlsx
 def create_workbook_from_xlsx(request: HttpRequest) -> JsonResponse:
     info("create_workbook_from_xlsx(): headers=%s" % request.headers)

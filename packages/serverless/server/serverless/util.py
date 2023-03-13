@@ -21,10 +21,16 @@ def get_license(http_meta: dict[str, Any]) -> License:
         raise LicenseKeyError("Invalid license key")
 
 
-def is_license_key_valid_for_host(license_key: str, host: str) -> bool:
+def is_license_key_valid_for_host(license_key: str, host: str | None) -> bool:
     # the license is valid if:
-    #   1. LicenseDomain contains a record for domain, OR
-    #   2. LicenseDomain contains a record for the parent of domain, with *. at the start
+    #   1. There are no LicenseDomain records (ie it's a beta license key, which does not
+    #      require a list of licensed domains), OR
+    #   2. LicenseDomain contains a record for domain, OR
+    #   3. LicenseDomain contains a record for the parent of domain, with *. at the start, OR
+
+    # This will be removed post-beta
+    host = "" if host is None else host
+    assert isinstance(host, str)
     if host.startswith("http://"):
         host = host[len("http://") :]
     elif host.startswith("https://"):
