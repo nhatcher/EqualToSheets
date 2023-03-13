@@ -313,6 +313,7 @@ impl Model {
             Function::Tbilleq => self.units_fn_percentage_2(args, cell),
             Function::Tbillprice => self.units_fn_currency(args, cell),
             Function::Tbillyield => self.units_fn_percentage_2(args, cell),
+            Function::Date => self.units_fn_dates(args, cell),
             _ => None,
         }
     }
@@ -353,5 +354,10 @@ impl Model {
             precision: 2,
             num_fmt: "0.00%".to_string(),
         })
+    }
+
+    fn units_fn_dates(&self, _args: &[Node], _cell: &CellReference) -> Option<Units> {
+        // TODO: update locale and use it here
+        Some(Units::Date("dd/mm/yyyy".to_string()))
     }
 }

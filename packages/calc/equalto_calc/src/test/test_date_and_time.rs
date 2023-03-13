@@ -4,7 +4,7 @@
 /// Either because Excel does not have that feature (i.e. wrong number of arguments)
 /// or because we differ from Excel throwing #NUM! on invalid dates
 /// We can also enter examples that illustrate/document a part of the function
-use crate::test::util::new_empty_model;
+use crate::{cell::CellValue, test::util::new_empty_model};
 
 #[test]
 fn test_fn_date_arguments() {
@@ -43,7 +43,11 @@ fn test_fn_date_arguments() {
     assert_eq!(model._get_text("A8"), *"#NUM!");
 
     assert_eq!(model._get_text("A9"), *"#NUM!");
-    assert_eq!(model._get_text("A10"), *"27819");
+    assert_eq!(model._get_text("A10"), *"29/02/1976");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A10"),
+        Ok(CellValue::Number(27819.0))
+    );
 }
 
 #[test]
@@ -187,13 +191,25 @@ fn test_date_early_dates() {
     model.evaluate();
 
     // This is 1 in Excel, we agree with Google Docs
-    assert_eq!(model._get_text("A1"), *"2");
+    assert_eq!(model._get_text("A1"), *"01/01/1900");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A1"),
+        Ok(CellValue::Number(2.0))
+    );
 
     // 1900 was not a leap year, this is a bug in EXCEL
     // This would be 60 in Excel
-    assert_eq!(model._get_text("A2"), *"60");
+    assert_eq!(model._get_text("A2"), *"28/02/1900");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A2"),
+        Ok(CellValue::Number(60.0))
+    );
     assert_eq!(model._get_text("B2"), *"#NUM!");
 
     // This agrees with Excel from he onward
-    assert_eq!(model._get_text("A3"), *"61");
+    assert_eq!(model._get_text("A3"), *"01/03/1900");
+    assert_eq!(
+        model.get_cell_value_by_ref("Sheet1!A3"),
+        Ok(CellValue::Number(61.0))
+    );
 }
