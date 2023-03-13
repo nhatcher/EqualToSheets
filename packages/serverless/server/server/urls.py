@@ -1,13 +1,15 @@
 from django.contrib import admin
 from django.urls import path
-
-from serverless.views import activate_license_key, graphql_view, send_license_key, get_updated_workbook
+from serverless.views import (activate_license_key, create_workbook_from_xlsx,
+                              get_updated_workbook, graphql_view,
+                              send_license_key)
 
 admin.autodiscover()
 
 
 urlpatterns = [
     path("send-license-key", send_license_key),
+    path("create-workbook-from-xlsx", create_workbook_from_xlsx),
     path("activate-license-key/<uuid:license_id>", activate_license_key),
     path("admin/", admin.site.urls),
     path("graphql", graphql_view),

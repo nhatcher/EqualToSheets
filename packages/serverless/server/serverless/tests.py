@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import equalto
 from asgiref.sync import sync_to_async
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.test import AsyncClient, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.utils.http import urlencode
@@ -16,7 +17,7 @@ from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import MAX_WORKBOOK_INPUT_SIZE, MAX_WORKBOOK_JSON_SIZE, MAX_WORKBOOKS_PER_LICENSE, schema
 from serverless.util import is_license_key_valid_for_host
-from serverless.views import activate_license_key, send_license_key
+from serverless.views import MAX_XLSX_FILE_SIZE, activate_license_key, create_workbook_from_xlsx, send_license_key
 
 
 @transaction.atomic
@@ -202,6 +203,103 @@ class SimpleTest(TestCase):
                 "workbook_id": str(workbook.id),
             },
         )
+
+    def test_create_workbook_from_xlsx(self) -> None:
+        license = _create_verified_license()
+        with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                test_upload_file.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        request = self.factory.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_ORIGIN="http://example.com",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        response = create_workbook_from_xlsx(request)
+        self.assertEqual(response.status_code, 200)
+
+        # confirm that that workbook has been created
+        data = graphql_query(
+            """
+            query {
+                workbooks {
+                    sheets {
+                        id
+                        name
+                    }
+                }
+            }""",
+            "example.com",
+            license.key,
+        )
+
+        self.assertEqual(len(data["data"]["workbooks"]), 1)
+        self.assertCountEqual(
+            data["data"]["workbooks"][0]["sheets"],
+            [
+                {"id": 1, "name": "Sheet1"},
+                {"id": 3, "name": "Second"},
+                {"id": 8, "name": "Sheet4"},
+                {"id": 9, "name": "shared"},
+                {"id": 7, "name": "Table"},
+                {"id": 2, "name": "Sheet2"},
+                {"id": 4, "name": "Created fourth"},
+                {"id": 5, "name": "Hidden"},
+            ],
+        )
+
+    def test_create_workbook_from_xlsx_bad_license(self) -> None:
+        _create_verified_license()
+        with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                test_upload_file.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        invalid_license_key = "dc6325b0-9e39-44e9-b2ca-278e14be6bc5"
+        request = self.factory.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_ORIGIN="http://example.com",
+            HTTP_AUTHORIZATION="Bearer %s" % invalid_license_key,
+        )
+        # with self.assertRaisesMessage(LicenseKeyError, "Invalid license key"):
+        response = create_workbook_from_xlsx(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.content,
+            b"Invalid license",
+        )
+        self.assertEqual(Workbook.objects.count(), 0)
+
+    def test_create_workbook_from_xlsx_too_large(self) -> None:
+        license = _create_verified_license()
+        xlsx_file = SimpleUploadedFile(
+            "test-upload.xlsx",
+            b" " * (MAX_XLSX_FILE_SIZE + 1),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        request = self.factory.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_ORIGIN="http://example.com",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+
+        # with self.assertRaisesMessage(LicenseKeyError, "Invalid license key"):
+        response = create_workbook_from_xlsx(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.content,
+            ("Excel file too large (max size %s bytes)." % MAX_XLSX_FILE_SIZE).encode("utf-8"),
+        )
+        self.assertEqual(Workbook.objects.count(), 0)
 
     def test_send_license_key(self) -> None:
         self.assertEqual(License.objects.count(), 0)

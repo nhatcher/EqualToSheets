@@ -1,6 +1,8 @@
+import tempfile
 from asyncio import sleep
 from typing import Any
 
+import equalto
 from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.http import (
@@ -17,10 +19,12 @@ from graphene_django.views import GraphQLView
 
 from server import settings
 from serverless.email import send_license_activation_email
-from serverless.log import info
+from serverless.log import error, info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
-from serverless.util import LicenseKeyError, get_license
+from serverless.util import LicenseKeyError, get_license, is_license_key_valid_for_host
+
+MAX_XLSX_FILE_SIZE = 2 * 1024 * 1024
 
 
 def send_license_key(request: HttpRequest) -> HttpResponse:
@@ -66,6 +70,35 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
         workbook = Workbook.objects.create(license=license)
 
     return JsonResponse({"license_key": str(license.key), "workbook_id": str(workbook.id)})
+
+
+# Note that you can manually trigger an upload using curl as follows:
+#   $ curl -F xlsx-file=@/path/to/file.xlsx
+#           -H "Authorization: Bearer <license key>"
+#           -H "Origin: http://localhost:5000"
+#           http://localhost:5000/create-workbook-from-xlsx
+def create_workbook_from_xlsx(request: HttpRequest) -> JsonResponse:
+    info("create_workbook_from_xlsx(): headers=%s" % request.headers)
+    try:
+        license = get_license(request.META)
+    except LicenseKeyError:
+        return HttpResponseForbidden("Invalid license")
+    origin = request.META.get("HTTP_ORIGIN")
+    if not is_license_key_valid_for_host(license.key, origin):
+        error("License key %s is not valid for %s." % (license.key, origin))
+        return HttpResponseForbidden("License key is not valid")
+
+    file = request.FILES["xlsx-file"]
+    if file.size > MAX_XLSX_FILE_SIZE:
+        return HttpResponseBadRequest("Excel file too large (max size %s bytes)." % (MAX_XLSX_FILE_SIZE))
+    tmp = tempfile.NamedTemporaryFile()
+    tmp.write(file.read())
+    equalto_workbook = equalto.load(tmp.name)
+
+    workbook = Workbook(license=license, workbook_json=equalto_workbook.json)
+    workbook.save()
+
+    return JsonResponse({"workbook_id": str(workbook.id)})
 
 
 def graphql_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
