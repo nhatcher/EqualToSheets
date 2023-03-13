@@ -16,7 +16,7 @@ const roll = (format) => {
       dir: 'dist',
       format: format,
       sourcemap: false,
-      name: 'EqualToServerless',
+      name: 'EqualToSheets',
       entryFileNames: `${format}/[name].${format === 'cjs' ? 'cjs' : 'js'}`,
     },
     external: format === 'umd' ? [] : ['react', 'react/jsx-runtime'],

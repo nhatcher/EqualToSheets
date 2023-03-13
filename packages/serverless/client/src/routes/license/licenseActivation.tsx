@@ -35,11 +35,11 @@ const getSnippet = (
   // Sets the Authorization: Bearer <key> http header
   // For production use, use a proxy instead of exposing this
   // in your client code
-  EqualToServerless.setLicenseKey(
+  EqualToSheets.setLicenseKey(
     "${licenseKey}"
   );
   // Insert spreadsheet widget into the DOM
-  EqualToServerless.load(
+  EqualToSheets.load(
     "${workbookId}",
     document.getElementById("workbook-slot")
   );
