@@ -30,7 +30,7 @@ export const LicenseActivationPage = () => {
 const getSnippet = (
   licenseKey: LicenseKey,
   workbookId: string,
-) => `<script src="https://www.equalto.com/serverless/static/v1/equalto.js"></script>
+) => `<script src="https://sheets.equalto.com/static/v1/equalto.js"></script>
 <script>
   // Sets the Authorization: Bearer <key> http header
   // For production use, use a proxy instead of exposing this

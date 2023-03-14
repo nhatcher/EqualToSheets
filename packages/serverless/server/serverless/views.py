@@ -85,11 +85,27 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
         <meta charset="utf-8"/>
         <title>EqualTo Sheets</title>
         <script type="text/javascript" src="/static/v1/equalto.js"></script>
+        <style>
+            html {{
+                height: 100%;
+            }}
+            body {{
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 20px;
+                box-sizing: border-box;
+                margin: 0;
+            }}
+            #workbook-slot {{
+                flex-grow: 1;
+            }}
+        </style>
     </head>
     <body>
         <h1>WARNING: you should avoid sharing the above URL. It contains your license key, which
             allows full access to all your EqualTo Sheets data.</h1>
-        <div id="workbook-slot" style="height:500px"></div>
+        <div id="workbook-slot"></div>
         <script type="text/javascript">
             EqualToSheets.setLicenseKey(
                 "{license_key}"

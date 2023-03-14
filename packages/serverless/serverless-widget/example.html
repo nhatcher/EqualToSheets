@@ -5,10 +5,6 @@
 
   <script src="./dist/umd/index.js"></script>
   <script>
-    // Needed for running example locally
-    EqualToSheets.setGraphqlEndpoint('http://127.0.0.1:5000/graphql');
-    EqualToSheets.setSyncEndpoint('http://127.0.0.1:5000/get-updated-workbook');
-
     EqualToSheets.setLicenseKey('00000000-0000-0000-0000-000000000000');
     EqualToSheets.load('00000000-0000-0000-0000-000000000000', document.getElementById('workbook-slot'));
   </script>
