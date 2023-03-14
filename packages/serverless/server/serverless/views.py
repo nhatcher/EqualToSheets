@@ -131,8 +131,20 @@ GraphQL query to list all sheets in this workbook: {proto}{host}/graphql?license
     return HttpResponse(content, content_type="text/plain")
 
 
+class LicenseGraphQLView(GraphQLView):
+    graphiql_template = "graphiql.html"
+    license_key: str | None = None
+
+    def __init__(self, license_key: str | None) -> None:
+        super().__init__(graphiql=True, schema=schema)
+        self.license_key = license_key  # noqa: WPS601
+
+    def render_graphiql(self, request: HttpRequest, **data: Any) -> HttpResponse:
+        return super().render_graphiql(request, license_key=self.license_key, **data)
+
+
 def graphql_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-    return GraphQLView.as_view(graphiql=True, schema=schema)(request, *args, **kwargs)
+    return LicenseGraphQLView.as_view(license_key=request.GET.get("license"))(request, *args, **kwargs)
 
 
 @transaction.non_atomic_requests
