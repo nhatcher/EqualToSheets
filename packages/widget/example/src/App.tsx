@@ -9,7 +9,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div style={{ width: COLUMNS * 100 + 30, height: ROWS * 24 + 74, overflow: 'visible' }}>
-          <WorkbookRoot lastRow={ROWS + 10} lastColumn={COLUMNS + 10}>
+          <WorkbookRoot>
             <Workbook.Toolbar />
             <Workbook.FormulaBar />
             <Workbook.Worksheet />
