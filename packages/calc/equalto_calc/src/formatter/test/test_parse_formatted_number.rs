@@ -192,3 +192,15 @@ fn long_dates() {
         Ok((27435.0, Some("dd-m-yy".to_string())))
     );
 }
+
+#[test]
+fn iso_dates() {
+    assert_eq!(
+        parse("2024/03/02", &["$"]),
+        Ok((45353.0, Some("yyyy/mm/dd".to_string())))
+    );
+    assert_eq!(
+        parse("2024/March/02", &["$"]),
+        Err(PARSE_ERROR_MSG.to_string())
+    );
+}
