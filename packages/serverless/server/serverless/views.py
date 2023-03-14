@@ -74,6 +74,39 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
     return JsonResponse({"license_key": str(license.key), "workbook_id": str(workbook.id)})
 
 
+def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> HttpResponse:
+    workbook = Workbook.objects.filter(license__key=license_key, id=workbook_id).order_by("create_datetime").first()
+    if workbook is None:
+        return HttpResponseNotFound("Workbook not found")
+
+    html = f"""<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <title>EqualTo Sheets</title>
+        <script type="text/javascript" src="/static/v1/equalto.js"></script>
+    </head>
+    <body>
+        <h1>WARNING: you should avoid sharing the above URL. It contains your license key, which
+            allows full access to all your EqualTo Sheets data.</h1>
+        <div id="workbook-slot" style="height:500px"></div>
+        <script type="text/javascript">
+            EqualToSheets.setLicenseKey(
+                "{license_key}"
+            );
+            // Insert spreadsheet widget into the DOM
+            EqualToSheets.load(
+                "{workbook.id}",
+                document.getElementById("workbook-slot")
+            );
+        </script>
+    </body>
+</html>
+"""
+
+    return HttpResponse(html)
+
+
 # Note that you can manually trigger an upload using curl as follows:
 #   $ curl -F xlsx-file=@/path/to/file.xlsx
 #           -H "Authorization: Bearer <license key>"
@@ -123,7 +156,7 @@ Congratulations! The workbook has been uploaded.
 
 Workbook Id: {workbook.id}
 
-Preview workbook: {proto}{host}/edit-workbook/{license.id}/{workbook.id}/
+Preview workbook: {proto}{host}/edit-workbook/{license.key}/{workbook.id}/
 
 GraphQL query to list all sheets in this workbook: {proto}{host}/graphql?license={license.key}#query={quote(query)}
 
