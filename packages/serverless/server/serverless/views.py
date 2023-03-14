@@ -1,6 +1,7 @@
 import tempfile
 from asyncio import sleep
 from typing import Any
+from urllib.parse import quote
 
 import equalto
 from asgiref.sync import sync_to_async
@@ -76,7 +77,7 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
 #   $ curl -F xlsx-file=@/path/to/file.xlsx
 #           -H "Authorization: Bearer <license key>"
 #           http://localhost:5000/create-workbook-from-xlsx
-def create_workbook_from_xlsx(request: HttpRequest) -> JsonResponse:
+def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
     info("create_workbook_from_xlsx(): headers=%s" % request.headers)
     try:
         license = get_license(request.META)
@@ -97,7 +98,32 @@ def create_workbook_from_xlsx(request: HttpRequest) -> JsonResponse:
     workbook = Workbook(license=license, workbook_json=equalto_workbook.json)
     workbook.save()
 
-    return JsonResponse({"workbook_id": str(workbook.id)})
+    query = (
+        """# WARNING: you should avoid sharing the above URL. It contains
+#          your license key, which grants full access to all
+#          your EqualTo Sheets data.
+
+query {
+  workbook(workbookId: "%s") {
+    sheets{ name }
+  }
+}"""
+        % workbook.id
+    )
+
+    host = request.get_host()
+    proto = "https://" if request.is_secure() else "http://"
+    content = f"""
+Congratulations! The file has been uploaded.
+
+Workbook Id: {workbook.id}
+
+Preview workbook: {proto}{host}/edit-workbook/{license.id}/{workbook.id}/
+
+GraphQL query to list all sheets in this workbook: {proto}{host}/graphql?license={license.key}#query={quote(query)}
+
+"""
+    return HttpResponse(content, content_type="text/plain")
 
 
 def graphql_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
