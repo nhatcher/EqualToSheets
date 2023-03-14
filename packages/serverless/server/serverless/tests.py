@@ -303,6 +303,27 @@ class SimpleTest(TestCase):
         )
         self.assertEqual(Workbook.objects.count(), 0)
 
+    def test_create_workbook_invalid_xlsx_file(self) -> None:
+        license = _create_verified_license()
+        xlsx_file = SimpleUploadedFile(
+            "test-upload.xlsx",
+            # This is not a valid XLSX file (!)
+            b" ",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        request = self.factory.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_ORIGIN="http://example.com",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+
+        response = create_workbook_from_xlsx(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.content.startswith(b"Could not upload workbook."))
+        self.assertEqual(Workbook.objects.count(), 0)
+
     def test_send_license_key(self) -> None:
         self.assertEqual(License.objects.count(), 0)
 

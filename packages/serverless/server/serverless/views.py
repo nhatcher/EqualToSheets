@@ -16,6 +16,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404
+from equalto.exceptions import WorkbookError
 from graphene_django.views import GraphQLView
 
 from server import settings
@@ -93,7 +94,11 @@ def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
         return HttpResponseBadRequest("Excel file too large (max size %s bytes)." % (MAX_XLSX_FILE_SIZE))
     tmp = tempfile.NamedTemporaryFile()
     tmp.write(file.read())
-    equalto_workbook = equalto.load(tmp.name)
+
+    try:
+        equalto_workbook = equalto.load(tmp.name)
+    except WorkbookError as err:
+        return HttpResponseBadRequest(f"Could not upload workbook.\n\nDetails:\n\n{err}\n")
 
     workbook = Workbook(license=license, workbook_json=equalto_workbook.json)
     workbook.save()
@@ -114,7 +119,7 @@ query {
     host = request.get_host()
     proto = "https://" if request.is_secure() else "http://"
     content = f"""
-Congratulations! The file has been uploaded.
+Congratulations! The workbook has been uploaded.
 
 Workbook Id: {workbook.id}
 
