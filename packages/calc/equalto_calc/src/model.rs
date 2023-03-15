@@ -116,60 +116,121 @@ pub struct Style {
 }
 
 impl Model {
-    fn get_range(&self, left: &Node, right: &Node, cell: CellReference) -> CalcResult {
-        match (left, right) {
-            (
-                Node::ReferenceKind {
-                    sheet_name: _,
-                    sheet_index: sheet_left,
-                    absolute_row: absolute_row_left,
-                    absolute_column: absolute_column_left,
-                    row: row_left,
-                    column: column_left,
-                },
-                Node::ReferenceKind {
-                    sheet_name: _,
-                    sheet_index: _sheet_right,
-                    absolute_row: absolute_row_right,
-                    absolute_column: absolute_column_right,
-                    row: row_right,
-                    column: column_right,
-                },
-            ) => {
-                let mut row1 = *row_left;
-                let mut column1 = *column_left;
-                if !absolute_row_left {
+    pub(crate) fn evaluate_node_with_reference(
+        &mut self,
+        node: &Node,
+        cell: CellReference,
+    ) -> CalcResult {
+        match node {
+            Node::ReferenceKind {
+                sheet_name: _,
+                sheet_index,
+                absolute_row,
+                absolute_column,
+                row,
+                column,
+            } => {
+                let mut row1 = *row;
+                let mut column1 = *column;
+                if !absolute_row {
                     row1 += cell.row;
                 }
-                if !absolute_column_left {
+                if !absolute_column {
                     column1 += cell.column;
                 }
-                let mut row2 = *row_right;
-                let mut column2 = *column_right;
-                if !absolute_row_right {
-                    row2 += cell.row;
-                }
-                if !absolute_column_right {
-                    column2 += cell.column;
-                }
-                // FIXME: HACK. The parser is currently parsing Sheet3!A1:A10 as Sheet3!A1:(present sheet)!A10
                 CalcResult::Range {
                     left: CellReference {
-                        sheet: *sheet_left,
+                        sheet: *sheet_index,
                         row: row1,
                         column: column1,
                     },
                     right: CellReference {
-                        sheet: *sheet_left,
-                        row: row2,
-                        column: column2,
+                        sheet: *sheet_index,
+                        row: row1,
+                        column: column1,
                     },
                 }
             }
+            Node::RangeKind {
+                sheet_name: _,
+                sheet_index,
+                absolute_row1,
+                absolute_column1,
+                row1,
+                column1,
+                absolute_row2,
+                absolute_column2,
+                row2,
+                column2,
+            } => {
+                let mut row_left = *row1;
+                let mut column_left = *column1;
+                if !absolute_row1 {
+                    row_left += cell.row;
+                }
+                if !absolute_column1 {
+                    column_left += cell.column;
+                }
+                let mut row_right = *row2;
+                let mut column_right = *column2;
+                if !absolute_row2 {
+                    row_right += cell.row;
+                }
+                if !absolute_column2 {
+                    column_right += cell.column;
+                }
+                // FIXME: HACK. The parser is currently parsing Sheet3!A1:A10 as Sheet3!A1:(present sheet)!A10
+                CalcResult::Range {
+                    left: CellReference {
+                        sheet: *sheet_index,
+                        row: row_left,
+                        column: column_left,
+                    },
+                    right: CellReference {
+                        sheet: *sheet_index,
+                        row: row_right,
+                        column: column_right,
+                    },
+                }
+            }
+            _ => self.evaluate_node_in_context(node, cell),
+        }
+    }
+
+    fn get_range(&mut self, left: &Node, right: &Node, cell: CellReference) -> CalcResult {
+        let left_result = self.evaluate_node_with_reference(left, cell);
+        let right_result = self.evaluate_node_with_reference(right, cell);
+        match (left_result, right_result) {
+            (
+                CalcResult::Range {
+                    left: left1,
+                    right: right1,
+                },
+                CalcResult::Range {
+                    left: left2,
+                    right: right2,
+                },
+            ) => {
+                if left1.row == right1.row
+                    && left1.column == right1.column
+                    && left2.row == right2.row
+                    && left2.column == right2.column
+                {
+                    return CalcResult::Range {
+                        left: left1,
+                        right: right2,
+                    };
+                }
+                CalcResult::Error {
+                    error: Error::VALUE,
+                    origin: cell,
+                    message: "Invalid range".to_string(),
+                }
+            }
             _ => CalcResult::Error {
-                error: Error::NIMPL,
+                error: Error::VALUE,
                 origin: cell,
-                message: "Function not implemented".to_string(),
+                message: "Invalid range".to_string(),
             },
         }
     }

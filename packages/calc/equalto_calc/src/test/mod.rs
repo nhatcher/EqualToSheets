@@ -42,6 +42,7 @@ mod test_worksheet;
 pub(crate) mod util;
 
 mod engineering;
+mod test_fn_offset;
 mod test_number_format;
 
 mod test_percentage;

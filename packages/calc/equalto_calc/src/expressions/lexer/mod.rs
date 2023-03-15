@@ -284,12 +284,15 @@ impl Lexer {
                             //   4. A range without sheet ER4:ER7
                             //   5. A column range E:E
                             //   6. An identifier like a function name or a defined name
-                            //   7. An invalid token
+                            //   7. A range operator A1:OFFSET(...)
+                            //   8. An Invalid token
                             let position = self.position;
                             self.position -= 1;
                             let name = self.consume_identifier();
+                            let position_indent = self.position;
 
                             let peek_char = self.peek_char();
+                            let next_char_is_colon = self.peek_char() == Some(':');
 
                             if peek_char == Some('!') {
                                 // reference
@@ -306,9 +309,10 @@ impl Lexer {
                                 return TokenType::Boolean(false);
                             }
                             if self.mode == LexerMode::A1 {
-                                if utils::parse_reference_a1(&name_upper).is_some()
+                                let parsed_reference = utils::parse_reference_a1(&name_upper);
+                                if parsed_reference.is_some()
                                     || (utils::is_valid_column(name_upper.trim_start_matches('$'))
-                                        && self.peek_char() == Some(':'))
+                                        && next_char_is_colon)
                                 {
                                     self.position = position - 1;
                                     match self.consume_range_a1() {
@@ -330,6 +334,19 @@ impl Lexer {
                                             }
                                         }
                                         Err(error) => {
+                                            // This could be the range operator: ":"
+                                            if let Some(r) = parsed_reference {
+                                                if next_char_is_colon {
+                                                    self.position = position_indent;
+                                                    return TokenType::Reference {
+                                                        sheet: None,
+                                                        row: r.row,
+                                                        column: r.column,
+                                                        absolute_column: r.absolute_column,
+                                                        absolute_row: r.absolute_row,
+                                                    };
+                                                }
+                                            }
                                             self.position = self.len;
                                             return TokenType::Illegal(error);
                                         }
@@ -379,12 +396,25 @@ impl Lexer {
                                         }
                                     }
                                     Err(error) => {
+                                        self.position = position - 1;
+                                        if let Ok(r) = self.consume_reference_r1c1() {
+                                            if self.peek_char() == Some(':') {
+                                                return TokenType::Reference {
+                                                    sheet: None,
+                                                    row: r.row,
+                                                    column: r.column,
+                                                    absolute_column: r.absolute_column,
+                                                    absolute_row: r.absolute_row,
+                                                };
+                                            }
+                                        }
                                         self.position = pos;
+
                                         if utils::is_valid_identifier(&name) {
                                             return TokenType::Ident(name);
                                         } else {
                                             return TokenType::Illegal(self.set_error(
-                                                "Invalid identifier (R1C1)",
+                                                &format!("Invalid identifier (R1C1): {name}"),
                                                 error.position,
                                             ));
                                         }

@@ -230,7 +230,7 @@ impl Lexer {
         }
     }
 
-    fn consume_reference_r1c1(&mut self) -> Result<ParsedReference> {
+    pub(super) fn consume_reference_r1c1(&mut self) -> Result<ParsedReference> {
         // R12C3, R[2]C[-2], R3C[6], R[-3]C4, RC1, R[-2]C
         let absolute_column;
         let absolute_row;

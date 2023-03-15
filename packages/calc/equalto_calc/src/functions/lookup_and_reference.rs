@@ -665,7 +665,7 @@ impl Model {
             };
         }
 
-        self.evaluate_node_in_context(&args[index_num], cell)
+        self.evaluate_node_with_reference(&args[index_num], cell)
     }
 
     // COLUMNS(range)

@@ -38,14 +38,13 @@ fn test_fn_choose_basic_tests() {
     model._set("B2", "2");
     model._set("B3", "3");
     model._set("A1", "=CHOOSE(3.1, B1, B2, B3)");
-    // FIXME: Not supported by lexer
     model._set("A2", "=SUM(B1:CHOOSE(1, B1, B2, B3))");
     model._set("A3", "=SUM(CHOOSE(3, B1:B1, B1:B2, B1:B3))");
     model._set("A4", "=CHOOSE(3,\"Wide\",115,\"world\",8)");
     model.evaluate();
 
     assert_eq!(model._get_text("A1"), *"3");
-    assert_eq!(model._get_text("A2"), *"#ERROR!");
+    assert_eq!(model._get_text("A2"), *"1");
     assert_eq!(model._get_text("A3"), *"6");
     assert_eq!(model._get_text("A4"), *"world");
 }

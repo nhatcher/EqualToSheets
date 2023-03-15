@@ -468,3 +468,20 @@ fn test_range_incomplete_column() {
     assert!(matches!(lx.next_token(), Illegal(_)));
     assert_eq!(lx.next_token(), EOF);
 }
+
+#[test]
+fn range_operator() {
+    let mut lx = new_lexer("A1:OFFSET(B1,1,2)");
+    lx.set_lexer_mode(LexerMode::A1);
+    assert_matches!(lx.next_token(), Reference { .. });
+    assert_matches!(lx.next_token(), Colon);
+    assert_matches!(lx.next_token(), Ident(_));
+    assert_matches!(lx.next_token(), LeftParenthesis);
+    assert_matches!(lx.next_token(), Reference { .. });
+    assert_eq!(lx.next_token(), Comma);
+    assert_matches!(lx.next_token(), Number(_));
+    assert_eq!(lx.next_token(), Comma);
+    assert_matches!(lx.next_token(), Number(_));
+    assert_matches!(lx.next_token(), RightParenthesis);
+    assert_eq!(lx.next_token(), EOF);
+}

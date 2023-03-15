@@ -17,6 +17,10 @@ regex = "1.0"
 once_cell = "1.16.0"
 js-sys = { version = "0.3.60", optional = true }
 
+[dev-dependencies]
+# Remove once it stabilices
+assert_matches = "1.5"
+
 [features]
 wasm-build = ["js-sys"]
 timezones = ["chrono-tz"]
