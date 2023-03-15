@@ -113,7 +113,7 @@ fn test_move_formula_context_offset() {
         height: 5,
     };
 
-    let node = parser.parse("X9+C2", &Some(context.clone()));
+    let node = parser.parse("-X9+C2%", &Some(context.clone()));
     let t = move_formula(
         &node,
         &MoveContext {
@@ -126,7 +126,7 @@ fn test_move_formula_context_offset() {
             column_delta: 10,
         },
     );
-    assert_eq!(t, "X9+M12");
+    assert_eq!(t, "-X9+M12%");
 }
 
 #[test]

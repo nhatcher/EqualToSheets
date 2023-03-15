@@ -1,5 +1,6 @@
 use super::{super::utils::quote_name, Node, Reference};
 use crate::constants::{LAST_COLUMN, LAST_ROW};
+use crate::expressions::token::OpUnary;
 use crate::{expressions::types::CellReferenceRC, number_format::to_excel_precision_str};
 
 pub enum DisplaceData {
@@ -489,13 +490,20 @@ fn stringify(
             format!("{{{}}}", arguments)
         }
         VariableKind(value) => value.to_string(),
-        UnaryKind { kind, right } => {
-            format!(
-                "{}{}",
-                kind,
-                stringify(right, context, displace_data, use_original_name)
-            )
-        }
+        UnaryKind { kind, right } => match kind {
+            OpUnary::Minus => {
+                format!(
+                    "-{}",
+                    stringify(right, context, displace_data, use_original_name)
+                )
+            }
+            OpUnary::Percentage => {
+                format!(
+                    "{}%",
+                    stringify(right, context, displace_data, use_original_name)
+                )
+            }
+        },
         ErrorKind(kind) => format!("{}", kind),
         ParseErrorKind {
             formula,

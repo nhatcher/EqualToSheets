@@ -2,7 +2,10 @@ use super::{
     stringify::{stringify_reference, DisplaceData},
     Node, Reference,
 };
-use crate::constants::{LAST_COLUMN, LAST_ROW};
+use crate::{
+    constants::{LAST_COLUMN, LAST_ROW},
+    expressions::token::OpUnary,
+};
 use crate::{
     expressions::types::{Area, CellReferenceRC},
     number_format::to_excel_precision_str,
@@ -379,9 +382,10 @@ fn to_string_moved(node: &Node, move_context: &MoveContext) -> String {
             kind,
             to_string_moved(right, move_context),
         ),
-        UnaryKind { kind, right } => {
-            format!("{}{}", kind, to_string_moved(right, move_context))
-        }
+        UnaryKind { kind, right } => match kind {
+            OpUnary::Minus => format!("-{}", to_string_moved(right, move_context)),
+            OpUnary::Percentage => format!("{}%", to_string_moved(right, move_context)),
+        },
         ErrorKind(kind) => format!("{}", kind),
         ParseErrorKind {
             formula,

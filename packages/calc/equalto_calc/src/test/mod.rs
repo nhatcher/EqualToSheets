@@ -43,3 +43,5 @@ pub(crate) mod util;
 
 mod engineering;
 mod test_number_format;
+
+mod test_percentage;
