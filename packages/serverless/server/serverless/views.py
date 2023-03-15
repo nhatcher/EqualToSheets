@@ -1,6 +1,7 @@
+import json
 import tempfile
 from asyncio import sleep
-from typing import Any
+from typing import Any, Union
 from urllib.parse import quote
 
 import equalto
@@ -24,6 +25,7 @@ from serverless.email import send_license_activation_email
 from serverless.log import error, info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
+from serverless.types import SimulateInputType, SimulateOutputType, SimulateResultType
 from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
 
 MAX_XLSX_FILE_SIZE = 2 * 1024 * 1024
@@ -180,6 +182,50 @@ GraphQL query to list all sheets in this workbook: {proto}{host}/graphql?license
 
 """
     return HttpResponse(content, content_type="text/plain")
+
+
+def simulate(request: HttpRequest, workbook_id: str) -> Union[HttpResponse, JsonResponse]:
+    info("simulate(): headers=%s" % request.headers)
+    try:
+        license = get_license(request.META)
+    except LicenseKeyError:
+        return HttpResponseForbidden("Invalid license")
+    origin = request.META.get("HTTP_ORIGIN")
+    if not is_license_key_valid_for_host(license.key, origin):
+        error("License key %s is not valid for %s." % (license.key, origin))
+        return HttpResponseForbidden("License key is not valid")
+
+    def get(param: str) -> str:
+        post_param = request.POST.get(param)
+        return post_param if post_param else request.GET.get(param)
+
+    workbook = get_object_or_404(Workbook, license=license, id=workbook_id)
+
+    equalto_workbook = workbook.calc
+
+    inputs_str = get("inputs")
+    try:
+        inputs: SimulateInputType = json.loads(inputs_str)
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest(f"Invalid inputs: {inputs_str}")
+
+    outputs_str = get("outputs")
+    try:
+        outputs: SimulateOutputType = json.loads(outputs_str)
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest(f"Invalid outputs: {outputs_str}")
+
+    for sheet_name, assignments in inputs.items():
+        for cell_ref, value in assignments.items():
+            equalto_workbook.sheets[sheet_name][cell_ref].value = value
+
+    results: SimulateResultType = {}
+    for sheet_name, cell_refs in outputs.items():  # noqa: WPS440
+        results[sheet_name] = {}
+        for cell_ref in cell_refs:  # noqa: WPS440
+            results[sheet_name][cell_ref] = equalto_workbook.sheets[sheet_name][cell_ref].value
+
+    return JsonResponse(results)
 
 
 class LicenseGraphQLView(GraphQLView):

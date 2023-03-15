@@ -3,6 +3,7 @@ from asyncio import sleep
 from collections import namedtuple
 from typing import Any
 from unittest.mock import MagicMock, patch
+from urllib.parse import quote
 
 import equalto
 from asgiref.sync import sync_to_async
@@ -16,6 +17,7 @@ from serverless.email import LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import MAX_WORKBOOK_INPUT_SIZE, MAX_WORKBOOK_JSON_SIZE, MAX_WORKBOOKS_PER_LICENSE, schema
+from serverless.types import SimulateInputType, SimulateOutputType
 from serverless.util import get_name_from_path, is_license_key_valid_for_host
 from serverless.views import MAX_XLSX_FILE_SIZE, activate_license_key, create_workbook_from_xlsx, send_license_key
 
@@ -81,10 +83,11 @@ def _create_verified_license(
 ) -> License:
     before_license_ids = list(License.objects.values_list("id", flat=True))
     request = RequestFactory().post("/send-license-key?%s" % urlencode({"email": email, "domains": domains}))
-    send_license_key(request)
+    response = send_license_key(request)
+    assert response.status_code == 200, response.content
     after_license_ids = License.objects.values_list("id", flat=True)
     new_license_ids = list(set(after_license_ids).difference(before_license_ids))
-    assert len(new_license_ids) == 1
+    assert len(new_license_ids) == 1, new_license_ids
     license = License.objects.get(id=new_license_ids[0])
     license.email_verified = True
     license.save()
@@ -1214,6 +1217,156 @@ class SimpleTest(TestCase):
             [sheet.name for sheet in workbook.calc.sheets],
             ["Calculation", "Data"],
         )
+
+    def test_simulate(self) -> None:
+        # first, we upload the workbook
+        license = _create_verified_license(domains="")
+        with open("serverless/test-data/simulate-example.xlsx", "rb") as simulate_example:
+            xlsx_file = SimpleUploadedFile(
+                "simulate-example.xlsx",
+                simulate_example.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        request = self.factory.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        response = create_workbook_from_xlsx(request)
+        self.assertEqual(response.status_code, 200)
+
+        workbook = Workbook.objects.filter(license=license).get()
+        # then, we execute the simulations
+
+        # simulate noop
+        inputs: SimulateInputType = {}
+        outputs: SimulateOutputType = {}
+        response = self.client.get(
+            f"/simulate/{workbook.id}/?inputs={json.dumps(inputs)}&outputs={json.dumps(outputs)}",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {})
+
+        # simulate changes where everything computes without error
+        inputs = {
+            "Sheet1": {
+                "A1": 55,
+                "A2": 30,
+                "A3": 0.08,
+                "A4": "xyz",
+                "A5": 500,
+                "A6": False,
+            },
+        }
+        outputs = {
+            "Sheet1": ["B1", "B2", "B3", "B4", "B5", "B6", "B500"],
+        }
+        response = self.client.get(
+            f"/simulate/{workbook.id}/?inputs={quote(json.dumps(inputs))}&outputs={quote(json.dumps(outputs))}",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content.decode("utf-8")),
+            {
+                "Sheet1": {
+                    "B1": 56.0,
+                    "B2": 60,
+                    "B3": 0.04,
+                    "B4": "xyzpqr",
+                    "B5": 500,
+                    "B6": False,
+                    "B500": "",
+                },
+            },
+        )
+
+        # simulate using POST
+        inputs = {"Sheet1": {"A1": 99.0}}
+        outputs = {
+            "Sheet1": ["B1"],
+        }
+        response = self.client.post(
+            f"/simulate/{workbook.id}/",
+            {"inputs": json.dumps(inputs), "outputs": json.dumps(outputs)},
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {"Sheet1": {"B1": 100.0}})
+
+        # simulate changes where lots of errors occur
+        inputs = {
+            "Sheet1": {
+                "A1": "abc",
+                "A2": "def",
+                "A3": "ghi",
+                "A4": 89,
+                "A5": "jkl",
+                "A6": "mno",
+            },
+        }
+        outputs = {
+            "Sheet1": ["B1", "B2", "B3", "B4", "B5", "B6", "B500"],
+        }
+        response = self.client.get(
+            f"/simulate/{workbook.id}/?inputs={quote(json.dumps(inputs))}&outputs={quote(json.dumps(outputs))}",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content.decode("utf-8")),
+            {
+                "Sheet1": {
+                    "B1": "#VALUE!",
+                    "B2": "#VALUE!",
+                    "B3": "#VALUE!",
+                    "B4": "89pqr",
+                    "B5": "jkl",
+                    "B6": "mno",
+                    "B500": "",
+                },
+            },
+        )
+
+    def test_simulate_invalid(self) -> None:
+        # first, we upload the workbook
+        license = _create_verified_license(domains="")
+        with open("serverless/test-data/simulate-example.xlsx", "rb") as simulate_example:
+            xlsx_file = SimpleUploadedFile(
+                "simulate-example.xlsx",
+                simulate_example.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        request = self.factory.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        response = create_workbook_from_xlsx(request)
+        self.assertEqual(response.status_code, 200)
+
+        workbook = Workbook.objects.filter(license=license).get()
+
+        # confirm that invalid workbook ids and license keys are rejected
+        inputs: SimulateInputType = {}
+        outputs: SimulateOutputType = {}
+        invalid_workbook_id = "dc6325b0-9e39-44e9-b2ca-278e14be6bc5"
+        invalid_license_key = invalid_workbook_id
+        response = self.client.get(
+            f"/simulate/{workbook.id}/?inputs={quote(json.dumps(inputs))}&outputs={quote(json.dumps(outputs))}",
+            HTTP_AUTHORIZATION="Bearer %s" % invalid_license_key,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.content, b"Invalid license")
+
+        response = self.client.get(
+            f"/simulate/{invalid_workbook_id}/?inputs={quote(json.dumps(inputs))}&outputs={quote(json.dumps(outputs))}",
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        self.assertEqual(response.status_code, 404)
 
 
 class GetUpdatedWorkbookTests(TransactionTestCase):
