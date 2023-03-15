@@ -205,10 +205,19 @@ export default class Model implements IModel {
   deleteSheet(sheet: number): void {
     const worksheet = this.workbook.sheets.get(sheet);
     const { name } = worksheet;
+    const deletedCells = worksheet.getCells().map((cell) => ({
+      cell: {
+        sheet,
+        row: cell.row,
+        column: cell.column,
+      },
+      value: Model.getInputValue(cell),
+      style: cell.style.getSnapshot(),
+    }));
 
     worksheet.delete();
 
-    this.history.push([new DeleteSheetAction(this, sheet, name)]);
+    this.history.push([new DeleteSheetAction(this, sheet, name, deletedCells)]);
     this.notifySubscribers({ type: 'deleteSheet' });
   }
 
@@ -651,9 +660,21 @@ export default class Model implements IModel {
   // We need to delete (and save) the data
   deleteRow(sheet: number, row: number): void {
     const height = this.getRowHeight(sheet, row);
+    const deletedCells = this.workbook.sheets
+      .get(sheet)
+      .getRowCells(row)
+      .map((cell) => ({
+        cell: {
+          sheet,
+          row: cell.row,
+          column: cell.column,
+        },
+        value: Model.getInputValue(cell),
+        style: cell.style.getSnapshot(),
+      }));
     this.workbook.sheets.get(sheet).deleteRows(row, 1);
 
-    this.history.push([new DeleteRowAction(this, sheet, row, height)]);
+    this.history.push([new DeleteRowAction(this, sheet, row, height, deletedCells)]);
     this.notifySubscribers({ type: 'deleteRow' });
   }
 
@@ -668,9 +689,21 @@ export default class Model implements IModel {
   // We need to delete (and save) the data
   deleteColumn(sheet: number, column: number): void {
     const width = this.getColumnWidth(sheet, column);
+    const deletedCells = this.workbook.sheets
+      .get(sheet)
+      .getColumnCells(column)
+      .map((cell) => ({
+        cell: {
+          sheet,
+          row: cell.row,
+          column: cell.column,
+        },
+        value: Model.getInputValue(cell),
+        style: cell.style.getSnapshot(),
+      }));
     this.workbook.sheets.get(sheet).deleteColumns(column, 1);
 
-    this.history.push([new DeleteColumnAction(this, sheet, column, width)]);
+    this.history.push([new DeleteColumnAction(this, sheet, column, width, deletedCells)]);
     this.notifySubscribers({ type: 'deleteColumn' });
   }
 

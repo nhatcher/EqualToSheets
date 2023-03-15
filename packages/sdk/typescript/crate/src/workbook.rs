@@ -369,6 +369,48 @@ impl WasmWorkbook {
             .map_err(JsError::from)
     }
 
+    #[wasm_bindgen(js_name = "getColumnCellReferences")]
+    pub fn column_cell_references(&self, sheet_index: u32, column: i32) -> Result<String, JsError> {
+        let cell_references = self
+            .model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .column_cell_references(column)
+            .map_err(WorkbookError::from)?;
+        Ok(serde_json::to_string(&cell_references)
+            .map_err(|_| "Could not stringify style to JSON.".to_string())
+            .map_err(WorkbookError::from)?)
+    }
+
+    #[wasm_bindgen(js_name = "getRowCellReferences")]
+    pub fn row_cell_references(&self, sheet_index: u32, row: i32) -> Result<String, JsError> {
+        let cell_references = self
+            .model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .row_cell_references(row)
+            .map_err(WorkbookError::from)?;
+        Ok(serde_json::to_string(&cell_references)
+            .map_err(|_| "Could not stringify style to JSON.".to_string())
+            .map_err(WorkbookError::from)?)
+    }
+
+    #[wasm_bindgen(js_name = "getCellReferences")]
+    pub fn cell_references(&self, sheet_index: u32) -> Result<String, JsError> {
+        let cell_references = self
+            .model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)?
+            .cell_references()
+            .map_err(WorkbookError::from)?;
+        Ok(serde_json::to_string(&cell_references)
+            .map_err(|_| "Could not stringify style to JSON.".to_string())
+            .map_err(WorkbookError::from)?)
+    }
+
     #[wasm_bindgen(js_name = "getRowHeight")]
     pub fn row_height(&self, sheet_index: u32, row: i32) -> Result<f64, JsError> {
         self.model

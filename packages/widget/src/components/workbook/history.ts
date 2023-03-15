@@ -2,7 +2,12 @@ import { CellStyleSnapshot } from '@equalto-software/calc';
 import { IModel } from './types';
 
 // TODO: Move to sheet ids or just use indexes for now
-// TODO: Get data from removed stuff
+
+type DeletedCell = {
+  cell: Cell;
+  value: string | null;
+  style: CellStyleSnapshot;
+};
 
 export class ActionHistory {
   private enabled: boolean;
@@ -244,13 +249,20 @@ export class DeleteColumnAction extends ModelAction {
 
   private width: number;
 
-  // TODO: data
+  private deletedCells: DeletedCell[];
 
-  constructor(model: IModel, sheet: number, column: number, width: number) {
+  constructor(
+    model: IModel,
+    sheet: number,
+    column: number,
+    width: number,
+    deletedCells: DeletedCell[],
+  ) {
     super(model);
     this.sheet = sheet;
     this.column = column;
     this.width = width;
+    this.deletedCells = deletedCells;
   }
 
   protected redoAction() {
@@ -260,6 +272,19 @@ export class DeleteColumnAction extends ModelAction {
   protected undoAction() {
     this.model.insertColumn(this.sheet, this.column);
     this.model.setColumnWidth(this.sheet, this.column, this.width);
+
+    this.deletedCells.forEach((deletedCell) => {
+      const { cell, value, style } = deletedCell;
+      const { sheet, row, column } = cell;
+      if (value) {
+        this.model.setCellValue(sheet, row, column, value);
+      }
+      this.model.setCellsStyle(
+        sheet,
+        { rowStart: row, rowEnd: row, columnStart: column, columnEnd: column },
+        () => style,
+      );
+    });
   }
 }
 
@@ -321,13 +346,20 @@ export class DeleteRowAction extends ModelAction {
 
   private height: number;
 
-  // TODO: data
+  private deletedCells: DeletedCell[];
 
-  constructor(model: IModel, sheet: number, row: number, height: number) {
+  constructor(
+    model: IModel,
+    sheet: number,
+    row: number,
+    height: number,
+    deletedCells: DeletedCell[],
+  ) {
     super(model);
     this.sheet = sheet;
     this.row = row;
     this.height = height;
+    this.deletedCells = deletedCells;
   }
 
   protected redoAction() {
@@ -337,6 +369,19 @@ export class DeleteRowAction extends ModelAction {
   protected undoAction() {
     this.model.insertRow(this.sheet, this.row);
     this.model.setRowHeight(this.sheet, this.row, this.height);
+
+    this.deletedCells.forEach((deletedCell) => {
+      const { cell, value, style } = deletedCell;
+      const { sheet, row, column } = cell;
+      if (value) {
+        this.model.setCellValue(sheet, row, column, value);
+      }
+      this.model.setCellsStyle(
+        sheet,
+        { rowStart: row, rowEnd: row, columnStart: column, columnEnd: column },
+        () => style,
+      );
+    });
   }
 }
 
@@ -388,13 +433,14 @@ export class DeleteSheetAction extends ModelAction {
 
   private name: string;
 
-  // TODO: data
+  private deletedCells: DeletedCell[];
 
-  constructor(model: IModel, sheet: number, name: string) {
+  constructor(model: IModel, sheet: number, name: string, deletedCells: DeletedCell[]) {
     super(model);
 
     this.sheet = sheet;
     this.name = name;
+    this.deletedCells = deletedCells;
   }
 
   protected redoAction() {
@@ -403,7 +449,22 @@ export class DeleteSheetAction extends ModelAction {
 
   protected undoAction() {
     const sheet = this.model.addBlankSheet();
-    sheet.name = this.name;
+    if (sheet.name !== this.name) {
+      sheet.name = this.name;
+    }
     this.sheet = sheet.index; // TODO: Migrate undoStack to use the new id
+
+    this.deletedCells.forEach((deletedCell) => {
+      const { cell, value, style } = deletedCell;
+      const { row, column } = cell;
+      if (value) {
+        this.model.setCellValue(this.sheet, row, column, value);
+      }
+      this.model.setCellsStyle(
+        this.sheet,
+        { rowStart: row, rowEnd: row, columnStart: column, columnEnd: column },
+        () => style,
+      );
+    });
   }
 }

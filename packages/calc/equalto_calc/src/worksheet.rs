@@ -1,4 +1,5 @@
 use crate::constants::{self, LAST_COLUMN, LAST_ROW};
+use crate::expressions::types::CellReferenceIndex;
 use crate::expressions::utils::{is_valid_column_number, is_valid_row};
 use crate::{expressions::token::Error, types::*};
 
@@ -368,6 +369,25 @@ impl Worksheet {
         Ok(constants::DEFAULT_COLUMN_WIDTH)
     }
 
+    // Returns non empty cells in a column
+    pub fn column_cell_references(&self, column: i32) -> Result<Vec<CellReferenceIndex>, String> {
+        let mut column_cell_references: Vec<CellReferenceIndex> = Vec::new();
+        if !is_valid_column_number(column) {
+            return Err(format!("Column number '{column}' is not valid."));
+        }
+
+        for row in self.sheet_data.keys() {
+            if self.cell(*row, column).is_some() {
+                column_cell_references.push(CellReferenceIndex {
+                    sheet: self.sheet_id,
+                    row: *row,
+                    column,
+                });
+            }
+        }
+        Ok(column_cell_references)
+    }
+
     /// Returns the height of a row in pixels
     pub fn row_height(&self, row: i32) -> Result<f64, String> {
         if !is_valid_row(row) {
@@ -381,6 +401,42 @@ impl Worksheet {
             }
         }
         Ok(constants::DEFAULT_ROW_HEIGHT)
+    }
+
+    /// Returns non empty cells in a row
+    pub fn row_cell_references(&self, row: i32) -> Result<Vec<CellReferenceIndex>, String> {
+        let mut row_cell_references: Vec<CellReferenceIndex> = Vec::new();
+        if !is_valid_row(row) {
+            return Err(format!("Row number '{row}' is not valid."));
+        }
+
+        for (row_index, columns) in self.sheet_data.iter() {
+            if *row_index == row {
+                for column in columns.keys() {
+                    row_cell_references.push(CellReferenceIndex {
+                        sheet: self.sheet_id,
+                        row,
+                        column: *column,
+                    })
+                }
+            }
+        }
+        Ok(row_cell_references)
+    }
+
+    /// Returns non empty cells
+    pub fn cell_references(&self) -> Result<Vec<CellReferenceIndex>, String> {
+        let mut cell_references: Vec<CellReferenceIndex> = Vec::new();
+        for (row, columns) in self.sheet_data.iter() {
+            for column in columns.keys() {
+                cell_references.push(CellReferenceIndex {
+                    sheet: self.sheet_id,
+                    row: *row,
+                    column: *column,
+                })
+            }
+        }
+        Ok(cell_references)
     }
 
     /// Calculates dimension of the sheet. This function isn't cheap to calculate.

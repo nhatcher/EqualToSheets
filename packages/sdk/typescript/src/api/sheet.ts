@@ -1,6 +1,10 @@
 import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
 import { parseCellReference } from '../utils';
-import { WasmWorkbook, WasmNavigationDirection } from '../__generated_pkg/equalto_wasm';
+import {
+  WasmWorkbook,
+  WasmNavigationDirection,
+  WasmCellReferenceIndex,
+} from '../__generated_pkg/equalto_wasm';
 import { Cell, ICell } from './cell';
 import { WorkbookSheets } from './workbookSheets';
 
@@ -84,11 +88,36 @@ export interface ISheet {
     maxColumn: number;
   };
 
-  insertRows(row: number, rowCount: number): void;
-  deleteRows(row: number, rowCount: number): void;
+  /**
+   * @returns nonempty cells in the worksheet.
+   */
+  getCells(): ICell[];
 
+  /**
+   * Inserts `rowCount` number of rows starting at `row`.
+   */
+  insertRows(row: number, rowCount: number): void;
+  /**
+   * Inserts `rowCount` number of rows starting at `row`.
+   */
+  deleteRows(row: number, rowCount: number): void;
+  /**
+   * @returns nonempty cells in the row.
+   */
+  getRowCells(column: number): ICell[];
+
+  /**
+   * Inserts `columnCount` number of columns starting at `column`.
+   */
   insertColumns(column: number, columnCount: number): void;
+  /**
+   * Deletes `columnCount` number of columns starting at `column`.
+   */
   deleteColumns(column: number, columnCount: number): void;
+  /**
+   * @returns nonempty cells in the column.
+   */
+  getColumnCells(column: number): ICell[];
 
   /**
    * Returns sub-interface providing features useful when implementing user interface
@@ -220,6 +249,43 @@ export class Sheet implements ISheet {
   setColumnWidth(column: number, columnWidth: number): void {
     try {
       this._wasmWorkbook.setColumnWidth(this.index, column, columnWidth);
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  getColumnCells(column: number): ICell[] {
+    try {
+      const cellReferences = JSON.parse(
+        this._wasmWorkbook.getColumnCellReferences(this.index, column),
+      );
+      return cellReferences.map((reference: WasmCellReferenceIndex) =>
+        this.cell(reference.row, reference.column),
+      );
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  getRowCells(column: number): ICell[] {
+    try {
+      const cellReferences = JSON.parse(
+        this._wasmWorkbook.getRowCellReferences(this.index, column),
+      );
+      return cellReferences.map((reference: WasmCellReferenceIndex) =>
+        this.cell(reference.row, reference.column),
+      );
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  getCells(): ICell[] {
+    try {
+      const cellReferences = JSON.parse(this._wasmWorkbook.getCellReferences(this.index));
+      return cellReferences.map((reference: WasmCellReferenceIndex) =>
+        this.cell(reference.row, reference.column),
+      );
     } catch (error) {
       throw wrapWebAssemblyError(error);
     }

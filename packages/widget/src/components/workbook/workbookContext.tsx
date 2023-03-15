@@ -107,7 +107,11 @@ export const Root: FunctionComponent<{
     root: rootRef,
   });
 
+  if (editorState.selectedSheet >= (model?.getTabs()?.length ?? 0)) {
+    editorState.selectedSheet = 0;
+  }
   const { selectedSheet, selectedCell, selectedArea, extendToArea, cellEditing } = editorState;
+
   const onExtendToEnd = useCallback(() => {
     if (!model || !extendToArea) {
       return;
