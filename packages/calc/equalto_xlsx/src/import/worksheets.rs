@@ -799,12 +799,16 @@ pub(super) fn load_sheets<R: Read + std::io::Seek>(
         let rel = &rels[&rel_id];
         if rel.rel_type.ends_with("worksheet") {
             let path = &rel.target;
-            // let sheet_index = get_index_from_rel_id(rel_id.as_str());
+            let path = if let Some(p) = path.strip_prefix('/') {
+                p.to_string()
+            } else {
+                format!("xl/{path}")
+            };
             sheets.push(load_sheet(
                 archive,
-                &("xl/".to_owned() + path),
+                &path,
                 &name,
-                sheet.sheet_id, //&rel_id,
+                sheet.sheet_id,
                 &state,
                 &ws_list,
             )?);
