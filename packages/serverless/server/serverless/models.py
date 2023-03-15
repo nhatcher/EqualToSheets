@@ -43,11 +43,15 @@ class LicenseDomain(models.Model):
 
 class Workbook(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=256, null=False, default="")
     license = models.ForeignKey(License, on_delete=models.CASCADE)
     workbook_json = models.JSONField(null=False, default=get_default_workbook)
     revision = models.IntegerField(default=1, null=False)
     create_datetime = models.DateTimeField(default=timezone.now, null=False)
     modify_datetime = models.DateTimeField(default=timezone.now, null=False)
+
+    # workbook json version
+    version = models.IntegerField(default=1, null=False)
 
     @cached_property
     def calc(self) -> equalto.workbook.Workbook:

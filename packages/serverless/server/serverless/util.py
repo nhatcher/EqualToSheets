@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from serverless.log import error, info
@@ -6,6 +7,11 @@ from serverless.models import License, LicenseDomain
 
 class LicenseKeyError(Exception):
     """A problem with the license key."""
+
+
+def get_name_from_path(path: str) -> str:
+    m = re.search(r"([^/\\]+$)", path)
+    return m.group(0) if m else ""
 
 
 def get_license(http_meta: dict[str, Any]) -> License:

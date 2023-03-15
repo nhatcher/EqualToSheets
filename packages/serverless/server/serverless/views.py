@@ -24,7 +24,7 @@ from serverless.email import send_license_activation_email
 from serverless.log import error, info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import schema
-from serverless.util import LicenseKeyError, get_license, is_license_key_valid_for_host
+from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
 
 MAX_XLSX_FILE_SIZE = 2 * 1024 * 1024
 
@@ -149,7 +149,8 @@ def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
     except WorkbookError as err:
         return HttpResponseBadRequest(f"Could not upload workbook.\n\nDetails:\n\n{err}\n")
 
-    workbook = Workbook(license=license, workbook_json=equalto_workbook.json)
+    workbook_name = get_name_from_path(file.name)
+    workbook = Workbook(license=license, workbook_json=equalto_workbook.json, name=workbook_name)
     workbook.save()
 
     query = (
@@ -159,6 +160,7 @@ def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
 
 query {
   workbook(workbookId: "%s") {
+    name,
     sheets{ name }
   }
 }"""

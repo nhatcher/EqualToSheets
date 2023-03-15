@@ -16,7 +16,7 @@ from serverless.email import LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID
 from serverless.log import info
 from serverless.models import License, LicenseDomain, Workbook
 from serverless.schema import MAX_WORKBOOK_INPUT_SIZE, MAX_WORKBOOK_JSON_SIZE, MAX_WORKBOOKS_PER_LICENSE, schema
-from serverless.util import is_license_key_valid_for_host
+from serverless.util import get_name_from_path, is_license_key_valid_for_host
 from serverless.views import MAX_XLSX_FILE_SIZE, activate_license_key, create_workbook_from_xlsx, send_license_key
 
 
@@ -229,6 +229,8 @@ class SimpleTest(TestCase):
             """
             query {
                 workbooks {
+                    name
+                    id
                     sheets {
                         id
                         name
@@ -240,6 +242,11 @@ class SimpleTest(TestCase):
         )
 
         self.assertEqual(len(data["data"]["workbooks"]), 1)
+        self.assertEqual(
+            data["data"]["workbooks"][0]["name"],
+            "test-upload.xlsx",
+        )
+
         self.assertCountEqual(
             data["data"]["workbooks"][0]["sheets"],
             [
@@ -1294,3 +1301,9 @@ class GetUpdatedWorkbookTests(TransactionTestCase):
             f"/edit-workbook/{self.license.key}/{invalid_workbook_id}/",
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_get_name_from_path(self) -> None:
+        self.assertEqual(get_name_from_path("/path/to/file.xlsx"), "file.xlsx")
+        self.assertEqual(get_name_from_path(r"c:\path\to\file.xlsx"), "file.xlsx")
+        self.assertEqual(get_name_from_path("/path/to€/file€.xlsx"), "file€.xlsx")
+        self.assertEqual(get_name_from_path(""), "")

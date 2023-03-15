@@ -136,6 +136,7 @@ class Workbook(DjangoObjectType):
             "create_datetime",
             "modify_datetime",
             "revision",
+            "name",
         )
 
     sheet = graphene.Field(Sheet, sheet_id=graphene.Int(), name=graphene.String())
