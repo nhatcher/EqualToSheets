@@ -167,7 +167,19 @@ pub(super) fn load_styles<R: Read + std::io::Seek>(
         let pattern_fill = fill
             .children()
             .filter(|n| n.has_tag_name("patternFill"))
-            .collect::<Vec<Node>>()[0];
+            .collect::<Vec<Node>>();
+        if pattern_fill.len() != 1 {
+            // safety belt
+            // Some fills do not have a patternFill, but they have gradientFill
+            fills.push(Fill {
+                pattern_type: "solid".to_string(),
+                fg_color: None,
+                bg_color: None,
+            });
+            continue;
+        }
+        let pattern_fill = pattern_fill[0];
+
         let pattern_type = pattern_fill
             .attribute("patternType")
             .unwrap_or("none")
