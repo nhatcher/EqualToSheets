@@ -586,11 +586,23 @@ export default class Model implements IModel {
       }
       // Change all formulas that pointed to the old area to the new area
       // TODO: paste - we need forwardReferences diff getter
-      this.workbook.forwardReferences(sourceArea, {
+      const forwardReferencesActions = this.workbook.forwardReferences(sourceArea, {
         sheet: target.sheet,
         row: target.rowStart,
         column: target.columnStart,
       });
+      actions.push(
+        ...forwardReferencesActions.map((forwardReferenceAction) => {
+          const { sheet: actionSheet, row, column } = forwardReferenceAction.cell;
+          const { newValue, oldValue } = forwardReferenceAction;
+          return new SetCellValueAction(
+            this,
+            { sheet: actionSheet, row, column },
+            newValue,
+            oldValue,
+          );
+        }),
+      );
     }
     this.history.push(actions);
     this.notifySubscribers({ type: 'paste' });

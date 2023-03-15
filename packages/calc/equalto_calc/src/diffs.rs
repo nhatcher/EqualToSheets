@@ -19,19 +19,10 @@ pub enum CellValue {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub enum Diff {
-    #[serde(rename_all = "camelCase")]
-    SetCellValue {
-        sheet: u32,
-        column: i32,
-        row: i32,
-        new_value: CellValue,
-        new_style: i32,
-        old_value: CellValue,
-        old_style: i32,
-    },
-    // TODO: Rest of the diffs
+pub struct SetCellValue {
+    cell: CellReferenceIndex,
+    new_value: CellValue,
+    old_value: CellValue,
 }
 
 impl Model {
@@ -70,8 +61,8 @@ impl Model {
         &mut self,
         source_area: &Area,
         target: &CellReferenceIndex,
-    ) -> Result<Vec<Diff>, String> {
-        let mut diff_list: Vec<Diff> = Vec::new();
+    ) -> Result<Vec<SetCellValue>, String> {
+        let mut diff_list: Vec<SetCellValue> = Vec::new();
         let target_area = &Area {
             sheet: target.sheet,
             row: target.row,
@@ -132,15 +123,10 @@ impl Model {
                         format!("={updated_formula}"),
                     )?;
                     // Update the diff list
-                    let style = self.get_cell_style_index(sheet, row, column);
-                    diff_list.push(Diff::SetCellValue {
-                        sheet,
-                        column,
-                        row,
+                    diff_list.push(SetCellValue {
+                        cell: CellReferenceIndex { sheet, column, row },
                         new_value: CellValue::Value(format!("={}", updated_formula)),
-                        new_style: style,
                         old_value: CellValue::Value(format!("={}", formula)),
-                        old_style: style,
                     });
                 }
             }

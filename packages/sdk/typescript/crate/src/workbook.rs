@@ -543,11 +543,14 @@ impl WasmWorkbook {
         &mut self,
         source_area: WasmArea,
         target: WasmCellReferenceIndex,
-    ) -> Result<(), JsError> {
-        self.model
+    ) -> Result<String, JsError> {
+        let forward_references_actions = self
+            .model
             .forward_references(&source_area.into(), &target.into())
             .map_err(WorkbookError::from)?;
-        Ok(())
+        Ok(serde_json::to_string(&forward_references_actions)
+            .map_err(|_| "Could not stringify action to JSON.".to_string())
+            .map_err(WorkbookError::from)?)
     }
 
     #[wasm_bindgen(js_name = "getCellStyle")]

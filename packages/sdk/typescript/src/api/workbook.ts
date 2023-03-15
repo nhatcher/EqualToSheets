@@ -51,6 +51,12 @@ type Area = {
   height: number;
 };
 
+type ForwardReferenceAction = {
+  cell: CellReference;
+  newValue: string | null;
+  oldValue: string | null;
+};
+
 export interface IWorkbook {
   get sheets(): IWorkbookSheets;
   /**
@@ -112,7 +118,7 @@ export interface IWorkbook {
    * @param source_area - area that was cut.
    * @param target - target cell where it was pasted.
    */
-  forwardReferences(source_area: Area, target: CellReference): void;
+  forwardReferences(source_area: Area, target: CellReference): ForwardReferenceAction[];
 }
 
 export class Workbook implements IWorkbook {
@@ -203,16 +209,25 @@ export class Workbook implements IWorkbook {
     }
   }
 
-  forwardReferences(sourceArea: Area, target: CellReference): void {
+  forwardReferences(sourceArea: Area, target: CellReference): ForwardReferenceAction[] {
+    let forwardReferenceActions: ForwardReferenceAction[] = [];
     try {
-      this._wasmWorkbook.forwardReferences(
+      const actionsJson = this._wasmWorkbook.forwardReferences(
         Workbook.areaToWasm(sourceArea),
         Workbook.cellReferenceToWasm(target),
+      );
+      forwardReferenceActions = JSON.parse(actionsJson).map(
+        (action: {
+          cell: WasmCellReferenceIndex;
+          new_value: string | null;
+          old_value: string | null;
+        }) => ({ cell: action.cell, newValue: action.new_value, oldValue: action.old_value }),
       );
       this._wasmWorkbook.evaluate();
     } catch (e) {
       throw wrapWebAssemblyError(e);
     }
+    return forwardReferenceActions;
   }
 
   private static cellReferenceToWasm(cell: CellReference) {
