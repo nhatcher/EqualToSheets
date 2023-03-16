@@ -30,4 +30,6 @@ export interface IModel {
   deleteCells(sheet: number, area: Area): void;
   enableHistory(): void;
   disableHistory(): void;
+  pauseSubscriptions(): void;
+  unpauseSubscriptions(): void;
 }

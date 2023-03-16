@@ -99,16 +99,26 @@ class ModelAction implements IAction {
     throw new Error('Not implemented');
   }
 
-  redo() {
+  private beforeAction() {
     this.model.disableHistory();
-    this.redoAction();
+    this.model.pauseSubscriptions();
+  }
+
+  private afterAction() {
+    this.model.unpauseSubscriptions();
     this.model.enableHistory();
   }
 
+  redo() {
+    this.beforeAction();
+    this.redoAction();
+    this.afterAction();
+  }
+
   undo() {
-    this.model.disableHistory();
+    this.beforeAction();
     this.undoAction();
-    this.model.enableHistory();
+    this.afterAction();
   }
 }
 

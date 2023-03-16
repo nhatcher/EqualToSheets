@@ -95,6 +95,8 @@ export default class Model implements IModel {
 
   private subscribers: Record<number, Subscriber> = {};
 
+  private subscriptionsPaused: boolean = false;
+
   constructor(options: ModelSettings) {
     this.workbook = options.workbook;
     this.history = new ActionHistory();
@@ -121,9 +123,20 @@ export default class Model implements IModel {
   }
 
   private notifySubscribers(change: Change) {
+    if (this.subscriptionsPaused) {
+      return;
+    }
     for (const subscriber of Object.values(this.subscribers)) {
       subscriber(change);
     }
+  }
+
+  pauseSubscriptions() {
+    this.subscriptionsPaused = true;
+  }
+
+  unpauseSubscriptions() {
+    this.subscriptionsPaused = false;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -307,6 +320,7 @@ export default class Model implements IModel {
 
   undo(): void {
     this.history.undo();
+    this.notifySubscribers({ type: 'undo' });
   }
 
   canRedo(): boolean {
@@ -315,6 +329,7 @@ export default class Model implements IModel {
 
   redo(): void {
     this.history.redo();
+    this.notifySubscribers({ type: 'redo' });
   }
 
   private static getInputValue(cell: ICell): string | null {
