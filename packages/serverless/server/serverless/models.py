@@ -1,4 +1,6 @@
 import uuid
+from functools import cache
+from typing import Any
 
 import equalto.workbook
 from django.db import models
@@ -6,6 +8,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 
 
+@cache
 def get_default_workbook() -> str:
     # TODO: use a better default workbook
     with open("serverless/data/XLOOKUP.xlsx.json", encoding="utf-8") as f:
@@ -52,6 +55,18 @@ class Workbook(models.Model):
 
     # workbook json version
     version = models.IntegerField(default=1, null=False)
+
+    def set_workbook_json(self, workbook_json: dict[str, Any]) -> None:
+        if self.workbook_json == workbook_json:
+            return
+
+        self.workbook_json = workbook_json
+        self.revision += 1
+
+        self.save(update_fields=["workbook_json", "revision"])
+
+        # invalidate `calc` property cache
+        self.__dict__.pop("calc", None)
 
     @cached_property
     def calc(self) -> equalto.workbook.Workbook:

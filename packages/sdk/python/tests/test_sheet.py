@@ -34,6 +34,15 @@ def test_get_sheet_by_negative_index(example_workbook: Workbook) -> None:
     assert example_workbook.sheets[-1].name == "Hidden"
 
 
+def test_get_sheet_by_id(example_workbook: Workbook) -> None:
+    assert example_workbook.sheets.get_sheet_by_id(4).name == "Created fourth"
+
+
+def test_get_sheet_by_invalid_id(example_workbook: Workbook) -> None:
+    with pytest.raises(WorkbookError, match="sheet with ID 42 does not exist"):
+        example_workbook.sheets.get_sheet_by_id(42)
+
+
 def test_sheets_len(empty_workbook: Workbook, example_workbook: Workbook) -> None:
     assert len(empty_workbook.sheets) == 1
     assert len(example_workbook.sheets) == 8

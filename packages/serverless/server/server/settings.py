@@ -35,7 +35,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 if IS_HEROKU:
     ALLOWED_HOSTS = ["*"]
     SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 else:
     ALLOWED_HOSTS = []
 
@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "serverless",
     "graphene_django",
     "django_extensions",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [

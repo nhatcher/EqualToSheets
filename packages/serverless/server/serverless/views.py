@@ -59,7 +59,7 @@ def send_license_key(request: HttpRequest) -> HttpResponse:
 
     send_license_activation_email(license)
 
-    return JsonResponse({"license_id": str(license.id), "license_key": str(license.key)})
+    return HttpResponse(status=201)
 
 
 def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:

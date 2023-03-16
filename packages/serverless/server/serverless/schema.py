@@ -144,7 +144,7 @@ class Workbook(DjangoObjectType):
 
     def resolve_sheet(self, info: graphene.ResolveInfo, sheet_id: int | None = None, name: str | None = None) -> Sheet:
         if sheet_id is not None and name is None:
-            return Sheet(calc_sheet=self.calc.sheets._get_sheet(sheet_id))  # noqa: WPS437
+            return Sheet(calc_sheet=self.calc.sheets.get_sheet_by_id(sheet_id))
         elif sheet_id is None and name is not None:
             return Sheet(calc_sheet=self.calc.sheets[name])
         else:
@@ -191,12 +191,11 @@ class SaveWorkbook(graphene.Mutation):
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
         try:
-            workbook.workbook_json = equalto.loads(workbook_json).json
+            workbook_json = equalto.loads(workbook_json).json
         except equalto.exceptions.WorkbookError:
             raise GraphQLError("Could not parse workbook JSON")
 
-        workbook.revision += 1
-        workbook.save(update_fields=["workbook_json", "revision"])
+        workbook.set_workbook_json(workbook_json)
 
         return SaveWorkbook(revision=workbook.revision)
 
@@ -239,7 +238,7 @@ class SetCellInput(graphene.Mutation):
             sheet = workbook.calc.sheets[sheet_name]
         else:
             assert sheet_id is not None
-            sheet = workbook.calc.sheets._get_sheet(sheet_id)  # noqa: WPS437
+            sheet = workbook.calc.sheets.get_sheet_by_id(sheet_id)
 
         if ref is not None:
             assert row is None and col is None
@@ -250,9 +249,7 @@ class SetCellInput(graphene.Mutation):
 
         cell.set_user_input(input)
 
-        workbook.workbook_json = workbook.calc.json
-        workbook.revision += 1
-        workbook.save(update_fields=["workbook_json", "revision"])
+        workbook.set_workbook_json(workbook.calc.json)
         return SetCellInput(workbook=workbook)
 
 
@@ -271,9 +268,7 @@ class CreateSheet(graphene.Mutation):
 
         calc_sheet = workbook.calc.sheets.add(sheet_name)
 
-        workbook.workbook_json = workbook.calc.json
-        workbook.revision += 1
-        workbook.save(update_fields=["workbook_json", "revision"])
+        workbook.set_workbook_json(workbook.calc.json)
         return cls(workbook=workbook, sheet=Sheet(calc_sheet=calc_sheet))
 
 
@@ -289,11 +284,9 @@ class DeleteSheet(graphene.Mutation):
     def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_id: int) -> Self:
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
-        workbook.calc.sheets._get_sheet(sheet_id).delete()  # noqa: WPS437
+        workbook.calc.sheets.get_sheet_by_id(sheet_id).delete()
 
-        workbook.workbook_json = workbook.calc.json
-        workbook.revision += 1
-        workbook.save(update_fields=["workbook_json", "revision"])
+        workbook.set_workbook_json(workbook.calc.json)
         return cls(workbook=workbook)
 
 
@@ -311,12 +304,10 @@ class RenameSheet(graphene.Mutation):
     def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_id: int, new_name: str) -> Self:
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
-        calc_sheet = workbook.calc.sheets._get_sheet(sheet_id)  # noqa: WPS437
+        calc_sheet = workbook.calc.sheets.get_sheet_by_id(sheet_id)
         calc_sheet.name = new_name
 
-        workbook.workbook_json = workbook.calc.json
-        workbook.revision += 1
-        workbook.save(update_fields=["workbook_json", "revision"])
+        workbook.set_workbook_json(workbook.calc.json)
         return cls(workbook=workbook, sheet=Sheet(calc_sheet=calc_sheet))
 
 

@@ -87,11 +87,11 @@ class WorkbookSheets:
     def __getitem__(self, key: str | int) -> Sheet:
         """Get sheet by either name or index."""
         if isinstance(key, str):
-            return self._get_sheet(self._get_sheet_id_from_name(name=key))
+            return self.get_sheet_by_id(self._get_sheet_id_from_name(name=key))
         elif isinstance(key, int):
             if key < 0:
                 key = len(self) + key
-            return self._get_sheet(self._get_sheet_id_from_index(index=key))
+            return self.get_sheet_by_id(self._get_sheet_id_from_index(index=key))
         raise ValueError("invalid sheet lookup key type")  # pragma: no cover
 
     def __delitem__(self, key: str | int) -> None:
@@ -129,7 +129,9 @@ class WorkbookSheets:
     _sheet_index_to_sheet_id: dict[int, int]
     _sheet_id_to_sheet_index: dict[int, int]
 
-    def _get_sheet(self, sheet_id: int) -> Sheet:
+    def get_sheet_by_id(self, sheet_id: int) -> Sheet:
+        if sheet_id not in self._sheet_id_to_sheet_name:
+            raise WorkbookError(f"sheet with ID {sheet_id} does not exist")
         if sheet_id not in self._sheet_cache:
             self._sheet_cache[sheet_id] = Sheet(self, sheet_id)
         return self._sheet_cache[sheet_id]
