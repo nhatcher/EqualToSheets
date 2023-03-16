@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path
 from serverless.views import (activate_license_key, create_workbook_from_xlsx,
                               edit_workbook, get_updated_workbook,
-                              graphql_view, send_license_key, simulate)
+                              graphql_view, send_license_key, simulate,
+                              unsubscribe_email)
 
 admin.autodiscover()
 
@@ -16,4 +17,5 @@ urlpatterns = [
     path("get-updated-workbook/<uuid:workbook_id>/<int:revision>", get_updated_workbook),
     path("edit-workbook/<uuid:license_key>/<uuid:workbook_id>/", edit_workbook),
     path("simulate/<uuid:workbook_id>/", simulate),
+    path("unsubscribe-email", unsubscribe_email)
 ]

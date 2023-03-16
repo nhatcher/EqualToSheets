@@ -23,7 +23,7 @@ from graphene_django.views import GraphQLView
 from server import settings
 from serverless.email import send_license_activation_email
 from serverless.log import error, info
-from serverless.models import License, LicenseDomain, Workbook
+from serverless.models import License, LicenseDomain, UnsubscribedEmail, Workbook
 from serverless.schema import schema
 from serverless.types import SimulateInputType, SimulateOutputType, SimulateResultType
 from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
@@ -182,6 +182,18 @@ GraphQL query to list all sheets in this workbook: {proto}{host}/graphql?license
 
 """
     return HttpResponse(content, content_type="text/plain")
+
+
+def unsubscribe_email(request: HttpRequest) -> HttpResponse:
+    info("unsubscribe_email(): headers=%s" % request.headers)
+    email = request.GET.get("email")
+    if not email:
+        return HttpResponseBadRequest("You must specify the email GET parameter.")
+    if UnsubscribedEmail.objects.filter(email=email).count() > 0:
+        return HttpResponse(f"The email address {email} has already been unsubscribed from all EqualTo mailings.")
+    unsubscribed_email = UnsubscribedEmail(email=email)
+    unsubscribed_email.save()
+    return HttpResponse(f"The email address {email} has unsubscribed from all EqualTo mailings.")
 
 
 def simulate(request: HttpRequest, workbook_id: str) -> Union[HttpResponse, JsonResponse]:

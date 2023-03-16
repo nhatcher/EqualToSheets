@@ -15,11 +15,17 @@ from graphql import GraphQLError
 
 from serverless.email import LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID
 from serverless.log import info
-from serverless.models import License, LicenseDomain, Workbook
+from serverless.models import License, LicenseDomain, UnsubscribedEmail, Workbook
 from serverless.schema import MAX_WORKBOOK_INPUT_SIZE, MAX_WORKBOOK_JSON_SIZE, MAX_WORKBOOKS_PER_LICENSE, schema
 from serverless.types import SimulateInputType, SimulateOutputType
 from serverless.util import get_name_from_path, is_license_key_valid_for_host
-from serverless.views import MAX_XLSX_FILE_SIZE, activate_license_key, create_workbook_from_xlsx, send_license_key
+from serverless.views import (
+    MAX_XLSX_FILE_SIZE,
+    activate_license_key,
+    create_workbook_from_xlsx,
+    send_license_key,
+    unsubscribe_email,
+)
 
 
 @transaction.atomic
@@ -1367,6 +1373,27 @@ class SimpleTest(TestCase):
             HTTP_AUTHORIZATION="Bearer %s" % license.key,
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_unsubscribe_email(self) -> None:
+        email = "test€+234@example.com"
+        request = self.factory.get(f"/unsubscribe-email?email={quote(email)}")
+        response = unsubscribe_email(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.content,
+            f"The email address {email} has unsubscribed from all EqualTo mailings.".encode("utf-8"),
+        )
+
+        self.assertEqual(UnsubscribedEmail.objects.filter(email=email).count(), 1)
+        # repeated unsubscription
+        request = self.factory.get(f"/unsubscribe-email?email={quote(email)}")
+        response = unsubscribe_email(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.content,
+            f"The email address {email} has already been unsubscribed from all EqualTo mailings.".encode("utf-8"),
+        )
+        self.assertEqual(UnsubscribedEmail.objects.filter(email=email).count(), 1)
 
 
 class GetUpdatedWorkbookTests(TransactionTestCase):

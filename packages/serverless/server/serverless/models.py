@@ -56,3 +56,13 @@ class Workbook(models.Model):
     @cached_property
     def calc(self) -> equalto.workbook.Workbook:
         return equalto.loads(self.workbook_json)
+
+
+class UnsubscribedEmail(models.Model):
+    # WARNING!
+    # This is a hack - but I need a quick way to track users who want to unsubscribe
+    # from our mailings. We should move to proper system post-beta (HubSpot?).
+    # Users can be appended to the UnsubscribedEmail list by clicking on a link
+    # to /unsubscribe?email=...
+    email = models.CharField(max_length=256, primary_key=True, null=False)
+    create_datetime = models.DateTimeField(default=timezone.now, null=False)
