@@ -81,6 +81,9 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
     if workbook is None:
         return HttpResponseNotFound("Workbook not found")
 
+    host = request.get_host()
+    proto = "https://" if request.is_secure() else "http://"
+
     html = f"""<!doctype html>
 <html lang="en">
     <head>
@@ -102,12 +105,48 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
             #workbook-slot {{
                 flex-grow: 1;
             }}
+            .column {{
+                float: left;
+                width: 50%;
+                height:100%;
+            }}
+            .row {{
+                height:100%;
+            }}
+
+            /* Clear floats after the columns */
+            .row:after {{
+                content: "";
+                display: table;
+                clear: both;
+            }}
         </style>
     </head>
     <body>
         <h1>WARNING: you should avoid sharing the above URL. It contains your license key, which
             allows full access to all your EqualTo Sheets data.</h1>
-        <div id="workbook-slot"></div>
+        <div class="row">
+            <div class="column">
+                <pre>
+&lt;div id="workbook-slot" style="height:100%"&gt;&lt;/div&gt;
+&lt;script src="{proto}{host}/static/v1/equalto.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+    // WARNING: do not expose your license key in client code,
+    //          instead you should proxy calls to EqualTo.
+    EqualToSheets.setLicenseKey(
+        "{license_key}"
+    );
+    // Insert spreadsheet widget into the DOM
+    EqualToSheets.load(
+        "{workbook.id}",
+        document.getElementById("workbook-slot")
+    );
+&lt;/script&gt;
+                </pre>
+            </div>
+            <div id="workbook-slot" class="column"></div>
+        </div>
+
         <script type="text/javascript">
             EqualToSheets.setLicenseKey(
                 "{license_key}"
