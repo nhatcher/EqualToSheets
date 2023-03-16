@@ -7,6 +7,7 @@ from serverless.views import (
     edit_workbook,
     get_updated_workbook,
     graphql_view,
+    hacky_send_email_to_subscriber,
     send_license_key,
     simulate,
     unsubscribe_email,
@@ -27,4 +28,5 @@ urlpatterns = [
     # TODO: Move the simulate endpoint implementation to serverless.rest_api
     path("api/v1/workbooks/<uuid:workbook_id>/simulate", simulate),
     path("api/", include("serverless.rest_api.urls")),
+    path("hacky_send_email_to_subscriber/<str:email>", hacky_send_email_to_subscriber),
 ]

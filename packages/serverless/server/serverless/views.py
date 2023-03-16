@@ -25,6 +25,7 @@ from serverless.email import send_license_activation_email
 from serverless.log import error, info
 from serverless.models import License, LicenseDomain, UnsubscribedEmail, Workbook
 from serverless.schema import schema
+from serverless.send_email_to_subscribers import send_license_email_to_subscriber
 from serverless.types import SimulateInputType, SimulateOutputType, SimulateResultType
 from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
 
@@ -74,6 +75,14 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
         workbook = Workbook.objects.create(license=license)
 
     return JsonResponse({"license_key": str(license.key), "workbook_id": str(workbook.id)})
+
+
+def hacky_send_email_to_subscriber(request: HttpRequest, email: str) -> HttpResponse:
+    try:
+        send_license_email_to_subscriber(email)
+    except Exception as e:
+        return HttpResponseBadRequest(f"Failed: {e}")
+    return HttpResponse(f"Email sent for {email}")
 
 
 def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> HttpResponse:
