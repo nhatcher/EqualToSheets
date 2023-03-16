@@ -80,7 +80,18 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
     }
 
     case WorkbookActionType.EDIT_ESCAPE: {
-      return { ...state, cellEditing: null };
+      const { cellEditing } = state;
+      if (!cellEditing) {
+        return state;
+      }
+      const { sheet, row, column } = cellEditing;
+      return {
+        ...state,
+        cellEditing: null,
+        selectedSheet: sheet,
+        selectedCell: { row, column },
+        selectedArea: { rowStart: row, rowEnd: row, columnStart: column, columnEnd: column },
+      };
     }
 
     case WorkbookActionType.EDIT_KEY_PRESS_START: {

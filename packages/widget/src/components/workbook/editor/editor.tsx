@@ -82,7 +82,7 @@ const Editor: FunctionComponent<{
         formulaBarInput.current?.focus();
       }
     }
-  }, [cellInput, focus, formulaBarInput]);
+  }, [cellInput, focus, formulaBarInput, selectedSheet]);
 
   const cellEditorKeyDown = useEditorKeyDown({
     onEditEnd,

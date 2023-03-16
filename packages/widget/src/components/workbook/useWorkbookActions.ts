@@ -51,8 +51,9 @@ const useWorkbookActions = (
   const onSheetSelected = useCallback(
     (sheet: number): void => {
       dispatch({ type: WorkbookActionType.SELECT_SHEET, payload: { sheet } });
+      rootElement.current?.focus();
     },
-    [dispatch],
+    [dispatch, rootElement],
   );
 
   const onAreaSelected = useCallback(
