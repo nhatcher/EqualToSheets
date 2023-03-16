@@ -35,7 +35,7 @@ const getSnippet = (
   licenseKey: LicenseKey,
   workbookId: string,
 ) => `<div id="workbook-slot" style="height:100%"></div>
-<script src="https://sheets.equalto.com/static/v1/equalto.js">
+<script src="${window.location.origin}/static/v1/equalto.js">
 </script>
 <script>
   // WARNING: you should not expose your license key in client,
@@ -53,7 +53,7 @@ const getSnippet = (
 
 const getCurlSnippet = (
   licenseKey: LicenseKey,
-) => `curl -F xlsx-file=@/path/to/file.xlsx -H "Authorization: Bearer ${licenseKey}" https://sheets.equalto.com/create-workbook-from-xlsx`
+) => `curl -F xlsx-file=@/path/to/file.xlsx -H "Authorization: Bearer ${licenseKey}" ${window.location.origin}/create-workbook-from-xlsx`
 
 const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
   const { licenseId } = parameters;
