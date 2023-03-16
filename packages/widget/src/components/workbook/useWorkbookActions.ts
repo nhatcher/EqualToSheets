@@ -34,11 +34,11 @@ const useWorkbookActions = (
   {
     worksheetCanvas,
     worksheetElement,
-    rootElement,
+    focusWorkbook,
   }: {
     worksheetCanvas: RefObject<WorksheetCanvas>;
     worksheetElement: RefObject<HTMLDivElement>;
-    rootElement: RefObject<HTMLDivElement>;
+    focusWorkbook: () => void;
   },
 ): WorkbookActions => {
   const setScrollPosition = useCallback(
@@ -51,9 +51,9 @@ const useWorkbookActions = (
   const onSheetSelected = useCallback(
     (sheet: number): void => {
       dispatch({ type: WorkbookActionType.SELECT_SHEET, payload: { sheet } });
-      rootElement.current?.focus();
+      focusWorkbook();
     },
-    [dispatch, rootElement],
+    [dispatch, focusWorkbook],
   );
 
   const onAreaSelected = useCallback(
@@ -203,26 +203,15 @@ const useWorkbookActions = (
         type: WorkbookActionType.EDIT_END,
         payload: { deltaRow, deltaColumn, canvasRef: worksheetCanvas },
       });
-      if (rootElement.current) {
-        rootElement.current?.focus();
-        // HACK: We need to select something inside the root for onCopy to work
-        const selection = window.getSelection();
-        if (selection) {
-          selection.empty();
-          const range = new Range();
-          range.setStart(rootElement.current.firstChild as Node, 0);
-          range.setEnd(rootElement.current.firstChild as Node, 0);
-          selection.addRange(range);
-        }
-      }
+      focusWorkbook();
     },
-    [dispatch, rootElement, worksheetCanvas],
+    [dispatch, focusWorkbook, worksheetCanvas],
   );
 
   const onEditEscape = useCallback((): void => {
     dispatch({ type: WorkbookActionType.EDIT_ESCAPE });
-    rootElement.current?.focus();
-  }, [dispatch, rootElement]);
+    focusWorkbook();
+  }, [dispatch, focusWorkbook]);
 
   const onCellEditStart = useCallback((): void => {
     dispatch({

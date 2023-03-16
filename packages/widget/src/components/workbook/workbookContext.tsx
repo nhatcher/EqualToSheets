@@ -73,7 +73,18 @@ export const Root: FunctionComponent<{
   const [requestRenderId, requestRender] = useReducer((x: number) => x + 1, 0);
 
   const focusWorkbook = useCallback(() => {
-    rootRef.current?.focus();
+    if (rootRef.current) {
+      rootRef.current.focus();
+      // HACK: We need to select something inside the root for onCopy to work
+      const selection = window.getSelection();
+      if (selection) {
+        selection.empty();
+        const range = new Range();
+        range.setStart(rootRef.current.firstChild as Node, 0);
+        range.setEnd(rootRef.current.firstChild as Node, 0);
+        selection.addRange(range);
+      }
+    }
   }, []);
 
   const onChange = useCallback(() => {
@@ -97,7 +108,7 @@ export const Root: FunctionComponent<{
   const editorActions = useWorkbookActions(dispatch, {
     worksheetCanvas,
     worksheetElement,
-    rootElement: rootRef,
+    focusWorkbook,
   });
 
   const { onKeyDown: onKeyDownNavigation } = useKeyboardNavigation({
