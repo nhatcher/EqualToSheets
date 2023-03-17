@@ -7,11 +7,15 @@ from serverless.models import License, Workbook
 from serverless.views import send_license_key
 
 
-def create_workbook(license: License, workbook_data: dict[str, Any] | None = None) -> Workbook:
+def create_workbook(license: License, workbook_data: dict[str, Any] | None = None, name: str | None = None) -> Workbook:
     workbook = Workbook.objects.create(license=license)
 
     if workbook_data is not None:
         _set_workbook_data(workbook, workbook_data)
+
+    if name is not None:
+        workbook.name = name
+        workbook.save()
 
     return workbook
 

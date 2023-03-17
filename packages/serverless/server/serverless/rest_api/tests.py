@@ -28,6 +28,7 @@ class RestAPITest(TestCase):
                         "A3": "=UNSUPPORTED()",  # one invalid formula confirming that unsupported files can be edited
                     },
                 },
+                "WorkbookName",
             )
 
         # workbook linked to another license shouldn't be visible for self.license_client
@@ -54,6 +55,7 @@ class RestAPITest(TestCase):
                 "workbooks": [
                     {
                         "id": str(self.workbook.id),
+                        "name": "WorkbookName",
                         "revision": 1,
                         "create_datetime": self.workbook.create_datetime.isoformat().replace("+00:00", "Z"),
                         "modify_datetime": self.workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
@@ -76,6 +78,7 @@ class RestAPITest(TestCase):
             workbook_data,
             {
                 "id": str(workbook.id),
+                "name": "Book",
                 "revision": 1,
                 "create_datetime": workbook.create_datetime.isoformat().replace("+00:00", "Z"),
                 "modify_datetime": workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
@@ -89,6 +92,7 @@ class RestAPITest(TestCase):
             json.loads(response.content),
             {
                 "id": str(self.workbook.id),
+                "name": "WorkbookName",
                 "revision": 1,
                 "create_datetime": self.workbook.create_datetime.isoformat().replace("+00:00", "Z"),
                 "modify_datetime": self.workbook.modify_datetime.isoformat().replace("+00:00", "Z"),

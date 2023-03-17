@@ -61,6 +61,7 @@ class ServerlessView(APIView):
 
 class WorkbookSerializer(serializers.Serializer):
     id = serializers.UUIDField()
+    name = serializers.CharField()
     revision = serializers.IntegerField()
     create_datetime = serializers.DateTimeField()
     modify_datetime = serializers.DateTimeField()
