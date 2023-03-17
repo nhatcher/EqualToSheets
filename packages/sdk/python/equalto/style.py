@@ -22,7 +22,7 @@ class Style:
     def format(self, number_format: str) -> None:
         self._data["num_fmt"] = number_format
         self._model.set_cell_style(*self.cell.cell_ref, json.dumps(self._data))
-        self._model.evaluate()
+        self.cell.workbook.evaluate()
 
     @cached_property
     def _model(self) -> PyCalcModel:

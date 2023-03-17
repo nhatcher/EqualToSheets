@@ -7,7 +7,7 @@ use equalto_calc::types::CellType;
 use equalto_calc::types::Worksheet;
 use equalto_xlsx::error::XlsxError;
 use equalto_xlsx::export::save_to_xlsx;
-use equalto_xlsx::import::load_model_from_xlsx;
+use equalto_xlsx::import::{check_model_support, load_model_from_xlsx_without_support_check};
 
 create_exception!(_equalto, WorkbookError, PyException);
 
@@ -71,10 +71,11 @@ impl PyModel {
             .map_err(WorkbookError::new_err)
     }
 
-    pub fn evaluate(&mut self) -> PyResult<()> {
-        self.model
-            .evaluate_with_error_check()
-            .map_err(WorkbookError::new_err)
+    pub fn evaluate_with_error_check(&mut self) -> PyResult<Vec<String>> {
+        match self.model.evaluate_with_error_check() {
+            Ok(()) => Ok(Vec::new()),
+            Err(errors) => Ok(errors),
+        }
     }
 
     pub fn get_style_for_cell(&self, sheet: i32, row: i32, column: i32) -> PyResult<String> {
@@ -175,6 +176,10 @@ impl PyModel {
     pub fn to_json(&self) -> PyResult<String> {
         Ok(self.model.to_json_str())
     }
+
+    pub fn check_model_support(&mut self) -> PyResult<()> {
+        check_model_support(&mut self.model).map_err(WorkbookError::from_xlsx_error)
+    }
 }
 
 impl WorkbookError {
@@ -186,7 +191,7 @@ impl WorkbookError {
 #[pyfunction]
 pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
     Ok(PyModel {
-        model: load_model_from_xlsx(file_path, locale, tz)
+        model: load_model_from_xlsx_without_support_check(file_path, locale, tz)
             .map_err(WorkbookError::from_xlsx_error)?,
     })
 }

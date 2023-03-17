@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
-from equalto.exceptions import CellReferenceError
+from equalto.exceptions import CellReferenceError, SuppressEvaluationErrors, WorkbookError, WorkbookEvaluationError
 from equalto.reference import parse_cell_reference
 from equalto.sheet import WorkbookSheets
 
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 class Workbook:
     def __init__(self, model: PyCalcModel):
         self._model = model
+        self._check_model_support()
 
     def __repr__(self) -> str:
         return f"<Workbook: {self.name}>"
@@ -58,3 +59,23 @@ class Workbook:
     @property
     def json(self) -> str:
         return self._model.to_json()
+
+    def evaluate(self) -> None:
+        errors = self._model.evaluate_with_error_check()
+        if not errors:
+            return
+
+        if SuppressEvaluationErrors.in_context():
+            SuppressEvaluationErrors.log_errors(self, errors)
+        else:
+            raise WorkbookEvaluationError(errors[0])
+
+    def _check_model_support(self) -> None:
+        try:
+            self._model.check_model_support()
+        except WorkbookError as err:
+            error_message = str(err)
+            if SuppressEvaluationErrors.in_context():
+                SuppressEvaluationErrors.log_errors(self, [error_message])
+            else:
+                raise WorkbookEvaluationError(error_message)

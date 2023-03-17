@@ -17,7 +17,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404
-from equalto.exceptions import WorkbookError
+from equalto.exceptions import SuppressEvaluationErrors, WorkbookError
 from graphene_django.views import GraphQLView
 
 from server import settings
@@ -198,10 +198,12 @@ def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
     tmp = tempfile.NamedTemporaryFile()
     tmp.write(file.read())
 
-    try:
-        equalto_workbook = equalto.load(tmp.name)
-    except WorkbookError as err:
-        return HttpResponseBadRequest(f"Could not upload workbook.\n\nDetails:\n\n{err}\n")
+    with SuppressEvaluationErrors() as context:
+        try:
+            equalto_workbook = equalto.load(tmp.name)
+        except WorkbookError as err:
+            return HttpResponseBadRequest(f"Could not upload workbook.\n\nDetails:\n\n{err}\n")
+        compatibility_errors = context.suppressed_errors(equalto_workbook)
 
     workbook_name = get_name_from_path(file.name)
     workbook = Workbook(license=license, workbook_json=equalto_workbook.json, name=workbook_name)
@@ -221,18 +223,22 @@ query {
         % workbook.id
     )
 
-    host = request.get_host()
-    proto = "https://" if request.is_secure() else "http://"
     content = f"""
 Congratulations! The workbook has been uploaded.
 
 Workbook Id: {workbook.id}
 
-Preview workbook: {proto}{host}/edit-workbook/{license.key}/{workbook.id}/
+Preview workbook: {settings.SERVER}/edit-workbook/{license.key}/{workbook.id}/
 
-GraphQL query to list all sheets in this workbook: {proto}{host}/graphql?license={license.key}#query={quote(query)}
+GraphQL query to list all sheets in this workbook: {settings.SERVER}/graphql?license={license.key}#query={quote(query)}
 
 """
+
+    if compatibility_errors:
+        error_message = "\n".join(compatibility_errors)
+        error(error_message)
+        content = f"{content}{error_message}\n\n"
+
     return HttpResponse(content, content_type="text/plain")
 
 
@@ -279,9 +285,10 @@ def simulate(request: HttpRequest, workbook_id: str) -> Union[HttpResponse, Json
     except json.JSONDecodeError:
         return HttpResponseBadRequest(f"Invalid outputs: {outputs_str}")
 
-    for sheet_name, assignments in inputs.items():
-        for cell_ref, value in assignments.items():
-            equalto_workbook.sheets[sheet_name][cell_ref].value = value
+    with SuppressEvaluationErrors():
+        for sheet_name, assignments in inputs.items():
+            for cell_ref, value in assignments.items():
+                equalto_workbook.sheets[sheet_name][cell_ref].value = value
 
     results: SimulateResultType = {}
     for sheet_name, cell_refs in outputs.items():  # noqa: WPS440

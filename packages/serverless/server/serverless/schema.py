@@ -190,12 +190,19 @@ class SaveWorkbook(graphene.Mutation):
 
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
-        try:
-            workbook_json = equalto.loads(workbook_json).json
-        except equalto.exceptions.WorkbookError:
-            raise GraphQLError("Could not parse workbook JSON")
+        with equalto.exceptions.SuppressEvaluationErrors() as context:
+            try:
+                equalto_workbook = equalto.loads(workbook_json)
+            except equalto.exceptions.WorkbookError:
+                raise GraphQLError("Could not parse workbook JSON")
+            compatibility_errors = context.suppressed_errors(equalto_workbook)
 
-        workbook.set_workbook_json(workbook_json)
+        if compatibility_errors:
+            # TODO: Should we let the user know? Perhaps we can include the error message in the response,
+            #       it's already supposed to be user-friendly.
+            log.error("\n".join(compatibility_errors))
+
+        workbook.set_workbook_json(equalto_workbook.json)
 
         return SaveWorkbook(revision=workbook.revision)
 
@@ -247,7 +254,8 @@ class SetCellInput(graphene.Mutation):
             assert row is not None and col is not None
             cell = sheet.cell(row, col)
 
-        cell.set_user_input(input)
+        with equalto.exceptions.SuppressEvaluationErrors():
+            cell.set_user_input(input)
 
         workbook.set_workbook_json(workbook.calc.json)
         return SetCellInput(workbook=workbook)

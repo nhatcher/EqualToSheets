@@ -71,7 +71,7 @@ class Cell:
         else:  # pragma: no cover
             raise ValueError(f"unrecognized value type ({value=})")
 
-        self._model.evaluate()
+        self.workbook.evaluate()
 
     @property
     def str_value(self) -> str:
@@ -125,7 +125,7 @@ class Cell:
     @formula.setter
     def formula(self, formula: str) -> None:
         self._model.update_cell_with_formula(*self.cell_ref, formula)
-        self._model.evaluate()
+        self.workbook.evaluate()
 
     def set_user_input(self, value: str) -> None:
         """
@@ -135,7 +135,7 @@ class Cell:
         type and style/formatting.
         """
         self._model.set_user_input(*self.cell_ref, value)
-        self._model.evaluate()
+        self.workbook.evaluate()
 
     @property
     def style(self) -> Style:

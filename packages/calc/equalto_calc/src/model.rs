@@ -1291,14 +1291,14 @@ impl Model {
     }
 
     /// Evaluates the model with a top-down recursive algorithm
-    /// Returns an error instead of using #N/IMPL!, #CIRC! or #ERROR! values.
-    pub fn evaluate_with_error_check(&mut self) -> Result<(), String> {
+    /// Returns a list of errors instead of using #N/IMPL!, #CIRC! or #ERROR! values.
+    pub fn evaluate_with_error_check(&mut self) -> Result<(), Vec<String>> {
         // clear all computation artifacts
         self.cells.clear();
 
         let cells = self.get_all_cells();
 
-        let mut result = Ok(());
+        let mut errors = Vec::new();
 
         for cell in cells {
             let calc_result = self.evaluate_cell(CellReference {
@@ -1306,9 +1306,6 @@ impl Model {
                 row: cell.row,
                 column: cell.column,
             });
-            if result.is_err() {
-                continue;
-            }
             if let CalcResult::Error {
                 error: Error::CIRC | Error::NIMPL | Error::ERROR,
                 origin,
@@ -1324,12 +1321,16 @@ impl Model {
                     let cell_text_reference = self
                         .cell_reference_to_string(&origin)
                         .expect("expected a valid error origin cell");
-                    result = Err(format!("{cell_text_reference} ('{formula}'): {message}"));
+                    errors.push(format!("{cell_text_reference} ('{formula}'): {message}"));
                 }
             }
         }
 
-        result
+        if !errors.is_empty() {
+            return Err(errors);
+        }
+
+        Ok(())
     }
 
     /// Sets cell to empty. Can be used to delete value without affecting style.

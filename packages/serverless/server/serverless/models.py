@@ -6,6 +6,7 @@ import equalto.workbook
 from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
+from equalto.exceptions import SuppressEvaluationErrors
 
 
 @cache
@@ -70,7 +71,8 @@ class Workbook(models.Model):
 
     @cached_property
     def calc(self) -> equalto.workbook.Workbook:
-        return equalto.loads(self.workbook_json)
+        with SuppressEvaluationErrors():
+            return equalto.loads(self.workbook_json)
 
 
 class UnsubscribedEmail(models.Model):

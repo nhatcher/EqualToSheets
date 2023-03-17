@@ -6,7 +6,7 @@ import pytest
 
 import equalto
 from equalto.cell import Cell, CellType
-from equalto.exceptions import WorkbookError, WorkbookValueError
+from equalto.exceptions import WorkbookError, WorkbookEvaluationError, WorkbookValueError
 from equalto.workbook import Workbook
 
 
@@ -226,7 +226,7 @@ def test_formula_error_propagation(
 ) -> None:
     cell = empty_workbook[cell_reference]
 
-    with pytest.raises(WorkbookError) as err:
+    with pytest.raises(WorkbookEvaluationError) as err:
         cell.formula = formula
 
     assert err.value.args[0] == error  # noqa: WPS441

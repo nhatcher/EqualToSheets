@@ -1,6 +1,7 @@
 import json
 
 from django.test import TestCase
+from equalto.exceptions import SuppressEvaluationErrors
 from rest_framework.test import APIClient
 
 from serverless.models import License, Workbook
@@ -16,7 +17,18 @@ class RestAPITest(TestCase):
         cls.license = create_verified_license(domains="")
         cls.another_license = create_verified_license(email="bob@example.com", domains="")
 
-        create_workbook(cls.license, {"Calculation": {"A1": "=2*Data!A2"}, "Data": {"A1": "$3.99", "A2": 4}})
+        with SuppressEvaluationErrors():
+            create_workbook(
+                cls.license,
+                {
+                    "Calculation": {"A1": "=2*Data!A2"},
+                    "Data": {
+                        "A1": "$3.99",
+                        "A2": 4,
+                        "A3": "=UNSUPPORTED()",  # one invalid formula confirming that unsupported files can be edited
+                    },
+                },
+            )
 
         # workbook linked to another license shouldn't be visible for self.license_client
         create_workbook(cls.another_license)

@@ -173,11 +173,13 @@ class CellByIndexView(ServerlessView):
         except equalto.exceptions.WorkbookError:
             raise NotFound("Cell not found")
 
-        if cell_input is not None:
-            cell.set_user_input(cell_input)
-        else:
-            assert cell_value is not None
-            cell.value = cell_value
+        with equalto.exceptions.SuppressEvaluationErrors():
+            # TODO: We should probably return the suppressed errors to the user post beta
+            if cell_input is not None:
+                cell.set_user_input(cell_input)
+            else:
+                assert cell_value is not None
+                cell.value = cell_value
 
         workbook.set_workbook_json(workbook.calc.json)
 

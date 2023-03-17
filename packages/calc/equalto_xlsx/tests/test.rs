@@ -225,12 +225,22 @@ fn test_xlsx() {
 fn test_evaluation_error_on_load() {
     let model = load_model_from_xlsx("tests/UNSUPPORTED_FNS_DAYS_NETWORKDAYS.xlsx", "en", "UTC");
     assert!(model.is_err());
+    let err = model.err().unwrap();
     assert_eq!(
-        model.err(),
-        Some(XlsxError::Evaluation(
-            include_str!("./UNSUPPORTED_FNS_DAYS_NETWORKDAYS.expected_error.txt").to_string()
-        ))
+        err,
+        XlsxError::Evaluation(vec![
+            "Sheet1!A3 ('=_xlfn.DAYS(A2,A1)'): Invalid function: _xlfn.DAYS".to_string(),
+            "Sheet1!A4 ('=NETWORKDAYS(A1,A2)'): Invalid function: NETWORKDAYS".to_string(),
+        ])
     );
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "Evaluation Error: {}; {}",
+            "Sheet1!A3 ('=_xlfn.DAYS(A2,A1)'): Invalid function: _xlfn.DAYS",
+            "Sheet1!A4 ('=NETWORKDAYS(A1,A2)'): Invalid function: NETWORKDAYS",
+        ),
+    )
 }
 
 #[test]
@@ -239,9 +249,9 @@ fn test_today_not_supported() {
     assert!(model.is_err());
     assert_eq!(
         model.err(),
-        Some(XlsxError::Evaluation(
-            include_str!("./TODAY.expected_error.txt").to_string()
-        ))
+        Some(XlsxError::Evaluation(vec![
+            "Sheet1!A1 ('=TODAY()'): Invalid function: TODAY".to_string(),
+        ]))
     );
 }
 

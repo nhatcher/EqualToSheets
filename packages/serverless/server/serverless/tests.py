@@ -1,6 +1,8 @@
 import json
+import tempfile
 from asyncio import sleep
 from collections import namedtuple
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 from urllib.parse import quote
@@ -11,6 +13,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.test import AsyncClient, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.utils.http import urlencode
+from equalto.exceptions import SuppressEvaluationErrors
 from graphql import GraphQLError
 
 from serverless.email import LICENSE_ACTIVATION_EMAIL_TEMPLATE_ID
@@ -290,6 +293,34 @@ class SimpleTest(TestCase):
         self.assertTrue(response.content.startswith(b"Could not upload workbook."))
         self.assertEqual(Workbook.objects.count(), 0)
 
+    def test_create_workbook_unsupported_function(self) -> None:
+        license = create_verified_license(domains="")
+
+        calc = equalto.new()
+        with SuppressEvaluationErrors():
+            calc["Sheet1!A1"].formula = "=TODAY()"
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "file.xlsx"
+            calc.save(str(path))
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                path.read_bytes(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        response = self.client.post(
+            "/create-workbook-from-xlsx",
+            {"xlsx-file": xlsx_file},
+            HTTP_AUTHORIZATION=f"Bearer {license.key}",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        workbook = Workbook.objects.get(license=license)
+        cell = workbook.calc["Sheet1!A1"]
+        self.assertEqual(cell.formula, "=TODAY()")
+        self.assertEqual(cell.value, "#ERROR!")
+
     def test_send_license_key(self) -> None:
         self.assertEqual(License.objects.count(), 0)
 
@@ -483,7 +514,8 @@ class SimpleTest(TestCase):
         data = graphql_query(
             """
             mutation SetCellWorkbook($workbook_id: String!) {
-                setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "$2.50") { workbook { id } }
+                B2: setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "B2", input: "=B2") { workbook { id } }
+                A1: setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "$2.50") { workbook { id } }
                 output: setCellInput(workbookId: $workbook_id, sheetId: 1, row: 1, col: 2, input: "=A1*2") {
                     workbook {
                         id
@@ -495,6 +527,9 @@ class SimpleTest(TestCase):
                                     number
                                 }
                                 formula
+                            }
+                            B2: cell(ref: "B2") {
+                                formattedValue
                             }
                         }
                     }
@@ -513,6 +548,7 @@ class SimpleTest(TestCase):
                     "sheet": {
                         "id": 1,
                         "B1": {"formattedValue": "$5.00", "value": {"number": 5}, "formula": "=A1*2"},
+                        "B2": {"formattedValue": "#CIRC!"},
                     },
                 },
             },
@@ -620,6 +656,32 @@ class SimpleTest(TestCase):
         workbook.refresh_from_db()
         self.assertEqual(workbook.revision, 1)
         self.assertEqual(workbook.workbook_json, old_workbook_json)
+
+    def test_save_workbook_unsupported_function(self) -> None:
+        license = create_verified_license()
+        workbook = create_workbook(license)
+
+        calc = equalto.new()
+        with SuppressEvaluationErrors():
+            calc["Sheet1!A1"].formula = "=TODAY()"
+        new_json = calc.json
+
+        response = graphql_query(
+            """
+            mutation SaveWorkbook($workbook_id: String!, $workbook_json: String!) {
+                save_workbook: saveWorkbook(workbookId: $workbook_id, workbookJson: $workbook_json) {
+                    revision
+                }
+            }
+            """,
+            "example.com",
+            license.key,
+            {"workbook_id": str(workbook.id), "workbook_json": new_json},
+        )
+        self.assertEqual(response["data"]["save_workbook"], {"revision": 2})
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 2)
+        self.assertEqual(workbook.workbook_json, new_json)
 
     def test_save_workbook_json_too_large(self) -> None:
         license = create_verified_license()
@@ -1284,6 +1346,24 @@ class SimpleTest(TestCase):
                     "B500": "",
                 },
             },
+        )
+
+    def test_simulate_unsupported_function(self) -> None:
+        license = create_verified_license(domains="")
+        with SuppressEvaluationErrors():
+            workbook = create_workbook(license, {"Sheet1": {"A1": "=TODAY()"}})
+        response = self.client.get(
+            f"/api/v1/workbooks/{workbook.id}/simulate",
+            {
+                "inputs": json.dumps({"Sheet1": {"B1": 42}}),
+                "outputs": json.dumps({"Sheet1": ["A1", "B1"]}),
+            },
+            HTTP_AUTHORIZATION=f"Bearer {license.key}",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {"Sheet1": {"A1": "#ERROR!", "B1": 42}},
         )
 
     def test_simulate_invalid(self) -> None:

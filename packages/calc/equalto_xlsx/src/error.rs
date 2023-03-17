@@ -13,8 +13,8 @@ pub enum XlsxError {
     Xml(String),
     #[error("{0}")]
     Workbook(String),
-    #[error("Evaluation Error: {0}")]
-    Evaluation(String),
+    #[error("Evaluation Error: {}", .0.join("; "))]
+    Evaluation(Vec<String>),
     #[error("Comparison Error: {0}")]
     Comparison(String),
     #[error("Not Implemented Error: {0}")]
@@ -69,11 +69,12 @@ impl XlsxError {
                 supported by EqualTo, or you can send this workbook to support@equalto.com \
                 and our engineering team will work with you to fix the issue.",
             ),
-            XlsxError::Evaluation(error) => format!(
+            XlsxError::Evaluation(errors) => format!(
                 "EqualTo could not evaluate this workbook without errors. This may indicate a bug or missing feature \
                 in the EqualTo spreadsheet calculation engine. Please contact support@equalto.com, share the entirety \
                 of this error message and the relevant workbook, and we will work with you to resolve the issue. \
-                Detailed error message:\n{error}"
+                Detailed error message:\n{}",
+                errors.join("\n")
             ),
             XlsxError::Comparison(error) => format!(
                 "EqualTo produces different results when evaluating the workbook \

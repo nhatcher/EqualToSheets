@@ -8,7 +8,9 @@ fn test_circ() {
     model._set("A1", "=A1+1");
     assert_eq!(
         model.evaluate_with_error_check(),
-        Err("Sheet1!A1 ('=A1+1'): Circular reference detected".to_string()),
+        Err(vec![
+            "Sheet1!A1 ('=A1+1'): Circular reference detected".to_string()
+        ]),
     )
 }
 
@@ -18,7 +20,9 @@ fn test_nimpl() {
     model._set("B2", "={{1}}");
     assert_eq!(
         model.evaluate_with_error_check(),
-        Err("Sheet1!B2 ('={{1}}'): Arrays not implemented".to_string()),
+        Err(vec![
+            "Sheet1!B2 ('={{1}}'): Arrays not implemented".to_string()
+        ]),
     )
 }
 
@@ -35,6 +39,8 @@ fn test_error() {
     model._set("C3", "=INVALID()");
     assert_eq!(
         model.evaluate_with_error_check(),
-        Err("Sheet1!C3 ('=INVALID()'): Invalid function: INVALID".to_string()),
+        Err(vec![
+            "Sheet1!C3 ('=INVALID()'): Invalid function: INVALID".to_string()
+        ]),
     )
 }

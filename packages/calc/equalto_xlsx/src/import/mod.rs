@@ -113,11 +113,19 @@ pub fn load_xlsx_from_memory(
 }
 
 pub fn load_model_from_xlsx(file_name: &str, locale: &str, tz: &str) -> Result<Model, XlsxError> {
-    let workbook = load_from_excel(file_name, locale, tz)?;
-    let env = Environment::default();
-    let mut model = Model::from_workbook(workbook, env).map_err(XlsxError::Workbook)?;
+    let mut model = load_model_from_xlsx_without_support_check(file_name, locale, tz)?;
     check_model_support(&mut model)?;
     Ok(model)
+}
+
+pub fn load_model_from_xlsx_without_support_check(
+    file_name: &str,
+    locale: &str,
+    tz: &str,
+) -> Result<Model, XlsxError> {
+    let workbook = load_from_excel(file_name, locale, tz)?;
+    let env = Environment::default();
+    Model::from_workbook(workbook, env).map_err(XlsxError::Workbook)
 }
 
 /// Checks if imported model can be safely used in our system.

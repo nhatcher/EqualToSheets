@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 import pytest
 
 import equalto
-from equalto.exceptions import CellReferenceError
+from equalto.cell import Cell
+from equalto.exceptions import CellReferenceError, SuppressEvaluationErrors, WorkbookEvaluationError
 from equalto.workbook import Workbook
 
 
@@ -73,3 +74,22 @@ def test_save_xlsx(empty_workbook: Workbook) -> None:
 
         # simple assert confirming that the exported file is valid
         assert equalto.load(file_path)["Sheet1!A1"].value == 42
+
+
+def test_suppress_evaluation_errors(cell: Cell) -> None:
+    # the errors are normally raised before entering the context
+    with pytest.raises(WorkbookEvaluationError):
+        cell.formula = "=INVALID()"
+
+    # the errors are suppressed when in the context
+    with SuppressEvaluationErrors() as context:
+        cell.formula = "=INVALID()"
+        errors = context.suppressed_errors(cell.workbook)
+
+    assert errors == ["Sheet1!A1 ('=INVALID()'): Invalid function: INVALID"]
+    assert cell.formula == "=INVALID()"
+    assert cell.value == "#ERROR!"
+
+    # the errors are normally raised after leaving the context
+    with pytest.raises(WorkbookEvaluationError):
+        cell.formula = "=INVALID()"
