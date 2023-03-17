@@ -72,7 +72,12 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
     workbook = Workbook.objects.filter(license=license).order_by("create_datetime").first()
     if workbook is None:
         # create a new workbook which can be used in the sample snippet
-        workbook = Workbook.objects.create(license=license)
+        workbook = Workbook.objects.create(
+            license=license,
+            workbook_json=equalto.load("serverless/data/Investment Growth Calculator.xlsx").json,
+        )
+        workbook.name = "Investment Growth Calculator"
+        workbook.save()
 
     return JsonResponse({"license_key": str(license.key), "workbook_id": str(workbook.id)})
 

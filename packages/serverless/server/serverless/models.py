@@ -12,8 +12,7 @@ from equalto.exceptions import SuppressEvaluationErrors
 @cache
 def get_default_workbook() -> str:
     # TODO: use a better default workbook
-    with open("serverless/data/XLOOKUP.xlsx.json", encoding="utf-8") as f:
-        return f.read()
+    return equalto.load("serverless/data/Book.xlsx").json
 
 
 # 1. User visits www.equalto.com/serverless
@@ -47,7 +46,7 @@ class LicenseDomain(models.Model):
 
 class Workbook(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=256, null=False, default="")
+    name = models.CharField(max_length=256, null=False, default="Book")
     license = models.ForeignKey(License, on_delete=models.CASCADE)
     workbook_json = models.JSONField(null=False, default=get_default_workbook)
     revision = models.IntegerField(default=1, null=False)
