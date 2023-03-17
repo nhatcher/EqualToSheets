@@ -34,7 +34,7 @@ export const LicenseActivationPage = () => {
 const getSnippet = (
   licenseKey: LicenseKey,
   workbookId: string,
-) => `<div id="workbook-slot" style="height:100%"></div>
+) => `<div id="workbook-slot" style="height:100%;min-height:300px;"></div>
 <script src="${window.location.origin}/static/v1/equalto.js">
 </script>
 <script>

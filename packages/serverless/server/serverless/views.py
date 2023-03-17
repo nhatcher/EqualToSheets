@@ -146,7 +146,7 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
             <div class="row">
                 <div class="column">
                     <pre>
-&lt;div id="workbook-slot" style="height:100%"&gt;&lt;/div&gt;
+&lt;div id="workbook-slot" style="height:100%;min-height:300px;"&gt;&lt;/div&gt;
 &lt;script src="{proto}{host}/static/v1/equalto.js"&gt;&lt;/script&gt;
 &lt;script&gt;
     // WARNING: do not expose your license key in client code,
