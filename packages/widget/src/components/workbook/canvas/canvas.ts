@@ -739,27 +739,15 @@ export default class WorksheetCanvas {
     // Position the cell outline and clip it
     cellOutline.style.left = `${x - padding}px`;
     cellOutline.style.top = `${y - padding}px`;
-    if (cellEditing !== null) {
-      // If we are editing the cell we want the editor to grow as we type.
-      // TODO [MVP]: Long formulas may cause editor to grow out of viewport vertically.
-      cellOutline.style.minWidth = `${width}px`;
-      cellOutline.style.minHeight = `${height}px`;
-      cellOutline.style.maxWidth = `${this.width - x}px`;
-      cellOutline.style.maxHeight = `${this.height - y}px`;
-      cellOutline.style.overflowY = 'auto';
-      cellOutline.style.width = 'auto';
-      cellOutline.style.height = 'auto';
-    } else {
-      // Reset CSS properties
-      cellOutline.style.minWidth = '';
-      cellOutline.style.minHeight = '';
-      cellOutline.style.maxWidth = '';
-      cellOutline.style.maxHeight = '';
-      cellOutline.style.overflow = 'hidden';
-      // New properties
-      cellOutline.style.width = `${width}px`;
-      cellOutline.style.height = `${height}px`;
-    }
+    // Reset CSS properties
+    cellOutline.style.minWidth = '';
+    cellOutline.style.minHeight = '';
+    cellOutline.style.maxWidth = '';
+    cellOutline.style.maxHeight = '';
+    cellOutline.style.overflow = 'hidden';
+    // New properties
+    cellOutline.style.width = `${width}px`;
+    cellOutline.style.height = `${height}px`;
     if (cellEditing) {
       cellOutline.style.fontWeight = style.font.bold ? 'bold' : 'normal';
       cellOutline.style.fontStyle = style.font.italics ? 'italic' : 'normal';
