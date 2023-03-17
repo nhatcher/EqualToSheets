@@ -14,6 +14,7 @@ import React, {
 } from 'react';
 import { fonts } from 'src/theme';
 import styled from 'styled-components';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import WorksheetCanvas from './canvas';
 import { workbookLastColumn, workbookLastRow } from './constants';
 import Model from './model';
@@ -181,21 +182,26 @@ export const Root: FunctionComponent<{
 
   return (
     <WorkbookContext.Provider value={contextValue}>
-      <WorkbookContainer
-        className={properties.className}
-        ref={rootRef}
-        tabIndex={0}
-        onKeyDown={onKeyDownNavigation}
-        onContextMenu={(event): void => {
-          // prevents the browser menu
-          event.preventDefault();
-        }}
-        onCopy={onCopy(model, selectedSheet, selectedArea)}
-        onPaste={onPaste(model, selectedSheet, selectedCell, selectedArea)}
-        onCut={onCut(model, selectedSheet, selectedArea)}
-      >
-        {properties.children}
-      </WorkbookContainer>
+      <AutoSizer>
+        {({ height, width }) => (
+          <WorkbookContainer
+            style={{ height, width }}
+            className={properties.className}
+            ref={rootRef}
+            tabIndex={0}
+            onKeyDown={onKeyDownNavigation}
+            onContextMenu={(event): void => {
+              // prevents the browser menu
+              event.preventDefault();
+            }}
+            onCopy={onCopy(model, selectedSheet, selectedArea)}
+            onPaste={onPaste(model, selectedSheet, selectedCell, selectedArea)}
+            onCut={onCut(model, selectedSheet, selectedArea)}
+          >
+            {properties.children}
+          </WorkbookContainer>
+        )}
+      </AutoSizer>
     </WorkbookContext.Provider>
   );
 };
@@ -213,8 +219,6 @@ const WorkbookContainer = styled.div`
   background-color: #fff;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
   font-family: ${fonts.mono};
   color: #000;
   font-size: 16px;
