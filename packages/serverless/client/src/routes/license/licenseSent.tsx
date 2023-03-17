@@ -1,5 +1,12 @@
 import styled from 'styled-components/macro';
-import { DualBox, LeftSide, RightSide, Subtitle, VideoPlaceholder, HeadingText as LeftHeadingText } from './common';
+import {
+  DualBox,
+  LeftSide,
+  RightSide,
+  Subtitle,
+  VideoPlaceholder,
+  HeadingText as LeftHeadingText,
+} from './common';
 import { ReactComponent as SentSvg } from './sent.svg';
 
 export const LicenseSentPage = () => {
@@ -15,7 +22,7 @@ export const LicenseSentPage = () => {
       <RightSide>
         <div />
         <Container>
-          <SentSvg viewBox='0 0 330 230' width={280} />
+          <SentSvg viewBox="0 0 330 230" width={280} />
           <HeadingText>
             Thank you
             <br />

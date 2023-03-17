@@ -3,7 +3,7 @@ import { Stack } from '@mui/system';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import MaterialBox from '@mui/material/Box';
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Snackbar from '@mui/material/Snackbar';
 import styled from 'styled-components/macro';
@@ -51,9 +51,8 @@ const getSnippet = (
 </script>
 `;
 
-const getCurlSnippet = (
-  licenseKey: LicenseKey,
-) => `curl -F xlsx-file=@/path/to/file.xlsx -H "Authorization: Bearer ${licenseKey}" ${window.location.origin}/create-workbook-from-xlsx`
+const getCurlSnippet = (licenseKey: LicenseKey) =>
+  `curl -F xlsx-file=@/path/to/file.xlsx -H "Authorization: Bearer ${licenseKey}" ${window.location.origin}/create-workbook-from-xlsx`;
 
 const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
   const { licenseId } = parameters;
@@ -121,7 +120,6 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
     );
   }
 
-
   if (activationState.type === 'error') {
     return (
       <StyledBox $maxWidth={660}>
@@ -133,8 +131,8 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
   const copyToClipboard = (text: string) => () => {
     navigator.clipboard.writeText(text).then(() => {
       setAlertOpen(true);
-    })
-  }
+    });
+  };
 
   const { licenseKey, workbookId } = activationState;
 
@@ -148,7 +146,9 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
       <Stack gap={1} marginBottom="20px">
         <InputLabel>License key</InputLabel>
         <Input value={licenseKey} readOnly onClick={copyToClipboard(licenseKey)}></Input>
-        <InputDescription>Protect your license key, it grants full access to the data you store in EqualTo Sheets.</InputDescription>
+        <InputDescription>
+          Protect your license key, it grants full access to the data you store in EqualTo Sheets.
+        </InputDescription>
       </Stack>
       <Panel>
         <TabsBox>
@@ -161,106 +161,68 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
           </Tabs>
         </TabsBox>
         <TabPanel value={selectedTab} index={0}>
-          <TabTextSection gap={2} direction="row" alignItems="center">
-            <div>
-              We've created a sample workbook for you. Paste code snippet below inside the &lt;body&gt; tag and use it immediately.
-            </div>
-            <a className="link-button" href={`./edit-workbook/${licenseKey}/${workbookId}`} target="_blank" rel="noreferrer">Preview workbook
-</a>
-          </TabTextSection>
-          <CodeArea onClick={copyToClipboard(getSnippet(licenseKey, workbookId))}>
-            <code>{getSnippet(licenseKey, workbookId)}</code>
-          </CodeArea>
+          <GetStartedPanel
+            licenseKey={licenseKey}
+            workbookId={workbookId}
+            copyToClipboard={copyToClipboard}
+          />
         </TabPanel>
         <TabPanel value={selectedTab} index={1}>
-          <TabTextSection direction="column" alignItems="flex-start">
-            <div>
-              You can use this <em>curl</em> command to upload an XLSX file:
-            </div>
-            <CodeArea onClick={copyToClipboard(getCurlSnippet(licenseKey))}>
-              <code style={{whiteSpace: 'break-spaces'}}>{getCurlSnippet(licenseKey)}</code>
-            </CodeArea>
-          </TabTextSection>
-          <TabTextSection>
-            <div>
-              List of all your workbooks:
-              <WorkbookList licenseKey={licenseKey} />
-            </div>
-          </TabTextSection>
+          <UploadPanel
+            licenseKey={licenseKey}
+            workbookId={workbookId}
+            copyToClipboard={copyToClipboard}
+          />
         </TabPanel>
         <TabPanel value={selectedTab} index={2}>
-          <TabTextSection>
-            You can use GraphQL to explore and manipulate your data:
-            <ul>
-              <li>
-                <ExternalGraphQLLink target="_blank" href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbooks%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%7D%0A%7D%0A%0A%0A`}>
-                  List all workbooks
-                </ExternalGraphQLLink>
-              </li>
-              <li>
-                <ExternalGraphQLLink target="_blank" href={`./graphql?license=${licenseKey}#query=mutation%20%7B%0A%09%20%20createWorkbook%20%7B%0A%20%20%20%20%09workbook%20%7B%0A%20%20%20%20%20%20%09id%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A%0A`}>
-                  Create a new workbook
-                </ExternalGraphQLLink>
-              </li>
-              <li>
-                <ExternalGraphQLLink target="_blank" href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheets%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}>
-                  List all sheets in your sample workbook
-                </ExternalGraphQLLink>
-              </li>
-              <li>
-                <ExternalGraphQLLink target="_blank" href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetId%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"A1")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}>
-                  View the value in cell Sheet1!A1 of your sample workbook
-                </ExternalGraphQLLink>
-              </li>
-              <li>
-                <ExternalGraphQLLink target="_blank" href={`./graphql?license=${licenseKey}#query=mutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetId%3A%201%2C%20row%3A%201%2C%20col%3A%201%2C%20input%3A%20"300%24")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}>
-                  Change the value of cell Sheet1!A1 in your sample workbook
-                </ExternalGraphQLLink>
-              </li>
-            </ul>
-          </TabTextSection>
+          <GraphQLPanel licenseKey={licenseKey} workbookId={workbookId} />
         </TabPanel>
         <TabPanel value={selectedTab} index={3}>
-          <TabTextSection>
-            Create, read and update your workbook using our REST API.
-          </TabTextSection>
+          <RestAPIPanel licenseKey={licenseKey} workbookId={workbookId} />
         </TabPanel>
         <TabPanel value={selectedTab} index={4}>
-          <TabTextSection>
-            Run "what if" scenarios for your workbook.
-          </TabTextSection>
+          <SimulationAPIPanel licenseKey={licenseKey} workbookId={workbookId} />
         </TabPanel>
       </Panel>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" marginTop="24px">
         <FooterText>
-          {'Need help? Contact us at '}
-          <ExternalLink href="mailto:support@equalto.com">support@equalto.com</ExternalLink>.
+          {'Need help? Take a look at the '}
+          <DocumentationLink>documentation</DocumentationLink>.
         </FooterText>
-        <BookmarkText>
-          We recommend bookmarking this page
-        </BookmarkText>
+        <BookmarkText>We recommend bookmarking this page</BookmarkText>
       </Stack>
       <Snackbar
         open={openAlert}
         autoHideDuration={3000}
         onClose={() => setAlertOpen(false)}
         message="Copied to the clipboard!"
-       />
+      />
     </StyledBox>
+  );
+};
+
+const DocumentationLink = ({ children }: { children: ReactNode }) => {
+  return (
+    <ExternalLink
+      href="https://docs.google.com/document/d/19cDrllxVKid0HbSG8uXjDSs7iRDlitKM-9OLgkKiQV4/edit?usp=sharing"
+      target="_blank"
+    >
+      {children}
+    </ExternalLink>
   );
 };
 
 type Workbook = {
   id: string;
   name: string | null;
-}
+};
 const WorkbookList = ({ licenseKey }: { licenseKey: string }) => {
   const [workbooks, setWorkbooks] = useState<Workbook[]>([]);
   useEffect(() => {
     getWorkbookList();
     async function getWorkbookList() {
       try {
-        const response = await fetch('./api/v1/workbooks', { 
+        const response = await fetch('./api/v1/workbooks', {
           method: 'GET',
           headers: new Headers({
             Authorization: `Bearer ${licenseKey}`,
@@ -275,25 +237,327 @@ const WorkbookList = ({ licenseKey }: { licenseKey: string }) => {
       } catch (e) {
         console.error(e);
       }
-    };
+    }
   }, [licenseKey]);
 
   return (
     <ul>
-      {workbooks.map(workbook => (
+      {workbooks.map((workbook) => (
         <li key={workbook.id}>
-          <ExternalGraphQLLink href={`./edit-workbook/${licenseKey}/${workbook.id}`} target="_blank">
+          <ExternalGraphQLLink
+            href={`./edit-workbook/${licenseKey}/${workbook.id}`}
+            target="_blank"
+          >
             {workbook.name ?? workbook.id}
           </ExternalGraphQLLink>
         </li>
       ))}
     </ul>
-  )
+  );
+};
+
+const GetStartedPanel = ({
+  licenseKey,
+  workbookId,
+  copyToClipboard,
+}: {
+  licenseKey: LicenseKey;
+  workbookId: string;
+  copyToClipboard: (text: string) => () => void;
+}) => {
+  return (
+    <>
+      <TabTextSection gap={2} direction="row" alignItems="center" $border>
+        <div>
+          We've created a sample workbook for you. Paste code snippet below inside the &lt;body&gt;
+          tag and use it immediately.
+        </div>
+        <a
+          className="link-button"
+          href={`./edit-workbook/${licenseKey}/${workbookId}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Preview workbook
+        </a>
+      </TabTextSection>
+      <CodeArea onClick={copyToClipboard(getSnippet(licenseKey, workbookId))}>
+        <code>{getSnippet(licenseKey, workbookId)}</code>
+      </CodeArea>
+    </>
+  );
+};
+const UploadPanel = ({
+  licenseKey,
+  workbookId,
+  copyToClipboard,
+}: {
+  licenseKey: LicenseKey;
+  workbookId: string;
+  copyToClipboard: (text: string) => () => void;
+}) => {
+  return (
+    <>
+      <TabTextSection direction="column" alignItems="flex-start" $border>
+        <div>
+          You can use this <em>curl</em> command to upload an XLSX file:
+        </div>
+        <CodeArea onClick={copyToClipboard(getCurlSnippet(licenseKey))}>
+          <code style={{ whiteSpace: 'break-spaces' }}>{getCurlSnippet(licenseKey)}</code>
+        </CodeArea>
+      </TabTextSection>
+      <TabTextSection>
+        <div>
+          List of all your workbooks:
+          <WorkbookList licenseKey={licenseKey} />
+        </div>
+      </TabTextSection>
+    </>
+  );
+};
+const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbookId: string }) => {
+  return (
+    <TabTextSection>
+      You can use GraphQL to explore and manipulate your data:
+      <ul>
+        <li>
+          <ExternalGraphQLLink
+            target="_blank"
+            href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbooks%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%7D%0A%7D%0A%0A%0A`}
+          >
+            List all workbooks
+          </ExternalGraphQLLink>
+        </li>
+        <li>
+          <ExternalGraphQLLink
+            target="_blank"
+            href={`./graphql?license=${licenseKey}#query=mutation%20%7B%0A%09%20%20createWorkbook%20%7B%0A%20%20%20%20%09workbook%20%7B%0A%20%20%20%20%20%20%09id%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A%0A`}
+          >
+            Create a new workbook
+          </ExternalGraphQLLink>
+        </li>
+        <li>
+          <ExternalGraphQLLink
+            target="_blank"
+            href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheets%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
+          >
+            List all sheets in your sample workbook
+          </ExternalGraphQLLink>
+        </li>
+        <li>
+          <ExternalGraphQLLink
+            target="_blank"
+            href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetId%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"A1")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
+          >
+            View the value in cell Sheet1!A1 of your sample workbook
+          </ExternalGraphQLLink>
+        </li>
+        <li>
+          <ExternalGraphQLLink
+            target="_blank"
+            href={`./graphql?license=${licenseKey}#query=mutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetId%3A%201%2C%20row%3A%201%2C%20col%3A%201%2C%20input%3A%20"300%24")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}
+          >
+            Change the value of cell Sheet1!A1 in your sample workbook
+          </ExternalGraphQLLink>
+        </li>
+      </ul>
+    </TabTextSection>
+  );
+};
+const RestAPIPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbookId: string }) => {
+  const [response, setResponse] = useState('');
+
+  const setInitialInvestment = async () => {
+    const response = await fetch(`./api/v1/workbooks/${workbookId}/sheets/1/cells/6/3`, {
+      method: 'PUT',
+      headers: new Headers({
+        Authorization: `Bearer ${licenseKey}`,
+        'Content-Type': 'application/json',
+      }),
+      credentials: 'include',
+      body: JSON.stringify({ value: 25000 }),
+    });
+    const responseJson = await response.json();
+    setResponse(JSON.stringify(responseJson, null, 2));
+  };
+
+  const getInterestEarned = async () => {
+    const response = await fetch(`./api/v1/workbooks/${workbookId}/sheets/1/cells/10/6`, {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${licenseKey}`,
+        'Content-Type': 'application/json',
+      }),
+      credentials: 'include',
+    });
+    const responseJson = await response.json();
+    setResponse(JSON.stringify(responseJson, null, 2));
+  };
+
+  const getAllWorkbooks = async () => {
+    const response = await fetch('./api/v1/workbooks', {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${licenseKey}`,
+        'Content-Type': 'application/json',
+      }),
+      credentials: 'include',
+    });
+    const responseJson = await response.json();
+    setResponse(JSON.stringify(responseJson, null, 2));
+  };
+
+  const createNewWorkbook = async () => {
+    const response = await fetch('./api/v1/workbooks', {
+      method: 'POST',
+      headers: new Headers({
+        Authorization: `Bearer ${licenseKey}`,
+        'Content-Type': 'application/json',
+      }),
+      credentials: 'include',
+    });
+    const responseJson = await response.json();
+    setResponse(JSON.stringify(responseJson, null, 2));
+  };
+
+  return (
+    <TabTextSection>
+      Create, read and update your workbook using our REST API.
+      <br /> <br />
+      For the sample workbook in your account:
+      <ul>
+        <ClickableLi onClick={setInitialInvestment}>
+          Set the initial investment (Sheet!C6) to $25,000
+        </ClickableLi>
+        <ClickableLi onClick={getInterestEarned}>Get the interest earned (Sheet!F10)</ClickableLi>
+      </ul>
+      Other useful REST APIs:
+      <ul>
+        <ClickableLi onClick={getAllWorkbooks}>Get a list of all my workbooks</ClickableLi>
+        <ClickableLi onClick={createNewWorkbook}>Create new workbook</ClickableLi>
+      </ul>
+      <div style={{ fontSize: 'inherit' }}>
+        Read <DocumentationLink>our documentation</DocumentationLink> for the full list of REST
+        APIs.
+      </div>
+      <br />
+      {response !== '' ? (
+        <>
+          Response:
+          <CodeArea>
+            <code>{response}</code>
+          </CodeArea>
+        </>
+      ) : null}
+    </TabTextSection>
+  );
+};
+
+const SimulationAPIPanel = ({
+  licenseKey,
+  workbookId,
+}: {
+  licenseKey: string;
+  workbookId: string;
+}) => {
+  const [response, setResponse] = useState('');
+  const simulateInterest = async () => {
+    const url = new URL(`${window.location.origin}/api/v1/workbooks/${workbookId}/simulate`);
+    url.searchParams.append('inputs', JSON.stringify({ Sheet1: { C6: 50000 } }));
+    url.searchParams.append('outputs', JSON.stringify({ Sheet1: ['F10'] }));
+    const response = await fetch(url.href, {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${licenseKey}`,
+        'Content-Type': 'application/json',
+      }),
+    });
+    const responseJson = await response.json();
+    setResponse(JSON.stringify(responseJson, null, 2));
+  };
+
+  const simulateCapital = async () => {
+    const url = new URL(`${window.location.origin}/api/v1/workbooks/${workbookId}/simulate`);
+    url.searchParams.append('inputs', JSON.stringify({ Sheet1: { F4: 15 } }));
+    url.searchParams.append('outputs', JSON.stringify({ Sheet1: ['F6'] }));
+    const response = await fetch(url.href, {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${licenseKey}`,
+        'Content-Type': 'application/json',
+      }),
+    });
+    const responseJson = await response.json();
+    setResponse(JSON.stringify(responseJson, null, 2));
+  };
+  return (
+    <TabTextSection>
+      Run "what if" scenarios for your workbook.
+      <br /> <br />
+      For the sample workbook in your account:
+      <ul>
+        <ClickableLi onClick={simulateInterest}>
+          The interest earned, if the initial investment is $50,000
+        </ClickableLi>
+        <ClickableLi onClick={simulateCapital}>
+          Capital at the end of a term of 15 years
+        </ClickableLi>
+      </ul>
+      <div style={{ fontSize: 'inherit' }}>
+        Read <DocumentationLink>our documentation</DocumentationLink> for the full list of REST
+        APIs.
+      </div>
+      <br />
+      {response !== '' ? (
+        <>
+          Response:
+          <CodeArea>
+            <code>{response}</code>
+          </CodeArea>
+        </>
+      ) : null}
+    </TabTextSection>
+  );
+};
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
 }
 
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && <>{children}</>}
+    </div>
+  );
+}
+
+const ClickableLi = styled.li`
+  cursor: pointer;
+`;
+
 const TabsBox = styled(MaterialBox)`
-  background: rgba(255, 255, 255, 0.05);
+  background: rgb(73, 74, 99);
   border-bottom: 1px solid #545971;
+  position: sticky;
+  top: 0;
 `;
 
 const Input = styled.input`
@@ -305,7 +569,7 @@ const Input = styled.input`
   padding: 5px 4px 5px 10px;
   gap: 10px;
   color: #fff;
-  background: #3E415A;
+  background: #3e415a;
   border: 1px solid rgba(180, 183, 209, 0.2);
   border-radius: 5px;
   font-family: inherit;
@@ -315,37 +579,39 @@ const InputLabel = styled.label`
   font-weight: 500;
   font-size: 13px;
   line-height: 16px;
-  color: #FFFFFF;
+  color: #ffffff;
 `;
 const InputDescription = styled.div`
   font-size: 13px;
   line-height: 16px;
-  color: #8B8FAD;
+  color: #8b8fad;
 `;
 
 const Panel = styled.div`
-  background: #3E415A;
+  background: #3e415a;
   border: 1px solid rgba(180, 183, 209, 0.2);
   border-radius: 5px;
+  flex-grow: 1;
+  overflow: scroll;
 `;
 
 const BookmarkText = styled.div`
   font-size: 11px;
   line-height: 13px;
-  color: #F5BB49;
+  color: #f5bb49;
 `;
 
-const TabTextSection = styled(Stack)`
+const TabTextSection = styled(Stack)<{ $border?: boolean }>`
   color: #fff;
   font-style: normal;
   font-weight: 400;
   font-size: 14px;
   line-height: 17px;
   padding: 11px 13px;
-  border-bottom: 1px solid #545971;
+  ${({ $border }) => ($border ? 'border-bottom: 1px solid #545971;' : '')}
 
   em {
-    color: #8B8FAD;
+    color: #8b8fad;
   }
   a.link-button {
     unset: all;
@@ -381,43 +647,15 @@ const ExternalGraphQLLink = styled(ExternalLink)`
   }
 `;
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function a11yProps(index: number) {
-  return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
-  };
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-          <>{children}</>
-      )}
-    </div>
-  );
-}
-
 const LoadingBox = styled.div`
   text-align: center;
 `;
 
 const StyledBox = styled(Box)`
   padding: 60px 35px 24px 35px;
+  height: 750px;
+  display: flex;
+  flex-direction: column;
 `;
 
 const LicenseStatusText = styled.p`
@@ -435,7 +673,6 @@ const LicenseStatusText = styled.p`
 
 const CodeArea = styled.pre`
   cursor: pointer;
-  position: relative;
   padding: 10px;
   overflow: auto;
 
@@ -444,6 +681,7 @@ const CodeArea = styled.pre`
   font-size: 14px;
   line-height: 18px;
   margin: 0px;
+  flex-grow: 1;
 `;
 
 const FooterText = styled.div`

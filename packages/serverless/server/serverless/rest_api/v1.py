@@ -4,6 +4,7 @@ import equalto.cell
 import equalto.exceptions
 import equalto.sheet
 import equalto.workbook
+from django.db import transaction
 from django.db.models import QuerySet
 from rest_framework import serializers, status
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, NotFound
@@ -77,6 +78,7 @@ class WorkbookListView(ServerlessView):
         serializer = WorkbookSerializer(self._get_workbooks().order_by("create_datetime"), many=True)
         return Response({"workbooks": serializer.data})
 
+    @transaction.atomic
     def post(self, request: Request) -> Response:
         """Create a workbook."""
         workbook = Workbook.objects.create(license=self._get_license())
@@ -98,9 +100,10 @@ class SheetListView(ServerlessView):
         sheets = workbook.calc.sheets
         return Response({"sheets": [serialize_sheet(sheet) for sheet in sheets]})
 
+    @transaction.atomic
     def post(self, request: Request, workbook_id: str) -> Response:
         """Create a sheet."""
-        name = request.POST.get("name")
+        name = request.data.get("name")
 
         workbook = self._get_workbook(workbook_id)
 
@@ -117,9 +120,10 @@ class SheetDetailView(ServerlessView):
         sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_id)
         return Response(serialize_sheet(sheet))
 
+    @transaction.atomic
     def put(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
         """Rename the sheet."""
-        new_name = request.POST.get("new_name")
+        new_name = request.data.get("new_name")
         if not new_name:
             return Response(
                 {"detail": "'new_name' parameter is not provided"},
@@ -135,6 +139,7 @@ class SheetDetailView(ServerlessView):
 
         return Response(serialize_sheet(sheet))
 
+    @transaction.atomic
     def delete(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
         """Delete the sheet."""
         workbook = self._get_workbook(workbook_id)
@@ -156,10 +161,11 @@ class CellByIndexView(ServerlessView):
             raise NotFound("Cell not found")
         return Response(serialize_cell(cell))
 
+    @transaction.atomic
     def put(self, request: Request, workbook_id: str, sheet_id: int, row: int, col: int) -> Response:
         """Update the cell."""
-        cell_input = request.POST.get("input")
-        cell_value = request.POST.get("value")
+        cell_input = request.data.get("input")
+        cell_value = request.data.get("value")
         if (cell_input is None) == (cell_value is None):
             return Response(
                 {"detail": "Either 'input' or 'value' parameter needs to be provided, but not both"},

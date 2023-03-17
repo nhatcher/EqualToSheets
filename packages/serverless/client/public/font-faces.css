@@ -55,7 +55,8 @@
 
 @font-face {
   font-family: 'Inter';
-  src: local('Inter'), local('Inter'), url('./assets/fonts/Inter/Inter-Medium.woff2') format('woff2');
+  src: local('Inter'), local('Inter'),
+    url('./assets/fonts/Inter/Inter-Medium.woff2') format('woff2');
   font-style: normal;
   font-weight: 500;
 }

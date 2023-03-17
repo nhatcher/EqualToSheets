@@ -3,7 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { SubmitButton } from '../../components/buttons';
 import { EmailInput } from '../../components/emailInput';
-import { DualBox, ExternalLink, HeadingText, LeftSide, RightSide, Subtitle, VideoPlaceholder } from './common';
+import {
+  DualBox,
+  ExternalLink,
+  HeadingText,
+  LeftSide,
+  RightSide,
+  Subtitle,
+  VideoPlaceholder,
+} from './common';
 
 export const LicenseRequestPage = () => {
   const navigate = useNavigate();
@@ -94,7 +102,6 @@ export const LicenseRequestPage = () => {
     </DualBox>
   );
 };
-
 
 const Form = styled.form`
   display: grid;
