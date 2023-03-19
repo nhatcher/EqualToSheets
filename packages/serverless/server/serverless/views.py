@@ -1,5 +1,6 @@
 import json
 import tempfile
+import time
 from asyncio import sleep
 from typing import Any, Union
 from urllib.parse import quote
@@ -339,9 +340,13 @@ async def get_updated_workbook(request: HttpRequest, workbook_id: str, revision:
 
     # TODO: We should check the license settings against the request HOST but we're skipping that in the beta.
 
-    for _ in range(50):  # 50 attempts, one connection is open for up to ~10s
+    for i in range(50):  # 50 attempts, one connection is open for up to ~10s
         workbook = await _get_updated_workbook(workbook_id, revision)
         if workbook is not None:
+            if i == 0:
+                # HACK!
+                # Workaround to reduce the risk of triggering the race condition #289
+                time.sleep(0.5)
             return JsonResponse(workbook)
         await sleep(0.2)
 
