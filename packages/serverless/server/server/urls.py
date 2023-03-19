@@ -23,7 +23,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("graphql", graphql_view),
     path("get-updated-workbook/<uuid:workbook_id>/<int:revision>", get_updated_workbook),
-    path("edit-workbook/<uuid:license_key>/<uuid:workbook_id>/", edit_workbook),
+    path("unsafe-just-for-beta/edit-workbook/<uuid:license_key>/<uuid:workbook_id>/", edit_workbook),
     path("unsubscribe-email", unsubscribe_email),
     # TODO: Move the simulate endpoint implementation to serverless.rest_api
     path("api/v1/workbooks/<uuid:workbook_id>/simulate", simulate),

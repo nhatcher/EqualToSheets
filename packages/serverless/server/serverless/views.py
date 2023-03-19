@@ -215,7 +215,7 @@ def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
     workbook.save()
 
     query = (
-        """# WARNING: you should avoid sharing the above URL. It contains
+        """# WARNING: you should not share the above URL. It contains
 #          your license key, which grants full access to all
 #          your EqualTo Sheets data.
 
@@ -233,7 +233,7 @@ Congratulations! The workbook has been uploaded.
 
 Workbook Id: {workbook.id}
 
-Preview workbook: {settings.SERVER}/edit-workbook/{license.key}/{workbook.id}/
+Preview workbook: {settings.SERVER}/unsafe-just-for-beta/edit-workbook/{license.key}/{workbook.id}/
 
 GraphQL query to list all sheets in this workbook: {settings.SERVER}/graphql?license={license.key}#query={quote(query)}
 

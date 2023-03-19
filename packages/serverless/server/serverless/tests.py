@@ -1493,7 +1493,7 @@ class GetUpdatedWorkbookTests(TransactionTestCase):
 
     def test_edit_workbook(self) -> None:
         response = self.client.get(
-            f"/edit-workbook/{self.license.key}/{self.workbook.id}/",
+            f"/unsafe-just-for-beta/edit-workbook/{self.license.key}/{self.workbook.id}/",
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.content.startswith(b"<!doctype html>"))
@@ -1503,14 +1503,14 @@ class GetUpdatedWorkbookTests(TransactionTestCase):
     def test_edit_workbook_invalid_license_id(self) -> None:
         invalid_license_key = "dc6325b0-9e39-44e9-b2ca-278e14be6bc5"
         response = self.client.get(
-            f"/edit-workbook/{invalid_license_key}/{self.workbook.id}/",
+            f"/unsafe-just-for-beta/edit-workbook/{invalid_license_key}/{self.workbook.id}/",
         )
         self.assertEqual(response.status_code, 404)
 
     def test_edit_workbook_invalid_workbook_id(self) -> None:
         invalid_workbook_id = "dc6325b0-9e39-44e9-b2ca-278e14be6bc5"
         response = self.client.get(
-            f"/edit-workbook/{self.license.key}/{invalid_workbook_id}/",
+            f"/unsafe-just-for-beta/edit-workbook/{self.license.key}/{invalid_workbook_id}/",
         )
         self.assertEqual(response.status_code, 404)
 

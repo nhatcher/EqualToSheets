@@ -245,7 +245,7 @@ const WorkbookList = ({ licenseKey }: { licenseKey: string }) => {
       {workbooks.map((workbook) => (
         <li key={workbook.id}>
           <ExternalGraphQLLink
-            href={`./edit-workbook/${licenseKey}/${workbook.id}`}
+            href={`./unsafe-just-for-beta/edit-workbook/${licenseKey}/${workbook.id}`}
             target="_blank"
           >
             {workbook.name ?? workbook.id}
@@ -274,7 +274,7 @@ const GetStartedPanel = ({
         </div>
         <a
           className="link-button"
-          href={`./edit-workbook/${licenseKey}/${workbookId}`}
+          href={`./unsafe-just-for-beta/edit-workbook/${licenseKey}/${workbookId}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -323,7 +323,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbooks%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%7D%0A%7D%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbooks%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
             List all workbooks
           </ExternalGraphQLLink>
@@ -331,7 +331,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=mutation%20%7B%0A%09%20%20createWorkbook%20%7B%0A%20%20%20%20%09workbook%20%7B%0A%20%20%20%20%20%20%09id%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Amutation%20%7B%0A%09%20%20createWorkbook%20%7B%0A%20%20%20%20%09workbook%20%7B%0A%20%20%20%20%20%20%09id%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A%0A`}
           >
             Create a new workbook
           </ExternalGraphQLLink>
@@ -339,7 +339,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheets%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheets%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
             List all sheets in your sample workbook
           </ExternalGraphQLLink>
@@ -347,7 +347,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=query%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetId%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"A1")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetId%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"A1")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
             View the value in cell Sheet1!A1 of your sample workbook
           </ExternalGraphQLLink>
@@ -355,7 +355,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=mutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetId%3A%201%2C%20row%3A%201%2C%20col%3A%201%2C%20input%3A%20"300%24")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Amutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetId%3A%201%2C%20row%3A%201%2C%20col%3A%201%2C%20input%3A%20"300%24")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}
           >
             Change the value of cell Sheet1!A1 in your sample workbook
           </ExternalGraphQLLink>

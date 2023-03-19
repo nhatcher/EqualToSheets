@@ -148,9 +148,9 @@ class WorkbookSheets:
         assert len(names) == len(set(names))
         assert len(ids) == len(set(ids))
 
-        self._sheet_name_to_sheet_id = {name: sheet_id for name, sheet_id in zip(names, ids)}
+        self._sheet_name_to_sheet_id = dict(zip(names, ids))
         self._sheet_id_to_sheet_name = {sheet_id: name for name, sheet_id in zip(names, ids)}
-        self._sheet_index_to_sheet_id = {index: sheet_id for index, sheet_id in enumerate(ids)}
+        self._sheet_index_to_sheet_id = dict(enumerate(ids))
         self._sheet_id_to_sheet_index = {sheet_id: index for index, sheet_id in enumerate(ids)}
 
     def _get_sheet_id_from_name(self, name: str) -> int:
