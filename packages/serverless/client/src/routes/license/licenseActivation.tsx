@@ -156,7 +156,7 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
             <Tab label="Get started now" {...a11yProps(0)} />
             <Tab label="Upload XLSX" {...a11yProps(1)} />
             <Tab label="GraphQL" {...a11yProps(2)} />
-            <Tab label="Rest API" {...a11yProps(3)} />
+            <Tab label="REST API" {...a11yProps(3)} />
             <Tab label="Simulation API" {...a11yProps(4)} />
           </Tabs>
         </TabsBox>
