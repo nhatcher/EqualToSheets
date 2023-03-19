@@ -592,7 +592,7 @@ const Panel = styled.div`
   border: 1px solid rgba(180, 183, 209, 0.2);
   border-radius: 5px;
   flex-grow: 1;
-  overflow: scroll;
+  overflow: auto;
 `;
 
 const BookmarkText = styled.div`
