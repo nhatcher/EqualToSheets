@@ -40,7 +40,7 @@ const roll = (format) => {
       commonjs({ include: 'node_modules/**' }),
       typescript(),
       postcss(),
-      // TODO: terser(),
+      terser(), // Comment if you want readable source code in the output.
     ],
   };
 };
