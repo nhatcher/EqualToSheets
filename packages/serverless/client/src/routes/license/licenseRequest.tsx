@@ -10,8 +10,8 @@ import {
   LeftSide,
   RightSide,
   Subtitle,
-  VideoPlaceholder,
 } from './common';
+import { VideoEmbed } from './videoEmbed';
 
 export const LicenseRequestPage = () => {
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ export const LicenseRequestPage = () => {
           Get your <em>EqualTo Sheets</em> license key
         </HeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
-        <VideoPlaceholder>VIDEO</VideoPlaceholder>
+        <VideoEmbed />
       </LeftSide>
       <RightSide>
         <div />

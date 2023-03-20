@@ -1,13 +1,7 @@
 import styled from 'styled-components/macro';
-import {
-  DualBox,
-  LeftSide,
-  RightSide,
-  Subtitle,
-  VideoPlaceholder,
-  HeadingText as LeftHeadingText,
-} from './common';
+import { DualBox, LeftSide, RightSide, Subtitle, HeadingText as LeftHeadingText } from './common';
 import { ReactComponent as SentSvg } from './sent.svg';
+import { VideoEmbed } from './videoEmbed';
 
 export const LicenseSentPage = () => {
   return (
@@ -17,7 +11,7 @@ export const LicenseSentPage = () => {
           Get your <em>EqualTo Sheets</em> license key
         </LeftHeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
-        <VideoPlaceholder>VIDEO</VideoPlaceholder>
+        <VideoEmbed />
       </LeftSide>
       <RightSide>
         <div />

@@ -79,13 +79,3 @@ export const Subtitle = styled.p`
   display: flex;
   color: #b4b7d1;
 `;
-
-export const VideoPlaceholder = styled.div`
-  margin-top: 30px;
-  background: #f2f2f2;
-  border-radius: 10px;
-  width: 100%;
-  height: 250px;
-  text-align: center;
-  padding: 40px;
-`;
