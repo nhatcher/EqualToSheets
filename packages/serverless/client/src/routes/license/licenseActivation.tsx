@@ -454,14 +454,14 @@ const RestAPIPanel = ({
       <ul>
         <li>
           <ClickableSpan onClick={setInitialInvestment}>
-            Set the initial investment (Sheet!C6) to $25,000
+            Set the initial investment (Sheet1!C6) to $25,000
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlSetInvestmentCommand} copyToClipboard={copyToClipboard} />
         </li>
         <li>
           <ClickableSpan onClick={getInterestEarned}>
-            Get the interest earned (Sheet!F10)
+            Get the interest earned (Sheet1!F10)
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlGetInterestCommand} copyToClipboard={copyToClipboard} />
@@ -541,8 +541,8 @@ const SimulationAPIPanel = ({
     setResponse(JSON.stringify(responseJson, null, 2));
   };
 
-  const curlSimulateInterestCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22C6%22%3A50000%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F10%22%5D%7D -H 'Authorization: Bearer ${licenseKey}'`;
-  const curlSimulateCapitalCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22F4%22%3A15%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F6%22%5D%7D -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlSimulateInterestCommand = `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22C6%22%3A50000%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F10%22%5D%7D' -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlSimulateCapitalCommand = `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22F4%22%3A15%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F6%22%5D%7D' -H 'Authorization: Bearer ${licenseKey}'`;
 
   return (
     <TabTextSection>
@@ -552,14 +552,14 @@ const SimulationAPIPanel = ({
       <ul>
         <li>
           <ClickableSpan onClick={simulateInterest}>
-            The interest earned, if the initial investment is $50,000
+            The interest earned, if the initial investment is $50,000 (Sheet1!F10 if Sheet1!C6=50000)
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlSimulateInterestCommand} copyToClipboard={copyToClipboard} />
         </li>
         <li>
           <ClickableSpan onClick={simulateCapital}>
-            Capital at the end of a term of 15 years
+            Capital at the end of a term of 15 years (Sheet1!F6 if Sheet1!C12=15)
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlSimulateCapitalCommand} copyToClipboard={copyToClipboard} />
