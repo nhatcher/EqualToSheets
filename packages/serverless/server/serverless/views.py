@@ -1,3 +1,4 @@
+import html
 import json
 import tempfile
 import time
@@ -99,57 +100,37 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
     host = request.get_host()
     proto = "https://" if request.is_secure() else "http://"
 
-    html = f"""<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8"/>
-        <title>EqualTo Sheets</title>
-        <script type="text/javascript" src="/static/v1/equalto.js"></script>
-        <style>
-            html {{
-                height: 100%;
-            }}
-            body {{
-                height: 100%;
-                margin: 0;
-            }}
-            #container {{
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                padding: 20px;
-                box-sizing: border-box;
-            }}
-            #workbook-slot {{
-                flex-grow: 1;
-            }}
-            .column {{
-                float: left;
-                width: 50%;
-                height:100%;
-            }}
-            .row {{
-                height:100%;
-            }}
+    equalto_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="35" height="36" fill="none">
+  <rect width="34" height="34" x=".5" y="1" fill="url(#a)" rx="4.5"/>
+  <g filter="url(#b)">
+    <path fill="url(#c)" fill-rule="evenodd" d="M11.5 10.5a.5.5 0 0 0-.5.5v5.72a.5.5 0 0 0 .5.5h12.714a.5.5 0 0 0 .5-.5V11a.5.5 0 0 0-.5-.5H11.5Zm6.857 9.28a.5.5 0 0 0-.5.5V26a.5.5 0 0 0 .5.5h5.857a.5.5 0 0 0 .5-.5v-5.72a.5.5 0 0 0-.5-.5h-5.857Z" clip-rule="evenodd"/>
+  </g>
+  <rect width="34" height="34" x=".5" y="1" stroke="#343855" rx="4.5"/>
+  <defs>
+    <linearGradient id="a" x1="17.5" x2="17.5" y1=".5" y2="35.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#292C42"/>
+      <stop offset="1" stop-color="#1F2236"/>
+    </linearGradient>
+    <linearGradient id="c" x1="17.857" x2="17.857" y1="10.5" y2="26.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#72ED79"/>
+      <stop offset="1" stop-color="#53CD5A"/>
+    </linearGradient>
+    <filter id="b" width="15.714" height="19" x="10" y="10.5" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+      <feOffset dy="2"/>
+      <feGaussianBlur stdDeviation=".5"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0"/>
+      <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_253_33415"/>
+      <feBlend in="SourceGraphic" in2="effect1_dropShadow_253_33415" result="shape"/>
+    </filter>
+  </defs>
+</svg>"""  # noqa: E501
 
-            /* Clear floats after the columns */
-            .row:after {{
-                content: "";
-                display: table;
-                clear: both;
-            }}
-        </style>
-    </head>
-    <body>
-        <div id="container">
-            <h1>WARNING: you should avoid sharing the above URL. It contains your license key, which
-                allows full access to all your EqualTo Sheets data.</h1>
-            <div class="row">
-                <div class="column">
-                    <pre>
-&lt;div id="workbook-slot" style="height:100%;min-height:300px;"&gt;&lt;/div&gt;
-&lt;script src="{proto}{host}/static/v1/equalto.js"&gt;&lt;/script&gt;
-&lt;script&gt;
+    snippet_unescaped = f"""<div id="workbook-slot" style="height:100%;min-height:300px;"></div>
+<script src="{proto}{host}/static/v1/equalto.js"></script>
+<script>
     // WARNING: do not expose your license key in client code,
     //          instead you should proxy calls to EqualTo.
     EqualToSheets.setLicenseKey(
@@ -160,11 +141,233 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
         "{workbook.id}",
         document.getElementById("workbook-slot")
     );
-&lt;/script&gt;
-                    </pre>
+</script>"""
+
+    snippet_json = json.dumps(snippet_unescaped).replace("</", r"<\/")
+
+    snippet_html = html.escape(snippet_unescaped)
+
+    snippet_lines = len(snippet_unescaped.splitlines())
+    snippet_lines_html = "".join([f"<li>{line}</li>" for line in range(1, snippet_lines + 1 + 1)])
+
+    response_html = f"""<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <title>EqualTo Sheets</title>
+        <script type="text/javascript" src="/static/v1/equalto.js"></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:200,300,regular,500,600,700,800%7CFira+Mono:regular%7CFira+Code:300,regular,500,600%7CJetBrains+Mono:100,200,300,regular,500,600,700,800" media="all">
+        <style>
+            html {{
+                height: 100%;
+            }}
+            body {{
+                height: 100%;
+                margin: 0;
+            }}
+
+            #container {{
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
+                position: relative;
+            }}
+
+            #workbook-slot {{
+                flex-grow: 1;
+            }}
+
+            .warning-bar {{
+                font-family: "Inter";
+                font-style: normal;
+                font-weight: 500;
+                font-size: 9px;
+                line-height: 11px;
+                text-align: center;
+                color: #21243A;
+                background: #F5BB49;
+                padding: 0 10px;
+                padding: 5px;
+            }}
+
+            .radial-background {{
+                background: radial-gradient(
+                    70.43% 179.85% at 21.99% 27.53%,
+                    rgba(88, 121, 240, 0.07) 0%,
+                    rgba(88, 121, 240, 0) 100%
+                    ),
+                    linear-gradient(180deg, #292c42 0%, #1f2236 100%);
+                background-blend-mode: normal, normal;
+            }}
+
+            .heading-bar {{
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                padding: 10px;
+                border-bottom: 1px solid #545971;
+            }}
+
+            .heading-bar .sheets {{
+                margin-left: 10px;
+                font-family: 'JetBrains Mono', monospace;
+                font-style: normal;
+                font-weight: 400;
+                font-size: 13px;
+                line-height: 17px;
+                color: #C6CAE3;
+            }}
+
+            .columns {{
+                flex: 1;
+                display: grid;
+                grid-template-columns: 605px 1fr;
+            }}
+
+            .snippet {{
+                display: grid;
+                grid-template-columns: min-content 1fr;
+                gap: 15px;
+                background: rgba(255, 255, 255, 0.05);
+                overflow: auto;
+                cursor: pointer;
+            }}
+
+            .snippet .numbers {{
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                user-select: none;
+                padding: 20px 0 20px 20px;
+            }}
+
+            .snippet .numbers li {{
+                font-family: 'JetBrains Mono';
+                font-style: normal;
+                font-weight: 300;
+                font-size: 13px;
+                line-height: 18px;
+                color: #8B8FAD;
+            }}
+
+            .snippet pre {{
+                padding: 20px 20px 20px 0;
+                margin: 0;
+                font-family: 'JetBrains Mono';
+                font-style: normal;
+                font-weight: 300;
+                font-size: 13px;
+                line-height: 18px;
+                color: #D3D6E9;
+            }}
+
+            .footer {{
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                padding: 5px;
+                border-top: 1px solid #545971;
+            }}
+
+            .footer .made-by {{
+                font-family: 'Inter';
+                font-style: normal;
+                font-weight: 400;
+                font-size: 9px;
+                line-height: 11px;
+                color: #8B8FAD;
+            }}
+
+            .footer .divider {{
+                height: 8px;
+                margin: 0 10px;
+                border-left: 1px solid #5F6989;
+            }}
+
+            .footer a:link,
+            .footer a:visited,
+            .footer a:hover,
+            .footer a:active {{
+                font-family: 'Inter';
+                font-style: normal;
+                font-weight: 400;
+                font-size: 9px;
+                line-height: 11px;
+                color: #5879F0;
+            }}
+
+            .popover {{
+                position: absolute;
+                bottom: 20px;
+                left: 20px;
+
+                font-family: Inter, sans-serif;
+                font-size: 14px;
+                font-weight: 400;
+                line-height: 1.43;
+                color: rgb(255, 255, 255);
+                background-color: rgb(50, 50, 50);
+                text-align: center;
+                padding: 6px 16px;
+                border-radius: 4px;
+                user-select: none;
+                box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 5px -1px,
+                    rgba(0, 0, 0, 0.14) 0px 6px 10px 0px,
+                    rgba(0, 0, 0, 0.12) 0px 1px 18px 0px;
+                opacity: 1;
+                transition: 0.2s ease-in-out opacity;
+            }}
+
+            .popover-hidden {{
+                pointer-events: none;
+                opacity: 0;
+            }}
+
+            .equalto-serverless-workbook {{
+                border: none;
+                filter: none;
+            }}
+
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div class="warning-bar">
+                Warning: You should avoid sharing the above URL. It contains your license key,
+                which allows full access to all your EqualTo Sheets data.
+            </div>
+
+            <div class="heading-bar radial-background">
+                {equalto_svg}
+                <div class="sheets">
+                    Sheets
+                </div>
+            </div>
+
+            <div class="columns radial-background">
+                <div class="snippet">
+                    <ul class="numbers">
+                        {snippet_lines_html}
+                    </ul>
+                    <pre>{snippet_html}</pre>
                 </div>
                 <div id="workbook-slot" class="column"></div>
             </div>
+
+            <div class="footer radial-background">
+                <span class="made-by">Made in Berlin and Warsaw by the EqualTo team</span>
+                <span class="divider"></span>
+                <a href="https://www.equalto.com/" target="_blank">
+                    equalto.com
+                </a>
+            </div>
+
+            <div id="copied" class="popover popover-hidden">
+                Copied to clipboard.
+            </div>
+
             <script type="text/javascript">
                 EqualToSheets.setLicenseKey(
                     "{license_key}"
@@ -174,13 +377,28 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
                     "{workbook.id}",
                     document.getElementById("workbook-slot")
                 );
+
+                let currentTimeout = null;
+                document.querySelector('.snippet').addEventListener('click', () => {{
+                    let popover = document.querySelector('#copied');
+                    popover.classList.remove('popover-hidden');
+                    navigator.clipboard.writeText({snippet_json}).then(() => {{
+                        if (currentTimeout) {{
+                            clearTimeout(currentTimeout);
+                            currentTimeout = null;
+                        }}
+                        currentTimeout = setTimeout(() => {{
+                            popover.classList.add('popover-hidden');
+                        }}, 2000);
+                    }});
+                }});
             </script>
         </div>
     </body>
 </html>
-"""
+"""  # noqa: E501
 
-    return HttpResponse(html)
+    return HttpResponse(response_html)
 
 
 # Note that you can manually trigger an upload using curl as follows:
