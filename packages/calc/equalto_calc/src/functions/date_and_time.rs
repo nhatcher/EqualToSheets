@@ -1,5 +1,8 @@
 use chrono::Datelike;
 use chrono::Months;
+use chrono::NaiveDateTime;
+use chrono::TimeZone;
+use chrono::Timelike;
 
 use crate::formatter::dates::date_to_serial_number;
 use crate::{
@@ -189,5 +192,68 @@ impl Model {
             };
         }
         CalcResult::Number(serial_number as f64)
+    }
+
+    pub(crate) fn fn_today(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let args_count = args.len();
+        if args_count != 0 {
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: cell,
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        // milliseconds since January 1, 1970 00:00:00 UTC.
+        let milliseconds = (self.env.get_milliseconds_since_epoch)();
+        let seconds = milliseconds / 1000;
+        let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
+            Some(dt) => dt,
+            None => {
+                return CalcResult::Error {
+                    error: Error::ERROR,
+                    origin: cell,
+                    message: "Invalid date".to_string(),
+                }
+            }
+        };
+        let local_time = self.tz.from_utc_datetime(&dt);
+        // 693_594 is computed as:
+        // NaiveDate::from_ymd(1900, 1, 1).num_days_from_ce() - 2
+        // The 2 days offset is because of Excel 1900 bug
+        let days_from_1900 = local_time.num_days_from_ce() - 693_594;
+
+        CalcResult::Number(days_from_1900 as f64)
+    }
+
+    pub(crate) fn fn_now(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let args_count = args.len();
+        if args_count != 0 {
+            return CalcResult::Error {
+                error: Error::ERROR,
+                origin: cell,
+                message: "Wrong number of arguments".to_string(),
+            };
+        }
+        // milliseconds since January 1, 1970 00:00:00 UTC.
+        let milliseconds = (self.env.get_milliseconds_since_epoch)();
+        let seconds = milliseconds / 1000;
+        let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
+            Some(dt) => dt,
+            None => {
+                return CalcResult::Error {
+                    error: Error::ERROR,
+                    origin: cell,
+                    message: "Invalid date".to_string(),
+                }
+            }
+        };
+        let local_time = self.tz.from_utc_datetime(&dt);
+        // 693_594 is computed as:
+        // NaiveDate::from_ymd(1900, 1, 1).num_days_from_ce() - 2
+        // The 2 days offset is because of Excel 1900 bug
+        let days_from_1900 = local_time.num_days_from_ce() - 693_594;
+        let days = (local_time.num_seconds_from_midnight() as f64) / (60.0 * 60.0 * 24.0);
+
+        CalcResult::Number(days_from_1900 as f64 + days.fract())
     }
 }

@@ -17,11 +17,7 @@ use crate::{
     utils::ParsedReference,
 };
 
-#[cfg(feature = "timezones")]
 pub use chrono_tz::Tz;
-
-#[cfg(not(feature = "timezones"))]
-use crate::timezones_utc::Tz;
 
 pub const APPLICATION: &str = "EqualTo Sheets";
 pub const APP_VERSION: &str = "10.0000";

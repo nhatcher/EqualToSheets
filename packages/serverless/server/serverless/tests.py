@@ -298,7 +298,7 @@ class SimpleTest(TestCase):
 
         calc = equalto.new()
         with SuppressEvaluationErrors():
-            calc["Sheet1!A1"].formula = "=TODAY()"
+            calc["Sheet1!A1"].formula = "=NOTTODAY()"
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             path = Path(tmp_dir) / "file.xlsx"
@@ -318,7 +318,7 @@ class SimpleTest(TestCase):
 
         workbook = Workbook.objects.get(license=license)
         cell = workbook.calc["Sheet1!A1"]
-        self.assertEqual(cell.formula, "=TODAY()")
+        self.assertEqual(cell.formula, "=NOTTODAY()")
         self.assertEqual(cell.value, "#ERROR!")
 
     def test_send_license_key(self) -> None:
@@ -663,7 +663,7 @@ class SimpleTest(TestCase):
 
         calc = equalto.new()
         with SuppressEvaluationErrors():
-            calc["Sheet1!A1"].formula = "=TODAY()"
+            calc["Sheet1!A1"].formula = "=NOTTODAY()"
         new_json = calc.json
 
         response = graphql_query(
@@ -1351,7 +1351,7 @@ class SimpleTest(TestCase):
     def test_simulate_unsupported_function(self) -> None:
         license = create_verified_license(domains="")
         with SuppressEvaluationErrors():
-            workbook = create_workbook(license, {"Sheet1": {"A1": "=TODAY()"}})
+            workbook = create_workbook(license, {"Sheet1": {"A1": "=NOTTODAY()"}})
         response = self.client.get(
             f"/api/v1/workbooks/{workbook.id}/simulate",
             {

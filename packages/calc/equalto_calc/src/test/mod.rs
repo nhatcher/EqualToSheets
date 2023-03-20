@@ -46,3 +46,4 @@ mod test_fn_offset;
 mod test_number_format;
 
 mod test_percentage;
+mod test_today;

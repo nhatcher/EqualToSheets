@@ -4,10 +4,20 @@ import { ICell } from './cell';
 import { parseCellReference } from '../utils';
 import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
 
+function getTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (_e) {
+    return 'UTC';
+  }
+}
+
 export function newWorkbook(): IWorkbook {
   let wasmWorkbook;
   try {
-    wasmWorkbook = new WasmWorkbook('en', 'UTC');
+    const tz = getTimeZone();
+    console.log('New Timezone: ', tz);
+    wasmWorkbook = new WasmWorkbook('en', tz);
   } catch (error) {
     throw wrapWebAssemblyError(error);
   }
@@ -18,7 +28,9 @@ export function newWorkbook(): IWorkbook {
 export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
   let wasmWorkbook;
   try {
-    wasmWorkbook = WasmWorkbook.loadFromMemory(data, 'en', 'UTC');
+    const tz = getTimeZone();
+    console.log('Timezone: ', tz);
+    wasmWorkbook = WasmWorkbook.loadFromMemory(data, 'en', tz);
   } catch (error) {
     throw wrapWebAssemblyError(error);
   }
@@ -29,6 +41,7 @@ export function loadWorkbookFromMemory(data: Uint8Array): IWorkbook {
 export function loadWorkbookFromJson(workbookJson: string): IWorkbook {
   let wasmWorkbook;
   try {
+    console.log('workbookJson');
     wasmWorkbook = WasmWorkbook.loadFromJson(workbookJson);
   } catch (error) {
     throw wrapWebAssemblyError(error);

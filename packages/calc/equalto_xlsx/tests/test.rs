@@ -273,18 +273,6 @@ fn test_evaluation_error_on_load() {
 }
 
 #[test]
-fn test_today_not_supported() {
-    let model = load_model_from_xlsx("tests/TODAY.xlsx", "en", "UTC");
-    assert!(model.is_err());
-    assert_eq!(
-        model.err(),
-        Some(XlsxError::Evaluation(vec![
-            "Sheet1!A1 ('=TODAY()'): Invalid function: TODAY".to_string(),
-        ]))
-    );
-}
-
-#[test]
 fn test_evaluation_discrepancy_on_load() {
     let model = load_model_from_xlsx("tests/XLOOKUP_with_errors.xlsx", "en", "UTC");
     assert!(model.is_err());

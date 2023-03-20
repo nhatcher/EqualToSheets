@@ -31,11 +31,7 @@ use crate::{
     utils as common,
 };
 
-#[cfg(feature = "timezones")]
 pub use chrono_tz::Tz;
-
-#[cfg(not(feature = "timezones"))]
-use crate::timezones_utc::Tz;
 
 #[cfg(feature = "wasm-build")]
 use js_sys::Date;
