@@ -9,6 +9,7 @@ import Snackbar from '@mui/material/Snackbar';
 import styled from 'styled-components/macro';
 import { Brand } from '../../utils';
 import { Box, ExternalLink } from './common';
+import { ReactComponent as ArrowIcon } from './arrow.svg';
 
 type LicenseId = Brand<string, 'LicenseId'>;
 type LicenseKey = Brand<string, 'LicenseKey'>;
@@ -178,10 +179,18 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
           <GraphQLPanel licenseKey={licenseKey} workbookId={workbookId} />
         </TabPanel>
         <TabPanel value={selectedTab} index={3}>
-          <RestAPIPanel licenseKey={licenseKey} workbookId={workbookId} />
+          <RestAPIPanel
+            licenseKey={licenseKey}
+            workbookId={workbookId}
+            copyToClipboard={copyToClipboard}
+          />
         </TabPanel>
         <TabPanel value={selectedTab} index={4}>
-          <SimulationAPIPanel licenseKey={licenseKey} workbookId={workbookId} />
+          <SimulationAPIPanel
+            licenseKey={licenseKey}
+            workbookId={workbookId}
+            copyToClipboard={copyToClipboard}
+          />
         </TabPanel>
       </Panel>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" marginTop="24px">
@@ -249,6 +258,7 @@ const WorkbookList = ({ licenseKey }: { licenseKey: string }) => {
             target="_blank"
           >
             {workbook.name ?? workbook.id}
+            <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
       ))}
@@ -302,9 +312,7 @@ const UploadPanel = ({
         <div>
           You can use this <em>curl</em> command to upload an XLSX file:
         </div>
-        <CodeArea onClick={copyToClipboard(getCurlSnippet(licenseKey))}>
-          <code style={{ whiteSpace: 'break-spaces' }}>{getCurlSnippet(licenseKey)}</code>
-        </CodeArea>
+        <CurlOneliner snippet={getCurlSnippet(licenseKey)} copyToClipboard={copyToClipboard} />
       </TabTextSection>
       <TabTextSection>
         <div>
@@ -326,6 +334,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
             href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbooks%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
             List all workbooks
+            <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
         <li>
@@ -334,6 +343,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
             href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Amutation%20%7B%0A%09%20%20createWorkbook%20%7B%0A%20%20%20%20%09workbook%20%7B%0A%20%20%20%20%20%20%09id%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A%0A`}
           >
             Create a new workbook
+            <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
         <li>
@@ -342,6 +352,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
             href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheets%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
             List all sheets in your sample workbook
+            <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
         <li>
@@ -350,6 +361,7 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
             href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetId%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"A1")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
             View the value in cell Sheet1!A1 of your sample workbook
+            <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
         <li>
@@ -358,13 +370,22 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
             href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Amutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetId%3A%201%2C%20row%3A%201%2C%20col%3A%201%2C%20input%3A%20"300%24")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}
           >
             Change the value of cell Sheet1!A1 in your sample workbook
+            <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
       </ul>
     </TabTextSection>
   );
 };
-const RestAPIPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbookId: string }) => {
+const RestAPIPanel = ({
+  licenseKey,
+  workbookId,
+  copyToClipboard,
+}: {
+  licenseKey: string;
+  workbookId: string;
+  copyToClipboard: (text: string) => () => void;
+}) => {
   const [response, setResponse] = useState('');
 
   const setInitialInvestment = async () => {
@@ -420,21 +441,48 @@ const RestAPIPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
     setResponse(JSON.stringify(responseJson, null, 2));
   };
 
+  const curlSetInvestmentCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/sheets/1/cells/6/3 -X PUT -H 'Authorization: Bearer ${licenseKey}' -H 'content-type: application/json' --data-raw '{"value":25000}'`;
+  const curlGetInterestCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/sheets/1/cells/10/6 -X GET -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlGetWorkbooksCommand = `curl ${window.location.origin}/api/v1/workbooks -X GET -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlCreatewWorkbookCommand = `curl ${window.location.origin}/api/v1/workbooks -X POST -H 'Authorization: Bearer ${licenseKey}'`;
+
   return (
     <TabTextSection>
       Create, read and update your workbook using our REST API.
       <br /> <br />
       For the sample workbook in your account:
       <ul>
-        <ClickableLi onClick={setInitialInvestment}>
-          Set the initial investment (Sheet!C6) to $25,000
-        </ClickableLi>
-        <ClickableLi onClick={getInterestEarned}>Get the interest earned (Sheet!F10)</ClickableLi>
+        <li>
+          <ClickableSpan onClick={setInitialInvestment}>
+            Set the initial investment (Sheet!C6) to $25,000
+            <StyledArrowIcon />
+          </ClickableSpan>
+          <CurlOneliner snippet={curlSetInvestmentCommand} copyToClipboard={copyToClipboard} />
+        </li>
+        <li>
+          <ClickableSpan onClick={getInterestEarned}>
+            Get the interest earned (Sheet!F10)
+            <StyledArrowIcon />
+          </ClickableSpan>
+          <CurlOneliner snippet={curlGetInterestCommand} copyToClipboard={copyToClipboard} />
+        </li>
       </ul>
       Other useful REST APIs:
       <ul>
-        <ClickableLi onClick={getAllWorkbooks}>Get a list of all my workbooks</ClickableLi>
-        <ClickableLi onClick={createNewWorkbook}>Create new workbook</ClickableLi>
+        <li>
+          <ClickableSpan onClick={getAllWorkbooks}>
+            Get a list of all my workbooks
+            <StyledArrowIcon />
+          </ClickableSpan>
+          <CurlOneliner snippet={curlGetWorkbooksCommand} copyToClipboard={copyToClipboard} />
+        </li>
+        <li>
+          <ClickableSpan onClick={createNewWorkbook}>
+            Create new workbook
+            <StyledArrowIcon />
+          </ClickableSpan>
+          <CurlOneliner snippet={curlCreatewWorkbookCommand} copyToClipboard={copyToClipboard} />
+        </li>
       </ul>
       <div style={{ fontSize: 'inherit' }}>
         Read <DocumentationLink>our documentation</DocumentationLink> for the full list of REST
@@ -456,9 +504,11 @@ const RestAPIPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
 const SimulationAPIPanel = ({
   licenseKey,
   workbookId,
+  copyToClipboard,
 }: {
   licenseKey: string;
   workbookId: string;
+  copyToClipboard: (text: string) => () => void;
 }) => {
   const [response, setResponse] = useState('');
   const simulateInterest = async () => {
@@ -490,18 +540,30 @@ const SimulationAPIPanel = ({
     const responseJson = await response.json();
     setResponse(JSON.stringify(responseJson, null, 2));
   };
+
+  const curlSimulateInterestCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22C6%22%3A50000%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F10%22%5D%7D -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlSimulateCapitalCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22F4%22%3A15%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F6%22%5D%7D -H 'Authorization: Bearer ${licenseKey}'`;
+
   return (
     <TabTextSection>
       Run "what if" scenarios for your workbook.
       <br /> <br />
       For the sample workbook in your account:
       <ul>
-        <ClickableLi onClick={simulateInterest}>
-          The interest earned, if the initial investment is $50,000
-        </ClickableLi>
-        <ClickableLi onClick={simulateCapital}>
-          Capital at the end of a term of 15 years
-        </ClickableLi>
+        <li>
+          <ClickableSpan onClick={simulateInterest}>
+            The interest earned, if the initial investment is $50,000
+            <StyledArrowIcon />
+          </ClickableSpan>
+          <CurlOneliner snippet={curlSimulateInterestCommand} copyToClipboard={copyToClipboard} />
+        </li>
+        <li>
+          <ClickableSpan onClick={simulateCapital}>
+            Capital at the end of a term of 15 years
+            <StyledArrowIcon />
+          </ClickableSpan>
+          <CurlOneliner snippet={curlSimulateCapitalCommand} copyToClipboard={copyToClipboard} />
+        </li>
       </ul>
       <div style={{ fontSize: 'inherit' }}>
         Read <DocumentationLink>our documentation</DocumentationLink> for the full list of REST
@@ -549,7 +611,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const ClickableLi = styled.li`
+const ClickableSpan = styled.span`
   cursor: pointer;
 `;
 
@@ -684,6 +746,30 @@ const CodeArea = styled.pre`
   flex-grow: 1;
 `;
 
+const CurlOneliner = ({
+  snippet,
+  copyToClipboard,
+}: {
+  snippet: string;
+  copyToClipboard: (text: string) => () => void;
+}) => {
+  return (
+    <CurlCodeArea onClick={copyToClipboard(snippet)} title={snippet}>
+      <code>{snippet}</code>
+    </CurlCodeArea>
+  );
+};
+
+const CurlCodeArea = styled(CodeArea)`
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0;
+  code {
+    white-space: nowrap;
+  }
+`;
+
 const FooterText = styled.div`
   font-weight: 400;
   font-size: 14px;
@@ -698,4 +784,9 @@ const ErrorText = styled.div`
   font-size: 16px;
   line-height: 19px;
   text-align: center;
+`;
+
+const StyledArrowIcon = styled(ArrowIcon)`
+  margin-left: 5px;
+  margin-bottom: -2px;
 `;
