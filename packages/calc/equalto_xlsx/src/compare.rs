@@ -5,7 +5,7 @@ use equalto_calc::types::*;
 use equalto_calc::{expressions::utils::number_to_column, model::Model};
 
 use crate::export::save_to_xlsx;
-use crate::import::load_model_from_xlsx;
+use crate::import::{load_model_from_xlsx, load_model_from_xlsx_without_support_check};
 
 pub struct CompareError {
     message: String,
@@ -183,8 +183,8 @@ pub(crate) fn compare_models(m1: &Model, m2: &Model) -> Result<(), String> {
 
 /// Tests that file in file_path produces the same results in Excel and in EqualTo Calc.
 pub fn test_file(file_path: &str) -> Result<(), String> {
-    let model1 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
-    let mut model2 = load_model_from_xlsx(file_path, "en", "UTC").unwrap();
+    let model1 = load_model_from_xlsx_without_support_check(file_path, "en", "UTC").unwrap();
+    let mut model2 = load_model_from_xlsx_without_support_check(file_path, "en", "UTC").unwrap();
     model2.evaluate();
     compare_models(&model1, &model2)
 }

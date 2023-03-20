@@ -756,6 +756,16 @@ impl Parser {
                         Some(TableReference::ColumnReference(s)) => {
                             let column_index =
                                 get_table_column_by_name(&s, table).expect("") + column_start;
+                            if row_start == row_end {
+                                return Node::ReferenceKind {
+                                    sheet_name,
+                                    sheet_index: table_sheet_index,
+                                    absolute_row: true,
+                                    absolute_column: true,
+                                    row: row_start,
+                                    column: column_index,
+                                };
+                            }
                             return Node::RangeKind {
                                 sheet_name,
                                 sheet_index: table_sheet_index,

@@ -450,9 +450,16 @@ fn load_sheet_rels<R: Read + std::io::Seek>(
             comments = load_comments(archive, &target)?;
         } else if t.ends_with("table") {
             let mut target = get_attribute(&rel, "Target")?.to_string();
-            // Target="../table1.xlsx"
-            target.replace_range(..2, v[0]);
-            let table = load_table(archive, &target, sheet_name)?;
+
+            let path = if let Some(p) = target.strip_prefix('/') {
+                p.to_string()
+            } else {
+                // Target="../table1.xlsx"
+                target.replace_range(..2, v[0]);
+                target
+            };
+
+            let table = load_table(archive, &path, sheet_name)?;
             tables.insert(table.name.clone(), table);
         }
     }
