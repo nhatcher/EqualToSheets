@@ -18,6 +18,7 @@
       "sheet_name": "Table",
       "reference": "A1:D4",
       "totals_row_count": 0,
+      "header_row_count": 1,
       "columns": [
         { "id": 1, "name": "Cars" },
         { "id": 2, "name": "Year" },

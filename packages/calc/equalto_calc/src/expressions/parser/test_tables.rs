@@ -40,6 +40,7 @@ fn create_test_table(
             sheet_name: "Sheet One".to_string(),
             reference: area_ref,
             totals_row_count: 0,
+            header_row_count: 1,
             header_row_dxf_id: None,
             data_dxf_id: None,
             columns,

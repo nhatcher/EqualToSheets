@@ -61,6 +61,12 @@ pub(crate) fn load_table<R: Read + std::io::Seek>(
         None => 0,
     };
 
+    // Either 0 or 1, indicates if the table has headers at the top of the table
+    let header_row_count = match table.attribute("headerRowCount") {
+        Some(s) => s.parse::<u32>().expect("Invalid headerRowCount"),
+        None => 1,
+    };
+
     // style index of the header row of the table
     let header_row_dxf_id = if let Some(index_str) = table.attribute("headerRowDxfId") {
         match index_str.parse::<u32>() {
@@ -197,6 +203,7 @@ pub(crate) fn load_table<R: Read + std::io::Seek>(
         display_name,
         reference,
         totals_row_count,
+        header_row_count,
         header_row_dxf_id,
         data_dxf_id,
         totals_row_dxf_id,

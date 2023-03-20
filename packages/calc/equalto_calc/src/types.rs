@@ -225,6 +225,7 @@ pub struct Table {
     pub sheet_name: String,
     pub reference: String,
     pub totals_row_count: u32,
+    pub header_row_count: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub header_row_dxf_id: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]

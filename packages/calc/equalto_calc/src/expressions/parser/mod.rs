@@ -705,6 +705,7 @@ impl Parser {
                         parse_range(&table.reference).expect("Failed parsing range");
 
                     let totals_row_count = table.totals_row_count as i32;
+                    let header_row_count = table.header_row_count as i32;
                     row_end -= totals_row_count;
 
                     match specifier {
@@ -725,7 +726,7 @@ impl Parser {
                             row_end = row_start;
                         }
                         Some(token::TableSpecifier::Data) => {
-                            row_start += 1;
+                            row_start += header_row_count;
                         }
                         Some(token::TableSpecifier::All) => {
                             if totals_row_count != 0 {
@@ -734,7 +735,7 @@ impl Parser {
                         }
                         None => {
                             // skip the headers
-                            row_start += 1;
+                            row_start += header_row_count;
                         }
                     }
                     match table_reference {
