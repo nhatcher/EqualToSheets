@@ -619,30 +619,18 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
     }
 
     case WorkbookActionType.POINTER_DOWN_AT_CELL: {
-      const { cellEditing } = state;
       const { cell, canvasRef, worksheetRef } = action.payload;
-      if (cellEditing) {
-        const { sheet } = cellEditing;
-        const newRow = cellEditing.row;
-        const newColumn = cellEditing.column;
-        const newState = {
-          ...state,
-          selectedSheet: sheet,
-          selectedCell: { row: newRow, column: newColumn },
-          selectedArea: {
-            rowStart: newRow,
-            rowEnd: newRow,
-            columnStart: newColumn,
-            columnEnd: newColumn,
-          },
-        };
 
-        return { ...newState, cellEditing: null };
-      }
-      return state.reducer(state, {
-        type: WorkbookActionType.CELL_SELECTED,
-        payload: { cell, canvasRef, worksheetRef },
-      });
+      return state.reducer(
+        {
+          ...state,
+          cellEditing: null,
+        },
+        {
+          type: WorkbookActionType.CELL_SELECTED,
+          payload: { cell, canvasRef, worksheetRef },
+        },
+      );
     }
 
     case WorkbookActionType.EDIT_POINTER_DOWN: {
