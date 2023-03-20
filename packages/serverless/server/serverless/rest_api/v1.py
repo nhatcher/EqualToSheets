@@ -74,13 +74,13 @@ class WorkbookDetailSerializer(WorkbookSerializer):
 
 class WorkbookListView(ServerlessView):
     def get(self, request: Request) -> Response:
-        """Get workbooks."""
+        """Get a list of all workbooks."""
         serializer = WorkbookSerializer(self._get_workbooks().order_by("create_datetime"), many=True)
         return Response({"workbooks": serializer.data})
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
-        """Create a workbook."""
+        """Create a new blank workbook."""
         workbook = Workbook.objects.create(license=self._get_license())
         serializer = WorkbookSerializer(workbook)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -95,14 +95,14 @@ class WorkbookDetailView(ServerlessView):
 
 class SheetListView(ServerlessView):
     def get(self, request: Request, workbook_id: str) -> Response:
-        """Get the workbook sheets."""
+        """Get the sheets in a workbook."""
         workbook = self._get_workbook(workbook_id)
         sheets = workbook.calc.sheets
         return Response({"sheets": [serialize_sheet(sheet) for sheet in sheets]})
 
     @transaction.atomic
     def post(self, request: Request, workbook_id: str) -> Response:
-        """Create a sheet."""
+        """Create a new blank sheet in a workbook."""
         name = request.data.get("name")
 
         workbook = self._get_workbook(workbook_id)
@@ -116,13 +116,13 @@ class SheetListView(ServerlessView):
 
 class SheetDetailView(ServerlessView):
     def get(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
-        """Get the sheet metadata."""
+        """Get the metadata of a sheet in a workbook."""
         sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_id)
         return Response(serialize_sheet(sheet))
 
     @transaction.atomic
     def put(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
-        """Rename the sheet."""
+        """Rename a sheet in a workbook."""
         new_name = request.data.get("new_name")
         if not new_name:
             return Response(
@@ -141,7 +141,7 @@ class SheetDetailView(ServerlessView):
 
     @transaction.atomic
     def delete(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
-        """Delete the sheet."""
+        """Delete a sheet in a workbook."""
         workbook = self._get_workbook(workbook_id)
 
         self._get_sheet(workbook, sheet_id).delete()
@@ -153,7 +153,7 @@ class SheetDetailView(ServerlessView):
 
 class CellByIndexView(ServerlessView):
     def get(self, request: Request, workbook_id: str, sheet_id: int, row: int, col: int) -> Response:
-        """Get the cell information."""
+        """Get all the cell data."""
         sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_id)
         try:
             cell = sheet.cell(row, col)
@@ -163,7 +163,7 @@ class CellByIndexView(ServerlessView):
 
     @transaction.atomic
     def put(self, request: Request, workbook_id: str, sheet_id: int, row: int, col: int) -> Response:
-        """Update the cell."""
+        """Update the cell data."""
         cell_input = request.data.get("input")
         cell_value = request.data.get("value")
         if (cell_input is None) == (cell_value is None):

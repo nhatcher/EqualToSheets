@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "graphene_django",
     "django_extensions",
     "rest_framework",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -159,8 +160,28 @@ GRAPHENE = {
     "ATOMIC_MUTATIONS": True,
 }
 
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
-    ]
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EqualTo Sheets API (beta)",
+    "DESCRIPTION": "EqualTo: Spreadsheets as a service for developers.",
+    "VERSION": "0.1.0",
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": True,
+        "supportedSubmitMethods": [],
+        "tryItOutEnabled": False,
+    },
+}
+
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {"basic": {"type": "basic"}},
 }

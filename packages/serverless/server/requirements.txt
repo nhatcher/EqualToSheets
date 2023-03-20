@@ -40,6 +40,11 @@ django-stubs-ext==0.7.0
 djangorestframework==3.14.0
     # via -r requirements.in
 docutils==0.19
+# drf-spectacular deliberately stays below version 1.x.x to signal that every new version may
+# potentially break you.
+# For production we strongly recommend pinning the version and inspecting a schema diff on update.
+# https://drf-spectacular.readthedocs.io/en/latest/readme.html#release-management
+drf-spectacular==0.26.1
     # via restructuredtext-lint
 eradicate==2.2.0
     # via flake8-eradicate

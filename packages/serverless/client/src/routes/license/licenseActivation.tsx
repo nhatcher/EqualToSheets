@@ -195,8 +195,8 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
       </Panel>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" marginTop="24px">
         <FooterText>
-          {'Need help? Take a look at the '}
-          <DocumentationLink>documentation</DocumentationLink>.
+          {'What more information? Check out our '}
+          <DocumentationLink>README</DocumentationLink> and <RESTDocumentationLink>REST docs</RESTDocumentationLink>.
         </FooterText>
         <BookmarkText>We recommend bookmarking this page</BookmarkText>
       </Stack>
@@ -213,7 +213,28 @@ const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
 const DocumentationLink = ({ children }: { children: ReactNode }) => {
   return (
     <ExternalLink
-      href="https://docs.google.com/document/d/19cDrllxVKid0HbSG8uXjDSs7iRDlitKM-9OLgkKiQV4/edit?usp=sharing"
+      href="/beta-readme"
+      target="_blank"
+    >
+      {children}
+    </ExternalLink>
+  );
+};
+const SimulationDocumentationLink = ({ children }: { children: ReactNode }) => {
+  return (
+    <ExternalLink
+      href="/beta-readme#simulation-api"
+      target="_blank"
+    >
+      {children}
+    </ExternalLink>
+  );
+};
+
+const RESTDocumentationLink = ({ children }: { children: ReactNode }) => {
+  return (
+    <ExternalLink
+      href="/docs/"
       target="_blank"
     >
       {children}
@@ -485,8 +506,7 @@ const RestAPIPanel = ({
         </li>
       </ul>
       <div style={{ fontSize: 'inherit' }}>
-        Read <DocumentationLink>our documentation</DocumentationLink> for the full list of REST
-        APIs.
+        For more information review our <RESTDocumentationLink>REST documentation</RESTDocumentationLink>.
       </div>
       <br />
       {response !== '' ? (
@@ -566,8 +586,7 @@ const SimulationAPIPanel = ({
         </li>
       </ul>
       <div style={{ fontSize: 'inherit' }}>
-        Read <DocumentationLink>our documentation</DocumentationLink> for the full list of REST
-        APIs.
+        Our <SimulationDocumentationLink>README</SimulationDocumentationLink> contains some more information on the Simulation API.
       </div>
       <br />
       {response !== '' ? (

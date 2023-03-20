@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from serverless.views import (
     activate_license_key,
     create_workbook_from_xlsx,
     edit_workbook,
+    equalto_sheets_beta_readme,
     get_updated_workbook,
     graphql_view,
     hacky_send_email_to_subscriber,
@@ -29,4 +31,11 @@ urlpatterns = [
     path("api/v1/workbooks/<uuid:workbook_id>/simulate", simulate),
     path("api/", include("serverless.rest_api.urls")),
     path("hacky_send_email_to_subscriber/<str:email>", hacky_send_email_to_subscriber),
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("beta-readme", equalto_sheets_beta_readme),
+    path(
+        "docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="docs",
+    ),
 ]
