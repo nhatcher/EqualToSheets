@@ -180,6 +180,7 @@ impl Worksheet {
             custom_format: true,
             custom_height: true,
             s: style_index,
+            hidden: false,
         });
         Ok(())
     }
@@ -276,6 +277,7 @@ impl Worksheet {
             custom_format: false,
             custom_height: true,
             s: 0,
+            hidden: false,
         });
         Ok(())
     }

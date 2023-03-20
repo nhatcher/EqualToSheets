@@ -11,6 +11,27 @@
     "created": "2020-08-06T21:20:53Z",
     "last_modified": "2020-11-20T16:24:35Z"
   },
+  "tables": {
+    "Table1": {
+      "name": "Table1",
+      "display_name": "Table1",
+      "sheet_name": "Table",
+      "reference": "A1:D4",
+      "totals_row_count": 0,
+      "columns": [
+        { "id": 1, "name": "Cars" },
+        { "id": 2, "name": "Year" },
+        { "id": 3, "name": "Make" },
+        { "id": 4, "name": "Other" }
+      ],
+      "style_info": {
+        "show_first_column": false,
+        "show_last_column": false,
+        "show_row_stripes": true,
+        "show_column_stripes": false
+      }
+    }
+  },
   "shared_strings": [
     "A string",
     "Long column",
@@ -583,25 +604,21 @@
         {
           "text": "nicol:\nThis cell has bold! Text. Náguara!",
           "author_name": "",
-          "author_id": null,
           "cell_ref": "L2"
         },
         {
           "text": "nicol:\nThere is a coment here, you know\n",
           "author_name": "",
-          "author_id": null,
           "cell_ref": "K7"
         },
         {
           "text": "nicol:\nNew comment",
           "author_name": "",
-          "author_id": null,
           "cell_ref": "E9"
         },
         {
           "text": "nicol:\nThere is a 15 here.\n",
           "author_name": "",
-          "author_id": null,
           "cell_ref": "C18"
         }
       ]
@@ -1479,7 +1496,6 @@
         {
           "text": "Someone else",
           "author_name": "",
-          "author_id": null,
           "cell_ref": "B4"
         }
       ]

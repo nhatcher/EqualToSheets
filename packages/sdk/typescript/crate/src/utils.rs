@@ -172,6 +172,13 @@ fn to_json_string(marked_token: &MarkedToken) -> String {
                 }
             })
         }
+        TokenType::StructuredReference { .. } => {
+            // FIXME
+            json!({
+                "type": "STRING",
+                "data": "".to_string()
+            })
+        }
     };
     json!({"token": token, "start":marked_token.start,"end":marked_token.end}).to_string()
 }

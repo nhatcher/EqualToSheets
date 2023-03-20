@@ -48,7 +48,7 @@ impl Model {
                     None => Err(CalcResult::Error {
                         error: Error::VALUE,
                         origin: cell,
-                        message: "Invalid reference".to_string(),
+                        message: "Invalid reference (number)".to_string(),
                     }),
                 }
             }
@@ -108,7 +108,7 @@ impl Model {
                     None => Err(CalcResult::Error {
                         error: Error::VALUE,
                         origin: cell,
-                        message: "Invalid reference".to_string(),
+                        message: "Invalid reference (string)".to_string(),
                     }),
                 }
             }
@@ -160,7 +160,7 @@ impl Model {
                     None => Err(CalcResult::Error {
                         error: Error::VALUE,
                         origin: cell,
-                        message: "Invalid reference".to_string(),
+                        message: "Invalid reference (bool)".to_string(),
                     }),
                 }
             }

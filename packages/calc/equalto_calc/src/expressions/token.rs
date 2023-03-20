@@ -194,6 +194,21 @@ pub fn is_english_error_string(name: &str) -> bool {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum TableSpecifier {
+    All,
+    Data,
+    Headers,
+    ThisRow,
+    Totals,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum TableReference {
+    ColumnReference(String),
+    RangeReference((String, String)),
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     Illegal(LexerError),
     EOF,
@@ -229,6 +244,11 @@ pub enum TokenType {
         sheet: Option<String>,
         left: ParsedReference,
         right: ParsedReference,
+    },
+    StructuredReference {
+        table_name: String,
+        specifier: Option<TableSpecifier>,
+        table_reference: Option<TableReference>,
     },
 }
 
@@ -316,6 +336,14 @@ impl fmt::Display for TokenType {
                     ),
                 }
             }
+            StructuredReference {
+                table_name: _,
+                specifier: _,
+                table_reference: _,
+            } => {
+                // This should never happen
+                write!(fmt, "-----ERROR-----")
+            }
         }
     }
 }
@@ -348,5 +376,6 @@ pub fn index(token: &TokenType) -> u32 {
         Reference { .. } => 34,
         Range { .. } => 35,
         Compare(..) => 37,
+        StructuredReference { .. } => 40,
     }
 }

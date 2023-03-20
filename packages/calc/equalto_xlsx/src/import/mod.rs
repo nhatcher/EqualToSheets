@@ -2,6 +2,7 @@ mod colors;
 mod metadata;
 mod shared_strings;
 mod styles;
+mod tables;
 mod util;
 mod workbook;
 mod worksheets;
@@ -65,8 +66,8 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
     let shared_strings = read_shared_strings(&mut archive)?;
     let workbook = load_workbook(&mut archive)?;
     let rels = load_relationships(&mut archive)?;
-
-    let worksheets = load_sheets(&mut archive, &rels, &workbook)?;
+    let mut tables = HashMap::new();
+    let worksheets = load_sheets(&mut archive, &rels, &workbook, &mut tables)?;
     let styles = load_styles(&mut archive)?;
     let metadata = load_metadata(&mut archive)?;
     Ok(Workbook {
@@ -80,6 +81,7 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
             locale: locale.to_string(),
         },
         metadata,
+        tables,
     })
 }
 

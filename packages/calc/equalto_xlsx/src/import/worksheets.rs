@@ -7,7 +7,7 @@ use equalto_calc::{
         types::CellReferenceRC,
         utils::column_to_number,
     },
-    types::{Cell, Col, Comment, DefinedName, Row, SheetData, SheetState, Worksheet},
+    types::{Cell, Col, Comment, DefinedName, Row, SheetData, SheetState, Table, Worksheet},
 };
 use roxmltree::Node;
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,10 @@ use thiserror::Error;
 
 use crate::error::XlsxError;
 
-use super::util::{get_attribute, get_color, get_number};
+use super::{
+    tables::load_table,
+    util::{get_attribute, get_color, get_number},
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Sheet {
@@ -231,8 +234,9 @@ fn from_a1_to_rc(
     formula: String,
     worksheets: &[String],
     context: String,
+    tables: HashMap<String, Table>,
 ) -> Result<String, XlsxError> {
-    let mut parser = Parser::new(worksheets.to_owned());
+    let mut parser = Parser::new(worksheets.to_owned(), tables);
     let cell_reference =
         parse_reference(&context).map_err(|error| XlsxError::Xml(error.to_string()))?;
     let t = parser.parse(&formula, &Some(cell_reference));
@@ -413,6 +417,8 @@ fn get_cell_from_excel(
 fn load_sheet_rels<R: Read + std::io::Seek>(
     archive: &mut zip::read::ZipArchive<R>,
     path: &str,
+    tables: &mut HashMap<String, Table>,
+    sheet_name: &str,
 ) -> Result<Vec<Comment>, XlsxError> {
     // ...xl/worksheets/sheet6.xml -> xl/worksheets/_rels/sheet6.xml.rels
     let mut comments = Vec::new();
@@ -423,7 +429,7 @@ fn load_sheet_rels<R: Read + std::io::Seek>(
     path.push_str(".rels");
     let file = archive.by_name(&path);
     if file.is_err() {
-        return Ok(vec![]);
+        return Ok(comments);
     }
     let mut text = String::new();
     file.unwrap().read_to_string(&mut text)?;
@@ -442,21 +448,35 @@ fn load_sheet_rels<R: Read + std::io::Seek>(
             // Target="../comments1.xlsx"
             target.replace_range(..2, v[0]);
             comments = load_comments(archive, &target)?;
-            break;
+        } else if t.ends_with("table") {
+            let mut target = get_attribute(&rel, "Target")?.to_string();
+            // Target="../table1.xlsx"
+            target.replace_range(..2, v[0]);
+            let table = load_table(archive, &target, sheet_name)?;
+            tables.insert(table.name.clone(), table);
         }
     }
     Ok(comments)
 }
 
+pub(super) struct SheetSettings {
+    pub id: u32,
+    pub name: String,
+    pub state: SheetState,
+    pub comments: Vec<Comment>,
+}
+
 pub(super) fn load_sheet<R: Read + std::io::Seek>(
     archive: &mut zip::read::ZipArchive<R>,
     path: &str,
-    sheet_name: &str,
-    sheet_id: u32,
-    state: &SheetState,
+    settings: SheetSettings,
     worksheets: &[String],
+    tables: &HashMap<String, Table>,
 ) -> Result<Worksheet, XlsxError> {
-    let comments = load_sheet_rels(archive, path)?;
+    let sheet_name = &settings.name;
+    let sheet_id = settings.id;
+    let state = &settings.state;
+
     let mut file = archive.by_name(path)?;
     let mut text = String::new();
     file.read_to_string(&mut text)?;
@@ -569,13 +589,16 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
             None => 0,
         };
         let custom_format = matches!(row.attribute("customFormat"), Some("1"));
-        if custom_height || custom_format || row_style != 0 || has_height_attribute {
+        let hidden = matches!(row.attribute("hidden"), Some("1"));
+
+        if custom_height || custom_format || row_style != 0 || has_height_attribute || hidden {
             rows.push(Row {
                 r: row_index,
                 height,
                 s: row_style,
                 custom_height,
                 custom_format,
+                hidden,
             });
         }
 
@@ -667,7 +690,8 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
                                 // It's the mother cell. We do not use the ref attribute in EqualTo
                                 let formula = fs[0].text().unwrap_or("").to_string();
                                 let context = format!("{}!{}", sheet_name, cell_ref);
-                                let formula = from_a1_to_rc(formula, worksheets, context)?;
+                                let formula =
+                                    from_a1_to_rc(formula, worksheets, context, tables.clone())?;
                                 match index_map.get(&si) {
                                     Some(index) => {
                                         // The index for that formula already exists meaning we bumped into a daughter cell first
@@ -721,7 +745,8 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
                         // Its a cell with a simple formula
                         let formula = fs[0].text().unwrap_or("").to_string();
                         let context = format!("{}!{}", sheet_name, cell_ref);
-                        let formula = from_a1_to_rc(formula, worksheets, context)?;
+                        let formula = from_a1_to_rc(formula, worksheets, context, tables.clone())?;
+
                         match get_formula_index(&formula, &shared_formulas) {
                             Some(index) => formula_index = index,
                             None => {
@@ -778,7 +803,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
         state: state.to_owned(),
         color,
         merge_cells,
-        comments,
+        comments: settings.comments,
         frozen_rows,
         frozen_columns,
     })
@@ -788,15 +813,12 @@ pub(super) fn load_sheets<R: Read + std::io::Seek>(
     archive: &mut zip::read::ZipArchive<R>,
     rels: &HashMap<String, Relationship>,
     workbook: &WorkbookXML,
+    tables: &mut HashMap<String, Table>,
 ) -> Result<Vec<Worksheet>, XlsxError> {
-    let worksheets = &workbook.worksheets;
-    let ws_list: Vec<String> = worksheets.iter().map(|s| s.name.clone()).collect();
-    let mut sheets = Vec::new();
+    // load comments and tables
+    let mut comments = HashMap::new();
     for sheet in &workbook.worksheets {
-        let name = sheet.name.clone();
-        let rel_id = sheet.id.clone();
-        let state = sheet.state.clone();
-        let rel = &rels[&rel_id];
+        let rel = &rels[&sheet.id];
         if rel.rel_type.ends_with("worksheet") {
             let path = &rel.target;
             let path = if let Some(p) = path.strip_prefix('/') {
@@ -804,14 +826,35 @@ pub(super) fn load_sheets<R: Read + std::io::Seek>(
             } else {
                 format!("xl/{path}")
             };
-            sheets.push(load_sheet(
-                archive,
-                &path,
-                &name,
-                sheet.sheet_id,
-                &state,
-                &ws_list,
-            )?);
+            comments.insert(
+                &sheet.id,
+                load_sheet_rels(archive, &path, tables, &sheet.name)?,
+            );
+        }
+    }
+
+    // load all sheets
+    let worksheets: &Vec<String> = &workbook.worksheets.iter().map(|s| s.name.clone()).collect();
+    let mut sheets = Vec::new();
+    for sheet in &workbook.worksheets {
+        let sheet_name = &sheet.name;
+        let rel_id = &sheet.id;
+        let state = &sheet.state;
+        let rel = &rels[rel_id];
+        if rel.rel_type.ends_with("worksheet") {
+            let path = &rel.target;
+            let path = if let Some(p) = path.strip_prefix('/') {
+                p.to_string()
+            } else {
+                format!("xl/{path}")
+            };
+            let settings = SheetSettings {
+                name: sheet_name.to_string(),
+                id: sheet.sheet_id,
+                state: state.clone(),
+                comments: comments.get(rel_id).expect("").to_vec(),
+            };
+            sheets.push(load_sheet(archive, &path, settings, worksheets, tables)?);
         }
     }
     Ok(sheets)

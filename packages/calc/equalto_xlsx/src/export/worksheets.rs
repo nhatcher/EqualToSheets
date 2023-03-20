@@ -83,6 +83,7 @@ pub(crate) fn get_worksheet_xml(
         //     "custom_format": false,
         //     "custom_height": true,
         //     "s": 0
+        //     "hidden": false,
         //   },
         row_style_dict.insert(row.r, row.clone());
     }
@@ -217,12 +218,18 @@ pub(crate) fn get_worksheet_xml(
         }
         let row_style_str = match row_style_dict.get(row_index) {
             Some(row_style) => {
+                let hidden_str = if row_style.hidden {
+                    r#" hidden="1""#
+                } else {
+                    ""
+                };
                 format!(
-                    " s=\"{}\" ht=\"{}\" customHeight=\"{}\" customFormat=\"{}\"",
+                    r#" s="{}" ht="{}" customHeight="{}" customFormat="{}"{}"#,
                     row_style.s,
                     row_style.height,
                     i32::from(row_style.custom_height),
-                    i32::from(row_style.custom_format)
+                    i32::from(row_style.custom_format),
+                    hidden_str,
                 )
             }
             None => "".to_string(),

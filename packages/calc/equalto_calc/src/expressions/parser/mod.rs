@@ -27,15 +27,20 @@ f_args  => e (',' e)*
 </pre>
 */
 
+use std::collections::HashMap;
+
 use crate::functions::Function;
 use crate::language::get_language;
 use crate::locale::get_locale;
+use crate::types::Table;
 
 use super::lexer;
 use super::token;
 use super::token::OpUnary;
+use super::token::TableReference;
 use super::token::TokenType;
 use super::types::*;
+use super::utils::number_to_column;
 
 use token::OpCompare;
 
@@ -51,6 +56,36 @@ mod test_ranges;
 
 #[cfg(test)]
 mod test_move_formula;
+#[cfg(test)]
+mod test_tables;
+
+pub(crate) fn parse_range(formula: &str) -> Result<(i32, i32, i32, i32), String> {
+    let mut lexer = lexer::Lexer::new(
+        formula,
+        lexer::LexerMode::A1,
+        get_locale("en").expect(""),
+        get_language("en").expect(""),
+    );
+    if let TokenType::Range {
+        left,
+        right,
+        sheet: _,
+    } = lexer.next_token()
+    {
+        Ok((left.column, left.row, right.column, right.row))
+    } else {
+        Err("Not a range".to_string())
+    }
+}
+
+fn get_table_column_by_name(table_column_name: &str, table: &Table) -> Option<i32> {
+    for (index, table_column) in table.columns.iter().enumerate() {
+        if table_column.name == table_column_name {
+            return Some(index as i32);
+        }
+    }
+    None
+}
 
 pub(crate) struct Reference<'a> {
     sheet_name: &'a Option<String>,
@@ -61,7 +96,7 @@ pub(crate) struct Reference<'a> {
     column: i32,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Node {
     BooleanKind(bool),
     NumberKind(f64),
@@ -159,10 +194,11 @@ pub struct Parser {
     lexer: lexer::Lexer,
     worksheets: Vec<String>,
     context: Option<CellReferenceRC>,
+    tables: HashMap<String, Table>,
 }
 
 impl Parser {
-    pub fn new(worksheets: Vec<String>) -> Parser {
+    pub fn new(worksheets: Vec<String>, tables: HashMap<String, Table>) -> Parser {
         let lexer = lexer::Lexer::new(
             "",
             lexer::LexerMode::A1,
@@ -173,6 +209,7 @@ impl Parser {
             lexer,
             worksheets,
             context: None,
+            tables,
         }
     }
     pub fn set_lexer_mode(&mut self, mode: lexer::LexerMode) {
@@ -618,6 +655,145 @@ impl Parser {
                 position: 0,
                 message: "Unexpected token: '['".to_string(),
             },
+            TokenType::StructuredReference {
+                table_name,
+                specifier,
+                table_reference,
+            } => {
+                // We will try to convert to a normal reference
+                // table_name[column_name] => cell1:cell2
+                // table_name[[#This Row], [column_name]:[column_name]] => cell1:cell2
+                if let Some(context) = &self.context {
+                    let context_sheet_index = match self.get_sheet_index_by_name(&context.sheet) {
+                        Some(i) => i,
+                        None => {
+                            return Node::ParseErrorKind {
+                                formula: self.lexer.get_formula(),
+                                position: 0,
+                                message: "sheet not found".to_string(),
+                            };
+                        }
+                    };
+                    // table-name => table
+                    let table = self.tables.get(&table_name).unwrap_or_else(|| {
+                        panic!(
+                            "Table not found: '{table_name}' at '{}!{}{}'",
+                            context.sheet,
+                            number_to_column(context.column).expect(""),
+                            context.row
+                        )
+                    });
+                    let table_sheet_index = match self.get_sheet_index_by_name(&table.sheet_name) {
+                        Some(i) => i,
+                        None => {
+                            return Node::ParseErrorKind {
+                                formula: self.lexer.get_formula(),
+                                position: 0,
+                                message: "sheet not found".to_string(),
+                            };
+                        }
+                    };
+
+                    let sheet_name = if table_sheet_index == context_sheet_index {
+                        None
+                    } else {
+                        Some(table.sheet_name.clone())
+                    };
+
+                    // context must be with tables.reference
+                    let (column_start, mut row_start, column_end, mut row_end) =
+                        parse_range(&table.reference).expect("Failed parsing range");
+
+                    let totals_row_count = table.totals_row_count as i32;
+                    row_end -= totals_row_count;
+
+                    match specifier {
+                        Some(token::TableSpecifier::ThisRow) => {
+                            row_start = context.row;
+                            row_end = context.row;
+                        }
+                        Some(token::TableSpecifier::Totals) => {
+                            if totals_row_count != 0 {
+                                row_start = row_end + 1;
+                                row_end = row_start;
+                            } else {
+                                // Table1[#Totals] is #REF! if Table1 does not have totals
+                                return Node::ErrorKind(token::Error::REF);
+                            }
+                        }
+                        Some(token::TableSpecifier::Headers) => {
+                            row_end = row_start;
+                        }
+                        Some(token::TableSpecifier::Data) => {
+                            row_start += 1;
+                        }
+                        Some(token::TableSpecifier::All) => {
+                            if totals_row_count != 0 {
+                                row_end += 1;
+                            }
+                        }
+                        None => {
+                            // skip the headers
+                            row_start += 1;
+                        }
+                    }
+                    match table_reference {
+                        None => {
+                            return Node::RangeKind {
+                                sheet_name,
+                                sheet_index: table_sheet_index,
+                                absolute_row1: true,
+                                absolute_column1: true,
+                                row1: row_start,
+                                column1: column_start,
+                                absolute_row2: true,
+                                absolute_column2: true,
+                                row2: row_end,
+                                column2: column_end,
+                            };
+                        }
+                        Some(TableReference::ColumnReference(s)) => {
+                            let column_index =
+                                get_table_column_by_name(&s, table).expect("") + column_start;
+                            return Node::RangeKind {
+                                sheet_name,
+                                sheet_index: table_sheet_index,
+                                absolute_row1: true,
+                                absolute_column1: true,
+                                row1: row_start,
+                                column1: column_index,
+                                absolute_row2: true,
+                                absolute_column2: true,
+                                row2: row_end,
+                                column2: column_index,
+                            };
+                        }
+                        Some(TableReference::RangeReference((left, right))) => {
+                            let left_column_index =
+                                get_table_column_by_name(&left, table).expect("") + column_start;
+                            let right_column_index =
+                                get_table_column_by_name(&right, table).expect("") + column_start;
+                            return Node::RangeKind {
+                                sheet_name,
+                                sheet_index: table_sheet_index,
+                                absolute_row1: true,
+                                absolute_column1: true,
+                                row1: row_start,
+                                column1: left_column_index,
+                                absolute_row2: true,
+                                absolute_column2: true,
+                                row2: row_end,
+                                column2: right_column_index,
+                            };
+                        }
+                    }
+                }
+                Node::ParseErrorKind {
+                    formula: self.lexer.get_formula(),
+                    position: 0,
+                    message: "Structured references not supported in R1C1 mode".to_string(),
+                }
+            }
         }
     }
 

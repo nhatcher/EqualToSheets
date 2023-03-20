@@ -358,10 +358,12 @@ impl Model {
                 created: now.clone(),
                 last_modified: now,
             },
+            tables: HashMap::new(),
         };
         let parsed_formulas = Vec::new();
         let worksheets = &workbook.worksheets;
-        let parser = Parser::new(worksheets.iter().map(|s| s.get_name()).collect());
+        let worksheet_names = worksheets.iter().map(|s| s.get_name()).collect();
+        let parser = Parser::new(worksheet_names, HashMap::new());
         let cells = HashMap::new();
 
         // FIXME: Add support for display languages

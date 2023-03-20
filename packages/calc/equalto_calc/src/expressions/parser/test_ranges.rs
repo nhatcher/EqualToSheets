@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::expressions::lexer::LexerMode;
 
 use super::super::parser::stringify::{to_rc_format, to_string};
@@ -12,7 +14,7 @@ struct Formula<'a> {
 #[test]
 fn test_parser_formulas_with_full_ranges() {
     let worksheets = vec!["Sheet1".to_string(), "Second Sheet".to_string()];
-    let mut parser = Parser::new(worksheets);
+    let mut parser = Parser::new(worksheets, HashMap::new());
 
     let formulas = vec![
         Formula {
@@ -79,7 +81,7 @@ fn test_parser_formulas_with_full_ranges() {
 #[test]
 fn test_range_inverse_order() {
     let worksheets = vec!["Sheet1".to_string(), "Sheet2".to_string()];
-    let mut parser = Parser::new(worksheets);
+    let mut parser = Parser::new(worksheets, HashMap::new());
 
     // Reference cell is Sheet1!A1
     let cell_reference = CellReferenceRC {

@@ -764,7 +764,19 @@ impl Model {
     pub fn from_workbook(workbook: Workbook, env: Environment) -> Result<Model, String> {
         let parsed_formulas = Vec::new();
         let worksheets = &workbook.worksheets;
-        let parser = Parser::new(worksheets.iter().map(|s| s.get_name()).collect());
+
+        let worksheet_names = worksheets.iter().map(|s| s.get_name()).collect();
+
+        // add all tables
+        // let mut tables = Vec::new();
+        // for worksheet in worksheets {
+        //     let mut tables_in_sheet = HashMap::new();
+        //     for table in &worksheet.tables {
+        //         tables_in_sheet.insert(table.name.clone(), table.clone());
+        //     }
+        //     tables.push(tables_in_sheet);
+        // }
+        let parser = Parser::new(worksheet_names, workbook.tables.clone());
         let cells = HashMap::new();
         let locale = get_locale(&workbook.settings.locale)
             .map_err(|_| "Invalid locale".to_string())?

@@ -29,6 +29,10 @@ fn is_default_alignment(o: &Option<Alignment>) -> bool {
     o.is_none() || *o == Some(Alignment::default())
 }
 
+fn hashmap_is_empty(h: &HashMap<String, Table>) -> bool {
+    h.values().len() == 0
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Metadata {
     pub application: String,
@@ -55,6 +59,9 @@ pub struct Workbook {
     pub name: String,
     pub settings: WorkbookSettings,
     pub metadata: Metadata,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "hashmap_is_empty")]
+    pub tables: HashMap<String, Table>,
 }
 
 /// A defined name. The `sheet_id` is the sheet index in case the name is local
@@ -126,6 +133,9 @@ pub struct Row {
     pub custom_format: bool,
     pub custom_height: bool,
     pub s: i32,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub hidden: bool,
 }
 
 // ECMA-376-1:2016 section 18.3.1.13
@@ -202,9 +212,82 @@ impl Default for Cell {
 pub struct Comment {
     pub text: String,
     pub author_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub author_id: Option<String>,
     pub cell_ref: String,
 }
+
+// ECMA-376-1:2016 section 18.5.1.2
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct Table {
+    pub name: String,
+    pub display_name: String,
+    pub sheet_name: String,
+    pub reference: String,
+    pub totals_row_count: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub header_row_dxf_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data_dxf_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub totals_row_dxf_id: Option<u32>,
+    pub columns: Vec<TableColumn>,
+    pub style_info: TableStyleInfo,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub has_filters: bool,
+}
+
+// totals_row_label vs totals_row_function might be mutually exclusive. Use an enum?
+// the totals_row_function is an enum not String methinks
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct TableColumn {
+    pub id: u32,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub totals_row_label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub header_row_dxf_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data_dxf_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub totals_row_dxf_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub totals_row_function: Option<String>,
+}
+
+impl Default for TableColumn {
+    fn default() -> Self {
+        TableColumn {
+            id: 0,
+            name: "Column".to_string(),
+            totals_row_label: None,
+            totals_row_function: None,
+            data_dxf_id: None,
+            header_row_dxf_id: None,
+            totals_row_dxf_id: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
+pub struct TableStyleInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub show_first_column: bool,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub show_last_column: bool,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub show_row_stripes: bool,
+    #[serde(default = "default_as_false")]
+    #[serde(skip_serializing_if = "is_false")]
+    pub show_column_stripes: bool,
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Styles {
     pub num_fmts: Vec<NumFmt>,

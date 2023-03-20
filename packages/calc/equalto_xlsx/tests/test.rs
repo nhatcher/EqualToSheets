@@ -19,7 +19,8 @@ fn test_example() {
     let contents =
         fs::read_to_string("tests/example.json").expect("Something went wrong reading the file");
     let model2: Workbook = serde_json::from_str(&contents).unwrap();
-    assert_eq!(model, model2);
+    let s = serde_json::to_string(&model).unwrap();
+    assert_eq!(model, model2, "{s}");
 }
 
 #[test]
@@ -214,6 +215,34 @@ fn test_xlsx() {
                 panic!("Model was evaluated inconsistently with XLSX data.")
             }
             assert!(test_load_and_saving(file_path_str, &dir).is_ok());
+        } else {
+            println!("skipping");
+        }
+    }
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn no_export() {
+    let mut entries = fs::read_dir("tests/calc_test_no_export/")
+        .unwrap()
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()
+        .unwrap();
+    entries.sort();
+    let temp_folder = env::temp_dir();
+    let path = format!("{}", Uuid::new_v4());
+    let dir = temp_folder.join(path);
+    fs::create_dir(&dir).unwrap();
+    for file_path in entries {
+        let file_name_str = file_path.file_name().unwrap().to_str().unwrap();
+        let file_path_str = file_path.to_str().unwrap();
+        println!("Testing file: {}", file_path_str);
+        if file_name_str.ends_with(".xlsx") && !file_name_str.starts_with('~') {
+            if let Err(message) = test_file(file_path_str) {
+                println!("{}", message);
+                panic!("Model was evaluated inconsistently with XLSX data.")
+            }
         } else {
             println!("skipping");
         }

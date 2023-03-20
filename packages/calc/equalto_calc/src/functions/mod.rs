@@ -16,13 +16,14 @@ mod logical;
 mod lookup_and_reference;
 mod mathematical;
 mod statistical;
+mod subtotal;
 mod text;
 mod text_util;
 pub(crate) mod util;
 mod xlookup;
 
 /// List of all implemented functions
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Function {
     And,
     False,
@@ -218,6 +219,8 @@ pub enum Function {
     Convert,
     Delta,
     Gestep,
+
+    Subtotal,
 }
 
 impl Function {
@@ -459,6 +462,8 @@ impl Function {
             "CONVERT" => Some(Function::Convert),
             "DELTA" => Some(Function::Delta),
             "GESTEP" => Some(Function::Gestep),
+
+            "SUBTOTAL" => Some(Function::Subtotal),
             _ => None,
         }
     }
@@ -646,6 +651,8 @@ impl fmt::Display for Function {
             Function::Convert => write!(f, "CONVERT"),
             Function::Delta => write!(f, "DELTA"),
             Function::Gestep => write!(f, "GESTEP"),
+
+            Function::Subtotal => write!(f, "SUBTOTAL"),
         }
     }
 }
@@ -853,6 +860,8 @@ impl Model {
             Function::Convert => self.fn_convert(args, cell),
             Function::Delta => self.fn_delta(args, cell),
             Function::Gestep => self.fn_gestep(args, cell),
+
+            Function::Subtotal => self.fn_subtotal(args, cell),
         }
     }
 }

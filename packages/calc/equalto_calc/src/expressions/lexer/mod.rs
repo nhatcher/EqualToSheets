@@ -57,6 +57,7 @@ pub mod util;
 mod test;
 
 mod ranges;
+mod structured_references;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LexerError {
@@ -352,6 +353,15 @@ impl Lexer {
                                         }
                                     }
                                 } else if utils::is_valid_identifier(&name) {
+                                    if peek_char == Some('[') {
+                                        if let Ok(r) = self.consume_structured_reference(&name) {
+                                            return r;
+                                        }
+                                        return TokenType::Illegal(self.set_error(
+                                            "Invalid structured reference",
+                                            self.position,
+                                        ));
+                                    }
                                     return TokenType::Ident(name);
                                 } else {
                                     return TokenType::Illegal(
