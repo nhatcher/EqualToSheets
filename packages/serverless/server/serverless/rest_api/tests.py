@@ -109,6 +109,17 @@ class RestAPITest(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(json.loads(response.content), {"detail": "Workbook not found"})
 
+    def test_export_workbook_to_xlsx(self) -> None:
+        response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}/xlsx")
+        self.assertEqual(response.status_code, 200)
+        # TODO: parse the XLSX file and confirm it's as expected
+        self.assertEqual(response.content[:2], b"PK")
+
+    def test_export_workbook_to_xlsx_invalid_license(self) -> None:
+        response = self.license_client.get(f"/api/v1/workbooks/{self.another_workbook.id}/xlsx")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(json.loads(response.content), {"detail": "Workbook not found"})
+
     def test_get_sheets(self) -> None:
         response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}/sheets")
         self.assertEqual(response.status_code, 200)

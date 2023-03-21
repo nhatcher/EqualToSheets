@@ -1,3 +1,5 @@
+import os.path
+import tempfile
 from typing import Any, Callable
 
 import equalto.cell
@@ -6,6 +8,7 @@ import equalto.sheet
 import equalto.workbook
 from django.db import transaction
 from django.db.models import QuerySet
+from django.http import HttpResponse
 from rest_framework import serializers, status
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, NotFound
 from rest_framework.request import Request
@@ -91,6 +94,24 @@ class WorkbookDetailView(ServerlessView):
         """Get the workbook data."""
         serializer = WorkbookDetailSerializer(self._get_workbook(workbook_id))
         return Response(serializer.data)
+
+
+class WorkbookXLSXView(ServerlessView):
+    def get(self, request: Request, workbook_id: Workbook) -> HttpResponse:
+        """Export workbook as a Microsoft XLSX file."""
+        workbook = self._get_workbook(workbook_id)
+        with equalto.exceptions.SuppressEvaluationErrors() as _:  # noqa: WPS122
+            equalto_workbook = equalto.loads(workbook.workbook_json)
+        tmp_name = os.path.join(tempfile.mkdtemp(), "temp.xlsx")
+        equalto_workbook.save(tmp_name)
+        with open(tmp_name, "rb") as xlsx_file:
+            data = xlsx_file.read()
+            # TODO: set the filename to the (sanitized) name of the workbook
+            return HttpResponse(
+                data,
+                headers={"Content-Disposition": 'attachment; filename="download.xlsx"'},
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
 
 
 class SheetListView(ServerlessView):
