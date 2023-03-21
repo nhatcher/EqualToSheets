@@ -52,10 +52,13 @@ const getSnippet = (
 </script>
 `;
 
-const getCurlSnippet = (licenseKey: LicenseKey) =>
+const getUploadCurlSnippet = (licenseKey: LicenseKey) =>
   `curl -F xlsx-file=@/path/to/file.xlsx -H "Authorization: Bearer ${licenseKey}" ${window.location.origin}/create-workbook-from-xlsx`;
 
-const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
+const getDownloadCurlSnippet = (licenseKey: LicenseKey, workbookId: string) =>
+  `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/xlsx' -X GET -H "Authorization: Bearer ${licenseKey}" --output equalto-export.xlsx`;
+
+  const LicenseActivation = (parameters: { licenseId: LicenseId }) => {
   const { licenseId } = parameters;
   const [activationState, setActivationState] = useState<
     | { type: 'loading' }
@@ -331,9 +334,15 @@ const UploadPanel = ({
     <>
       <TabTextSection direction="column" alignItems="flex-start" $border>
         <div>
-          You can use this <em>curl</em> command to upload an XLSX file:
+          You can use this <em>curl</em> command to import an XLSX file:
         </div>
-        <CurlOneliner snippet={getCurlSnippet(licenseKey)} copyToClipboard={copyToClipboard} />
+        <CurlOneliner snippet={getUploadCurlSnippet(licenseKey)} copyToClipboard={copyToClipboard} />
+      </TabTextSection>
+      <TabTextSection direction="column" alignItems="flex-start" $border>
+        <div>
+          And this <em>curl</em> command to export an XLSX file:
+        </div>
+        <CurlOneliner snippet={getDownloadCurlSnippet(licenseKey, workbookId)} copyToClipboard={copyToClipboard} />
       </TabTextSection>
       <TabTextSection>
         <div>
