@@ -64,6 +64,13 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
 
             break;
           }
+          case 'a': {
+            // TODO: Area selection. CTRL+A should select "continous" area around the selection,
+            // if it does exist then whole sheet is selected.
+            event.stopPropagation();
+            event.preventDefault();
+            break;
+          }
           default:
             break;
         }
