@@ -72,7 +72,7 @@ export const LicenseRequestPage = () => {
     <DualBox>
       <LeftSide>
         <HeadingText>
-          Get your <em>EqualTo Sheets</em> license key
+          Join the <em>EqualTo Sheets</em> open beta
         </HeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
         <VideoEmbed />
@@ -88,7 +88,7 @@ export const LicenseRequestPage = () => {
             autoFocus
           />
           <SubmitButton disabled={isDuringSubmit} type="submit">
-            Get license key
+            Get access now
           </SubmitButton>
           {requestError && <ErrorMessage>{requestError}</ErrorMessage>}
         </Form>
