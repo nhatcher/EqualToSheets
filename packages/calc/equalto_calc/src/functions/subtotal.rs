@@ -189,26 +189,298 @@ impl Model {
         };
         match value {
             1 => self.subtotal_average(&args[1..], cell, SubTotalMode::Full),
+            2 => self.subtotal_count(&args[1..], cell, SubTotalMode::Full),
+            3 => self.subtotal_counta(&args[1..], cell, SubTotalMode::Full),
             4 => self.subtotal_max(&args[1..], cell, SubTotalMode::Full),
             5 => self.subtotal_min(&args[1..], cell, SubTotalMode::Full),
             6 => self.subtotal_product(&args[1..], cell, SubTotalMode::Full),
+            7 => self.subtotal_stdevs(&args[1..], cell, SubTotalMode::Full),
+            8 => self.subtotal_stdevp(&args[1..], cell, SubTotalMode::Full),
             9 => self.subtotal_sum(&args[1..], cell, SubTotalMode::Full),
+            10 => self.subtotal_vars(&args[1..], cell, SubTotalMode::Full),
+            11 => self.subtotal_varp(&args[1..], cell, SubTotalMode::Full),
             101 => self.subtotal_average(&args[1..], cell, SubTotalMode::SkipHidden),
+            102 => self.subtotal_count(&args[1..], cell, SubTotalMode::SkipHidden),
+            103 => self.subtotal_counta(&args[1..], cell, SubTotalMode::SkipHidden),
             104 => self.subtotal_max(&args[1..], cell, SubTotalMode::SkipHidden),
             105 => self.subtotal_min(&args[1..], cell, SubTotalMode::SkipHidden),
             106 => self.subtotal_product(&args[1..], cell, SubTotalMode::SkipHidden),
+            107 => self.subtotal_stdevs(&args[1..], cell, SubTotalMode::SkipHidden),
+            108 => self.subtotal_stdevp(&args[1..], cell, SubTotalMode::SkipHidden),
             109 => self.subtotal_sum(&args[1..], cell, SubTotalMode::SkipHidden),
-            2 | 102 | 3 | 103 | 7 | 107 | 8 | 108 | 10 | 110 | 11 | 111 => CalcResult::new_error(
-                Error::NIMPL,
-                cell,
-                format!("Not implemented for SUBTOTAL: {value}"),
-            ),
+            110 => self.subtotal_vars(&args[1..], cell, SubTotalMode::Full),
+            111 => self.subtotal_varp(&args[1..], cell, SubTotalMode::Full),
             _ => CalcResult::new_error(
                 Error::VALUE,
                 cell,
                 format!("Invalid value for SUBTOTAL: {value}"),
             ),
         }
+    }
+
+    fn subtotal_vars(
+        &mut self,
+        args: &[Node],
+        cell: CellReference,
+        mode: SubTotalMode,
+    ) -> CalcResult {
+        let values = match self.subtotal_get_values(args, cell, mode) {
+            Ok(s) => s,
+            Err(s) => return s,
+        };
+        let mut result = 0.0;
+        let l = values.len();
+        for value in &values {
+            result += value;
+        }
+        if l < 2 {
+            return CalcResult::Error {
+                error: Error::DIV,
+                origin: cell,
+                message: "Division by 0!".to_string(),
+            };
+        }
+        // average
+        let average = result / (l as f64);
+        let mut result = 0.0;
+        for value in &values {
+            result += (value - average).powi(2) / (l as f64 - 1.0)
+        }
+
+        CalcResult::Number(result)
+    }
+
+    fn subtotal_varp(
+        &mut self,
+        args: &[Node],
+        cell: CellReference,
+        mode: SubTotalMode,
+    ) -> CalcResult {
+        let values = match self.subtotal_get_values(args, cell, mode) {
+            Ok(s) => s,
+            Err(s) => return s,
+        };
+        let mut result = 0.0;
+        let l = values.len();
+        for value in &values {
+            result += value;
+        }
+        if l == 0 {
+            return CalcResult::Error {
+                error: Error::DIV,
+                origin: cell,
+                message: "Division by 0!".to_string(),
+            };
+        }
+        // average
+        let average = result / (l as f64);
+        let mut result = 0.0;
+        for value in &values {
+            result += (value - average).powi(2) / (l as f64)
+        }
+        CalcResult::Number(result)
+    }
+
+    fn subtotal_stdevs(
+        &mut self,
+        args: &[Node],
+        cell: CellReference,
+        mode: SubTotalMode,
+    ) -> CalcResult {
+        let values = match self.subtotal_get_values(args, cell, mode) {
+            Ok(s) => s,
+            Err(s) => return s,
+        };
+        let mut result = 0.0;
+        let l = values.len();
+        for value in &values {
+            result += value;
+        }
+        if l < 2 {
+            return CalcResult::Error {
+                error: Error::DIV,
+                origin: cell,
+                message: "Division by 0!".to_string(),
+            };
+        }
+        // average
+        let average = result / (l as f64);
+        let mut result = 0.0;
+        for value in &values {
+            result += (value - average).powi(2) / (l as f64 - 1.0)
+        }
+
+        CalcResult::Number(result.sqrt())
+    }
+
+    fn subtotal_stdevp(
+        &mut self,
+        args: &[Node],
+        cell: CellReference,
+        mode: SubTotalMode,
+    ) -> CalcResult {
+        let values = match self.subtotal_get_values(args, cell, mode) {
+            Ok(s) => s,
+            Err(s) => return s,
+        };
+        let mut result = 0.0;
+        let l = values.len();
+        for value in &values {
+            result += value;
+        }
+        if l == 0 {
+            return CalcResult::Error {
+                error: Error::DIV,
+                origin: cell,
+                message: "Division by 0!".to_string(),
+            };
+        }
+        // average
+        let average = result / (l as f64);
+        let mut result = 0.0;
+        for value in &values {
+            result += (value - average).powi(2) / (l as f64)
+        }
+        CalcResult::Number(result.sqrt())
+    }
+
+    fn subtotal_counta(
+        &mut self,
+        args: &[Node],
+        cell: CellReference,
+        mode: SubTotalMode,
+    ) -> CalcResult {
+        let mut counta = 0;
+        for arg in args {
+            match arg {
+                Node::FunctionKind {
+                    kind: Function::Subtotal,
+                    args: _,
+                } => {
+                    // skip
+                }
+                _ => {
+                    match self.evaluate_node_with_reference(arg, cell) {
+                        CalcResult::EmptyCell | CalcResult::EmptyArg => {
+                            // skip
+                        }
+                        CalcResult::Range { left, right } => {
+                            if left.sheet != right.sheet {
+                                return CalcResult::new_error(
+                                    Error::VALUE,
+                                    cell,
+                                    "Ranges are in different sheets".to_string(),
+                                );
+                            }
+                            // We are not expecting subtotal to have open ranges
+                            let row1 = left.row;
+                            let row2 = right.row;
+                            let column1 = left.column;
+                            let column2 = right.column;
+
+                            for row in row1..=row2 {
+                                let cell_status = self.cell_hidden_status(left.sheet, row, column1);
+                                if cell_status == CellTableStatus::Filtered {
+                                    continue;
+                                }
+                                if mode == SubTotalMode::SkipHidden
+                                    && cell_status == CellTableStatus::Hidden
+                                {
+                                    continue;
+                                }
+                                for column in column1..=column2 {
+                                    if self.cell_is_subtotal(left.sheet, row, column) {
+                                        continue;
+                                    }
+                                    match self.evaluate_cell(CellReference {
+                                        sheet: left.sheet,
+                                        row,
+                                        column,
+                                    }) {
+                                        CalcResult::EmptyCell | CalcResult::EmptyArg => {
+                                            // skip
+                                        }
+                                        _ => counta += 1,
+                                    }
+                                }
+                            }
+                        }
+                        CalcResult::String(_)
+                        | CalcResult::Number(_)
+                        | CalcResult::Boolean(_)
+                        | CalcResult::Error { .. } => counta += 1,
+                    }
+                }
+            }
+        }
+        CalcResult::Number(counta as f64)
+    }
+
+    fn subtotal_count(
+        &mut self,
+        args: &[Node],
+        cell: CellReference,
+        mode: SubTotalMode,
+    ) -> CalcResult {
+        let mut count = 0;
+        for arg in args {
+            match arg {
+                Node::FunctionKind {
+                    kind: Function::Subtotal,
+                    args: _,
+                } => {
+                    // skip
+                }
+                _ => {
+                    match self.evaluate_node_with_reference(arg, cell) {
+                        CalcResult::Range { left, right } => {
+                            if left.sheet != right.sheet {
+                                return CalcResult::new_error(
+                                    Error::VALUE,
+                                    cell,
+                                    "Ranges are in different sheets".to_string(),
+                                );
+                            }
+                            // We are not expecting subtotal to have open ranges
+                            let row1 = left.row;
+                            let row2 = right.row;
+                            let column1 = left.column;
+                            let column2 = right.column;
+
+                            for row in row1..=row2 {
+                                let cell_status = self.cell_hidden_status(left.sheet, row, column1);
+                                if cell_status == CellTableStatus::Filtered {
+                                    continue;
+                                }
+                                if mode == SubTotalMode::SkipHidden
+                                    && cell_status == CellTableStatus::Hidden
+                                {
+                                    continue;
+                                }
+                                for column in column1..=column2 {
+                                    if self.cell_is_subtotal(left.sheet, row, column) {
+                                        continue;
+                                    }
+                                    if let CalcResult::Number(_) =
+                                        self.evaluate_cell(CellReference {
+                                            sheet: left.sheet,
+                                            row,
+                                            column,
+                                        })
+                                    {
+                                        count += 1;
+                                    }
+                                }
+                            }
+                        }
+                        // This hasn't been tested
+                        CalcResult::Number(_) => count += 1,
+                        _ => {}
+                    }
+                }
+            }
+        }
+        CalcResult::Number(count as f64)
     }
 
     fn subtotal_average(

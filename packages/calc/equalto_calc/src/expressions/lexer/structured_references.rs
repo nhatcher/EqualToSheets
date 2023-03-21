@@ -63,6 +63,16 @@ impl Lexer {
             let next_char = self.chars[position];
             if next_char != end_char {
                 position += 1;
+                if next_char == '\'' {
+                    if position == self.len {
+                        return Err(LexerError {
+                            position: self.position,
+                            message: "Invalid column name".to_string(),
+                        });
+                    }
+                    // skip next char
+                    position += 1
+                }
             } else {
                 break;
             }
@@ -72,7 +82,12 @@ impl Lexer {
             position += 1;
         }
         self.position = position;
-        Ok(chars)
+        Ok(chars
+            .replace("'[", "[")
+            .replace("']", "]")
+            .replace("'#", "#")
+            .replace("'@", "@")
+            .replace("''", "'"))
     }
 
     // Possibilities:
