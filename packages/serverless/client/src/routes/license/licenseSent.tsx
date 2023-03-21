@@ -8,7 +8,7 @@ export const LicenseSentPage = () => {
     <DualBox>
       <LeftSide>
         <LeftHeadingText>
-          Get your <em>EqualTo Sheets</em> license key
+          Join the <em>EqualTo Sheets</em> open beta
         </LeftHeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
         <VideoEmbed />
@@ -23,7 +23,7 @@ export const LicenseSentPage = () => {
             for signing up!
           </HeadingText>
           <Text>
-            You should receive an email shortly, to verify your account and activate your license.
+            You should receive an email shortly with instructions on getting started.
           </Text>
         </Container>
         <div />
