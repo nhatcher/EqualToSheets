@@ -97,6 +97,7 @@ impl Lexer {
     //  4. MyTable[[#This Row], [My Column]]
     //  5. MyTable[[#Totals], [MyColumn]]
     //  6. MyTable[[#This Row], [Jan]:[Dec]]
+    //  7. MyTable[]
     //
     // Multiple specifiers are not supported yet:
     //  1. MyTable[[#Data], [#Totals], [MyColumn]]
@@ -116,10 +117,14 @@ impl Lexer {
     pub(crate) fn consume_structured_reference(&mut self, table_name: &str) -> Result<TokenType> {
         self.expect(TokenType::LeftBracket)?;
         let peek_char = self.peek_char();
+        if peek_char == Some(']') {
+            // This is just a reference to the full table
+            self.expect(TokenType::RightBracket)?;
+            return Ok(TokenType::Ident(table_name.to_string()));
+        }
         if peek_char == Some('#') {
             // Expecting MyTable[#Totals]
             if let Some(specifier) = self.consume_table_specifier()? {
-                // self.expect(TokenType::RightBracket)?;
                 return Ok(TokenType::StructuredReference {
                     table_name: table_name.to_string(),
                     specifier: Some(specifier),

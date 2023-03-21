@@ -311,6 +311,13 @@ fn test_error_calc() {
 }
 
 #[test]
+fn test_error_null() {
+    let mut lx = new_lexer("#NULL!", true);
+    assert_eq!(lx.next_token(), Error(Error::NULL));
+    assert_eq!(lx.next_token(), EOF);
+}
+
+#[test]
 fn test_error_spill() {
     let mut lx = new_lexer("#SPILL!", true);
     assert_eq!(lx.next_token(), Error(Error::SPILL));

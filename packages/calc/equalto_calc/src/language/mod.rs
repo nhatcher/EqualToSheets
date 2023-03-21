@@ -25,6 +25,7 @@ pub struct Errors {
     pub calc: String,
     pub circ: String,
     pub error: String,
+    pub null: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

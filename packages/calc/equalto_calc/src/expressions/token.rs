@@ -93,11 +93,13 @@ pub enum Error {
     SPILL,
     CALC,
     CIRC,
+    NULL,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Error::NULL => write!(fmt, "#NULL!"),
             Error::REF => write!(fmt, "#REF!"),
             Error::NAME => write!(fmt, "#NAME?"),
             Error::VALUE => write!(fmt, "#VALUE!"),
@@ -115,6 +117,7 @@ impl fmt::Display for Error {
 impl Error {
     pub fn to_localized_error_string(&self, language: &Language) -> String {
         match self {
+            Error::NULL => language.errors.null.to_string(),
             Error::REF => language.errors.ref_value.to_string(),
             Error::NAME => language.errors.name.to_string(),
             Error::VALUE => language.errors.value.to_string(),
@@ -154,6 +157,8 @@ pub fn get_error_by_name(name: &str, language: &Language) -> Option<Error> {
         return Some(Error::CALC);
     } else if name == errors.circ {
         return Some(Error::CIRC);
+    } else if name == errors.null {
+        return Some(Error::NULL);
     }
     None
 }
@@ -181,6 +186,8 @@ pub fn get_error_by_english_name(name: &str) -> Option<Error> {
         return Some(Error::CALC);
     } else if name == "#CIRC!" {
         return Some(Error::CIRC);
+    } else if name == "#NULL!" {
+        return Some(Error::NULL);
     }
     None
 }
@@ -188,7 +195,7 @@ pub fn get_error_by_english_name(name: &str) -> Option<Error> {
 pub fn is_english_error_string(name: &str) -> bool {
     let names = vec![
         "#REF!", "#NAME?", "#VALUE!", "#DIV/0!", "#N/A", "#NUM!", "#ERROR!", "#N/IMPL!", "#SPILL!",
-        "#CALC!", "#CIRC!",
+        "#CALC!", "#CIRC!", "#NULL!",
     ];
     names.iter().any(|e| *e == name)
 }

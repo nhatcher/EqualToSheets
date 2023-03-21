@@ -686,6 +686,9 @@ impl Lexer {
         } else if rest_of_formula.starts_with(&errors.calc) {
             self.position += errors.calc.chars().count() - 1;
             return TokenType::Error(Error::CALC);
+        } else if rest_of_formula.starts_with(&errors.null) {
+            self.position += errors.calc.chars().count() - 1;
+            return TokenType::Error(Error::NULL);
         } else if rest_of_formula.starts_with(&errors.circ) {
             self.position += errors.circ.chars().count() - 1;
             return TokenType::Error(Error::CIRC);

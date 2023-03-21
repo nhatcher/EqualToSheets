@@ -754,8 +754,18 @@ impl Parser {
                             };
                         }
                         Some(TableReference::ColumnReference(s)) => {
-                            let column_index =
-                                get_table_column_by_name(&s, table).expect("") + column_start;
+                            let column_index = match get_table_column_by_name(&s, table) {
+                                Some(s) => s + column_start,
+                                None => {
+                                    return Node::ParseErrorKind {
+                                        formula: self.lexer.get_formula(),
+                                        position: self.lexer.get_position() as usize,
+                                        message: format!(
+                                            "Expecting column: {s} in table {table_name}"
+                                        ),
+                                    };
+                                }
+                            };
                             if row_start == row_end {
                                 return Node::ReferenceKind {
                                     sheet_name,
@@ -780,10 +790,31 @@ impl Parser {
                             };
                         }
                         Some(TableReference::RangeReference((left, right))) => {
-                            let left_column_index =
-                                get_table_column_by_name(&left, table).expect("") + column_start;
-                            let right_column_index =
-                                get_table_column_by_name(&right, table).expect("") + column_start;
+                            let left_column_index = match get_table_column_by_name(&left, table) {
+                                Some(f) => f + column_start,
+                                None => {
+                                    return Node::ParseErrorKind {
+                                        formula: self.lexer.get_formula(),
+                                        position: self.lexer.get_position() as usize,
+                                        message: format!(
+                                            "Expecting column: {left} in table {table_name}"
+                                        ),
+                                    };
+                                }
+                            };
+
+                            let right_column_index = match get_table_column_by_name(&right, table) {
+                                Some(f) => f + column_start,
+                                None => {
+                                    return Node::ParseErrorKind {
+                                        formula: self.lexer.get_formula(),
+                                        position: self.lexer.get_position() as usize,
+                                        message: format!(
+                                            "Expecting column: {right} in table {table_name}"
+                                        ),
+                                    };
+                                }
+                            };
                             return Node::RangeKind {
                                 sheet_name,
                                 sheet_index: table_sheet_index,

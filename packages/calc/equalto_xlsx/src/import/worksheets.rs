@@ -254,6 +254,7 @@ fn get_formula_index(formula: &str, shared_formulas: &[String]) -> Option<i32> {
 
 fn get_cell_from_excel(
     cell_value: Option<&str>,
+    value_metadata: Option<&str>,
     cell_type: &str,
     cell_style: i32,
     formula_index: i32,
@@ -280,11 +281,22 @@ fn get_cell_from_excel(
                 v: cell_value.unwrap_or("0").parse::<f64>().unwrap_or(0.0),
                 s: cell_style,
             },
-            "e" => Cell::ErrorCell {
-                ei: get_error_by_english_name(cell_value.unwrap_or("#ERROR!"))
-                    .unwrap_or(Error::ERROR),
-                s: cell_style,
-            },
+            "e" => {
+                // For compatibility reasons Excel does not put the value #SPILL! but adds it as a metadata
+                // Older engines would just import #VALUE!
+                let mut error_name = cell_value.unwrap_or("#ERROR!");
+                if error_name == "#VALUE!" && value_metadata.is_some() {
+                    error_name = match value_metadata {
+                        Some("1") => "#CALC!",
+                        Some("2") => "#SPILL!",
+                        _ => error_name,
+                    }
+                }
+                Cell::ErrorCell {
+                    ei: get_error_by_english_name(error_name).unwrap_or(Error::ERROR),
+                    s: cell_style,
+                }
+            }
             "s" => Cell::SharedString {
                 si: cell_value.unwrap_or("0").parse::<i32>().unwrap_or(0),
                 s: cell_style,
@@ -339,14 +351,25 @@ fn get_cell_from_excel(
                 v: cell_value.unwrap_or("0").parse::<f64>().unwrap_or(0.0),
                 s: cell_style,
             },
-            "e" => Cell::CellFormulaError {
-                f: formula_index,
-                ei: get_error_by_english_name(cell_value.unwrap_or("#ERROR!"))
-                    .unwrap_or(Error::ERROR),
-                s: cell_style,
-                o: format!("{}!{}", sheet_name, cell_ref),
-                m: cell_value.unwrap_or("#ERROR!").to_string(),
-            },
+            "e" => {
+                // For compatibility reasons Excel does not put the value #SPILL! but adds it as a metadata
+                // Older engines would just import #VALUE!
+                let mut error_name = cell_value.unwrap_or("#ERROR!");
+                if error_name == "#VALUE!" && value_metadata.is_some() {
+                    error_name = match value_metadata {
+                        Some("1") => "#CALC!",
+                        Some("2") => "#SPILL!",
+                        _ => error_name,
+                    }
+                }
+                Cell::CellFormulaError {
+                    f: formula_index,
+                    ei: get_error_by_english_name(error_name).unwrap_or(Error::ERROR),
+                    s: cell_style,
+                    o: format!("{}!{}", sheet_name, cell_ref),
+                    m: cell_value.unwrap_or("#ERROR!").to_string(),
+                }
+            }
             "s" => {
                 // Not implemented
                 let o = format!("{}!{}", sheet_name, cell_ref);
@@ -630,6 +653,8 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
             let column_letter = get_column_from_ref(cell_ref);
             let column = column_to_number(column_letter.as_str()).map_err(XlsxError::Xml)?;
 
+            let value_metadata = cell.attribute("vm");
+
             // We check the value "v" child.
             let vs: Vec<Node> = cell.children().filter(|n| n.has_tag_name("v")).collect();
             let cell_value = if vs.len() == 1 {
@@ -772,6 +797,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
             }
             let cell = get_cell_from_excel(
                 cell_value,
+                value_metadata,
                 cell_type,
                 cell_style,
                 formula_index,
