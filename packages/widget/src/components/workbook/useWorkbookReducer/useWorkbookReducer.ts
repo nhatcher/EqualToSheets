@@ -62,7 +62,12 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       const newRow = row + deltaRow;
       const newColumn = column + deltaColumn;
       let newState = state;
-      if (row >= 1 && row <= canvas.lastRow && column >= 1 && column <= canvas.lastColumn) {
+      if (
+        newRow >= 1 &&
+        newRow <= canvas.lastRow &&
+        newColumn >= 1 &&
+        newColumn <= canvas.lastColumn
+      ) {
         newState = {
           ...state,
           selectedSheet: sheet,
