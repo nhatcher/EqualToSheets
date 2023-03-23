@@ -50,8 +50,9 @@ export const Root: FunctionComponent<{
   lastRow?: number;
   lastColumn?: number;
   onModelCreate?: (model: Model) => void;
+  initialModelJson?: string;
 }> = (properties) => {
-  const { onModelCreate } = properties;
+  const { onModelCreate, initialModelJson } = properties;
   const { calcModule } = useCalcModule();
 
   // It is assumed for now that model is created exactly once.
@@ -99,10 +100,13 @@ export const Root: FunctionComponent<{
     }
     if (!model) {
       const newModel = calcModule.newEmpty();
+      if (initialModelJson) {
+        newModel.replaceWithJson(initialModelJson);
+      }
       newModel.subscribe(onChange);
       setModel(newModel);
     }
-  }, [model, calcModule, onChange, setModel]);
+  }, [model, calcModule, onChange, setModel, initialModelJson]);
 
   const [editorState, dispatch] = useWorkbookReducer(model);
 
