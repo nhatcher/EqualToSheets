@@ -1,23 +1,11 @@
 #![allow(clippy::unwrap_used)]
 
 use crate::calc_result::CellReference;
-use crate::model::{Environment, Model};
+use crate::model::Model;
 use crate::types::Cell;
 
-// 8 November 2022 12:13 Berlin time
-pub fn mock_get_milliseconds_since_epoch() -> i64 {
-    1667906008578
-}
 pub fn new_empty_model() -> Model {
-    Model::new_empty(
-        "model",
-        "en",
-        "UTC",
-        Environment {
-            get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
-        },
-    )
-    .unwrap()
+    Model::new_empty("model", "en", "UTC").unwrap()
 }
 
 impl Model {

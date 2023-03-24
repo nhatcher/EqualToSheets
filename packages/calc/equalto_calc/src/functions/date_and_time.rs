@@ -5,6 +5,7 @@ use chrono::TimeZone;
 use chrono::Timelike;
 
 use crate::formatter::dates::date_to_serial_number;
+use crate::model::get_milliseconds_since_epoch;
 use crate::{
     calc_result::{CalcResult, CellReference},
     constants::EXCEL_DATE_BASE,
@@ -204,7 +205,7 @@ impl Model {
             };
         }
         // milliseconds since January 1, 1970 00:00:00 UTC.
-        let milliseconds = (self.env.get_milliseconds_since_epoch)();
+        let milliseconds = get_milliseconds_since_epoch();
         let seconds = milliseconds / 1000;
         let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
             Some(dt) => dt,
@@ -235,7 +236,7 @@ impl Model {
             };
         }
         // milliseconds since January 1, 1970 00:00:00 UTC.
-        let milliseconds = (self.env.get_milliseconds_since_epoch)();
+        let milliseconds = get_milliseconds_since_epoch();
         let seconds = milliseconds / 1000;
         let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
             Some(dt) => dt,

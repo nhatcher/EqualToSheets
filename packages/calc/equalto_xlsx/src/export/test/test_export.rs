@@ -1,25 +1,12 @@
 use std::fs;
 
-use equalto_calc::model::{Environment, Model};
+use equalto_calc::model::Model;
 
 use crate::error::XlsxError;
 use crate::{export::save_to_xlsx, import::load_model_from_xlsx};
 
-// 8 November 2022 12:13 Berlin time
-pub fn mock_get_milliseconds_since_epoch() -> i64 {
-    1667906008578
-}
-
 pub fn new_empty_model() -> Model {
-    Model::new_empty(
-        "model",
-        "en",
-        "UTC",
-        Environment {
-            get_milliseconds_since_epoch: mock_get_milliseconds_since_epoch,
-        },
-    )
-    .unwrap()
+    Model::new_empty("model", "en", "UTC").unwrap()
 }
 
 #[test]

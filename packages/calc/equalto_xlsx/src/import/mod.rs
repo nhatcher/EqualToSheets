@@ -16,7 +16,7 @@ use std::{
 use roxmltree::Node;
 
 use equalto_calc::{
-    model::{Environment, Model},
+    model::Model,
     types::{Workbook, WorkbookSettings},
 };
 
@@ -105,11 +105,10 @@ pub fn load_xlsx_from_memory(
     data: &mut [u8],
     locale: &str,
     tz: &str,
-    environment: Environment,
 ) -> Result<Model, XlsxError> {
     let reader = std::io::Cursor::new(data);
     let workbook = load_xlsx_from_reader(name.to_string(), reader, locale, tz)?;
-    let mut model = Model::from_workbook(workbook, environment).map_err(XlsxError::Workbook)?;
+    let mut model = Model::from_workbook(workbook).map_err(XlsxError::Workbook)?;
     check_model_support(&mut model)?;
     Ok(model)
 }
@@ -126,8 +125,7 @@ pub fn load_model_from_xlsx_without_support_check(
     tz: &str,
 ) -> Result<Model, XlsxError> {
     let workbook = load_from_excel(file_name, locale, tz)?;
-    let env = Environment::default();
-    Model::from_workbook(workbook, env).map_err(XlsxError::Workbook)
+    Model::from_workbook(workbook).map_err(XlsxError::Workbook)
 }
 
 /// Checks if imported model can be safely used in our system.

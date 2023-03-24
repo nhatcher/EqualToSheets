@@ -1,7 +1,7 @@
 use std::{env, fs, io};
 use uuid::Uuid;
 
-use equalto_calc::model::{Environment, Model};
+use equalto_calc::model::Model;
 use equalto_calc::types::{HorizontalAlignment, VerticalAlignment, Workbook};
 use equalto_xlsx::compare::{test_file, test_load_and_saving};
 use equalto_xlsx::error::XlsxError;
@@ -163,13 +163,7 @@ fn test_simple_text() {
 fn test_defined_names_casing() {
     let test_file_path = "tests/calc_tests/defined_names_for_unit_test.xlsx";
     let loaded_workbook = load_from_excel(test_file_path, "en", "UTC").unwrap();
-    let mut model = Model::from_json(
-        &serde_json::to_string(&loaded_workbook).unwrap(),
-        Environment {
-            get_milliseconds_since_epoch: || 1,
-        },
-    )
-    .unwrap();
+    let mut model = Model::from_json(&serde_json::to_string(&loaded_workbook).unwrap()).unwrap();
 
     let (row, column) = (2, 13); // B13
     let test_cases = [

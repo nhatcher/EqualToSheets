@@ -6,7 +6,7 @@ use wasm_bindgen::{
 use equalto_calc::{
     cell::CellValue,
     expressions::types::{Area, CellReferenceIndex},
-    model::{Environment, Model},
+    model::Model,
     worksheet::NavigationDirection,
 };
 
@@ -124,9 +124,7 @@ pub struct WasmWorkbook {
 impl WasmWorkbook {
     #[wasm_bindgen(constructor)]
     pub fn new(locale: &str, timezone: &str) -> Result<WasmWorkbook, JsError> {
-        let env = Environment::default();
-        let model =
-            Model::new_empty("workbook", locale, timezone, env).map_err(WorkbookError::from)?;
+        let model = Model::new_empty("workbook", locale, timezone).map_err(WorkbookError::from)?;
         Ok(WasmWorkbook { model })
     }
 
@@ -137,16 +135,14 @@ impl WasmWorkbook {
         locale: &str,
         timezone: &str,
     ) -> Result<WasmWorkbook, JsError> {
-        let env = Environment::default();
-        let model = load_xlsx_from_memory("workbook", data, locale, timezone, env)
+        let model = load_xlsx_from_memory("workbook", data, locale, timezone)
             .map_err(WorkbookError::from)?;
         Ok(WasmWorkbook { model })
     }
 
     #[wasm_bindgen(js_name=loadFromJson)]
     pub fn load_from_json(workbook_json: &str) -> Result<WasmWorkbook, JsError> {
-        let env = Environment::default();
-        let model = Model::from_json(workbook_json, env).map_err(WorkbookError::from)?;
+        let model = Model::from_json(workbook_json).map_err(WorkbookError::from)?;
         Ok(WasmWorkbook { model })
     }
 

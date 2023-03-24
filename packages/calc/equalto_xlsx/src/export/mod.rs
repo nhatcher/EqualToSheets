@@ -15,7 +15,7 @@ use std::{
 };
 
 use equalto_calc::expressions::utils::number_to_column;
-use equalto_calc::model::Model;
+use equalto_calc::model::{get_milliseconds_since_epoch, Model};
 use equalto_calc::types::Workbook;
 
 use self::xml_constants::XML_DECLARATION;
@@ -81,7 +81,7 @@ pub fn save_xlsx_to_writer<W: Write + Seek>(model: &Model, writer: W) -> Result<
     zip.start_file("docProps/app.xml", options)?;
     zip.write_all(doc_props::get_app_xml(workbook).as_bytes())?;
     zip.start_file("docProps/core.xml", options)?;
-    let milliseconds = (model.env.get_milliseconds_since_epoch)();
+    let milliseconds = get_milliseconds_since_epoch();
     zip.write_all(doc_props::get_core_xml(workbook, milliseconds)?.as_bytes())?;
 
     // Package-relationship item

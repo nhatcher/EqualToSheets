@@ -33,33 +33,32 @@ use crate::{
 
 pub use chrono_tz::Tz;
 
-#[cfg(feature = "wasm-build")]
-use js_sys::Date;
-#[cfg(not(feature = "wasm-build"))]
-use std::time::{SystemTime, UNIX_EPOCH};
-
-#[derive(Clone)]
-pub struct Environment {
-    /// Returns the number of milliseconds January 1, 1970 00:00:00 UTC.
-    pub get_milliseconds_since_epoch: fn() -> i64,
+#[cfg(test)]
+pub fn get_milliseconds_since_epoch() -> i64 {
+    use std::env;
+    // 8 November 2022 12:13 Berlin time
+    let timestamp_default = 1667906008578;
+    match env::var("TIMESTAMP") {
+        Ok(s) => s.parse::<i64>().unwrap_or(timestamp_default),
+        Err(_) => timestamp_default,
+    }
 }
 
-fn get_milliseconds_since_epoch() -> i64 {
-    #[cfg(not(feature = "wasm-build"))]
-    return SystemTime::now()
+#[cfg(not(test))]
+#[cfg(not(feature = "wasm-build"))]
+pub fn get_milliseconds_since_epoch() -> i64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("problem with system time")
-        .as_millis() as i64;
-    #[cfg(feature = "wasm-build")]
-    return Date::now() as i64;
+        .as_millis() as i64
 }
 
-impl Default for Environment {
-    fn default() -> Self {
-        Self {
-            get_milliseconds_since_epoch,
-        }
-    }
+#[cfg(not(test))]
+#[cfg(feature = "wasm-build")]
+pub fn get_milliseconds_since_epoch() -> i64 {
+    use js_sys::Date;
+    Date::now() as i64
 }
 
 #[derive(Clone)]
@@ -91,7 +90,6 @@ pub struct Model {
     pub cells: HashMap<(u32, i32, i32), CellState>,
     pub locale: Locale,
     pub language: Language,
-    pub env: Environment,
     pub tz: Tz,
 }
 
@@ -751,13 +749,13 @@ impl Model {
 
     // Public API
     /// Returns a model from a String representation of a workbook
-    pub fn from_json(s: &str, env: Environment) -> Result<Model, String> {
+    pub fn from_json(s: &str) -> Result<Model, String> {
         let workbook: Workbook =
             serde_json::from_str(s).map_err(|_| "Error parsing workbook".to_string())?;
-        Model::from_workbook(workbook, env)
+        Model::from_workbook(workbook)
     }
 
-    pub fn from_workbook(workbook: Workbook, env: Environment) -> Result<Model, String> {
+    pub fn from_workbook(workbook: Workbook) -> Result<Model, String> {
         let parsed_formulas = Vec::new();
         let worksheets = &workbook.worksheets;
 
@@ -794,7 +792,6 @@ impl Model {
             cells,
             language,
             locale,
-            env,
             tz,
         };
 

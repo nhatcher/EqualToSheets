@@ -2,7 +2,7 @@ use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::{create_exception, prelude::*, wrap_pyfunction};
 
 use equalto_calc::expressions::utils;
-use equalto_calc::model::{Environment, Model};
+use equalto_calc::model::Model;
 use equalto_calc::types::CellType;
 use equalto_calc::types::Worksheet;
 use equalto_xlsx::error::XlsxError;
@@ -198,15 +198,13 @@ pub fn load_excel(file_path: &str, locale: &str, tz: &str) -> PyResult<PyModel> 
 
 #[pyfunction]
 pub fn load_json(workbook_json: &str) -> PyResult<PyModel> {
-    let env = Environment::default();
-    let model = Model::from_json(workbook_json, env).map_err(WorkbookError::new_err)?;
+    let model = Model::from_json(workbook_json).map_err(WorkbookError::new_err)?;
     Ok(PyModel { model })
 }
 
 #[pyfunction]
 pub fn create(name: &str, locale: &str, tz: &str) -> PyResult<PyModel> {
-    let env = Environment::default();
-    let model = Model::new_empty(name, locale, tz, env).map_err(WorkbookError::new_err)?;
+    let model = Model::new_empty(name, locale, tz).map_err(WorkbookError::new_err)?;
     Ok(PyModel { model })
 }
 

@@ -12,7 +12,7 @@ use crate::{
     },
     language::get_language,
     locale::get_locale,
-    model::{Environment, Model, ParsedDefinedName},
+    model::{get_milliseconds_since_epoch, Model, ParsedDefinedName},
     types::{Metadata, SheetState, Workbook, WorkbookSettings, Worksheet},
     utils::ParsedReference,
 };
@@ -311,12 +311,7 @@ impl Model {
     }
 
     /// Creates a new workbook with one empty sheet
-    pub fn new_empty(
-        name: &str,
-        locale_id: &str,
-        timezone: &str,
-        env: Environment,
-    ) -> Result<Model, String> {
+    pub fn new_empty(name: &str, locale_id: &str, timezone: &str) -> Result<Model, String> {
         let tz: Tz = match &timezone.parse() {
             Ok(tz) => *tz,
             Err(_) => return Err(format!("Invalid timezone: {}", &timezone)),
@@ -326,7 +321,7 @@ impl Model {
             Err(_) => return Err(format!("Invalid locale: {}", locale_id)),
         };
 
-        let milliseconds = (env.get_milliseconds_since_epoch)();
+        let milliseconds = get_milliseconds_since_epoch();
         let seconds = milliseconds / 1000;
         let dt = match NaiveDateTime::from_timestamp_opt(seconds, 0) {
             Some(s) => s,
@@ -373,7 +368,6 @@ impl Model {
             cells,
             locale,
             language,
-            env,
             tz,
         };
         model.parse_formulas();
