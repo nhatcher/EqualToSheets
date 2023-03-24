@@ -1,10 +1,11 @@
 import json
 
+import equalto
 from django.test import TestCase
 from equalto.exceptions import SuppressEvaluationErrors
 from rest_framework.test import APIClient
 
-from serverless.models import License, Workbook
+from serverless.models import WORKBOOK_JSON_VERSION, License, Workbook, get_default_workbook
 from serverless.test_util import create_verified_license, create_workbook
 
 
@@ -84,6 +85,156 @@ class RestAPITest(TestCase):
                 "modify_datetime": workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
             },
         )
+
+    def test_create_workbook_custom_name(self) -> None:
+        # create a new blank workbook, specifying the name
+        response = self.license_client.post("/api/v1/workbooks", {"name": "TEST NAME€"})
+
+        # check the response from the POST operation
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(new_workbook.name, "TEST NAME€")
+
+    def test_create_workbook_from_json(self) -> None:
+        """Confirm we can create a workbook from JSON."""
+        # create a blank source workbook, and then set cells A1 to 123, B1 to "abc€"
+        book = equalto.loads(get_default_workbook())
+        sheet = book.sheets.get_sheet_by_id(1)
+        sheet.cell(1, 1).value = 123
+        sheet.cell(1, 2).value = "abc€"
+        src_json = book.json
+
+        # POST the workbook JSON to create a copy
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"version": f"{WORKBOOK_JSON_VERSION}", "workbook_json": src_json},
+        )
+
+        # check the response from the POST operation
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+
+        # confirm the database has been updated as expected
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(json.loads(new_workbook.workbook_json), json.loads(src_json))
+        self.assertEqual(new_workbook.license, self.license)
+        new_book = equalto.loads(new_workbook.workbook_json)
+        self.assertEqual(new_book.sheets.get_sheet_by_id(1).cell(1, 1).value, 123)
+        self.assertEqual(new_book.sheets.get_sheet_by_id(1).cell(1, 2).value, "abc€")
+
+        self.assertEqual(
+            workbook_data,
+            {
+                "id": str(new_workbook.id),
+                "name": "Book",
+                "revision": 1,
+                "create_datetime": new_workbook.create_datetime.isoformat().replace("+00:00", "Z"),
+                "modify_datetime": new_workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
+            },
+        )
+
+    def test_create_workbook_from_json_unsupported_fn(self) -> None:
+        """Confirm we can create a workbook from JSON containing an unsupported function."""
+        # create a blank source workbook, and then set cell Sheet1!A1 to =UNSUPPORTED()
+        book = equalto.loads(get_default_workbook())
+        sheet = book.sheets.get_sheet_by_id(1)
+        with SuppressEvaluationErrors():
+            sheet.cell(1, 1).formula = "=UNSUPPORTED()"
+        src_json = book.json
+
+        # POST the workbook JSON to create a copy
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"version": f"{WORKBOOK_JSON_VERSION}", "workbook_json": src_json},
+        )
+
+        # check the response from the POST operation
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+
+        # confirm the database has been updated as expected
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(json.loads(new_workbook.workbook_json), json.loads(src_json))
+        self.assertEqual(new_workbook.license, self.license)
+        with SuppressEvaluationErrors():
+            new_book = equalto.loads(new_workbook.workbook_json)
+        self.assertEqual(new_book.sheets.get_sheet_by_id(1).cell(1, 1).formula, "=UNSUPPORTED()")
+
+        self.assertEqual(
+            workbook_data,
+            {
+                "id": str(new_workbook.id),
+                "name": "Book",
+                "revision": 1,
+                "create_datetime": new_workbook.create_datetime.isoformat().replace("+00:00", "Z"),
+                "modify_datetime": new_workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
+            },
+        )
+
+    def test_create_workbook_from_bad_json(self) -> None:
+        """Confirm we refuse to create a workbook from invalid workbook_json."""
+        workbook_count = Workbook.objects.all().count()
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"version": f"{WORKBOOK_JSON_VERSION}", "workbook_json": "{}"},  # noqa: WPS360, P103
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.content), {"detail": "Error parsing workbook"})
+        self.assertEqual(Workbook.objects.all().count(), workbook_count)
+
+    def test_create_workbook_from_not_json(self) -> None:
+        """Confirm we refuse to create a workbook from non-JSON data."""
+        workbook_count = Workbook.objects.all().count()
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"version": f"{WORKBOOK_JSON_VERSION}", "workbook_json": "abc123"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.content), {"detail": "Error parsing workbook"})
+        self.assertEqual(Workbook.objects.all().count(), workbook_count)
+
+    def test_create_workbook_from_json_custom_name(self) -> None:
+        # create a new workbook from JSON, specifying the name
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"version": f"{WORKBOOK_JSON_VERSION}", "workbook_json": get_default_workbook(), "name": "TEST NAME€"},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(new_workbook.name, "TEST NAME€")
+
+    def test_create_workbook_from_json_missing_json(self) -> None:
+        response = self.license_client.post("/api/v1/workbooks", {"version": "1"})
+        self.assertEqual(
+            json.loads(response.content),
+            {"detail": "When creating a workbook from JSON, you must specify the workbook_json data."},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_workbook_from_json_no_version(self) -> None:
+        response = self.license_client.post("/api/v1/workbooks", {"workbook_json": get_default_workbook()})
+        self.assertEqual(
+            json.loads(response.content),
+            {"detail": "When creating a workbook from JSON, you must specify the version of the JSON."},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_workbook_from_json_bad_version(self) -> None:
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"workbook_json": get_default_workbook(), "version": "123456789"},
+        )
+        self.assertEqual(
+            json.loads(response.content),
+            {"detail": "Currently, we only support JSON using the version 1 schema."},
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_get_workbook(self) -> None:
         response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}")

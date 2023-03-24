@@ -8,6 +8,9 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from equalto.exceptions import SuppressEvaluationErrors
 
+# the version of the workbook_json schema
+WORKBOOK_JSON_VERSION = 1
+
 
 @cache
 def get_default_workbook() -> str:
@@ -54,7 +57,7 @@ class Workbook(models.Model):
     modify_datetime = models.DateTimeField(default=timezone.now, null=False)
 
     # workbook json version
-    version = models.IntegerField(default=1, null=False)
+    version = models.IntegerField(default=WORKBOOK_JSON_VERSION, null=False)
 
     def set_workbook_json(self, workbook_json: dict[str, Any]) -> None:
         if self.workbook_json == workbook_json:

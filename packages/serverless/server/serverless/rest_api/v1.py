@@ -83,8 +83,58 @@ class WorkbookListView(ServerlessView):
 
     @transaction.atomic
     def post(self, request: Request) -> Response:
-        """Create a new blank workbook."""
-        workbook = Workbook.objects.create(license=self._get_license())
+        """Create a new workbook.
+
+        POST parameters supported by this endpoint:
+
+        * `name`: (optional) name of newly created workbook
+        * `version`: (optional) version of schema used in the associated `workbook_json`
+        * `workbook_json`: (optional) the JSON used to create the new workbook
+
+        There are two ways to use this endpoint:
+
+        1. Create a blank workbook, you may specify the `name` but nothing else.
+        2. Create a workbook from JSON, you must specify `version` and `workbook_json`, you may specify the `name`.
+        """
+        version = request.data.get("version")
+        workbook_json = request.data.get("workbook_json")
+        name = request.data.get("name", "Book")
+
+        if version is not None or workbook_json is not None:
+            # creating a workbook from json
+            if version is None:
+                return Response(
+                    {"detail": "When creating a workbook from JSON, you must specify the version of the JSON."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if workbook_json is None:
+                return Response(
+                    {"detail": "When creating a workbook from JSON, you must specify the workbook_json data."},
+                    content_type="application/json",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if version != "1":
+                # TODO: in future, when we have new JSON schemas, we'll need to auto-migrate old JSON to the new
+                #       structure
+                return Response(
+                    {"detail": "Currently, we only support JSON using the version 1 schema."},
+                    content_type="application/json",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # evaluate the workbook JSON, to ensure it's valid and fully computed
+            with equalto.exceptions.SuppressEvaluationErrors():
+                equalto_workbook = equalto.loads(workbook_json)
+
+            workbook = Workbook.objects.create(
+                license=self._get_license(),
+                workbook_json=equalto_workbook.json,
+                name=name,
+            )
+
+        else:
+            # create a blank workbook
+            workbook = Workbook.objects.create(license=self._get_license(), name=name)
         serializer = WorkbookSerializer(workbook)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
