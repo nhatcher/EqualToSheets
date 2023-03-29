@@ -16,7 +16,11 @@ const fetchUpdatedWorkbook = async (
   return await fetch(`${getSyncEndpoint()}/${workbookId}/${revision}`, {
     method: 'GET',
     headers: new Headers({
-      Authorization: `Bearer ${licenseKey}`,
+      ...(licenseKey !== null
+        ? {
+            Authorization: `Bearer ${licenseKey}`,
+          }
+        : {}),
       'Content-Type': 'application/json',
     }),
     credentials: 'include',

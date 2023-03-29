@@ -1,0 +1,25 @@
+.newWorkbookContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.divider {
+  flex: 1;
+  border-bottom: 1px solid black;
+}
+
+.dropzone {
+  background: #ffffff;
+  border: 1px dashed #dee0ef;
+  border-radius: 3px;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dropzone.active {
+  background: #f1f2f8;
+}

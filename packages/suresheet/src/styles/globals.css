@@ -1,0 +1,16 @@
+html,
+body,
+#__next {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+:root {
+  --font-body: 'Inter', 'Arial', sans-serif;
+  --font-code: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+code {
+  font-family: var(--font-code);
+}

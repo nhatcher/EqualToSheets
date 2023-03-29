@@ -7,10 +7,22 @@ import './styles.css';
 import { ApolloProvider, gql, useMutation } from '@apollo/client';
 import { fetchUpdatedWorkbookWithRetries } from './sync';
 
-export function load(workbookId: string, element: HTMLElement) {
+export function load(
+  workbookId: string,
+  element: HTMLElement,
+  options: {
+    onLoad?: (workbookId: string, workbookJson: string) => boolean;
+    saveWorkbookPreHook?: (workbookId: string, workbookJson: string) => boolean;
+  } = {},
+) {
   ReactDOM.render(
     <ApolloProvider client={getApollo()}>
-      <WorkbookComponent workbookId={workbookId} licenseKey={getLicenseKey()} />
+      <WorkbookComponent
+        workbookId={workbookId}
+        licenseKey={getLicenseKey()}
+        onLoad={options.onLoad}
+        saveWorkbookPreHook={options.saveWorkbookPreHook}
+      />
     </ApolloProvider>,
     element,
   );
@@ -27,9 +39,22 @@ const SAVE_WORKBOOK = gql`
 type WorkbookComponentProperties = {
   licenseKey: string | null;
   workbookId: string;
+  /**
+   * Experimental hook. API might change!
+   */
+  onLoad?: (workbookId: string, workbookJson: string) => void;
+  /**
+   * Experimental hook. API might change!
+   */
+  saveWorkbookPreHook?: (workbookId: string, workbookJson: string) => boolean;
 };
 
-export const WorkbookComponent = ({ licenseKey, workbookId }: WorkbookComponentProperties) => {
+export const WorkbookComponent = ({
+  licenseKey,
+  workbookId,
+  onLoad,
+  saveWorkbookPreHook,
+}: WorkbookComponentProperties) => {
   const [initialModel, setInitialModel] = useState<{
     json: any;
     revision: number;
@@ -50,6 +75,8 @@ export const WorkbookComponent = ({ licenseKey, workbookId }: WorkbookComponentP
         json: response['workbook_json'],
         revision: response['revision'],
       });
+
+      onLoad?.(workbookId, response['workbook_json']);
     }
   }, []);
 
@@ -58,6 +85,7 @@ export const WorkbookComponent = ({ licenseKey, workbookId }: WorkbookComponentP
       licenseKey={licenseKey}
       workbookId={workbookId}
       initialModel={initialModel}
+      saveWorkbookPreHook={saveWorkbookPreHook}
     />
   ) : null;
 };
@@ -66,7 +94,8 @@ const InnerWorkbookComponent = ({
   licenseKey,
   workbookId,
   initialModel,
-}: Pick<WorkbookComponentProperties, 'licenseKey' | 'workbookId'> & {
+  saveWorkbookPreHook,
+}: Pick<WorkbookComponentProperties, 'licenseKey' | 'workbookId' | 'saveWorkbookPreHook'> & {
   initialModel?: {
     json: string;
     revision: number;
@@ -89,6 +118,11 @@ const InnerWorkbookComponent = ({
           onError: console.error,
         });
 
+        if (!syncRunning) {
+          // Do not update if long poll returned after sync stopped.
+          break;
+        }
+
         revision = response['revision'];
         model.current?.replaceWithJson(response['workbook_json']);
       }
@@ -103,9 +137,13 @@ const InnerWorkbookComponent = ({
 
   const onChange = useCallback(() => {
     if (model.current) {
-      saveWorkbook({
-        variables: { workbook_id: workbookId, workbook_json: model.current?.toJson() },
-      });
+      const workbookJson = model.current.toJson();
+      const sendSave = saveWorkbookPreHook ? saveWorkbookPreHook(workbookId, workbookJson) : true;
+      if (sendSave) {
+        saveWorkbook({
+          variables: { workbook_id: workbookId, workbook_json: workbookJson },
+        });
+      }
     }
   }, []);
 
