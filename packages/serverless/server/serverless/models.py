@@ -34,6 +34,7 @@ class License(models.Model):
     email_verified = models.BooleanField(default=False, null=False)
 
     create_datetime = models.DateTimeField(default=timezone.now, null=False)
+    validated_datetime = models.DateTimeField(default=None, null=True)
 
 
 class LicenseDomain(models.Model):

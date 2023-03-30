@@ -18,6 +18,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from equalto.exceptions import SuppressEvaluationErrors, WorkbookError
 from graphene_django.views import GraphQLView
 
@@ -72,8 +73,10 @@ def equalto_sheets_beta_readme(request: HttpRequest) -> HttpResponse:
 def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
     license = get_object_or_404(License, id=license_id)
 
-    license.email_verified = True
-    license.save()
+    if not license.email_verified:
+        license.email_verified = True
+        license.validated_datetime = timezone.now()
+        license.save()
 
     workbook = Workbook.objects.filter(license=license).order_by("create_datetime").first()
     if workbook is None:

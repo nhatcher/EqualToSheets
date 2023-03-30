@@ -87,7 +87,7 @@ class SimpleTest(TestCase):
         self.assertEqual(LicenseDomain.objects.filter(license=license).count(), 0)
 
         self.assertFalse(license.email_verified)
-
+        self.assertIsNone(license.validated_datetime)
         # activation email should be dispatched
         mock_send_email.assert_called_once()
         args, _ = mock_send_email.call_args
@@ -127,6 +127,7 @@ class SimpleTest(TestCase):
         self.assertEqual(response.status_code, 200)
         license.refresh_from_db()
         self.assertTrue(license.email_verified)
+        self.assertIsNotNone(license.validated_datetime)
 
         self.assertTrue(Workbook.objects.filter(license=license).exists())
         workbook = Workbook.objects.get(license=license)
