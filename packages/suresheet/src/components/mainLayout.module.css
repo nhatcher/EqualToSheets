@@ -6,12 +6,21 @@
 
 .infoBar {
   background: #5879f0;
-  font-family: 'Inter';
+  font-family: var(--font-body);
   font-size: 9px;
   line-height: 11px;
   text-align: center;
   color: #f1f2f8;
   padding: 5px;
+}
+
+.infoBar a:link,
+.infoBar a:visited,
+.infoBar a:hover,
+.infoBar a:active {
+  color: #f1f2f8;
+  font-variation-settings: 'wght' 500;
+  text-underline-offset: 3px;
 }
 
 .menuBar {
@@ -33,7 +42,8 @@
 }
 
 .betaTag {
-  font-family: 'Inter';
+  margin-left: 3px;
+  font-family: var(--font-body);
   font-size: 6px;
   line-height: 7px;
   color: #5879f0;

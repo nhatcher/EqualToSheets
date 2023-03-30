@@ -3,9 +3,11 @@ declare namespace EqualToSheets {
   export declare function load(
     workbookId: string,
     element: HTMLElement,
-    options?: {
-      onLoad?: (workbookId: string, workbookJson: string) => void;
-      saveWorkbookPreHook?: (workbookId: string, workbookJson: string) => boolean;
+    options: {
+      syncChanges: boolean;
+      onJSONChange?: (workbookId: string, workbookJson: string) => void;
     },
-  ): void;
+  ): {
+    unmount: () => void;
+  };
 }

@@ -1,5 +1,5 @@
 import EditorView from '@/components/editorView';
-import { Button, Stack, Typography } from '@mui/material';
+import { Button, Paper, Stack, Typography } from '@mui/material';
 import clsx from 'clsx';
 import { File, Upload } from 'lucide-react';
 import { GetServerSideProps } from 'next';
@@ -7,6 +7,9 @@ import Head from 'next/head';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import styles from './index.module.css';
+import getConfig from 'next/config';
+
+const { publicRuntimeConfig } = getConfig();
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   return {
@@ -25,7 +28,7 @@ export default function Home(properties: {}) {
       {workbookId === null ? (
         <NewWorkbookChoice setWorkbookId={setWorkbookId} />
       ) : (
-        <EditorView workbookId={workbookId} />
+        <EditorView workbookId={workbookId} onNew={() => setWorkbookId(null)} />
       )}
     </>
   );
@@ -57,31 +60,40 @@ function NewWorkbookChoice(properties: { setWorkbookId: (workbookId: string) => 
 
   return (
     <div className={styles.newWorkbookContainer}>
-      <Stack direction="column" spacing={2}>
-        <Button type="button" onClick={onNew} startIcon={<File />}>
-          Start with a blank workbook
-        </Button>
+      <Paper className={styles.newWorkbookPaper}>
+        <div className={styles.newWorkbookSection}>
+          <Button type="button" onClick={onNew} startIcon={<File />} fullWidth>
+            Start with a blank workbook
+          </Button>
+        </div>
         <Stack direction="row" alignItems="center" spacing={1}>
           <div className={styles.divider} />
-          <Typography>OR</Typography>
+          <Typography className={styles.dividerText}>OR</Typography>
           <div className={styles.divider} />
         </Stack>
-        <div {...getRootProps({ className: clsx(styles.dropzone, isDragActive && styles.active) })}>
-          <input {...getInputProps()} />
-          <Stack direction="column" spacing={1} alignItems="center">
-            <Upload />
-            <Typography>Upload a workbook (.xlsx)</Typography>
-          </Stack>
+        <div className={styles.newWorkbookSection}>
+          <div
+            {...getRootProps({ className: clsx(styles.dropzone, isDragActive && styles.active) })}
+          >
+            <input {...getInputProps()} />
+            <Stack direction="column" spacing={1} alignItems="center">
+              <Upload size={15} />
+              <Typography>Upload a workbook (.xlsx)</Typography>
+            </Stack>
+          </div>
         </div>
-      </Stack>
+      </Paper>
     </div>
   );
 }
 
 async function createEmptyWorkbook() {
-  const response = await fetch('/api/sheets-proxy/api/v1/workbooks', {
-    method: 'POST',
-  });
+  const response = await fetch(
+    `${publicRuntimeConfig.basePath}/api/sheets-proxy/api/v1/workbooks`,
+    {
+      method: 'POST',
+    },
+  );
   const json = await response.json();
   return { workbookId: json['id'] as string };
 }
@@ -90,10 +102,13 @@ async function uploadXlsxWorkbook(xlsxFile: File) {
   const body = new FormData();
   body.append('xlsx-file', xlsxFile);
 
-  const response = await fetch('/api/sheets-proxy/create-workbook-from-xlsx', {
-    method: 'POST',
-    body,
-  });
+  const response = await fetch(
+    `${publicRuntimeConfig.basePath}/api/sheets-proxy/create-workbook-from-xlsx`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
 
   // TODO: Endpoint should return JSON to avoid this parsing.
   const text = await response.text();

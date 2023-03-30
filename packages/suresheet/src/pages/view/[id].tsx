@@ -4,6 +4,7 @@ import { Stack, Typography } from '@mui/material';
 import { Slash } from 'lucide-react';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import styles from './id.module.css';
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
@@ -34,6 +35,7 @@ export default function ViewWorkbookById(properties: {
   workbook: { id: string; name: string } | null;
 }) {
   const { workbook } = properties;
+  const router = useRouter();
 
   if (workbook === null) {
     return (
@@ -56,7 +58,7 @@ export default function ViewWorkbookById(properties: {
       <Head>
         <title>{`${workbook.name} - EqualTo SureSheet`}</title>
       </Head>
-      <EditorView workbookId={workbook.id} />
+      <EditorView workbookId={workbook.id} onNew={() => router.push('/')} />
     </>
   );
 }

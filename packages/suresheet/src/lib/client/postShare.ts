@@ -1,5 +1,9 @@
+import getConfig from 'next/config';
+
+const { publicRuntimeConfig } = getConfig();
+
 export async function postShareWorkbook(body: { workbookId: string } | { workbookJson: string }) {
-  const response = await fetch('/api/share', {
+  const response = await fetch(`${publicRuntimeConfig.basePath}/api/share`, {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {

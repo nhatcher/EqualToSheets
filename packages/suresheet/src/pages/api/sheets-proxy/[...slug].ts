@@ -20,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       if (slug.length > 1 && slug[0] === 'get-updated-workbook') {
-        // TODO: Should be restricted to workbooks created in context of the app.
         return true;
       }
 
@@ -58,6 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   return new Promise((resolve, reject) => {
     if (req.url) {
+      // Note: baseUrl is already handled by next.
       req.url = req.url.replace('/api/sheets-proxy', '');
     }
 

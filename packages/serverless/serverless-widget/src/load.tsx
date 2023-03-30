@@ -11,21 +11,29 @@ export function load(
   workbookId: string,
   element: HTMLElement,
   options: {
-    onLoad?: (workbookId: string, workbookJson: string) => boolean;
-    saveWorkbookPreHook?: (workbookId: string, workbookJson: string) => boolean;
+    syncChanges?: boolean;
+    onJSONChange?: (workbookId: string, workbookJson: string) => void;
   } = {},
-) {
+): {
+  unmount: () => void;
+} {
   ReactDOM.render(
     <ApolloProvider client={getApollo()}>
       <WorkbookComponent
         workbookId={workbookId}
         licenseKey={getLicenseKey()}
-        onLoad={options.onLoad}
-        saveWorkbookPreHook={options.saveWorkbookPreHook}
+        syncChanges={options?.syncChanges ?? true}
+        onJSONChange={options?.onJSONChange}
       />
     </ApolloProvider>,
     element,
   );
+
+  return {
+    unmount: () => {
+      ReactDOM.unmountComponentAtNode(element);
+    },
+  };
 }
 
 const SAVE_WORKBOOK = gql`
@@ -39,21 +47,15 @@ const SAVE_WORKBOOK = gql`
 type WorkbookComponentProperties = {
   licenseKey: string | null;
   workbookId: string;
-  /**
-   * Experimental hook. API might change!
-   */
-  onLoad?: (workbookId: string, workbookJson: string) => void;
-  /**
-   * Experimental hook. API might change!
-   */
-  saveWorkbookPreHook?: (workbookId: string, workbookJson: string) => boolean;
+  syncChanges: boolean;
+  onJSONChange?: (workbookId: string, workbookJson: string) => void;
 };
 
 export const WorkbookComponent = ({
   licenseKey,
   workbookId,
-  onLoad,
-  saveWorkbookPreHook,
+  syncChanges,
+  onJSONChange,
 }: WorkbookComponentProperties) => {
   const [initialModel, setInitialModel] = useState<{
     json: any;
@@ -71,12 +73,15 @@ export const WorkbookComponent = ({
         onError: console.error,
       });
 
+      const workbookJson = response['workbook_json'];
+      const workbookRevision = response['revision'];
+
       setInitialModel({
-        json: response['workbook_json'],
-        revision: response['revision'],
+        json: workbookJson,
+        revision: workbookRevision,
       });
 
-      onLoad?.(workbookId, response['workbook_json']);
+      onJSONChange?.(workbookId, workbookJson);
     }
   }, []);
 
@@ -85,7 +90,8 @@ export const WorkbookComponent = ({
       licenseKey={licenseKey}
       workbookId={workbookId}
       initialModel={initialModel}
-      saveWorkbookPreHook={saveWorkbookPreHook}
+      syncChanges={syncChanges}
+      onJSONChange={onJSONChange}
     />
   ) : null;
 };
@@ -94,8 +100,12 @@ const InnerWorkbookComponent = ({
   licenseKey,
   workbookId,
   initialModel,
-  saveWorkbookPreHook,
-}: Pick<WorkbookComponentProperties, 'licenseKey' | 'workbookId' | 'saveWorkbookPreHook'> & {
+  syncChanges,
+  onJSONChange,
+}: Pick<
+  WorkbookComponentProperties,
+  'licenseKey' | 'workbookId' | 'syncChanges' | 'onJSONChange'
+> & {
   initialModel?: {
     json: string;
     revision: number;
@@ -105,7 +115,7 @@ const InnerWorkbookComponent = ({
   const [saveWorkbook, mutationStatus] = useMutation(SAVE_WORKBOOK);
 
   useEffect(() => {
-    let syncRunning = true;
+    let syncRunning = syncChanges;
     let revision = initialModel?.revision ?? 0;
     runSync();
 
@@ -123,8 +133,10 @@ const InnerWorkbookComponent = ({
           break;
         }
 
+        const workbookJson = response['workbook_json'];
         revision = response['revision'];
-        model.current?.replaceWithJson(response['workbook_json']);
+        model.current?.replaceWithJson(workbookJson);
+        onJSONChange?.(workbookId, workbookJson);
       }
     }
 
@@ -138,8 +150,8 @@ const InnerWorkbookComponent = ({
   const onChange = useCallback(() => {
     if (model.current) {
       const workbookJson = model.current.toJson();
-      const sendSave = saveWorkbookPreHook ? saveWorkbookPreHook(workbookId, workbookJson) : true;
-      if (sendSave) {
+      onJSONChange?.(workbookId, workbookJson);
+      if (syncChanges) {
         saveWorkbook({
           variables: { workbook_id: workbookId, workbook_json: workbookJson },
         });

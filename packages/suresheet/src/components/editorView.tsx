@@ -13,6 +13,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ShareButton } from './shareButton';
 import { ToolbarTool } from './toolbar';
 import styles from './editorView.module.css';
+import getConfig from 'next/config';
+
+const { publicRuntimeConfig } = getConfig();
 
 export type EditorViewProperties = {
   /**
@@ -20,10 +23,11 @@ export type EditorViewProperties = {
    * be changed without component reload (use key if needed to force remount).
    */
   workbookId: string;
+  onNew?: () => void;
 };
 
 export default function EditorView(properties: EditorViewProperties) {
-  const { workbookId } = properties;
+  const { workbookId, onNew } = properties;
 
   const [latestJson, setLatestJson] = useState<string | null>(null);
   const [sharedWorkbookId, setSharedWorkbookId] = useState<string | null>(null);
@@ -47,7 +51,14 @@ export default function EditorView(properties: EditorViewProperties) {
   return (
     <>
       <ToolbarTool>
-        <ShareButton disabled={latestJson === null} onClick={share} ref={shareButtonReference} />
+        <Stack direction="row" justifyContent="space-between">
+          <div>
+            <Button onClick={onNew} sx={{ marginLeft: 2 }}>
+              New
+            </Button>
+          </div>
+          <ShareButton disabled={latestJson === null} onClick={share} ref={shareButtonReference} />
+        </Stack>
         <Popover
           className={styles.popover}
           open={isShareOpen}
@@ -92,7 +103,7 @@ export default function EditorView(properties: EditorViewProperties) {
             <Divider />
             <Button
               disabled={sharedWorkbookId === null}
-              href={`/api/sheets-proxy/api/v1/workbooks/${sharedWorkbookId}/xlsx`}
+              href={`${publicRuntimeConfig.basePath}/api/sheets-proxy/api/v1/workbooks/${sharedWorkbookId}/xlsx`}
               type="button"
               variant="contained"
               color="secondary"
@@ -114,36 +125,30 @@ export default function EditorView(properties: EditorViewProperties) {
  * Workbook ID is not updated on serverless! Save requests are stopped.
  */
 function Workbook(properties: { workbookId: string; onChange?: (json: string) => void }) {
-  const { workbookId } = properties;
-  const initializedRef = useRef(false);
+  const workbookIdRef = useRef(properties.workbookId);
+  const onChangeRef = useRef(properties.onChange);
 
   useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
+    const workbookSlot = document.getElementById('workbook-slot');
+    if (workbookSlot) {
+      const { unmount } = EqualToSheets.load(workbookIdRef.current, workbookSlot, {
+        syncChanges: false,
+        onJSONChange: (_workbookId, workbookJson) => {
+          onChangeRef.current?.(workbookJson);
+        },
+      });
 
-      const workbookSlot = document.getElementById('workbook-slot');
-      if (workbookSlot) {
-        EqualToSheets.load(workbookId, workbookSlot, {
-          onLoad: (_workbookId, workbookJson) => {
-            properties.onChange?.(workbookJson);
-          },
-          saveWorkbookPreHook: (_workbookId, workbookJson) => {
-            properties.onChange?.(workbookJson);
-            return false;
-          },
-        });
-      }
+      return () => {
+        unmount();
+      };
     }
-  }, [workbookId, properties]);
+  }, []);
 
-  return (
-    <div
-      id="workbook-slot"
-      style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}
-    />
-  );
+  return <div id="workbook-slot" style={{ position: 'absolute', inset: 10 }} />;
 }
 
 function getWorkbookViewLink(workbookId: string) {
-  return `${window.location.origin}/view/${encodeURIComponent(workbookId)}`;
+  return `${window.location.origin}${publicRuntimeConfig.basePath}/view/${encodeURIComponent(
+    workbookId,
+  )}`;
 }

@@ -35,8 +35,6 @@ export async function createWorkbook(options?: { json: string }): Promise<{
     credentials: 'include',
   });
 
-  // TODO: Error handling / retries
-
   if (!response.ok) {
     throw new Error('Request failed. Code=' + response.status + ' Text=' + response.statusText);
   }
