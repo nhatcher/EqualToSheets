@@ -8,12 +8,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Copy, Download } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ShareButton } from './shareButton';
-import { ToolbarTool } from './toolbar';
-import styles from './editorView.module.css';
+import { AlertOctagon, Copy, Download } from 'lucide-react';
 import getConfig from 'next/config';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import styles from './editorView.module.css';
+import { ShareButton } from './shareButton';
+import { useToast } from './toastProvider';
+import { ToolbarTool } from './toolbar';
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -30,21 +31,33 @@ export default function EditorView(properties: EditorViewProperties) {
   const { workbookId, onNew } = properties;
 
   const [latestJson, setLatestJson] = useState<string | null>(null);
-  const [sharedWorkbookId, setSharedWorkbookId] = useState<string | null>(null);
+
   const [isShareOpen, setShareOpen] = useState(false);
+  const [shareError, setShareError] = useState(false);
+  const [sharedWorkbookId, setSharedWorkbookId] = useState<string | null>(null);
   const shareButtonReference = useRef<HTMLButtonElement | null>(null);
 
   const onChange = useCallback((json: string) => {
     setSharedWorkbookId(null);
+    setShareError(false);
     setLatestJson(json);
   }, []);
+
+  const { pushToast } = useToast();
 
   const share = () => {
     setShareOpen(true);
     if (latestJson !== null && sharedWorkbookId === null) {
-      postShareWorkbook({ workbookJson: latestJson }).then(({ id }) => {
-        setSharedWorkbookId(id);
-      });
+      setShareError(false);
+      postShareWorkbook({ workbookJson: latestJson }).then(
+        ({ id }) => {
+          setSharedWorkbookId(id);
+        },
+        () => {
+          pushToast({ type: 'error', message: 'Could not share the workbook.' });
+          setShareError(true);
+        },
+      );
     }
   };
 
@@ -77,15 +90,29 @@ export default function EditorView(properties: EditorViewProperties) {
           <Stack direction="column" spacing={1}>
             <Typography>Anyone with the link can access the spreadsheet.</Typography>
             <TextField
+              autoFocus
               name="share-link"
-              disabled
-              value={sharedWorkbookId ? getWorkbookViewLink(sharedWorkbookId) : ''}
+              value={
+                !shareError
+                  ? sharedWorkbookId
+                    ? getWorkbookViewLink(sharedWorkbookId)
+                    : ''
+                  : 'Could not share the workbook.'
+              }
+              error={shareError}
               InputProps={{
+                readOnly: true,
                 startAdornment:
                   sharedWorkbookId === null ? (
-                    <Stack direction="column" justifyContent="center">
-                      <CircularProgress size={18} />
-                    </Stack>
+                    !shareError ? (
+                      <Stack direction="column" justifyContent="center">
+                        <CircularProgress size={18} />
+                      </Stack>
+                    ) : (
+                      <Stack direction="column" justifyContent="center" sx={{ mr: 1 }}>
+                        <AlertOctagon size={18} color="red" />
+                      </Stack>
+                    )
                   ) : undefined,
                 endAdornment:
                   sharedWorkbookId !== null ? (

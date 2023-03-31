@@ -1,6 +1,6 @@
-import { Html, Head, Main, NextScript } from 'next/document';
-import Script from 'next/script';
 import getConfig from 'next/config';
+import { Head, Html, Main, NextScript } from 'next/document';
+import Script from 'next/script';
 
 const { publicRuntimeConfig } = getConfig();
 

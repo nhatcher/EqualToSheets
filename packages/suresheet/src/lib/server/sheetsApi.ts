@@ -39,6 +39,5 @@ export async function createWorkbook(options?: { json: string }): Promise<{
     throw new Error('Request failed. Code=' + response.status + ' Text=' + response.statusText);
   }
 
-  // TODO: Zod on response json?
   return (await response.json()) as { id: string };
 }

@@ -1,11 +1,10 @@
-import styles from './mainLayout.module.css';
-import Image from 'next/image';
-import { ArrowUpRight } from 'lucide-react';
 import { Stack } from '@mui/system';
-import { PropsWithChildren, useMemo, useState } from 'react';
-import { ToolbarContext, ToolbarContextValue } from './toolbar';
+import { ArrowUpRight } from 'lucide-react';
 import getConfig from 'next/config';
-import Link from 'next/link';
+import Image from 'next/image';
+import { PropsWithChildren, useMemo, useState } from 'react';
+import styles from './mainLayout.module.css';
+import { ToolbarContext, ToolbarContextValue } from './toolbar';
 
 const { publicRuntimeConfig } = getConfig();
 

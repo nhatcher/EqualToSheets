@@ -30,8 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   const postParameters = parsedBody.data;
 
-  let workbookName = 'Book'; // TODO: Accept names.
-
   let workbookId;
   if ('workbookJson' in postParameters) {
     const { id } = await createWorkbook({
@@ -42,9 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     workbookId = postParameters.workbookId;
   }
 
+  let workbookName = 'Book';
   await prisma.workbook.create({
     data: {
-      name: 'Book', // TODO: Accept names.
+      name: workbookName,
       workbookId,
     },
   });

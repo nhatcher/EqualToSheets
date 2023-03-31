@@ -56,7 +56,7 @@ export default function ViewWorkbookById(properties: {
   return (
     <>
       <Head>
-        <title>{`${workbook.name} - EqualTo SureSheet`}</title>
+        <title>{`EqualTo SureSheet`}</title>
       </Head>
       <EditorView workbookId={workbook.id} onNew={() => router.push('/')} />
     </>

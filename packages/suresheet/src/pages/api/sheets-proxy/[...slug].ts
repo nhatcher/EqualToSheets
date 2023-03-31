@@ -64,9 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const proxy = httpProxy.createProxy();
     proxy
       .once('proxyRes', resolve)
-      .once('error', (error) => {
-        reject(error);
-      })
+      .once('error', reject)
       .web(req, res, {
         changeOrigin: true,
         target: `${getSheetsApiHost()}`,

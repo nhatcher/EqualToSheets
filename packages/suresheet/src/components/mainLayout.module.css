@@ -19,7 +19,7 @@
 .infoBar a:hover,
 .infoBar a:active {
   color: #f1f2f8;
-  font-variation-settings: 'wght' 500;
+  font-weight: 500;
   text-underline-offset: 3px;
 }
 

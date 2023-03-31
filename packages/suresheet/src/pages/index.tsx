@@ -1,13 +1,14 @@
 import EditorView from '@/components/editorView';
+import { useToast } from '@/components/toastProvider';
 import { Button, Paper, Stack, Typography } from '@mui/material';
 import clsx from 'clsx';
 import { File, Upload } from 'lucide-react';
 import { GetServerSideProps } from 'next';
+import getConfig from 'next/config';
 import Head from 'next/head';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import styles from './index.module.css';
-import getConfig from 'next/config';
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -36,15 +37,36 @@ export default function Home(properties: {}) {
 
 function NewWorkbookChoice(properties: { setWorkbookId: (workbookId: string) => void }) {
   const { setWorkbookId } = properties;
+  const { pushToast } = useToast();
+
+  const onNew = () => {
+    createEmptyWorkbook().then(
+      ({ workbookId }) => setWorkbookId(workbookId),
+      () => {
+        pushToast({ type: 'error', message: 'Could not create a new workbook.' });
+      },
+    );
+  };
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
       throw new Error('There are no accepted files.');
     }
+
     const firstFile = acceptedFiles[0];
-    uploadXlsxWorkbook(firstFile).then(({ workbookId }) => {
-      setWorkbookId(workbookId);
-    });
+    uploadXlsxWorkbook(firstFile).then(
+      ({ workbookId }) => {
+        setWorkbookId(workbookId);
+      },
+      () => {
+        pushToast({
+          type: 'error',
+          message:
+            'Could not create workbook from XLSX file. ' +
+            'Please make sure it was exported from Microsoft Excel.',
+        });
+      },
+    );
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -53,10 +75,6 @@ function NewWorkbookChoice(properties: { setWorkbookId: (workbookId: string) => 
     },
     onDrop,
   });
-
-  const onNew = () => {
-    createEmptyWorkbook().then(({ workbookId }) => setWorkbookId(workbookId));
-  };
 
   return (
     <div className={styles.newWorkbookContainer}>

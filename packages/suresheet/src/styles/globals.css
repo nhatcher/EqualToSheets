@@ -8,7 +8,7 @@ body,
 }
 
 :root {
-  --font-body: 'InterVariable', 'Inter', 'Arial', sans-serif;
+  --font-body: 'Inter', 'Arial', sans-serif;
   --font-code: 'JetBrains Mono', 'Courier New', monospace;
 }
 
