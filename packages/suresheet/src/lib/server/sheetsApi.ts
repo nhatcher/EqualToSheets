@@ -1,15 +1,15 @@
 export function getSheetsApiHost(): string {
-  const serverlessHost = process.env.SERVERLESS_HOST;
-  if (!serverlessHost) {
-    throw new Error('Serverless host is not set.');
+  const sheetsHost = process.env.EQUALTO_SHEETS_HOST;
+  if (!sheetsHost) {
+    throw new Error('EqualTo Sheets host is not set.');
   }
-  return serverlessHost;
+  return sheetsHost;
 }
 
 export function getSheetsApiLicenseId(): string {
-  const licenseId = process.env.SERVERLESS_LICENSE_ID;
+  const licenseId = process.env.EQUALTO_SHEETS_LICENSE_KEY;
   if (!licenseId) {
-    throw new Error('Serverless license ID is not set.');
+    throw new Error('EqualTo Sheets license key is not set.');
   }
   return licenseId;
 }

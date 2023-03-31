@@ -170,7 +170,7 @@ const InnerWorkbookComponent = ({
 
   return (
     <Workbook.Root
-      className="equalto-serverless-workbook"
+      className="equalto-sheets-workbook"
       initialModelJson={initialModel?.json}
       onModelCreate={onModelCreate}
     >

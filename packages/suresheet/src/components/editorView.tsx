@@ -20,7 +20,7 @@ const { publicRuntimeConfig } = getConfig();
 
 export type EditorViewProperties = {
   /**
-   * Workbook ID of workbook to load from serverless. It's not mutated, and this ID shouldn't
+   * Workbook ID of workbook to load from EqualTo Sheets. It's not mutated, and this ID shouldn't
    * be changed without component reload (use key if needed to force remount).
    */
   workbookId: string;
@@ -149,7 +149,7 @@ export default function EditorView(properties: EditorViewProperties) {
 /**
  * Important note: Properties updates are ignored at the moment. Attach key to force remount.
  *
- * Workbook ID is not updated on serverless! Save requests are stopped.
+ * Workbook ID is not updated on EqualTo Sheets! Save requests are stopped.
  */
 function Workbook(properties: { workbookId: string; onChange?: (json: string) => void }) {
   const workbookIdRef = useRef(properties.workbookId);

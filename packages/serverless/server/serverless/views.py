@@ -332,7 +332,7 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
                 opacity: 0;
             }}
 
-            .equalto-serverless-workbook {{
+            .equalto-sheets-workbook {{
                 border: none;
                 filter: none;
             }}
