@@ -22,7 +22,7 @@ Some notes on how EqualTo SureSheet works:
 8. Open http://localhost:3000/ in your browser.
 
 
-# License
+## License
 
 EqualTo SureSheet is [MIT licensed](LICENSE.md). Note that to deploy EqualTo SureSheet, you'll need a (freely available)
 [EqualTo Sheets license key](https://sheets.equalto.com/).
