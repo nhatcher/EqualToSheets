@@ -7,6 +7,7 @@ import {
   Stack,
   TextField,
   Typography,
+  styled,
 } from '@mui/material';
 import { AlertOctagon, Copy, Download } from 'lucide-react';
 import getConfig from 'next/config';
@@ -66,9 +67,8 @@ export default function EditorView(properties: EditorViewProperties) {
       <ToolbarTool>
         <Stack direction="row" justifyContent="space-between">
           <div>
-            <Button onClick={onNew} sx={{ marginLeft: 2 }}>
-              New
-            </Button>
+            <div className={styles.toolbarDivider} />
+            <NewButton onClick={onNew}>New</NewButton>
           </div>
           <ShareButton disabled={latestJson === null} onClick={share} ref={shareButtonReference} />
         </Stack>
@@ -121,7 +121,7 @@ export default function EditorView(properties: EditorViewProperties) {
                         navigator.clipboard.writeText(getWorkbookViewLink(sharedWorkbookId));
                       }}
                     >
-                      <Copy />
+                      <Copy style={{ marginRight: '5px' }} />
                       Copy
                     </Button>
                   ) : undefined,
@@ -179,3 +179,12 @@ function getWorkbookViewLink(workbookId: string) {
     workbookId,
   )}`;
 }
+
+const NewButton = styled(Button)({
+  color: '#21243A',
+  padding: '5px',
+  minWidth: 0,
+  '&:hover': {
+    background: '#F4F4F4',
+  },
+});

@@ -6,6 +6,7 @@ import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import styles from './id.module.css';
+import MainLayout from '@/components/mainLayout';
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   const workbookId = (params?.['id'] ?? null) as string | null;
@@ -43,12 +44,14 @@ export default function ViewWorkbookById(properties: {
         <Head>
           <title>{`Not found - EqualTo SureSheet`}</title>
         </Head>
-        <div className={styles.notFoundContainer}>
-          <Stack direction="column" spacing={1} alignItems="center">
-            <Slash />
-            <Typography>{'Workbook not found.'}</Typography>
-          </Stack>
-        </div>
+        <MainLayout>
+          <div className={styles.notFoundContainer}>
+            <Stack direction="column" spacing={1} alignItems="center">
+              <Slash />
+              <Typography>{'Workbook not found.'}</Typography>
+            </Stack>
+          </div>
+        </MainLayout>
       </>
     );
   }
@@ -58,7 +61,9 @@ export default function ViewWorkbookById(properties: {
       <Head>
         <title>{`EqualTo SureSheet`}</title>
       </Head>
-      <EditorView workbookId={workbook.id} onNew={() => router.push('/')} />
+      <MainLayout canHideMenuBar>
+        <EditorView workbookId={workbook.id} onNew={() => router.push('/')} />
+      </MainLayout>
     </>
   );
 }

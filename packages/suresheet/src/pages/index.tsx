@@ -9,6 +9,7 @@ import Head from 'next/head';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import styles from './index.module.css';
+import MainLayout from '@/components/mainLayout';
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -26,11 +27,13 @@ export default function Home(properties: {}) {
       <Head>
         <title>EqualTo SureSheet</title>
       </Head>
-      {workbookId === null ? (
-        <NewWorkbookChoice setWorkbookId={setWorkbookId} />
-      ) : (
-        <EditorView workbookId={workbookId} onNew={() => setWorkbookId(null)} />
-      )}
+      <MainLayout>
+        {workbookId === null ? (
+          <NewWorkbookChoice setWorkbookId={setWorkbookId} />
+        ) : (
+          <EditorView workbookId={workbookId} onNew={() => setWorkbookId(null)} />
+        )}
+      </MainLayout>
     </>
   );
 }
@@ -80,7 +83,7 @@ function NewWorkbookChoice(properties: { setWorkbookId: (workbookId: string) => 
     <div className={styles.newWorkbookContainer}>
       <Paper className={styles.newWorkbookPaper}>
         <div className={styles.newWorkbookSection}>
-          <Button type="button" onClick={onNew} startIcon={<File />} fullWidth>
+          <Button type="button" onClick={onNew} startIcon={<File size={15} />} fullWidth>
             Start with a blank workbook
           </Button>
         </div>

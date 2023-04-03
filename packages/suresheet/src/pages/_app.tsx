@@ -1,4 +1,3 @@
-import MainLayout from '@/components/mainLayout';
 import { ToastProvider } from '@/components/toastProvider';
 import '@/styles/globals.css';
 import '@fontsource/fira-mono/400.css';
@@ -31,9 +30,7 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <ThemeProvider theme={theme}>
         <ToastProvider>
-          <MainLayout>
-            <Component {...pageProps} />
-          </MainLayout>
+          <Component {...pageProps} />
         </ToastProvider>
       </ThemeProvider>
     </>
