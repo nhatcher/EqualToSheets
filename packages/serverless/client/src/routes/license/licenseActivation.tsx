@@ -146,6 +146,9 @@ const getDownloadCurlSnippet = (licenseKey: LicenseKey, workbookId: string) =>
         <LicenseStatusText>
           Your license is <em>active</em>
         </LicenseStatusText>
+        <InputDescription>
+          Hosted on EqualTo infrastructure or your own servers.
+        </InputDescription>
       </Stack>
       <Stack gap={1} marginBottom="20px">
         <InputLabel>License key</InputLabel>
