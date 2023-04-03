@@ -143,7 +143,6 @@ const HorizontalDivider = styled.div`
 const ColorPickerDialog = styled.div`
   background: ${palette.background.default};
   width: ${colorPickerWidth}px;
-  padding: 15px;
   display: flex;
   flex-direction: column;
 

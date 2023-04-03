@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@equalto-software/spreadsheet": "file:..",
+    "@fontsource/fira-mono": "^4.5.10",
+    "@fontsource/inter": "^4.5.15",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",

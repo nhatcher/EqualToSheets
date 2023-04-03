@@ -78,7 +78,6 @@ const NavigationContainer = styled.div`
   height: 40px;
   line-height: 40px;
   padding-left: 28px;
-  background: ${palette.background.default};
   color: ${palette.text.primary};
   overflow: hidden;
 `;

@@ -226,4 +226,5 @@ export default WorkbookToolbar;
 
 const ToolbarRoot = styled(Toolbar.Root)`
   background: transparent;
+  padding: 0 10px;
 `;

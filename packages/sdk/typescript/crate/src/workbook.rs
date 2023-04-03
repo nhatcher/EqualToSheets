@@ -663,4 +663,31 @@ impl WasmWorkbook {
     pub fn to_json(&self) -> Result<String, JsError> {
         Ok(self.model.to_json_str())
     }
+
+    #[wasm_bindgen(js_name = "getSheetColorBySheetIndex")]
+    pub fn get_sheet_color_by_sheet_index(
+        &self,
+        sheet_index: u32,
+    ) -> Result<Option<String>, JsError> {
+        return Ok(self
+            .model
+            .workbook
+            .worksheet(sheet_index)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)?
+            .color
+            .to_owned());
+    }
+
+    #[wasm_bindgen(js_name = "setSheetColorBySheetIndex")]
+    pub fn set_sheet_color_by_sheet_index(
+        &mut self,
+        sheet_index: u32,
+        color: &str,
+    ) -> Result<(), JsError> {
+        self.model
+            .set_sheet_color(sheet_index, color)
+            .map_err(WorkbookError::from)
+            .map_err(JsError::from)
+    }
 }

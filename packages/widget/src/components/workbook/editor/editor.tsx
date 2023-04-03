@@ -1,15 +1,15 @@
-import styled, { css } from 'styled-components';
 import React, { Fragment, FunctionComponent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { palette } from 'src/theme';
-import useEditorKeyDown from './useEditorKeyDown';
-import { useWorkbookContext } from '../workbookContext';
-import { FocusType } from '../util';
+import { fonts, palette } from 'src/theme';
+import styled, { css } from 'styled-components';
 import {
   ColoredFormulaReference,
   getColoredReferences,
   getReferencesFromFormula,
 } from '../formulas';
+import { FocusType } from '../util';
+import { useWorkbookContext } from '../workbookContext';
+import useEditorKeyDown from './useEditorKeyDown';
 
 export enum EditorPageTestId {
   FormulaEditor = 'workbook-editor-formula-editor',
@@ -171,7 +171,7 @@ const EditorFontCSS = css`
   font-weight: normal;
   height: 22px;
   flex-grow: 1;
-  font-family: 'Fira Mono', 'Adjusted Courier New Fallback', serif;
+  font-family: ${fonts.regular};
   font-size: 16px;
   padding: 0px;
 `;

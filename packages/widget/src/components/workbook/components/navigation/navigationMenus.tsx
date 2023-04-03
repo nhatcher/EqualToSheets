@@ -39,7 +39,7 @@ const SheetListItemColor = styled.div<{ $color?: string }>`
   border-radius: 2px;
   margin-right: 10px;
   margin-bottom: 2px; // TODO [MVP]: Is there better way to align it vertically with the text
-  background-color: ${({ $color }): string => $color ?? '#fff'};
+  background-color: ${({ $color }): string => $color ?? 'transparent'};
 `;
 
 const SheetListItemName = styled.span``;

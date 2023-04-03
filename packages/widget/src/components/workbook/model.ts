@@ -139,9 +139,8 @@ export default class Model implements IModel {
     this.subscriptionsPaused = false;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSheetColor(sheet: number, color: string): void {
-    // TODO: this.wasm.set_sheet_color(sheet, color);
+    this.workbook.sheets.get(sheet).color = color;
     this.notifySubscribers({ type: 'setSheetColor' });
   }
 
@@ -161,12 +160,20 @@ export default class Model implements IModel {
   }
 
   getTabs(): TabsInput[] {
-    return this.workbook.sheets.all().map((sheet) => ({
-      index: sheet.index,
-      sheet_id: sheet.id,
-      name: sheet.name,
-      state: 'visible',
-    }));
+    return this.workbook.sheets.all().map((sheet) => {
+      const { color } = sheet;
+      return {
+        index: sheet.index,
+        sheet_id: sheet.id,
+        name: sheet.name,
+        color: color
+          ? {
+              RGB: color,
+            }
+          : undefined,
+        state: 'visible',
+      };
+    });
   }
 
   getRowHeight(sheet: number, row: number): number {

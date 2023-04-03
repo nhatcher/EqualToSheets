@@ -1,5 +1,5 @@
 import { ErrorKind, CalcError, wrapWebAssemblyError } from 'src/errors';
-import { parseCellReference } from '../utils';
+import { parseCellReference, validateAndNormalizeColor } from '../utils';
 import {
   WasmWorkbook,
   WasmNavigationDirection,
@@ -32,6 +32,18 @@ export interface ISheet {
    * exists
    */
   set name(name: string);
+
+  /**
+   * @returns Worksheet color in 3-channel hex format or `null` if not set.
+   */
+  get color(): string | null;
+
+  /**
+   * Sets worksheet color
+   * @param color - 3-channel color in hex format or `null` if not set
+   * @throws {@link CalcError} will throw if color is not valid.
+   */
+  set color(color: string | null);
 
   /**
    * Deletes worksheet.
@@ -198,6 +210,25 @@ export class Sheet implements ISheet {
       throw wrapWebAssemblyError(error);
     }
     this._workbookSheets._refreshSheetLookups();
+  }
+
+  get color(): string | null {
+    try {
+      return this._wasmWorkbook.getSheetColorBySheetIndex(this.index) ?? null;
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
+  }
+
+  set color(color: string | null) {
+    try {
+      this._wasmWorkbook.setSheetColorBySheetIndex(
+        this.index,
+        color !== null ? validateAndNormalizeColor(color) : '',
+      );
+    } catch (error) {
+      throw wrapWebAssemblyError(error);
+    }
   }
 
   delete(): void {

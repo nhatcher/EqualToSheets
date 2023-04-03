@@ -1,4 +1,5 @@
 import dayjs, { Dayjs } from 'dayjs';
+import { CalcError } from './errors';
 
 export function columnNumberFromName(columnName: string): number {
   let column = 0;
@@ -63,4 +64,16 @@ export function convertDayjsUTCToSpreadsheetDate(date: Dayjs): number {
   const dayFraction = date.diff(baseForDayFraction, 'second') / (24 * 60 * 60);
 
   return fullDays + dayFraction;
+}
+
+/**
+ * Ensures that passed color is 3-channel RGB color in hex, without shorthands.
+ * @returns uppercased color
+ */
+export function validateAndNormalizeColor(color: string) {
+  let uppercaseColor = color.toUpperCase();
+  if (!/^#[0-9A-F]{6}$/.test(uppercaseColor)) {
+    throw new CalcError(`Color "${color}" is not valid 3-channel hex color.`);
+  }
+  return uppercaseColor;
 }

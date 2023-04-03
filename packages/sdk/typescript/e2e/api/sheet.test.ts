@@ -657,4 +657,53 @@ describe('Worksheet', () => {
       });
     });
   });
+
+  describe('color', () => {
+    test('can read initial color', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get('Sheet1');
+      expect(sheet.color).toEqual(null);
+    });
+
+    test('can set color and read it later', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get('Sheet1');
+      sheet.color = '#ff00ff';
+      expect(workbook.sheets.get(0).color).toEqual('#FF00FF');
+    });
+
+    test('can set color and clear it later', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get('Sheet1');
+      sheet.color = '#ff00ff';
+      expect(workbook.sheets.get(0).color).toEqual('#FF00FF');
+      sheet.color = null;
+      expect(workbook.sheets.get(0).color).toEqual(null);
+    });
+
+    test('can set color and clear it later', async () => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get('Sheet1');
+      sheet.color = '#ff00ff';
+      expect(workbook.sheets.get(0).color).toEqual('#FF00FF');
+      sheet.color = null;
+      expect(workbook.sheets.get(0).color).toEqual(null);
+    });
+
+    test.each(['#ff00ff00', 'red'])('throws if color is invalid (case: %s)', async (color) => {
+      const { newWorkbook } = await initialize();
+      const workbook = newWorkbook();
+      const sheet = workbook.sheets.get('Sheet1');
+      const failCase = () => {
+        sheet.color = color;
+      };
+
+      expect(failCase).toThrow(`Color "${color}" is not valid 3-channel hex color.`);
+      expect(failCase).toThrow(CalcError);
+    });
+  });
 });

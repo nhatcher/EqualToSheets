@@ -218,7 +218,7 @@ const WorkbookContainer = styled.div`
   background-color: #fff;
   display: flex;
   flex-direction: column;
-  font-family: ${fonts.mono};
+  font-family: ${fonts.regular};
   color: #000;
   font-size: 16px;
   &:focus {

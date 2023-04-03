@@ -37,47 +37,54 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
   const sheetTabReference = useRef<HTMLButtonElement | null>(null);
 
   return (
-    <SheetTabContainer
-      data-testid={NavigationTabTestId.Container}
-      $selected={selected}
-      onClick={onSheetSelected}
-    >
-      <SpaceContainer />
-      <NameWrapper>
-        <NameButton ref={sheetTabReference}>
-          <ReserveSpaceForFontWeight maxFontWeight="600">{name}</ReserveSpaceForFontWeight>
-        </NameButton>
-        {!readOnly && (
-          <Menu.Root>
-            <Menu.Trigger title="Sheet options">
-              <ChevronDownIcon size={14} />
-            </Menu.Trigger>
-            <Menu.Content side="top">
-              {!hideRename && (
-                <Menu.Item
-                  onSelect={(): void => {
-                    setRenameDialogOpen(true);
-                  }}
-                >
-                  {'Rename'}
+    <>
+      <SheetTabContainer
+        data-testid={NavigationTabTestId.Container}
+        $selected={selected}
+        onClick={onSheetSelected}
+      >
+        <SpaceContainer />
+        <NameWrapper>
+          <NameButton ref={sheetTabReference}>
+            <ReserveSpaceForFontWeight maxFontWeight="600">{name}</ReserveSpaceForFontWeight>
+          </NameButton>
+          {!readOnly && (
+            <Menu.Root>
+              <Menu.Trigger title="Sheet options">
+                <ChevronDownIcon size={14} />
+              </Menu.Trigger>
+              <Menu.Content side="top">
+                {!hideRename && (
+                  <Menu.Item
+                    onSelect={(): void => {
+                      setRenameDialogOpen(true);
+                    }}
+                  >
+                    {'Rename'}
+                  </Menu.Item>
+                )}
+                <Menu.Item onSelect={() => setDisplayPicker(true)}>
+                  <span>{'Change color'}</span>
                 </Menu.Item>
-              )}
-              <Menu.Item onSelect={() => setDisplayPicker(true)}>
-                <span>{'Change color'}</span>
-              </Menu.Item>
-              {!hideDelete && (
-                <Menu.Item
-                  onSelect={(): void => {
-                    properties.onSheetDeleted();
-                  }}
-                >
-                  {'Delete'}
-                </Menu.Item>
-              )}
-            </Menu.Content>
-          </Menu.Root>
-        )}
-      </NameWrapper>
+                {!hideDelete && (
+                  <Menu.Item
+                    onSelect={(): void => {
+                      properties.onSheetDeleted();
+                    }}
+                  >
+                    {'Delete'}
+                  </Menu.Item>
+                )}
+              </Menu.Content>
+            </Menu.Root>
+          )}
+        </NameWrapper>
+        <ColorContainer
+          data-testid={NavigationTabTestId.TabColor}
+          $color={color}
+          $selected={selected}
+        />
+      </SheetTabContainer>
       <PromptDialog
         open={renameDialogOpen}
         onClose={() => {
@@ -92,11 +99,6 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
         label="New name"
         defaultValue={name}
       />
-      <ColorContainer
-        data-testid={NavigationTabTestId.TabColor}
-        $color={color}
-        $selected={selected}
-      />
       <ColorPicker
         color={sheetColor || ''}
         onChange={(new_color): void => {
@@ -106,7 +108,7 @@ const SheetTab: FunctionComponent<SheetTabProps> = (properties) => {
         }}
         open={displayPicker}
       />
-    </SheetTabContainer>
+    </>
   );
 };
 

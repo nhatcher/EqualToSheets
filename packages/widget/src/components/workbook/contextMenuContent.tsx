@@ -90,5 +90,5 @@ const StyledMenuDivider = styled(Menu.Divider)`
 
 const StyledMenuContent = styled(Menu.Content)`
   border-radius: 10px;
-  font-family: ${fonts.mono};
+  font-family: ${fonts.regular};
 `;

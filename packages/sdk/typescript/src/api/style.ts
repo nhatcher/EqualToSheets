@@ -1,6 +1,7 @@
-import { CalcError, wrapWebAssemblyError } from 'src/errors';
+import { wrapWebAssemblyError } from 'src/errors';
 import { WasmWorkbook } from 'src/__generated_pkg/equalto_wasm';
 import { Cell, ICell } from './cell';
+import { validateAndNormalizeColor } from 'src/utils';
 
 export interface ICellStyle {
   /**
@@ -484,16 +485,4 @@ export class AlignmentStyleManager implements IAlignmentStyle {
       alignment: { wrapText },
     });
   }
-}
-
-/**
- * Ensures that passed color is 3-channel RGB color in hex, without shorthands.
- * @returns uppercased color
- */
-function validateAndNormalizeColor(color: string) {
-  let uppercaseColor = color.toUpperCase();
-  if (!/#[0-9A-F]{6}/.test(uppercaseColor)) {
-    throw new CalcError(`Color "${color}" is not valid 3-channel hex color.`);
-  }
-  return uppercaseColor;
 }
