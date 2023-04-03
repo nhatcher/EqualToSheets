@@ -89,11 +89,6 @@ export const Root: FunctionComponent<{
     }
   }, []);
 
-  const onChange = useCallback(() => {
-    requestRender();
-    rootRef.current?.focus();
-  }, []);
-
   useEffect(() => {
     if (!calcModule) {
       return;
@@ -103,10 +98,10 @@ export const Root: FunctionComponent<{
       if (initialModelJson) {
         newModel.replaceWithJson(initialModelJson);
       }
-      newModel.subscribe(onChange);
+      newModel.subscribe(requestRender);
       setModel(newModel);
     }
-  }, [model, calcModule, onChange, setModel, initialModelJson]);
+  }, [model, calcModule, requestRender, setModel, initialModelJson]);
 
   const [editorState, dispatch] = useWorkbookReducer(model);
 

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>My HTML file</title>
+</head>
+
+<body>
+  <h1>Welcome to my Markup sheet example!</h1>
+  <div id="workbook-slot" style="height: 100%; min-height: 300px"></div>
+
+  <script src="./dist/umd/index.js"></script>
+  <script>
+    EqualToSheets.loadMarkup(
+      `
+      **Item** | **Cost (per month)**
+      Rent | $1500
+      Utilities | $200
+      Groceries | $360
+      Transportation | $450
+      Entertainment | $120
+      **Total** | **=SUM(B2:B6)**
+      `,
+      document.getElementById('workbook-slot')
+    );
+  </script>
+</body>
+
+</html>
