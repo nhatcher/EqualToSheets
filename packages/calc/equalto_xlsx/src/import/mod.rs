@@ -63,11 +63,17 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
 ) -> Result<Workbook, XlsxError> {
     let mut archive = zip::ZipArchive::new(reader)?;
 
-    let shared_strings = read_shared_strings(&mut archive)?;
+    let mut shared_strings = read_shared_strings(&mut archive)?;
     let workbook = load_workbook(&mut archive)?;
     let rels = load_relationships(&mut archive)?;
     let mut tables = HashMap::new();
-    let worksheets = load_sheets(&mut archive, &rels, &workbook, &mut tables)?;
+    let worksheets = load_sheets(
+        &mut archive,
+        &rels,
+        &workbook,
+        &mut tables,
+        &mut shared_strings,
+    )?;
     let styles = load_styles(&mut archive)?;
     let metadata = load_metadata(&mut archive)?;
     Ok(Workbook {

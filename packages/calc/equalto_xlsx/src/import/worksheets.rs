@@ -252,6 +252,8 @@ fn get_formula_index(formula: &str, shared_formulas: &[String]) -> Option<i32> {
     None
 }
 
+// FIXME
+#[allow(clippy::too_many_arguments)]
 fn get_cell_from_excel(
     cell_value: Option<&str>,
     value_metadata: Option<&str>,
@@ -260,6 +262,7 @@ fn get_cell_from_excel(
     formula_index: i32,
     sheet_name: &str,
     cell_ref: &str,
+    shared_strings: &mut Vec<String>,
 ) -> Cell {
     // Possible cell types:
     // 18.18.11 ST_CellType (Cell Type)
@@ -302,13 +305,15 @@ fn get_cell_from_excel(
                 s: cell_style,
             },
             "str" => {
-                // We are assuming that all strings in cells without a formula in Excel are shared strings.
-                // Not implemented
-                println!("Invalid type (str) in {}!{}", sheet_name, cell_ref);
-                Cell::ErrorCell {
-                    ei: Error::NIMPL,
-                    s: cell_style,
-                }
+                let s = cell_value.unwrap_or("");
+                let si = if let Some(i) = shared_strings.iter().position(|r| r == s) {
+                    i
+                } else {
+                    shared_strings.push(s.to_string());
+                    shared_strings.len() - 1
+                } as i32;
+
+                Cell::SharedString { si, s: cell_style }
             }
             "d" => {
                 // Not implemented
@@ -502,6 +507,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
     settings: SheetSettings,
     worksheets: &[String],
     tables: &HashMap<String, Table>,
+    shared_strings: &mut Vec<String>,
 ) -> Result<Worksheet, XlsxError> {
     let sheet_name = &settings.name;
     let sheet_id = settings.id;
@@ -803,6 +809,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
                 formula_index,
                 sheet_name,
                 cell_ref,
+                shared_strings,
             );
             data_row.insert(column, cell);
         }
@@ -847,6 +854,7 @@ pub(super) fn load_sheets<R: Read + std::io::Seek>(
     rels: &HashMap<String, Relationship>,
     workbook: &WorkbookXML,
     tables: &mut HashMap<String, Table>,
+    shared_strings: &mut Vec<String>,
 ) -> Result<Vec<Worksheet>, XlsxError> {
     // load comments and tables
     let mut comments = HashMap::new();
@@ -887,7 +895,14 @@ pub(super) fn load_sheets<R: Read + std::io::Seek>(
                 state: state.clone(),
                 comments: comments.get(rel_id).expect("").to_vec(),
             };
-            sheets.push(load_sheet(archive, &path, settings, worksheets, tables)?);
+            sheets.push(load_sheet(
+                archive,
+                &path,
+                settings,
+                worksheets,
+                tables,
+                shared_strings,
+            )?);
         }
     }
     Ok(sheets)
