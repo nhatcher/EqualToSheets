@@ -692,4 +692,21 @@ describe('Workbook - Cell operations', () => {
       expect(cell.style.hasQuotePrefix).toBe(false);
     });
   });
+
+  test('can delete cells', async () => {
+    const { newWorkbook } = await initialize();
+    let workbook = newWorkbook();
+
+    let cell = workbook.cell('Sheet1!A1');
+    cell.value = 3.0;
+    cell.style.font.bold = true;
+    workbook.cell('Sheet1!A2').formula = '=A1*3';
+    workbook.cell('Sheet1!A3').formula = '=ISTEXT(A1)';
+    expect(workbook.cell('Sheet1!A2').numberValue).toEqual(9.0);
+    expect(workbook.cell('Sheet1!A3').booleanValue).toEqual(false);
+    cell.value = null;
+    expect(workbook.cell('Sheet1!A2').numberValue).toEqual(0.0);
+    expect(workbook.cell('Sheet1!A3').booleanValue).toEqual(false);
+    expect(cell.style.font.bold).toEqual(true);
+  });
 });

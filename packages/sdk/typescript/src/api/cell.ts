@@ -125,13 +125,10 @@ export class Cell implements ICell {
 
   set value(value: string | number | boolean | Date | null) {
     try {
-      if (value === null || typeof value === 'string') {
-        this._wasmWorkbook.updateCellWithText(
-          this._sheet.index,
-          this._row,
-          this._column,
-          value ?? '',
-        );
+      if (value === null) {
+        this._wasmWorkbook.setCellEmpty(this._sheet.index, this._row, this._column);
+      } else if (typeof value === 'string') {
+        this._wasmWorkbook.updateCellWithText(this._sheet.index, this._row, this._column, value);
       } else if (typeof value === 'number') {
         this._wasmWorkbook.updateCellWithNumber(this._sheet.index, this._row, this._column, value);
       } else if (typeof value === 'boolean') {

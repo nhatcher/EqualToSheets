@@ -372,9 +372,17 @@ export default class Model implements IModel {
   setCellValue(sheet: number, row: number, column: number, value: string): void {
     const cell = this.workbook.cell(sheet, row, column);
     const oldValue = Model.getInputValue(cell);
-
-    cell.input = value;
-    this.history.push([new SetCellValueAction(this, { sheet, row, column }, value, oldValue)]);
+    if (value === '') {
+      // FIXME: This might be a bit of a HACK.
+      // When deleting a cell we probably should call deleteCell and not setCellValue(null)
+      // Although I don't think it is currently possible to set the value of a cell to be the empty string
+      // To do that you would need to escape it with '
+      cell.value = null;
+      this.history.push([new SetCellValueAction(this, { sheet, row, column }, null, oldValue)]);
+    } else {
+      cell.input = value;
+      this.history.push([new SetCellValueAction(this, { sheet, row, column }, value, oldValue)]);
+    }
     this.notifySubscribers({ type: 'setCellValue' });
   }
 
