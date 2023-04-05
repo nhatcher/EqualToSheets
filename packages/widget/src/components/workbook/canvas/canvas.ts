@@ -365,7 +365,7 @@ export default class WorksheetCanvas {
     if (style.fill.foregroundColor) {
       backgroundColor = style.fill.foregroundColor; // FIXME: ?!
     }
-    const fontSize = 13;
+    const fontSize = 14;
     let font = `${fontSize}px ${defaultCellFontFamily}`;
     let textColor = defaultTextColor;
     if (style.font) {

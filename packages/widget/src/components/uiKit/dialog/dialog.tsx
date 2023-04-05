@@ -6,7 +6,7 @@ import { XIcon } from 'lucide-react';
 import styled from 'styled-components';
 import * as CSS from 'csstype';
 import StylelessButton from 'src/components/uiKit/button/styleless';
-import { palette } from 'src/theme';
+import { fonts, palette } from 'src/theme';
 
 export const DialogHeader = styled.div`
   display: flex;
@@ -24,6 +24,7 @@ const DialogContentContainer = styled(RadixDialog.Content)<{
   $height?: CSS.Property.Height;
   $maxHeight?: CSS.Property.MaxHeight;
 }>`
+  font-family: ${fonts.regular};
   position: fixed;
   top: 50%;
   left: 50%;

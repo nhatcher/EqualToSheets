@@ -172,7 +172,7 @@ const EditorFontCSS = css`
   height: 22px;
   flex-grow: 1;
   font-family: ${fonts.regular};
-  font-size: 16px;
+  font-size: 14px;
   padding: 0px;
 `;
 const CellEditorContainer = styled.div<{ $display: boolean }>`

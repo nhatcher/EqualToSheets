@@ -1,7 +1,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import React, { FunctionComponent, ReactNode } from 'react';
 import styled from 'styled-components';
-import { palette } from 'src/theme';
+import { fonts, palette } from 'src/theme';
 
 export type MenuProps = {
   id?: string;
@@ -59,6 +59,7 @@ const StyledContent = styled(DropdownMenu.Content)`
   box-shadow: 0px 4px 10px rgba(34, 42, 100, 0.1);
   border-radius: 10px;
   padding: 10px;
+  font-family: ${fonts.regular};
 `;
 
 export const Divider = styled(DropdownMenu.Separator)`

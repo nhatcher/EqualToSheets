@@ -1,6 +1,10 @@
 export const fonts = {
-  regular: 'Inter, "Adjusted Arial Fallback", sans-serif',
-  mono: '"Fira Mono", "Adjusted Courier New Fallback", serif',
+  regular: ['Inter', 'system-ui', 'Roboto', 'Ubuntu', 'Helvetica Neue', 'Arial', 'sans-serif']
+    .map((font) => `"${font}"`)
+    .join(', '),
+  mono: ['Fira Mono', 'JetBrains Mono', 'Courier New', 'monospace']
+    .map((font) => `"${font}"`)
+    .join(', '),
 };
 
 export const palette = {

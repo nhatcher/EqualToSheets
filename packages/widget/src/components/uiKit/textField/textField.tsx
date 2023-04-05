@@ -2,7 +2,7 @@ import React from 'react';
 import * as RadixLabel from '@radix-ui/react-label';
 import { BodyText } from 'src/components/uiKit/typography';
 import styled from 'styled-components';
-import { palette } from 'src/theme';
+import { fonts, palette } from 'src/theme';
 
 const TextField: React.FC<{
   name: string;
@@ -46,6 +46,7 @@ const Label = styled(RadixLabel.Root)`
 `;
 
 const Input = styled.input`
+  font-family: ${fonts.regular};
   font-size: 14px;
   box-sizing: border-box;
   &:hover,
