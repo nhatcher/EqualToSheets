@@ -45,7 +45,7 @@ pub fn get_milliseconds_since_epoch() -> i64 {
 }
 
 #[cfg(not(test))]
-#[cfg(not(feature = "wasm-build"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn get_milliseconds_since_epoch() -> i64 {
     use std::time::{SystemTime, UNIX_EPOCH};
     SystemTime::now()
@@ -55,7 +55,7 @@ pub fn get_milliseconds_since_epoch() -> i64 {
 }
 
 #[cfg(not(test))]
-#[cfg(feature = "wasm-build")]
+#[cfg(target_arch = "wasm32")]
 pub fn get_milliseconds_since_epoch() -> i64 {
     use js_sys::Date;
     Date::now() as i64

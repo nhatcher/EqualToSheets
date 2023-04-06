@@ -7,6 +7,17 @@ use crate::{
 };
 use std::f64::consts::PI;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub fn random() -> f64 {
+    rand::random()
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn random() -> f64 {
+    use js_sys::Math;
+    Math::random()
+}
+
 impl Model {
     pub(crate) fn fn_min(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         let mut result = f64::NAN;
@@ -626,5 +637,35 @@ impl Model {
             };
         }
         CalcResult::Number(result)
+    }
+
+    pub(crate) fn fn_rand(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if !args.is_empty() {
+            return CalcResult::new_args_number_error(cell);
+        }
+        CalcResult::Number(random())
+    }
+
+    // TODO: Add tests for RANDBETWEEN
+    pub(crate) fn fn_randbetween(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        if args.len() != 2 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let x = match self.get_number(&args[0], cell) {
+            Ok(f) => f.floor(),
+            Err(s) => return s,
+        };
+        let y = match self.get_number(&args[1], cell) {
+            Ok(f) => f.ceil() + 1.0,
+            Err(s) => return s,
+        };
+        if x > y {
+            return CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message: format!("{x}>{y}"),
+            };
+        }
+        CalcResult::Number((x + random() * (y - x)).floor())
     }
 }
