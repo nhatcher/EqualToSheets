@@ -258,7 +258,7 @@ impl Model {
                 CalcResult::Number(result)
             }
             NumberKind(value) => CalcResult::Number(*value),
-            StringKind(value) => CalcResult::String(value.clone()),
+            StringKind(value) => CalcResult::String(value.replace(r#""""#, r#"""#)),
             BooleanKind(value) => CalcResult::Boolean(*value),
             ReferenceKind {
                 sheet_name: _,

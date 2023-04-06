@@ -45,6 +45,7 @@ mod engineering;
 mod test_fn_offset;
 mod test_number_format;
 
+mod test_escape_quotes;
 mod test_fn_type;
 mod test_percentage;
 mod test_today;
