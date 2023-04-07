@@ -103,6 +103,10 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
           key === 'ArrowDown'
         ) {
           editorActions.onExpandAreaSelectedKeyboard(key);
+
+          // Shift + Arrows can be used to select content on a page - prevent this.
+          event.preventDefault();
+          event.stopPropagation();
         } else if (key === 'Tab') {
           editorActions.onArrowLeft();
           event.stopPropagation();
