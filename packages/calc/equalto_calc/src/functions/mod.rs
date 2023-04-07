@@ -142,6 +142,7 @@ pub enum Function {
     Date,
     Day,
     Edate,
+    Eomonth,
     Month,
     Now,
     Today,
@@ -404,6 +405,7 @@ impl Function {
             // Date and Time
             "YEAR" => Some(Function::Year),
             "DAY" => Some(Function::Day),
+            "EOMONTH" => Some(Function::Eomonth),
             "MONTH" => Some(Function::Month),
             "DATE" => Some(Function::Date),
             "EDATE" => Some(Function::Edate),
@@ -608,6 +610,7 @@ impl fmt::Display for Function {
             Function::Year => write!(f, "YEAR"),
             Function::Day => write!(f, "DAY"),
             Function::Month => write!(f, "MONTH"),
+            Function::Eomonth => write!(f, "EOMONTH"),
             Function::Date => write!(f, "DATE"),
             Function::Edate => write!(f, "EDATE"),
             Function::Today => write!(f, "TODAY"),
@@ -825,6 +828,7 @@ impl Model {
             // Date and Time
             Function::Year => self.fn_year(args, cell),
             Function::Day => self.fn_day(args, cell),
+            Function::Eomonth => self.fn_eomonth(args, cell),
             Function::Month => self.fn_month(args, cell),
             Function::Date => self.fn_date(args, cell),
             Function::Edate => self.fn_edate(args, cell),

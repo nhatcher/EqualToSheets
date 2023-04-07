@@ -64,6 +64,60 @@ impl Model {
         CalcResult::Number(month)
     }
 
+    pub(crate) fn fn_eomonth(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
+        let args_count = args.len();
+        if args_count != 2 {
+            return CalcResult::new_args_number_error(cell);
+        }
+        let serial_number = match self.get_number(&args[0], cell) {
+            Ok(c) => {
+                let t = c.floor() as i64;
+                if t < 0 {
+                    return CalcResult::Error {
+                        error: Error::NUM,
+                        origin: cell,
+                        message: "Function EOMONTH parameter 1 value is negative. It should be positive or zero.".to_string(),
+                    };
+                }
+                t
+            }
+            Err(s) => return s,
+        };
+
+        let months = match self.get_number_no_bools(&args[1], cell) {
+            Ok(c) => {
+                let t = c.trunc();
+                t as i32
+            }
+            Err(s) => return s,
+        };
+
+        let months_abs = months.unsigned_abs();
+
+        let native_date = if months > 0 {
+            from_excel_date(serial_number) + Months::new(months_abs)
+        } else {
+            from_excel_date(serial_number) - Months::new(months_abs)
+        };
+
+        // Instead of calculating the end of month we compute the first day of the following month
+        // and take one day.
+        let mut month = native_date.month() + 1;
+        let mut year = native_date.year();
+        if month == 13 {
+            month = 1;
+            year += 1;
+        }
+        match date_to_serial_number(1, month, year) {
+            Ok(serial_number) => CalcResult::Number(serial_number as f64 - 1.0),
+            Err(message) => CalcResult::Error {
+                error: Error::NUM,
+                origin: cell,
+                message,
+            },
+        }
+    }
+
     // year, month, day
     pub(crate) fn fn_date(&mut self, args: &[Node], cell: CellReference) -> CalcResult {
         let args_count = args.len();
