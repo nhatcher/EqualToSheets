@@ -1176,14 +1176,43 @@ export default class WorksheetCanvas {
     context.setLineDash([2, 2]);
     for (let rangeIndex = 0; rangeIndex < uniqueActiveRangesCount; rangeIndex += 1) {
       const range = uniqueActiveRanges[rangeIndex];
-      const [xStart, yStart] = this.getCoordinatesByCell(range.rowStart, range.columnStart);
-      const [xEnd, yEnd] = this.getCoordinatesByCell(range.rowEnd + 1, range.columnEnd + 1);
-      context.strokeStyle = range.color;
-      context.lineWidth = 1;
-      context.strokeRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
-      context.fillStyle = transparentize(0.9, range.color);
-      context.fillRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
+
+      const allowedOffset = 1; // to make borders look nicer
+      const minRow = topLeftCell.row - allowedOffset;
+      const maxRow = bottomRightCell.row + allowedOffset;
+      const minColumn = topLeftCell.column - allowedOffset;
+      const maxColumn = bottomRightCell.column + allowedOffset;
+
+      if (
+        minRow <= range.rowEnd &&
+        range.rowStart <= maxRow &&
+        minColumn <= range.columnEnd &&
+        range.columnStart < maxColumn
+      ) {
+        // Range in the viewport.
+        const displayRange: typeof range = {
+          ...range,
+          rowStart: Math.max(minRow, range.rowStart),
+          rowEnd: Math.min(maxRow, range.rowEnd),
+          columnStart: Math.max(minColumn, range.columnStart),
+          columnEnd: Math.min(maxColumn, range.columnEnd),
+        };
+        const [xStart, yStart] = this.getCoordinatesByCell(
+          displayRange.rowStart,
+          displayRange.columnStart,
+        );
+        const [xEnd, yEnd] = this.getCoordinatesByCell(
+          displayRange.rowEnd + 1,
+          displayRange.columnEnd + 1,
+        );
+        context.strokeStyle = range.color;
+        context.lineWidth = 1;
+        context.strokeRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
+        context.fillStyle = transparentize(0.9, range.color);
+        context.fillRect(xStart, yStart, xEnd - xStart, yEnd - yStart);
+      }
     }
+
     context.setLineDash([]);
     if (this.cellEditing && this.cellEditing.sheet !== this.selectedSheet) {
       const { cellOutline, areaOutline, cellOutlineHandle, extendToOutline } = this;
