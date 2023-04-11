@@ -494,6 +494,68 @@ fn load_sheet_rels<R: Read + std::io::Seek>(
     Ok(comments)
 }
 
+fn get_frozen_rows_and_columns(ws: Node) -> (i32, i32) {
+    // <sheetViews>
+    //   <sheetView workbookViewId="0">
+    //     <selection activeCell="E10" sqref="E10"/>
+    //   </sheetView>
+    // </sheetViews>
+    // <sheetFormatPr defaultRowHeight="14.5" x14ac:dyDescent="0.35"/>
+
+    // If we have frozen rows and columns:
+
+    // <sheetView tabSelected="1" workbookViewId="0">
+    //   <pane xSplit="3" ySplit="2" topLeftCell="D3" activePane="bottomRight" state="frozen"/>
+    //   <selection pane="topRight" activeCell="D1" sqref="D1"/>
+    //   <selection pane="bottomLeft" activeCell="A3" sqref="A3"/>
+    //   <selection pane="bottomRight" activeCell="K16" sqref="K16"/>
+    // </sheetView>
+
+    // 18.18.52 ST_Pane (Pane Types)
+    // bottomLeft, bottomRight, topLeft, topRight
+
+    // NB: bottomLeft is used when only rows are frozen, etc
+    // Calc ignores all those.
+
+    let mut frozen_rows = 0;
+    let mut frozen_columns = 0;
+
+    // In Calc there can only be one sheetView
+    let sheet_views = ws
+        .children()
+        .filter(|n| n.has_tag_name("sheetViews"))
+        .collect::<Vec<Node>>();
+
+    if sheet_views.len() != 1 {
+        return (0, 0);
+    }
+
+    let sheet_view = sheet_views[0]
+        .children()
+        .filter(|n| n.has_tag_name("sheetView"))
+        .collect::<Vec<Node>>();
+
+    if sheet_view.len() != 1 {
+        return (0, 0);
+    }
+
+    let pane = sheet_view[0]
+        .children()
+        .filter(|n| n.has_tag_name("pane"))
+        .collect::<Vec<Node>>();
+
+    // 18.18.53 ST_PaneState (Pane State)
+    // frozen, frozenSplit, split
+    if pane.len() == 1 && pane[0].attribute("state").unwrap_or("split") == "frozen" {
+        // TODO: Should we assert that topLeft is consistent?
+        // let top_left_cell = pane[0].attribute("topLeftCell").unwrap_or("A1").to_string();
+
+        frozen_columns = get_number(pane[0], "xSplit");
+        frozen_rows = get_number(pane[0], "ySplit");
+    }
+    (frozen_rows, frozen_columns)
+}
+
 pub(super) struct SheetSettings {
     pub id: u32,
     pub name: String,
@@ -525,53 +587,7 @@ pub(super) fn load_sheet<R: Read + std::io::Seek>(
 
     let dimension = load_dimension(ws);
 
-    // <sheetViews>
-    //   <sheetView workbookViewId="0">
-    //     <selection activeCell="E10" sqref="E10"/>
-    //   </sheetView>
-    // </sheetViews>
-    // <sheetFormatPr defaultRowHeight="14.5" x14ac:dyDescent="0.35"/>
-
-    // If we have frozen rows and columns:
-
-    // <sheetView tabSelected="1" workbookViewId="0">
-    //   <pane xSplit="3" ySplit="2" topLeftCell="D3" activePane="bottomRight" state="frozen"/>
-    //   <selection pane="topRight" activeCell="D1" sqref="D1"/>
-    //   <selection pane="bottomLeft" activeCell="A3" sqref="A3"/>
-    //   <selection pane="bottomRight" activeCell="K16" sqref="K16"/>
-    // </sheetView>
-
-    // 18.18.52 ST_Pane (Pane Types)
-    // bottomLeft, bottomRight, topLeft, topRight
-
-    // NB: bottomLeft is used when only rows are frozen, etc
-    // Calc ignores all those.
-
-    let mut frozen_rows = 0;
-    let mut frozen_columns = 0;
-
-    // In Calc there can only be one sheetView
-    let sheet_view = ws
-        .children()
-        .filter(|n| n.has_tag_name("sheetViews"))
-        .collect::<Vec<Node>>()[0]
-        .children()
-        .filter(|n| n.has_tag_name("sheetView"))
-        .collect::<Vec<Node>>()[0];
-    let pane = sheet_view
-        .children()
-        .filter(|n| n.has_tag_name("pane"))
-        .collect::<Vec<Node>>();
-
-    // 18.18.53 ST_PaneState (Pane State)
-    // frozen, frozenSplit, split
-    if pane.len() == 1 && pane[0].attribute("state").unwrap_or("split") == "frozen" {
-        // TODO: Should we assert that topLeft is consistent?
-        // let top_left_cell = pane[0].attribute("topLeftCell").unwrap_or("A1").to_string();
-
-        frozen_columns = get_number(pane[0], "xSplit");
-        frozen_rows = get_number(pane[0], "ySplit");
-    }
+    let (frozen_rows, frozen_columns) = get_frozen_rows_and_columns(ws);
 
     let cols = load_columns(ws)?;
     let color = load_sheet_color(ws)?;
