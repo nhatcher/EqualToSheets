@@ -34,6 +34,7 @@ export const getInitialWorkbookState = (
   modelRef,
   selectedSheet: 0,
   sheetStates: {},
+  cellEditingLastId: 0,
   cellEditing: null,
   scrollPosition: { ...defaultSheetState.scrollPosition },
   selectedCell: { ...defaultSheetState.selectedCell },
@@ -100,12 +101,15 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
     }
 
     case WorkbookActionType.EDIT_KEY_PRESS_START: {
-      const { selectedSheet, selectedCell } = state;
+      const { selectedSheet, selectedCell, cellEditingLastId } = state;
       const { initText } = action.payload;
 
+      const cellEditingId = cellEditingLastId + 1;
       return {
         ...state,
+        cellEditingLastId: cellEditingId,
         cellEditing: {
+          id: cellEditingId,
           sheet: selectedSheet,
           row: selectedCell.row,
           column: selectedCell.column,
@@ -118,7 +122,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
     }
 
     case WorkbookActionType.EDIT_CELL_EDITOR_START: {
-      const { selectedSheet, selectedCell, cellEditing } = state;
+      const { selectedSheet, selectedCell, cellEditingLastId, cellEditing } = state;
       const model = state.modelRef.current;
       if (cellEditing) {
         // Ignore if already editing
@@ -129,9 +133,13 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (!action.payload.ignoreQuotePrefix && model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
+
+      const cellEditingId = cellEditingLastId + 1;
       return {
         ...state,
+        cellEditingLastId: cellEditingId,
         cellEditing: {
+          id: cellEditingId,
           text,
           base: text,
           focus: FocusType.Cell,
@@ -144,7 +152,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
     }
 
     case WorkbookActionType.EDIT_FORMULA_BAR_EDITOR_START: {
-      const { cellEditing } = state;
+      const { cellEditing, cellEditingLastId } = state;
       const model = state.modelRef.current;
       if (cellEditing) {
         return state;
@@ -157,9 +165,13 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
+
+      const cellEditingId = cellEditingLastId + 1;
       return {
         ...state,
+        cellEditingLastId: cellEditingId,
         cellEditing: {
+          id: cellEditingId,
           text,
           base: text,
           focus: FocusType.FormulaBar,
@@ -233,6 +245,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, row: newRow },
         selectedArea: {
           columnStart: column,
@@ -264,6 +277,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, column: newColumn },
         selectedArea: {
           rowStart: row,
@@ -304,6 +318,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, column: newColumn },
         selectedArea: {
           rowStart: row,
@@ -357,6 +372,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, row: newRow },
         selectedArea: {
           rowStart: newRow,
@@ -378,6 +394,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       const { row } = state.selectedCell;
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, column: canvas.lastColumn },
         selectedArea: {
           ...state.selectedArea,
@@ -400,6 +417,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       const { row } = state.selectedCell;
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, column: 1 },
         selectedArea: { columnStart: 1, columnEnd: 1, rowStart: row, rowEnd: row },
         scrollPosition: { ...state.scrollPosition, left: 0 },
@@ -435,6 +453,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, row: newRow },
         selectedArea: {
           rowStart: newRow,
@@ -467,6 +486,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
 
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedCell: { ...state.selectedCell, row: newRow },
         selectedArea: {
           ...state.selectedArea,
@@ -550,6 +570,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         }
         return {
           ...state,
+          cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
           selectedArea: { ...area },
           scrollPosition: { left, top },
         };
@@ -842,6 +863,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       if (!area) {
         return {
           ...state,
+          cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
           extendToArea: null,
         };
       }
@@ -869,6 +891,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       ) {
         return {
           ...state,
+          cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
           scrollPosition: { left, top },
           extendToArea: { ...area },
         };
@@ -883,6 +906,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       }
       return {
         ...state,
+        cellEditing: null, // see #339; due to focus issues cell editing might not end correctly
         selectedArea: mergedAreas(extendToArea, selectedArea),
         extendToArea: null,
       };

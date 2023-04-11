@@ -294,6 +294,15 @@ export enum FocusType {
  */
 export type CellEditMode = 'init' | 'edit';
 export interface CellEditingType {
+  /**
+   * ID of cell editing. Useful when one edit transforms into another and some code needs to run
+   * when target changes.
+   *
+   * Due to problems with focus management (see #339) it's possible to start a new cell editing
+   * without properly cleaning up previous one (lose focus in workbook, regain focus NOT in
+   * the input and then use the keyboard.
+   */
+  id: number;
   sheet: number;
   row: number;
   column: number;

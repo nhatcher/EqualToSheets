@@ -23,6 +23,8 @@ export type WorkbookState = {
   /** NB the selected cell must be within the area selected */
   selectedArea: Area;
   extendToArea: AreaWithBorder | null;
+  /** {@link CellEditingType} contains an ID. See comment there for more details. */
+  cellEditingLastId: number;
   cellEditing: CellEditingType | null;
   reducer: WorkbookReducer;
 };

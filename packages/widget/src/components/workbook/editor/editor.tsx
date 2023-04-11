@@ -19,15 +19,8 @@ const Editor: FunctionComponent<{
   onReferencesChanged: (references: ColoredFormulaReference[]) => void;
 }> = (properties) => {
   const { onReferencesChanged } = properties;
-  const {
-    model,
-    editorActions,
-    editorState,
-    formulaBarEditor,
-    cellInput,
-    formulaBarInput,
-    requestRenderId,
-  } = useWorkbookContext();
+  const { model, editorActions, editorState, formulaBarEditor, cellInput, formulaBarInput } =
+    useWorkbookContext();
   const { selectedSheet, selectedCell, cellEditing } = editorState;
   const { onEditEscape } = editorActions;
 
@@ -35,12 +28,15 @@ const Editor: FunctionComponent<{
   const cellInputMask = useRef<HTMLDivElement>(null);
   const formulaBarMask = useRef<HTMLDivElement>(null);
 
-  const formulaReferences = getReferencesFromFormula(
-    text,
-    cellEditing?.sheet ?? selectedSheet,
-    model?.getTabs().map((tab) => tab.name) ?? [],
-    model?.getTokens ?? (() => []),
-  );
+  const formulaReferences = text
+    ? getReferencesFromFormula(
+        text,
+        cellEditing?.sheet ?? selectedSheet,
+        model?.getTabs().map((tab) => tab.name) ?? [],
+        model?.getTokens ?? (() => []),
+      )
+    : [];
+
   const coloredReferences = getColoredReferences(formulaReferences);
 
   // Sync references with canvas
@@ -53,15 +49,25 @@ const Editor: FunctionComponent<{
     }
   }, [coloredReferences, onReferencesChanged]);
 
-  const styledFormula = styleFormula(text, coloredReferences);
+  const styledFormula = text ? styleFormula(text, coloredReferences) : null;
 
-  useEffect(() => {
-    if (!cellEditing) {
-      const formula =
-        model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column) ?? '';
-      setText(formula);
+  const [previousInitialText, setPreviousInitialText] = useState<string | null>(null);
+  if (cellEditing) {
+    const initialText = cellEditing.text ?? '';
+    if (previousInitialText !== initialText) {
+      setPreviousInitialText(initialText);
+      setText(initialText);
     }
-  }, [model, selectedCell.column, selectedCell.row, selectedSheet, requestRenderId, cellEditing]);
+  } else {
+    if (previousInitialText !== null) {
+      setPreviousInitialText(null);
+    }
+    const formula = model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column);
+    const newText = formula ?? '';
+    if (text !== newText) {
+      setText(newText);
+    }
+  }
 
   // TODO: onReferenceCycle not needed for demo
   const onReferenceCycle = () => {};
@@ -69,11 +75,7 @@ const Editor: FunctionComponent<{
     editorActions.onEditEnd(text, delta);
   };
 
-  const { text: initialText, focus } = cellEditing ?? {};
-  useEffect(() => {
-    setText(initialText ?? '');
-  }, [initialText]);
-
+  const { focus } = cellEditing ?? {};
   useEffect(() => {
     if (focus) {
       if (focus === FocusType.Cell) {
@@ -82,7 +84,13 @@ const Editor: FunctionComponent<{
         formulaBarInput.current?.focus();
       }
     }
-  }, [cellInput, focus, formulaBarInput, selectedSheet]);
+  }, [
+    cellEditing?.id, // refresh focus when cell editing context changes.
+    cellInput,
+    focus,
+    formulaBarInput,
+    selectedSheet,
+  ]);
 
   const cellEditorKeyDown = useEditorKeyDown({
     onEditEnd,
@@ -180,6 +188,7 @@ const CellEditorContainer = styled.div<{ $display: boolean }>`
   box-sizing: border-box;
   position: relative;
   width: 100%;
+  height: 100%;
   padding: 0px;
   input {
     color: transparent;
@@ -187,18 +196,21 @@ const CellEditorContainer = styled.div<{ $display: boolean }>`
     outline: none;
     border: none;
     ${EditorFontCSS}
+    padding-bottom: 100vh;
+    width: 100%;
   }
   border-width: 0px;
   outline: none;
   resize: none;
-  white-space: pre-wrap;
+  white-space: nowrap;
   vertical-align: bottom;
   overflow: hidden;
+  background: #ffffff;
 `;
 
 const MaskContainer = styled.div`
   position: absolute;
   pointer-events: none;
-  white-space: nowrap;
+  white-space: pre;
   ${EditorFontCSS}
 `;
