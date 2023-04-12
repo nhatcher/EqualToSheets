@@ -521,14 +521,38 @@ export default class Model implements IModel {
       height: source.rowEnd - source.rowStart + 1,
     };
 
-    const deltaRow = target.rowStart - source.rowStart;
-    const deltaColumn = target.columnStart - source.columnStart;
+    const targetWidth = target.columnEnd - target.columnStart + 1;
+    const targetHeight = target.rowEnd - target.rowStart + 1;
 
-    for (let row = source.rowStart; row <= source.rowEnd; row += 1) {
-      for (let column = source.columnStart; column <= source.columnEnd; column += 1) {
-        const cellData = sheetData.data[row][column];
-        const targetRow = row + deltaRow;
-        const targetColumn = column + deltaColumn;
+    let copiesX: number;
+    let copiesY: number;
+    if (type === 'cut') {
+      copiesX = 1;
+      copiesY = 1;
+    } else {
+      copiesX = Math.floor(Math.max(targetWidth, sourceArea.width) / sourceArea.width);
+      copiesY = Math.floor(Math.max(targetHeight, sourceArea.height) / sourceArea.height);
+    }
+
+    const resultWidth = copiesX * sourceArea.width;
+    const resultHeight = copiesY * sourceArea.height;
+
+    if (
+      target.columnStart + resultWidth - 1 > workbookLastColumn ||
+      target.rowStart + resultHeight - 1 > workbookLastRow
+    ) {
+      // TODO: Notify about error - no space in workbook.
+      return;
+    }
+
+    for (let row = 0; row < resultHeight; row += 1) {
+      for (let column = 0; column < resultWidth; column += 1) {
+        const sourceRow = sourceArea.row + (row % sourceArea.height);
+        const sourceColumn = sourceArea.column + (column % sourceArea.width);
+        const cellData = sheetData.data[sourceRow][sourceColumn];
+
+        const targetRow = target.rowStart + row;
+        const targetColumn = target.columnStart + column;
 
         const cell = this.workbook.cell(target.sheet, targetRow, targetColumn);
         const oldValue = Model.getInputValue(cell);
@@ -544,7 +568,7 @@ export default class Model implements IModel {
               newValue = this.workbook.getCopiedValueExtended(
                 cellData.value,
                 sheetData.sheetName,
-                { sheet: source.sheet, row, column },
+                { sheet: source.sheet, row: sourceRow, column: sourceColumn },
                 { sheet: target.sheet, row: targetRow, column: targetColumn },
               );
               break;
@@ -552,7 +576,7 @@ export default class Model implements IModel {
             case 'cut': {
               newValue = this.workbook.getCutValueMoved(
                 cellData.value,
-                { sheet: source.sheet, row, column },
+                { sheet: source.sheet, row: sourceRow, column: sourceColumn },
                 { sheet: target.sheet, row: targetRow, column: targetColumn },
                 sourceArea,
               );
