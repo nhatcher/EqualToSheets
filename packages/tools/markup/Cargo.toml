@@ -1,0 +1,8 @@
+[package]
+name = "markup"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+equalto_calc = { path = "../../calc/equalto_calc" }
+equalto_xlsx = { path = "../../calc/equalto_xlsx" }

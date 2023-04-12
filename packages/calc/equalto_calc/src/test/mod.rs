@@ -35,6 +35,7 @@ mod test_model_set_cell_empty;
 mod test_move_formula;
 mod test_quote_prefix;
 mod test_set_user_input;
+mod test_sheet_markup;
 mod test_sheets;
 mod test_styles;
 mod test_trigonometric;

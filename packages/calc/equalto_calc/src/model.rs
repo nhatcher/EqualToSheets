@@ -1408,6 +1408,34 @@ impl Model {
         }
     }
 
+    /// Returns markup representation of the given `sheet`.
+    pub fn sheet_markup(&self, sheet: u32) -> Result<String, String> {
+        let worksheet = self.workbook.worksheet(sheet)?;
+        let dimension = worksheet.dimension();
+
+        let mut rows = Vec::new();
+
+        for row in 1..(dimension.max_row + 1) {
+            let mut row_markup: Vec<String> = Vec::new();
+
+            for column in 1..(dimension.max_column + 1) {
+                let mut cell_markup = match self.cell_formula(sheet, row, column)? {
+                    Some(formula) => formula,
+                    None => self.formatted_cell_value(sheet, row, column)?,
+                };
+                let style = self.get_style_for_cell(sheet, row, column);
+                if style.font.b {
+                    cell_markup = format!("**{cell_markup}**")
+                }
+                row_markup.push(cell_markup);
+            }
+
+            rows.push(row_markup.join("|"));
+        }
+
+        Ok(rows.join("\n"))
+    }
+
     pub fn set_currency(&mut self, iso: &str) -> Result<(), &str> {
         // TODO: Add a full list
         let symbol = if iso == "USD" {
