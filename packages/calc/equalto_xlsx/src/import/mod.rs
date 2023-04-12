@@ -17,7 +17,7 @@ use roxmltree::Node;
 
 use equalto_calc::{
     model::Model,
-    types::{Workbook, WorkbookSettings},
+    types::{Metadata, Workbook, WorkbookSettings},
 };
 
 use crate::compare::compare_models;
@@ -75,7 +75,20 @@ fn load_xlsx_from_reader<R: Read + std::io::Seek>(
         &mut shared_strings,
     )?;
     let styles = load_styles(&mut archive)?;
-    let metadata = load_metadata(&mut archive)?;
+    let metadata = match load_metadata(&mut archive) {
+        Ok(metadata) => metadata,
+        Err(_) => {
+            // In case there is no metadata, add some
+            Metadata {
+                application: "Unknown application".to_string(),
+                app_version: "".to_string(),
+                creator: "".to_string(),
+                last_modified_by: "".to_string(),
+                created: "".to_string(),
+                last_modified: "".to_string(),
+            }
+        }
+    };
     Ok(Workbook {
         shared_strings,
         defined_names: workbook.defined_names,
