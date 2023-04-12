@@ -17,7 +17,7 @@ const FormatPicker: FunctionComponent<FormatPickerProps> = (properties) => {
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
     const formData = new FormData(event.target as HTMLFormElement);
-    properties.onChange((formData.get('format_code') as string) ?? '');
+    properties.onChange((formData.get('formatCodeInput') as string) ?? '');
     properties.onClose();
   };
   return (
