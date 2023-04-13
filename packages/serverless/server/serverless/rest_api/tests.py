@@ -1,12 +1,16 @@
 import json
+import tempfile
+from pathlib import Path
 
 import equalto
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from equalto.exceptions import SuppressEvaluationErrors
 from rest_framework.test import APIClient
 
 from serverless.models import WORKBOOK_JSON_VERSION, License, Workbook, get_default_workbook
 from serverless.test_util import create_verified_license, create_workbook
+from serverless.views import MAX_XLSX_FILE_SIZE
 
 
 class RestAPITest(TestCase):
@@ -212,16 +216,16 @@ class RestAPITest(TestCase):
     def test_create_workbook_from_json_missing_json(self) -> None:
         response = self.license_client.post("/api/v1/workbooks", {"version": "1"})
         self.assertEqual(
-            json.loads(response.content),
-            {"detail": "When creating a workbook from JSON, you must specify the workbook_json data."},
+            json.loads(response.content)["detail"],
+            "When creating a workbook from 'blank' data, the following parameters are forbidden: ['version'].",
         )
         self.assertEqual(response.status_code, 400)
 
     def test_create_workbook_from_json_no_version(self) -> None:
         response = self.license_client.post("/api/v1/workbooks", {"workbook_json": get_default_workbook()})
         self.assertEqual(
-            json.loads(response.content),
-            {"detail": "When creating a workbook from JSON, you must specify the version of the JSON."},
+            json.loads(response.content)["detail"],
+            "When creating a workbook from 'blank' data, the following parameters are forbidden: ['workbook_json'].",
         )
         self.assertEqual(response.status_code, 400)
 
@@ -235,6 +239,99 @@ class RestAPITest(TestCase):
             {"detail": "Currently, we only support JSON using the version 1 schema."},
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_create_workbook_from_xlsx(self) -> None:
+        with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                test_upload_file.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"xlsx_file": xlsx_file},
+        )
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(new_workbook.name, "Book")
+
+        # confirm Sheet1!A1 contains the value "A string"
+        response = self.license_client.get(f"/api/v1/workbooks/{new_workbook.id}/sheets/1/cells/1/1")
+        cell = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(cell["value"], "A string")
+
+    def test_create_workbook_form_xlsx_custom_name(self) -> None:
+        with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                test_upload_file.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"xlsx_file": xlsx_file, "name": "TEST NAME€"},
+        )
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(new_workbook.name, "TEST NAME€")
+
+    def test_create_workbook_from_xlsx_too_large(self) -> None:
+        xlsx_file = SimpleUploadedFile(
+            "test-upload.xlsx",
+            b" " * (MAX_XLSX_FILE_SIZE + 1),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"xlsx_file": xlsx_file, "name": "TEST NAME€"},
+        )
+        self.assertEqual(json.loads(response.content), {"details": "Excel file too large (max size 2097152 bytes)."})
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_workbook_from_invalid_xlsx(self) -> None:
+        xlsx_file = SimpleUploadedFile(
+            "test-upload.xlsx",
+            # This is not a valid XLSX file (!)
+            b" ",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"xlsx_file": xlsx_file},
+        )
+        self.assertEqual(json.loads(response.content), {"details": "Could not upload workbook."})
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_workbook_from_xlsx_with_bad_fn(self) -> None:
+        # confirm we can create an XLXS from a workbook with an unsupported function
+        calc = equalto.new()
+        with SuppressEvaluationErrors():
+            calc["Sheet1!A1"].formula = "=NOTTODAY()"
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "file.xlsx"
+            calc.save(str(path))
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                path.read_bytes(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        response = self.license_client.post(
+            "/api/v1/workbooks",
+            {"xlsx_file": xlsx_file},
+        )
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+        workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        cell = workbook.calc["Sheet1!A1"]
+        self.assertEqual(cell.formula, "=NOTTODAY()")
+        self.assertEqual(cell.value, "#ERROR!")
 
     def test_get_workbook(self) -> None:
         response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}")

@@ -412,6 +412,7 @@ def edit_workbook(request: HttpRequest, license_key: str, workbook_id: str) -> H
 #   $ curl -F xlsx-file=@/path/to/file.xlsx
 #           -H "Authorization: Bearer <license key>"
 #           http://localhost:5000/create-workbook-from-xlsx
+# TODO: delete this method post-beta. POST /api/v1/workbooks already supports uploading of XLSX files.
 def create_workbook_from_xlsx(request: HttpRequest) -> HttpResponse:
     info("create_workbook_from_xlsx(): headers=%s" % request.headers)
     try:

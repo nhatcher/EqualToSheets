@@ -1,5 +1,6 @@
 import os.path
 import tempfile
+from collections import OrderedDict
 from typing import Any, Callable
 
 import equalto.cell
@@ -17,7 +18,8 @@ from rest_framework.views import APIView, exception_handler
 
 from serverless import log
 from serverless.models import License, Workbook
-from serverless.util import LicenseKeyError, get_license, is_license_key_valid_for_host
+from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
+from serverless.views import MAX_XLSX_FILE_SIZE
 
 
 class ServerlessView(APIView):
@@ -91,28 +93,61 @@ class WorkbookListView(ServerlessView):
         * `version`: (optional) version of schema used in the associated `workbook_json`
         * `workbook_json`: (optional) the JSON used to create the new workbook
 
-        There are two ways to use this endpoint:
+        There are multiple ways to use this endpoint:
 
         1. Create a blank workbook, you may specify the `name` but nothing else.
-        2. Create a workbook from JSON, you must specify `version` and `workbook_json`, you may specify the `name`.
+        2. Create a workbook from JSON, you must specify `version` and `workbook_json`, you may specify the `name` and
+           nothing else.
+        3. Create a workbook from XLSX, you must specify `xlsx_file`, you may specify the `name` and nothing else.
         """
-        version = request.data.get("version")
-        workbook_json = request.data.get("workbook_json")
-        name = request.data.get("name", "Book")
+        data = {
+            "version": request.data.get("version"),
+            "workbook_json": request.data.get("workbook_json"),
+            "name": request.data.get("name", "Book"),
+            "xlsx_file": request.FILES.get("xlsx_file"),
+        }
 
-        if version is not None or workbook_json is not None:
+        # define the "function signatures" for the different ways to create a workbook, so that
+        # we can implement "multiple dispatch" function overloading
+        signatures: dict[str, dict[str, list[str]]] = OrderedDict(  # noqa: WPS234
+            json={"required": ["version", "workbook_json"], "optional": ["name"]},
+            xlsx={"required": ["xlsx_file"], "optional": ["name"]},
+            blank={"required": [], "optional": ["name"]},
+        )
+
+        # based upon the function signatures above, determine how exactly the user wants to create the workbook
+        # and record it in the create_type variable.
+        create_type = None
+        all_params = data.keys()
+        for c, obj in signatures.items():
+            required = obj["required"]
+            optional = obj["optional"]
+            forbidden = set(all_params).difference(required + optional)
+            if all(data[r] is not None for r in required):
+                create_type = c
+                if any(data[r] is not None for r in forbidden):
+                    should_not_be_present = [f for f in forbidden if data[f]]
+                    should_not_be_present.sort()
+                    return Response(
+                        {
+                            "detail": (
+                                f"When creating a workbook from '{create_type}' data, the following parameters "
+                                + f"are forbidden: {should_not_be_present}."
+                            ),
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                break
+        assert create_type is not None
+
+        version = data["version"]
+        workbook_json = data["workbook_json"]
+        name = data["name"]
+        xlsx_file = data["xlsx_file"]
+
+        # create the workbook according to the caller's preference
+        if create_type == "json":
             # creating a workbook from json
-            if version is None:
-                return Response(
-                    {"detail": "When creating a workbook from JSON, you must specify the version of the JSON."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if workbook_json is None:
-                return Response(
-                    {"detail": "When creating a workbook from JSON, you must specify the workbook_json data."},
-                    content_type="application/json",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
             if version != "1":
                 # TODO: in future, when we have new JSON schemas, we'll need to auto-migrate old JSON to the new
                 #       structure
@@ -132,9 +167,38 @@ class WorkbookListView(ServerlessView):
                 name=name,
             )
 
-        else:
+        elif create_type == "blank":
             # create a blank workbook
             workbook = Workbook.objects.create(license=self._get_license(), name=name)
+        elif create_type == "xlsx":
+            if xlsx_file.size > MAX_XLSX_FILE_SIZE:
+                return Response(
+                    {"details": "Excel file too large (max size %s bytes)." % (MAX_XLSX_FILE_SIZE)},
+                    content_type="application/json",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            tmp = tempfile.NamedTemporaryFile()
+            tmp.write(xlsx_file.read())
+
+            with equalto.exceptions.SuppressEvaluationErrors():
+                try:
+                    equalto_workbook = equalto.load(tmp.name)
+                except equalto.exceptions.WorkbookError:
+                    return Response(
+                        {"details": "Could not upload workbook."},
+                        content_type="application/json",
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            if name is None:
+                workbook_name = get_name_from_path(xlsx_file.name)
+            else:
+                workbook_name = name
+            workbook = Workbook(license=self._get_license(), workbook_json=equalto_workbook.json, name=workbook_name)
+            workbook.save()
+        else:
+            raise AssertionError("Unreachable code")
+
         serializer = WorkbookSerializer(workbook)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
