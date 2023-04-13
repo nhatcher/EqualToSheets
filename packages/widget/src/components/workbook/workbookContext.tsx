@@ -23,6 +23,7 @@ import useKeyboardNavigation from './useKeyboardNavigation';
 import useWorkbookActions, { WorkbookActions } from './useWorkbookActions';
 import useWorkbookReducer, { WorkbookState } from './useWorkbookReducer';
 import { onCopy, onPaste, onCut } from './clipboard';
+import { Area } from './util';
 
 // TODO: it would be easier to use if model couldn't be null
 const WorkbookContext = createContext<
@@ -123,6 +124,21 @@ export const Root: FunctionComponent<{
   }
   const { selectedSheet, selectedCell, selectedArea, extendToArea, cellEditing } = editorState;
 
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent): void => {
+      const { key } = event;
+      if (key === 'Backspace') {
+        if (model) {
+          clearArea(model, selectedSheet, selectedArea);
+          requestRender();
+        }
+      } else {
+        onKeyDownNavigation(event);
+      }
+    },
+    [model, selectedSheet, selectedArea, requestRender, onKeyDownNavigation],
+  );
+
   const onExtendToEnd = useCallback(() => {
     if (!model || !extendToArea) {
       return;
@@ -188,7 +204,7 @@ export const Root: FunctionComponent<{
             className={properties.className}
             ref={rootRef}
             tabIndex={0}
-            onKeyDown={onKeyDownNavigation}
+            onKeyDown={onKeyDown}
             onContextMenu={(event): void => {
               // prevents the browser menu
               event.preventDefault();
@@ -225,3 +241,13 @@ const WorkbookContainer = styled.div`
     outline: none;
   }
 `;
+
+function clearArea(model: Model, selectedSheet: number, selectedArea: Area) {
+  for (let row = selectedArea.rowStart; row <= selectedArea.rowEnd; row += 1) {
+    for (let column = selectedArea.columnStart; column <= selectedArea.columnEnd; column += 1) {
+      const cell = model.getUICell(selectedSheet, row, column);
+      // FIXME: Each assignment triggers evaluation. It could be done once after area is cleared.
+      cell.value = null;
+    }
+  }
+}

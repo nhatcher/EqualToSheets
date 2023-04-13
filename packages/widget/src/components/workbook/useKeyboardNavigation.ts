@@ -87,8 +87,8 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
         event.preventDefault();
         return;
       }
-      if (isEditingKey(key) || key === 'Backspace') {
-        const initText = key === 'Backspace' ? '' : key;
+      if (isEditingKey(key)) {
+        const initText = key;
         editorActions.onEditKeyPressStart(initText);
         event.stopPropagation();
         event.preventDefault();
