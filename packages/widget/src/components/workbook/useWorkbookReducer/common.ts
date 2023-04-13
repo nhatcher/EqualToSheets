@@ -37,6 +37,7 @@ export enum WorkbookActionType {
   EDIT_ESCAPE = 'EDIT_ESCAPE',
   EDIT_CELL_EDITOR_START = 'EDIT_CELL_EDITOR_START',
   EDIT_KEY_PRESS_START = 'EDIT_KEY_PRESS_START',
+  SWITCH_CELL_EDITOR_TO_EDIT_MODE = 'SWITCH_CELL_EDITOR_TO_EDIT_MODE',
   EDIT_POINTER_MOVE = 'EDIT_POINTER_MOVE',
   EDIT_POINTER_DOWN = 'EDIT_POINTER_DOWN',
   EDIT_FORMULA_BAR_EDITOR_START = 'EDIT_FORMULA_BAR_EDITOR_START',
@@ -134,6 +135,11 @@ type EditKeyPressStartAction = {
     /** Skips the readonly check */
     forceEdit?: boolean;
   };
+};
+
+type SwitchCellEditorToEditModeAction = {
+  type: WorkbookActionType.SWITCH_CELL_EDITOR_TO_EDIT_MODE;
+  payload: {};
 };
 
 type EditFormulaBarEditorStartAction = {
@@ -244,6 +250,7 @@ export type Action =
   | NavigationToEdgeAction
   | EditEscapeAction
   | EditCellEditorStartAction
+  | SwitchCellEditorToEditModeAction
   | EditFormulaBarEditorStartAction
   | EditKeyPressStartAction
   | ExpandAreaSelectedKeyboardAction

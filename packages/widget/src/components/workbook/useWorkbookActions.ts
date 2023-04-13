@@ -19,6 +19,7 @@ export type WorkbookActions = {
   onExtendToEnd: () => void;
   onNavigationToEdge: (key: NavigationKey) => void;
   onEditKeyPressStart: (initText: string) => void;
+  onSwitchCellEditorToEditMode: () => void;
   onExpandAreaSelectedKeyboard: (key: 'ArrowRight' | 'ArrowLeft' | 'ArrowDown' | 'ArrowUp') => void;
   onPointerMoveToCell: (cell: Cell) => void;
   onPointerDownAtCell: (cell: Cell) => void;
@@ -156,6 +157,13 @@ const useWorkbookActions = (
     [dispatch],
   );
 
+  const onSwitchCellEditorToEditMode = useCallback((): void => {
+    dispatch({
+      type: WorkbookActionType.SWITCH_CELL_EDITOR_TO_EDIT_MODE,
+      payload: {},
+    });
+  }, [dispatch]);
+
   const onExpandAreaSelectedKeyboard = useCallback(
     (key: 'ArrowRight' | 'ArrowLeft' | 'ArrowDown' | 'ArrowUp'): void => {
       dispatch({
@@ -243,6 +251,7 @@ const useWorkbookActions = (
     onExtendToEnd,
     onNavigationToEdge,
     onEditKeyPressStart,
+    onSwitchCellEditorToEditMode,
     onExpandAreaSelectedKeyboard,
     onPointerMoveToCell,
     onPointerDownAtCell,

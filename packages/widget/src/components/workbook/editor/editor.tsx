@@ -93,10 +93,16 @@ const Editor: FunctionComponent<{
   ]);
 
   const cellEditorKeyDown = useEditorKeyDown({
+    onMoveCaretToStart: () => cellInput.current?.setSelectionRange(0, 0),
+    onMoveCaretToEnd: () =>
+      cellInput.current?.setSelectionRange(
+        cellInput.current.value.length,
+        cellInput.current.value.length,
+      ),
     onEditEnd,
     onEditEscape,
     onReferenceCycle,
-    mode: cellEditing?.text === cellInput.current?.value ? 'init' : 'edit',
+    mode: cellEditing?.mode ?? 'init',
   });
 
   const displayCellEditor = !!cellEditing && cellEditing.sheet === selectedSheet;
@@ -109,6 +115,9 @@ const Editor: FunctionComponent<{
           ref={cellInput}
           spellCheck="false"
           value={text}
+          onClick={() => {
+            editorActions.onSwitchCellEditorToEditMode();
+          }}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={cellEditorKeyDown}
           onScroll={() => {

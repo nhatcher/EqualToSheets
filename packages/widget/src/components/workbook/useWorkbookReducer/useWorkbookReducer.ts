@@ -121,6 +121,20 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       };
     }
 
+    case WorkbookActionType.SWITCH_CELL_EDITOR_TO_EDIT_MODE: {
+      const { cellEditing } = state;
+      if (!cellEditing) {
+        return state;
+      }
+      return {
+        ...state,
+        cellEditing: {
+          ...cellEditing,
+          mode: 'edit',
+        },
+      };
+    }
+
     case WorkbookActionType.EDIT_CELL_EDITOR_START: {
       const { selectedSheet, selectedCell, cellEditingLastId, cellEditing } = state;
       const model = state.modelRef.current;

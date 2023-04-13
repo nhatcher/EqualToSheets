@@ -2,6 +2,8 @@ import { useCallback, KeyboardEvent } from 'react';
 import { CellEditMode } from '../util';
 
 interface Options {
+  onMoveCaretToStart: () => void;
+  onMoveCaretToEnd: () => void;
   onEditEnd: (delta: { deltaRow: number; deltaColumn: number }) => void;
   onEditEscape: () => void;
   onReferenceCycle: () => void;
@@ -14,11 +16,28 @@ const useEditorKeydown = (options: Options): ((event: KeyboardEvent) => void) =>
       const { key } = event;
       switch (key) {
         case 'Enter':
-        case 'ArrowDown': {
           options.onEditEnd({ deltaRow: 1, deltaColumn: 0 });
           event.preventDefault();
           event.stopPropagation();
-
+          break;
+        case 'ArrowUp': {
+          if (options.mode === 'init') {
+            options.onEditEnd({ deltaRow: -1, deltaColumn: 0 });
+          } else {
+            options.onMoveCaretToStart();
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          break;
+        }
+        case 'ArrowDown': {
+          if (options.mode === 'init') {
+            options.onEditEnd({ deltaRow: 1, deltaColumn: 0 });
+          } else {
+            options.onMoveCaretToEnd();
+          }
+          event.preventDefault();
+          event.stopPropagation();
           break;
         }
         case 'Tab': {
@@ -54,13 +73,6 @@ const useEditorKeydown = (options: Options): ((event: KeyboardEvent) => void) =>
             event.preventDefault();
             event.stopPropagation();
           }
-
-          break;
-        }
-        case 'ArrowUp': {
-          options.onEditEnd({ deltaRow: -1, deltaColumn: 0 });
-          event.preventDefault();
-          event.stopPropagation();
 
           break;
         }
