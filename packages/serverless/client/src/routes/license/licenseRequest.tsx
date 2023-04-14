@@ -76,7 +76,7 @@ export const LicenseRequestPage = () => {
         </HeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
         <VideoEmbed />
-        <Subtitle>Learn more from&nbsp;<ExternalLink href="/beta-readme">our docs</ExternalLink></Subtitle>
+        <Subtitle>Learn more from&nbsp;<ExternalLink target="_blank" href="https://sheets.equalto.com/beta-readme">our docs</ExternalLink></Subtitle>
       </LeftSide>
       <RightSide>
         <div />
@@ -95,9 +95,9 @@ export const LicenseRequestPage = () => {
         </Form>
         <FormFooterText>
           {'By submitting my details, I agree to the '}
-          <ExternalLink href="https://www.equalto.com/tos">Terms of Service</ExternalLink>
+          <ExternalLink target="_blank" href="https://www.equalto.com/tos">Terms of Service</ExternalLink>
           {' and '}
-          <ExternalLink href="https://www.equalto.com/privacy-policy">Privacy Policy</ExternalLink>.
+          <ExternalLink target="_blank" href="https://www.equalto.com/privacy-policy">Privacy Policy</ExternalLink>.
         </FormFooterText>
       </RightSide>
     </DualBox>
