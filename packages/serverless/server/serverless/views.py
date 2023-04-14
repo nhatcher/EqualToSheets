@@ -460,7 +460,7 @@ Congratulations! The workbook has been uploaded.
 
 Workbook Id: {workbook.id}
 
-Preview workbook: {settings.SERVER}/unsafe-just-for-beta/edit-workbook/{license.key}/{workbook.id}/
+Open spreadsheet: {settings.SERVER}/unsafe-just-for-beta/edit-workbook/{license.key}/{workbook.id}/
 
 GraphQL query to list all sheets in this workbook: {settings.SERVER}/graphql?license={license.key}#query={quote(query)}
 

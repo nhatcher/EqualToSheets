@@ -315,7 +315,7 @@ const GetStartedPanel = ({
           target="_blank"
           rel="noreferrer"
         >
-          Preview workbook
+          Open spreadsheet
         </a>
       </TabTextSection>
       <CodeArea onClick={copyToClipboard(getSnippet(licenseKey, workbookId))}>
