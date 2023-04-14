@@ -76,6 +76,7 @@ export const LicenseRequestPage = () => {
         </HeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
         <VideoEmbed />
+        <Subtitle>Learn more from&nbsp;<ExternalLink href="/beta-readme">our docs</ExternalLink></Subtitle>
       </LeftSide>
       <RightSide>
         <div />
