@@ -28,13 +28,10 @@ const Editor: FunctionComponent<{
   const cellInputMask = useRef<HTMLDivElement>(null);
   const formulaBarMask = useRef<HTMLDivElement>(null);
 
+  const tabs = model?.getTabs().map((tab) => tab.name) ?? [];
+  const getTokens = model?.getTokens ?? (() => []);
   const formulaReferences = text
-    ? getReferencesFromFormula(
-        text,
-        cellEditing?.sheet ?? selectedSheet,
-        model?.getTabs().map((tab) => tab.name) ?? [],
-        model?.getTokens ?? (() => []),
-      )
+    ? getReferencesFromFormula(text, cellEditing?.sheet ?? selectedSheet, tabs, getTokens)
     : [];
 
   const coloredReferences = getColoredReferences(formulaReferences);
@@ -102,7 +99,8 @@ const Editor: FunctionComponent<{
     onEditEnd,
     onEditEscape,
     onReferenceCycle,
-    mode: cellEditing?.mode ?? 'init',
+    text,
+    setText,
   });
 
   const displayCellEditor = !!cellEditing && cellEditing.sheet === selectedSheet;

@@ -1,4 +1,5 @@
 import { FormulaToken } from '@equalto-software/calc';
+import last from 'lodash/last';
 import { LAST_COLUMN, LAST_ROW } from './constants';
 import { columnNameFromNumber, getColor, referenceToString } from './util';
 
@@ -216,6 +217,61 @@ type FormulaReference = {
   start: number;
   end: number;
 };
+
+export function popReferenceFromFormula(
+  text: string,
+  currentSheet: number,
+  sheetList: string[],
+  getTokens: (s: string) => FormulaToken[],
+): null | {
+  reference: FormulaReference;
+  remainderText: string;
+} {
+  if (text.startsWith('=')) {
+    const formula = text.slice(1);
+    const tokens = getTokens(formula);
+    const lastToken = last(tokens);
+    if (!lastToken) {
+      return null;
+    }
+    const { token, start, end } = lastToken;
+
+    if (token.type === 'REFERENCE') {
+      const { sheet, row, column } = token.data;
+      return {
+        reference: {
+          sheet: sheet ? sheetList.indexOf(sheet) : currentSheet,
+          rowStart: row,
+          columnStart: column,
+          rowEnd: row,
+          columnEnd: column,
+          start: start + 1,
+          end: end + 1,
+        },
+        remainderText: text.substring(0, start + 1),
+      };
+    }
+
+    if (token.type === 'RANGE') {
+      const { sheet, left, right } = token.data;
+      return {
+        reference: {
+          sheet: sheet ? sheetList.indexOf(sheet) : currentSheet,
+          rowStart: Math.min(left.row, right.row),
+          columnStart: Math.min(left.column, right.column),
+          rowEnd: Math.max(left.row, right.row),
+          columnEnd: Math.max(left.column, right.column),
+          start: start + 1,
+          end: end + 1,
+        },
+        remainderText: text.substring(0, start + 1),
+      };
+    }
+  }
+
+  return null;
+}
+
 export function getReferencesFromFormula(
   text: string,
   currentSheet: number,
