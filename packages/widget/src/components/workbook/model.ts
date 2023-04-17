@@ -25,7 +25,7 @@ import {
   SetRowHeightAction,
 } from './history';
 import { IModel, StyleReducer } from './types';
-import { Area, Cell, NavigationKey } from './util';
+import { Area, NavigationKey } from './util';
 
 interface ModelSettings {
   workbook: IWorkbook;
@@ -662,18 +662,32 @@ export default class Model implements IModel {
     this.notifySubscribers({ type: 'paste' });
   }
 
-  pasteText(sheet: number, target: Cell, value: string): void {
+  pasteText(sheet: number, target: SheetArea, value: string): void {
     const actions: IAction[] = [];
     const parsedData = Papa.parse(value, { delimiter: '\t', header: false });
     const data = parsedData.data as string[][];
 
-    for (let deltaRow = 0; deltaRow < data.length; deltaRow += 1) {
-      const line = data[deltaRow];
-      const targetRow = target.row + deltaRow;
+    const sourceAreaHeight = data.length;
+    const sourceAreaWidth = Math.max(...data.map((row) => row.length));
 
-      for (let deltaColumn = 0; deltaColumn < line.length; deltaColumn += 1) {
-        const newValue = line[deltaColumn].trim();
-        const targetColumn = target.column + deltaColumn;
+    const targetWidth = target.columnEnd - target.columnStart + 1;
+    const targetHeight = target.rowEnd - target.rowStart + 1;
+
+    const copiesX = Math.floor(Math.max(targetWidth, sourceAreaWidth) / sourceAreaWidth);
+    const copiesY = Math.floor(Math.max(targetHeight, sourceAreaHeight) / sourceAreaHeight);
+
+    const resultWidth = copiesX * sourceAreaWidth;
+    const resultHeight = copiesY * sourceAreaHeight;
+
+    for (let deltaRow = 0; deltaRow < resultHeight; deltaRow += 1) {
+      const line = data[deltaRow % sourceAreaHeight];
+      const targetRow = target.rowStart + deltaRow;
+
+      for (let deltaColumn = 0; deltaColumn < resultWidth; deltaColumn += 1) {
+        const lineColumn = deltaColumn % sourceAreaWidth;
+        const newValue = lineColumn < line.length ? line[lineColumn].trim() : '';
+        const targetColumn = target.columnStart + deltaColumn;
+
         const cell = this.workbook.cell(sheet, targetRow, targetColumn);
         const oldValue = Model.getInputValue(cell);
         cell.input = newValue;
@@ -687,6 +701,7 @@ export default class Model implements IModel {
         );
       }
     }
+
     this.history.push(actions);
     this.notifySubscribers({ type: 'pasteText' });
   }

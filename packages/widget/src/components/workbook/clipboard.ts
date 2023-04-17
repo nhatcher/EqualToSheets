@@ -53,7 +53,11 @@ export const onPaste =
         // If JSON is invalid We should try to paste 'text/plain' content if it exist
       }
     } else if (mimeType === 'text/plain') {
-      model.pasteText(selectedSheet, selectedCell, value);
+      const targetArea = {
+        sheet: selectedSheet,
+        ...selectedArea,
+      };
+      model.pasteText(selectedSheet, targetArea, value);
     } else {
       // NOT IMPLEMENTED
     }
