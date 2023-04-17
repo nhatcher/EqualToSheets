@@ -169,6 +169,15 @@ class SimpleTest(TestCase):
             },
         )
 
+        # requesting a new license with the same email address should result in the activation email being resent,
+        # without creating any new licenses
+        mock_send_email.reset_mock()
+        license_count = License.objects.count()
+        response = self.client.post("/send-license-key", {"email": "joe@example.com"})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(License.objects.count(), license_count)
+        mock_send_email.assert_called_once()
+
     def test_create_workbook_from_xlsx(self) -> None:
         license = create_verified_license()
         with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:

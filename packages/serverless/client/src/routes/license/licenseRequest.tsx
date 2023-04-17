@@ -1,9 +1,12 @@
 import { FormEventHandler, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components/macro';
-import { SubmitButton } from '../../components/buttons';
+import { SSOButton, SubmitButton } from '../../components/buttons';
 import { EmailInput } from '../../components/emailInput';
 import { DualBox, ExternalLink, HeadingText, LeftSide, RightSide, Subtitle } from './common';
+import { ReactComponent as GitHubSSOIcon } from './icons/github.svg';
+import { ReactComponent as GoogleSSOIcon } from './icons/google.svg';
+import { ReactComponent as MicrosoftSSOIcon } from './icons/microsoft.svg';
 import { VideoEmbed } from './videoEmbed';
 
 export const LicenseRequestPage = () => {
@@ -91,6 +94,44 @@ export const LicenseRequestPage = () => {
           </SubmitButton>
           {requestError && <ErrorMessage>{requestError}</ErrorMessage>}
         </Form>
+        <SSO>
+          <SSOButton
+            startIcon={
+              <SSOIcon>
+                <GoogleSSOIcon />
+              </SSOIcon>
+            }
+            onClick={() => {
+              window.location.assign('/sso/google/login');
+            }}
+          >
+            Log in with Google
+          </SSOButton>
+          <SSOButton
+            startIcon={
+              <SSOIcon>
+                <GitHubSSOIcon />
+              </SSOIcon>
+            }
+            onClick={() => {
+              window.location.assign('/sso/github/login');
+            }}
+          >
+            Log in with GitHub
+          </SSOButton>
+          <SSOButton
+            startIcon={
+              <SSOIcon>
+                <MicrosoftSSOIcon />
+              </SSOIcon>
+            }
+            onClick={() => {
+              window.location.assign('/sso/microsoft/login');
+            }}
+          >
+            Log in with Microsoft
+          </SSOButton>
+        </SSO>
         <FormFooterText>
           {'By submitting my details, I agree to the '}
           <ExternalLink target="_blank" href="https://www.equalto.com/tos">
@@ -111,6 +152,24 @@ const Form = styled.form`
   display: grid;
   gap: 15px;
   width: 100%;
+`;
+
+const SSO = styled.div`
+  display: grid;
+  gap: 8px;
+  width: 100%;
+`;
+
+export const SSOIcon = styled.div`
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 `;
 
 const FormFooterText = styled.div`

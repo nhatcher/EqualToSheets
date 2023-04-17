@@ -42,19 +42,20 @@ def send_license_key(request: HttpRequest) -> HttpResponse:
     email = request.POST.get("email", None) or request.GET.get("email", None)
     if email is None:
         return HttpResponseBadRequest("You must specify the 'email' field.")
-    if License.objects.filter(email=email).exists():
-        return HttpResponseBadRequest("License key already created for '%s'." % email)
-    domain_csv = request.POST.get("domains", "") or request.GET.get("domains", "")
-    # WARNING: during the beta, if a license has 0 domains, then the license key will work on all domains
-    # TODO: post-beta, we'll require that a license key requires one or more domains
-    domains = list(filter(lambda s: s != "", map(lambda s: s.strip(), domain_csv.split(","))))
 
-    # create license & license domains
-    license = License(email=email)
-    license.save()
-    for domain in domains:
-        license_domain = LicenseDomain(license=license, domain=domain)
-        license_domain.save()
+    license = License.objects.filter(email=email).first()
+    if license is None:
+        domain_csv = request.POST.get("domains", "") or request.GET.get("domains", "")
+        # WARNING: during the beta, if a license has 0 domains, then the license key will work on all domains
+        # TODO: post-beta, we'll require that a license key requires one or more domains
+        domains = list(filter(lambda s: s != "", map(lambda s: s.strip(), domain_csv.split(","))))
+
+        # create license & license domains
+        license = License(email=email)
+        license.save()
+        for domain in domains:
+            license_domain = LicenseDomain(license=license, domain=domain)
+            license_domain.save()
 
     info("license_id=%s, license key=%s" % (license.id, license.key))
     activation_url = "http://localhost:5000/activate-license-key/%s/" % license.id

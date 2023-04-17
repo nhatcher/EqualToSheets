@@ -33,3 +33,15 @@ export const SubmitButton = styled(Button)`
     color: #21243a;
   }
 `;
+
+export const SSOButton = styled(Button)`
+  background: #fff;
+  color: #21243a;
+
+  justify-content: flex-start;
+
+  &:hover {
+    background: #d3d3d3;
+    color: #21243a;
+  }
+`;
