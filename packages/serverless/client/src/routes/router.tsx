@@ -4,17 +4,17 @@ import { LicenseLayout } from './license/licenseLayout';
 import { LicenseRequestPage } from './license/licenseRequest';
 import { LicenseSentPage } from './license/licenseSent';
 
-const RedirectToRequest = () => {
-  return <Navigate to="/license/request" />;
-};
-
 export default createHashRouter([
   {
-    path: '/license/',
+    path: '/license',
     element: <LicenseLayout />,
     children: [
       {
         path: 'request',
+        element: <Navigate to="/license/access" replace />,
+      },
+      {
+        path: 'access',
         element: <LicenseRequestPage />,
       },
       {
@@ -28,7 +28,11 @@ export default createHashRouter([
     ],
   },
   {
+    path: 'access',
+    element: <Navigate to="/license/access" replace />,
+  },
+  {
     path: '*',
-    element: <RedirectToRequest />,
+    element: <Navigate to="/license/access" />,
   },
 ]);
