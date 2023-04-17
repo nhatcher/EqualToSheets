@@ -76,6 +76,5 @@ export const Subtitle = styled.p`
   font-weight: 400;
   font-size: 16px;
   line-height: 19px;
-  display: flex;
   color: #b4b7d1;
 `;

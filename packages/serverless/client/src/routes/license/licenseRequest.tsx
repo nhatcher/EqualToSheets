@@ -3,14 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { SubmitButton } from '../../components/buttons';
 import { EmailInput } from '../../components/emailInput';
-import {
-  DualBox,
-  ExternalLink,
-  HeadingText,
-  LeftSide,
-  RightSide,
-  Subtitle,
-} from './common';
+import { DualBox, ExternalLink, HeadingText, LeftSide, RightSide, Subtitle } from './common';
 import { VideoEmbed } from './videoEmbed';
 
 export const LicenseRequestPage = () => {
@@ -76,7 +69,12 @@ export const LicenseRequestPage = () => {
         </HeadingText>
         <Subtitle>Integrate a high-performance spreadsheet in minutes</Subtitle>
         <VideoEmbed />
-        <Subtitle>Learn more from&nbsp;<ExternalLink target="_blank" href="https://sheets.equalto.com/beta-readme">our docs</ExternalLink></Subtitle>
+        <Subtitle>
+          {'Learn more from '}
+          <ExternalLink target="_blank" href="https://sheets.equalto.com/beta-readme">
+            our docs
+          </ExternalLink>
+        </Subtitle>
       </LeftSide>
       <RightSide>
         <div />
@@ -95,9 +93,14 @@ export const LicenseRequestPage = () => {
         </Form>
         <FormFooterText>
           {'By submitting my details, I agree to the '}
-          <ExternalLink target="_blank" href="https://www.equalto.com/tos">Terms of Service</ExternalLink>
+          <ExternalLink target="_blank" href="https://www.equalto.com/tos">
+            Terms of Service
+          </ExternalLink>
           {' and '}
-          <ExternalLink target="_blank" href="https://www.equalto.com/privacy-policy">Privacy Policy</ExternalLink>.
+          <ExternalLink target="_blank" href="https://www.equalto.com/privacy-policy">
+            Privacy Policy
+          </ExternalLink>
+          .
         </FormFooterText>
       </RightSide>
     </DualBox>
