@@ -6,7 +6,7 @@ import MaterialBox from '@mui/material/Box';
 import { ReactNode, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Snackbar from '@mui/material/Snackbar';
-import styled from 'styled-components/macro';
+import styled, { keyframes } from 'styled-components/macro';
 import { Brand } from '../../utils';
 import { Box, ExternalLink } from './common';
 import { ReactComponent as ArrowIcon } from './arrow.svg';
@@ -694,6 +694,11 @@ const BookmarkText = styled.div`
   color: #f5bb49;
 `;
 
+const FlashAnimation = keyframes`
+  from { background: #565972; }
+  to { background: #70D379; }
+`;
+
 const TabTextSection = styled(Stack)<{ $border?: boolean }>`
   color: #fff;
   font-style: normal;
@@ -724,6 +729,12 @@ const TabTextSection = styled(Stack)<{ $border?: boolean }>`
     background: #565972;
     width: 180px;
     white-space: nowrap;
+
+    animation-name: ${FlashAnimation};
+    animation-timing-function: ease-in-out;
+    animation-direction: alternate;
+    animation-duration: 0.5s;
+    animation-iteration-count: 4;
   }
   li {
     margin-bottom: 10px;
