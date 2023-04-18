@@ -573,7 +573,7 @@ async def get_updated_workbook(request: HttpRequest, workbook_id: str, revision:
             return JsonResponse(workbook)
         await sleep(0.2)
 
-    return HttpResponse(status=408)  # timeout
+    return HttpResponse(status=204)  # no content
 
 
 async def _get_updated_workbook(workbook_id: str, revision: int) -> dict[str, Any] | None:

@@ -49,8 +49,8 @@ export const fetchUpdatedWorkbookWithRetries = async ({
   while (true) {
     try {
       const response = await fetchUpdatedWorkbook(workbookId, licenseKey, revision);
-      if (response.status === 502) {
-        // Connection timeout, let's sync again
+      if (response.status === 204) {
+        // No updates at this point, let's sync again
       } else if (!response.ok) {
         // Error, let's wait a second
         await new Promise((resolve) => setTimeout(resolve, ERROR_CHILL_OUT_TIME));
