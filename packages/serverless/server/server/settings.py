@@ -42,6 +42,26 @@ else:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not TEST and os.environ.get("DEBUG", "").lower() == "true"
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "console": {
+            "format": f"%(levelname)-8s | %(asctime)s | [%(process)d] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "console",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
+
 # Email sending service
 
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
