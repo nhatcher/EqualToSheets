@@ -102,7 +102,7 @@ export const LicenseRequestPage = () => {
               </SSOIcon>
             }
             onClick={() => {
-              window.location.assign('/sso/google/login');
+              window.location.assign(getSSOLoginURL('google'));
             }}
           >
             Log in with Google
@@ -114,7 +114,7 @@ export const LicenseRequestPage = () => {
               </SSOIcon>
             }
             onClick={() => {
-              window.location.assign('/sso/github/login');
+              window.location.assign(getSSOLoginURL('github'));
             }}
           >
             Log in with GitHub
@@ -126,7 +126,7 @@ export const LicenseRequestPage = () => {
               </SSOIcon>
             }
             onClick={() => {
-              window.location.assign('/sso/microsoft/login');
+              window.location.assign(getSSOLoginURL('microsoft'));
             }}
           >
             Log in with Microsoft
@@ -147,6 +147,11 @@ export const LicenseRequestPage = () => {
     </DualBox>
   );
 };
+
+function getSSOLoginURL(idp: string): string {
+  const origin = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://sheets.equalto.com';
+  return `${origin}/sso/${idp}/login`;
+}
 
 const Form = styled.form`
   display: grid;
