@@ -90,6 +90,29 @@ class RestAPITest(TestCase):
             },
         )
 
+    def test_create_blank_workbook_using_explicit_url(self) -> None:
+        """
+        Confirm we can create a blank workbook.
+
+        NOTE: This test is almost the same as `test_create_workbook`, the only difference is that it requests
+              /api/v1/workbooks/blank endpoint instead of /api/v1/workbooks.
+        """
+        response = self.license_client.post("/api/v1/workbooks/blank")
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+        workbook = Workbook.objects.get(id=workbook_data["id"])
+        self.assertEqual(workbook.license, self.license)
+        self.assertEqual(
+            workbook_data,
+            {
+                "id": str(workbook.id),
+                "name": "Book",
+                "revision": 1,
+                "create_datetime": workbook.create_datetime.isoformat().replace("+00:00", "Z"),
+                "modify_datetime": workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
+            },
+        )
+
     def test_create_workbook_custom_name(self) -> None:
         # create a new blank workbook, specifying the name
         response = self.license_client.post("/api/v1/workbooks", {"name": "TEST NAME€"})
@@ -138,6 +161,58 @@ class RestAPITest(TestCase):
                 "modify_datetime": new_workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
             },
         )
+
+    def test_create_workbook_from_json_using_explicit_url(self) -> None:
+        """
+        Confirm we can create a workbook from JSON.
+
+        NOTE: This test is almost the same as `test_create_workbook_from_json`, the only difference is that it requests
+              /api/v1/workbooks/json endpoint instead of /api/v1/workbooks.
+        """
+        # create a blank source workbook, and then set cells A1 to 123, B1 to "abc€"
+        book = equalto.loads(get_default_workbook())
+        sheet = book.sheets.get_sheet_by_id(1)
+        sheet.cell(1, 1).value = 123
+        sheet.cell(1, 2).value = "abc€"
+        src_json = book.json
+
+        # POST the workbook JSON to create a copy
+        response = self.license_client.post(
+            "/api/v1/workbooks/json",
+            {"version": f"{WORKBOOK_JSON_VERSION}", "workbook_json": src_json},
+        )
+
+        # check the response from the POST operation
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+
+        # confirm the database has been updated as expected
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(json.loads(new_workbook.workbook_json), json.loads(src_json))
+        self.assertEqual(new_workbook.license, self.license)
+        new_book = equalto.loads(new_workbook.workbook_json)
+        self.assertEqual(new_book.sheets.get_sheet_by_id(1).cell(1, 1).value, 123)
+        self.assertEqual(new_book.sheets.get_sheet_by_id(1).cell(1, 2).value, "abc€")
+
+        self.assertEqual(
+            workbook_data,
+            {
+                "id": str(new_workbook.id),
+                "name": "Book",
+                "revision": 1,
+                "create_datetime": new_workbook.create_datetime.isoformat().replace("+00:00", "Z"),
+                "modify_datetime": new_workbook.modify_datetime.isoformat().replace("+00:00", "Z"),
+            },
+        )
+
+    def test_create_workbook_from_json_explicit_url_missing_data(self) -> None:
+        response = self.license_client.post("/api/v1/workbooks/json", {"version": str(WORKBOOK_JSON_VERSION)})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.content), {"detail": "'workbook_json' parameter is not provided"})
+
+        response = self.license_client.post("/api/v1/workbooks/json", {"workbook_json": get_default_workbook()})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.content), {"detail": "'version' parameter is not provided"})
 
     def test_create_workbook_from_json_unsupported_fn(self) -> None:
         """Confirm we can create a workbook from JSON containing an unsupported function."""
@@ -262,6 +337,39 @@ class RestAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(cell["value"], "A string")
 
+    def test_create_workbook_from_xlsx_using_explicit_url(self) -> None:
+        """
+        Confirm we can create a workbook from .xlsx file.
+
+        NOTE: This test is almost the same as `test_create_workbook_from_xlsx`, the only difference is that it requests
+              /api/v1/workbooks/json endpoint instead of /api/v1/workbooks.
+        """
+        with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:
+            xlsx_file = SimpleUploadedFile(
+                "test-upload.xlsx",
+                test_upload_file.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        response = self.license_client.post(
+            "/api/v1/workbooks/xlsx",
+            {"xlsx_file": xlsx_file},
+        )
+        self.assertEqual(response.status_code, 201)
+        workbook_data = json.loads(response.content)
+        new_workbook = Workbook.objects.get(id=workbook_data["id"], license=self.license)
+        self.assertEqual(new_workbook.name, "Book")
+
+        # confirm Sheet1!A1 contains the value "A string"
+        response = self.license_client.get(f"/api/v1/workbooks/{new_workbook.id}/sheets/1/cells/1/1")
+        cell = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(cell["value"], "A string")
+
+    def test_create_workbook_from_xlsx_explicit_url_missing_data(self) -> None:
+        response = self.license_client.post("/api/v1/workbooks/xlsx")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.content), {"detail": "'xlsx_file' is not provided"})
+
     def test_create_workbook_form_xlsx_custom_name(self) -> None:
         with open("serverless/test-data/test-upload.xlsx", "rb") as test_upload_file:
             xlsx_file = SimpleUploadedFile(
@@ -289,7 +397,7 @@ class RestAPITest(TestCase):
             "/api/v1/workbooks",
             {"xlsx_file": xlsx_file, "name": "TEST NAME€"},
         )
-        self.assertEqual(json.loads(response.content), {"details": "Excel file too large (max size 2097152 bytes)."})
+        self.assertEqual(json.loads(response.content), {"detail": "Excel file too large (max size 2097152 bytes)."})
         self.assertEqual(response.status_code, 400)
 
     def test_create_workbook_from_invalid_xlsx(self) -> None:
@@ -304,7 +412,7 @@ class RestAPITest(TestCase):
             "/api/v1/workbooks",
             {"xlsx_file": xlsx_file},
         )
-        self.assertEqual(json.loads(response.content), {"details": "Could not upload workbook."})
+        self.assertEqual(json.loads(response.content), {"detail": "Could not upload workbook."})
         self.assertEqual(response.status_code, 400)
 
     def test_create_workbook_from_xlsx_with_bad_fn(self) -> None:

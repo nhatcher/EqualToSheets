@@ -1,6 +1,6 @@
+import enum
 import os.path
 import tempfile
-from collections import OrderedDict
 from typing import Any, Callable
 
 import equalto.cell
@@ -18,20 +18,24 @@ from rest_framework.views import APIView, exception_handler
 
 from serverless import log
 from serverless.models import License, Workbook
-from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
+from serverless.util import LicenseKeyError, get_license, is_license_key_valid_for_host
 from serverless.views import MAX_XLSX_FILE_SIZE
+
+
+class BadRequestError(Exception):
+    """Exception translated to 400 Bad Request response."""
+
+
+def custom_exception_handler(exception: Exception, context: Any) -> Response:
+    """Exception handler replacing uncaught WorkbookErrors and BadRequestErrors with 400 Bad Request."""
+    if isinstance(exception, (BadRequestError, equalto.exceptions.WorkbookError)):
+        return Response({"detail": str(exception)}, status=status.HTTP_400_BAD_REQUEST)
+    return exception_handler(exception, context)
 
 
 class ServerlessView(APIView):
     def get_exception_handler(self) -> Callable[[Exception, Any], Response]:
-        """Exception handler replacing uncaught WorkbookErrors with 400 Bad Request."""
-
-        def workbook_exception_handler(exception: Exception, context: Any) -> Response:
-            if isinstance(exception, equalto.exceptions.WorkbookError):
-                return Response({"detail": str(exception)}, status=status.HTTP_400_BAD_REQUEST)
-            return exception_handler(exception, context)
-
-        return workbook_exception_handler
+        return custom_exception_handler
 
     def _get_license(self) -> License:
         try:
@@ -77,6 +81,15 @@ class WorkbookDetailSerializer(WorkbookSerializer):
     workbook_json = serializers.JSONField()
 
 
+class CreateWorkbookType(enum.Enum):
+    blank = "blank"
+    json = "json"
+    xlsx = "xlsx"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class WorkbookListView(ServerlessView):
     def get(self, request: Request) -> Response:
         """Get a list of all workbooks."""
@@ -84,7 +97,7 @@ class WorkbookListView(ServerlessView):
         return Response({"workbooks": serializer.data})
 
     @transaction.atomic
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, create_type: CreateWorkbookType | None = None) -> Response:
         """Create a new workbook.
 
         POST parameters supported by this endpoint:
@@ -99,21 +112,93 @@ class WorkbookListView(ServerlessView):
         2. Create a workbook from JSON, you must specify `version` and `workbook_json`, you may specify the `name` and
            nothing else.
         3. Create a workbook from XLSX, you must specify `xlsx_file`, you may specify the `name` and nothing else.
+
+        You can explicitly specify the input data type in the URL in order to get better error reporting:
+
+        * /api/v1/workbooks/blank
+        * /api/v1/workbooks/json
+        * /api/v1/workbooks/xlsx
         """
+        create_type = create_type or self._get_create_type_from_parameters()
+
+        workbook = self._create_workbook(create_type)
+
+        serializer = WorkbookSerializer(workbook)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _create_workbook(self, create_type: CreateWorkbookType) -> Workbook:
+        return {
+            CreateWorkbookType.blank: self._create_blank_workbook,
+            CreateWorkbookType.json: self._create_workbook_from_json,
+            CreateWorkbookType.xlsx: self._create_workbook_from_xlsx,
+        }[create_type]()
+
+    def _create_blank_workbook(self) -> Workbook:
+        return Workbook.objects.create(license=self._get_license(), name=self.request.data.get("name", "Book"))
+
+    def _create_workbook_from_json(self) -> Workbook:
+        if "version" not in self.request.data:
+            raise BadRequestError("'version' parameter is not provided")
+        if "workbook_json" not in self.request.data:
+            raise BadRequestError("'workbook_json' parameter is not provided")
+
+        version = self.request.data["version"]
+        workbook_json = self.request.data["workbook_json"]
+
+        # creating a workbook from json
+        if version != "1":
+            # TODO: in future, when we have new JSON schemas, we'll need to auto-migrate old JSON to the new
+            #       structure
+            raise BadRequestError("Currently, we only support JSON using the version 1 schema.")
+
+        # evaluate the workbook JSON, to ensure it's valid and fully computed
+        with equalto.exceptions.SuppressEvaluationErrors():
+            equalto_workbook = equalto.loads(workbook_json)
+
+        return Workbook.objects.create(
+            license=self._get_license(),
+            workbook_json=equalto_workbook.json,
+            name=self.request.data.get("name", "Book"),
+        )
+
+    def _create_workbook_from_xlsx(self) -> Workbook:
+        if "xlsx_file" not in self.request.FILES:
+            raise BadRequestError("'xlsx_file' is not provided")
+        xlsx_file = self.request.FILES["xlsx_file"]
+
+        if xlsx_file.size > MAX_XLSX_FILE_SIZE:
+            raise BadRequestError(f"Excel file too large (max size {MAX_XLSX_FILE_SIZE} bytes).")
+        tmp = tempfile.NamedTemporaryFile()
+        tmp.write(xlsx_file.read())
+
+        with equalto.exceptions.SuppressEvaluationErrors():
+            try:
+                equalto_workbook = equalto.load(tmp.name)
+            except equalto.exceptions.WorkbookError:
+                raise BadRequestError("Could not upload workbook.")
+
+        return Workbook.objects.create(
+            license=self._get_license(),
+            workbook_json=equalto_workbook.json,
+            name=self.request.data.get("name", "Book"),
+        )
+
+    def _get_create_type_from_parameters(self) -> CreateWorkbookType:
+        # TODO: We shouldn't allow to create new workbooks without explicitly specifying `create_type` in the URL
         data = {
-            "version": request.data.get("version"),
-            "workbook_json": request.data.get("workbook_json"),
-            "name": request.data.get("name", "Book"),
-            "xlsx_file": request.FILES.get("xlsx_file"),
+            "version": self.request.data.get("version"),
+            "workbook_json": self.request.data.get("workbook_json"),
+            "name": self.request.data.get("name"),
+            "xlsx_file": self.request.FILES.get("xlsx_file"),
         }
 
         # define the "function signatures" for the different ways to create a workbook, so that
         # we can implement "multiple dispatch" function overloading
-        signatures: dict[str, dict[str, list[str]]] = OrderedDict(  # noqa: WPS234
-            json={"required": ["version", "workbook_json"], "optional": ["name"]},
-            xlsx={"required": ["xlsx_file"], "optional": ["name"]},
-            blank={"required": [], "optional": ["name"]},
-        )
+        signatures: dict[CreateWorkbookType, dict[str, list[str]]] = {  # noqa: WPS234
+            CreateWorkbookType.json: {"required": ["version", "workbook_json"], "optional": ["name"]},
+            CreateWorkbookType.xlsx: {"required": ["xlsx_file"], "optional": ["name"]},
+            CreateWorkbookType.blank: {"required": [], "optional": ["name"]},
+        }
 
         # based upon the function signatures above, determine how exactly the user wants to create the workbook
         # and record it in the create_type variable.
@@ -128,79 +213,13 @@ class WorkbookListView(ServerlessView):
                 if any(data[r] is not None for r in forbidden):
                     should_not_be_present = [f for f in forbidden if data[f]]
                     should_not_be_present.sort()
-                    return Response(
-                        {
-                            "detail": (
-                                f"When creating a workbook from '{create_type}' data, the following parameters "
-                                + f"are forbidden: {should_not_be_present}."
-                            ),
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
+                    raise BadRequestError(
+                        f"When creating a workbook from '{create_type}' data, the following parameters "
+                        + f"are forbidden: {should_not_be_present}.",
                     )
                 break
         assert create_type is not None
-
-        version = data["version"]
-        workbook_json = data["workbook_json"]
-        name = data["name"]
-        xlsx_file = data["xlsx_file"]
-
-        # create the workbook according to the caller's preference
-        if create_type == "json":
-            # creating a workbook from json
-            if version != "1":
-                # TODO: in future, when we have new JSON schemas, we'll need to auto-migrate old JSON to the new
-                #       structure
-                return Response(
-                    {"detail": "Currently, we only support JSON using the version 1 schema."},
-                    content_type="application/json",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # evaluate the workbook JSON, to ensure it's valid and fully computed
-            with equalto.exceptions.SuppressEvaluationErrors():
-                equalto_workbook = equalto.loads(workbook_json)
-
-            workbook = Workbook.objects.create(
-                license=self._get_license(),
-                workbook_json=equalto_workbook.json,
-                name=name,
-            )
-
-        elif create_type == "blank":
-            # create a blank workbook
-            workbook = Workbook.objects.create(license=self._get_license(), name=name)
-        elif create_type == "xlsx":
-            if xlsx_file.size > MAX_XLSX_FILE_SIZE:
-                return Response(
-                    {"details": "Excel file too large (max size %s bytes)." % (MAX_XLSX_FILE_SIZE)},
-                    content_type="application/json",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            tmp = tempfile.NamedTemporaryFile()
-            tmp.write(xlsx_file.read())
-
-            with equalto.exceptions.SuppressEvaluationErrors():
-                try:
-                    equalto_workbook = equalto.load(tmp.name)
-                except equalto.exceptions.WorkbookError:
-                    return Response(
-                        {"details": "Could not upload workbook."},
-                        content_type="application/json",
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            if name is None:
-                workbook_name = get_name_from_path(xlsx_file.name)
-            else:
-                workbook_name = name
-            workbook = Workbook(license=self._get_license(), workbook_json=equalto_workbook.json, name=workbook_name)
-            workbook.save()
-        else:
-            raise AssertionError("Unreachable code")
-
-        serializer = WorkbookSerializer(workbook)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return create_type
 
 
 class WorkbookDetailView(ServerlessView):
@@ -260,10 +279,7 @@ class SheetDetailView(ServerlessView):
         """Rename a sheet in a workbook."""
         new_name = request.data.get("new_name")
         if not new_name:
-            return Response(
-                {"detail": "'new_name' parameter is not provided"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise BadRequestError("'new_name' parameter is not provided")
 
         workbook = self._get_workbook(workbook_id)
 
@@ -302,10 +318,7 @@ class CellByIndexView(ServerlessView):
         cell_input = request.data.get("input")
         cell_value = request.data.get("value")
         if (cell_input is None) == (cell_value is None):
-            return Response(
-                {"detail": "Either 'input' or 'value' parameter needs to be provided, but not both"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise BadRequestError("Either 'input' or 'value' parameter needs to be provided, but not both")
 
         workbook = self._get_workbook(workbook_id)
         sheet = self._get_sheet(workbook, sheet_id)
