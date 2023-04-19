@@ -498,11 +498,10 @@ export default class Model implements IModel {
 
       for (let column = columnStart; column <= columnEnd; column += 1) {
         const cell = this.workbook.cell(sheet, row, column);
-        const value = cell.formula ?? `${cell.value ?? ''}`;
         const style = this.getCellStyle(sheet, row, column).getSnapshot();
 
-        sheetData.data[row][column] = { value, style };
-        tsvRow.push(escapeTabs(value));
+        sheetData.data[row][column] = { value: cell.formula ?? `${cell.value ?? ''}`, style };
+        tsvRow.push(escapeTabs(`${cell.value}` ?? ''));
       }
 
       tsv.push(tsvRow.join('\t'));
