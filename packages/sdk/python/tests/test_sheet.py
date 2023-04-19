@@ -146,6 +146,15 @@ def test_get_sheet_cell_by_reference(sheet: Sheet) -> None:
     assert cell.value == 3
 
 
+def test_get_sheet_cell_range(sheet: Sheet) -> None:
+    cell_range = sheet.cell_range("B4:D5")
+
+    assert [[cell.text_ref for cell in row] for row in cell_range] == [
+        ["Sheet1!B4", "Sheet1!C4", "Sheet1!D4"],
+        ["Sheet1!B5", "Sheet1!C5", "Sheet1!D5"],
+    ]
+
+
 @pytest.mark.parametrize(
     "reference, error",
     [

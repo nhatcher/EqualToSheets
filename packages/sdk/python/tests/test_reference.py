@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from equalto.exceptions import CellReferenceError
-from equalto.reference import parse_cell_reference
+from equalto.reference import parse_cell_range_reference, parse_cell_reference
 
 
 @pytest.mark.parametrize(
@@ -21,13 +21,25 @@ def test_parse_cell_reference(reference: str, result: tuple[str | None, int, int
 
 
 @pytest.mark.parametrize(
-    "reference, error",
+    "reference, result",
     [
-        ("Sheet!!A1", '"Sheet!!A1" reference cannot be parsed'),
-        ("Sheet!AA", '"Sheet!AA" reference cannot be parsed'),
-        ("foobar", '"foobar" reference cannot be parsed'),
+        ("A1:C5", ((1, 1), (5, 3))),
+        ("G20:B20", ((20, 2), (20, 7))),
+        ("ZZ2:ZZ1", ((1, 702), (2, 702))),
+        ("Z5:ZZ6", ((5, 26), (6, 702))),
     ],
 )
-def test_invalid_reference(reference: str, error: str) -> None:
-    with pytest.raises(CellReferenceError, match=error):
+def test_parse_cell_range_reference(reference: str, result: tuple[tuple[int, int], tuple[int, int]]) -> None:
+    assert parse_cell_range_reference(reference) == result
+
+
+@pytest.mark.parametrize("reference", ["Sheet!!A1", "Sheet!AA", "foobar"])
+def test_invalid_cell_reference(reference: str) -> None:
+    with pytest.raises(CellReferenceError, match=f'"{reference}" reference cannot be parsed'):
         parse_cell_reference(reference)
+
+
+@pytest.mark.parametrize("reference", ["Sheet!A1:A3", "A1:B", "A:B1", "1:2"])
+def test_invalid_cell_range_reference(reference: str) -> None:
+    with pytest.raises(CellReferenceError, match=f'"{reference}" reference cannot be parsed'):
+        parse_cell_range_reference(reference)

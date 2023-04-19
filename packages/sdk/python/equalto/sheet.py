@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Generator
 
 from equalto.cell import Cell
 from equalto.exceptions import CellReferenceError, WorkbookError
-from equalto.reference import parse_cell_reference
+from equalto.reference import parse_cell_range_reference, parse_cell_reference
 
 if TYPE_CHECKING:
     from equalto._equalto import PyCalcModel
@@ -47,6 +47,14 @@ class Sheet:
         if key not in self._cell_cache:
             self._cell_cache[key] = Cell(sheet=self, row=row, column=column)
         return self._cell_cache[key]
+
+    def cell_range(self, range_reference: str) -> list[list[Cell]]:
+        """Get a 2D array of cells for given cell range reference."""
+        (min_row, min_column), (max_row, max_column) = parse_cell_range_reference(range_reference)
+        return [
+            [self.cell(row, column) for column in range(min_column, max_column + 1)]
+            for row in range(min_row, max_row + 1)
+        ]
 
     @property
     def name(self) -> str:

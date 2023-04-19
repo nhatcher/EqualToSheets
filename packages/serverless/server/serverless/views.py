@@ -2,6 +2,7 @@ import html
 import json
 import tempfile
 from asyncio import sleep
+from collections import defaultdict
 from typing import Any, Union
 from urllib.parse import quote
 
@@ -19,7 +20,8 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from equalto.exceptions import SuppressEvaluationErrors, WorkbookError
+from equalto.exceptions import CellReferenceError, SuppressEvaluationErrors, WorkbookError
+from equalto.sheet import Sheet
 from graphene_django.views import GraphQLView
 
 from server import settings
@@ -28,7 +30,7 @@ from serverless.log import error, info
 from serverless.models import License, LicenseDomain, UnsubscribedEmail, Workbook
 from serverless.schema import schema
 from serverless.send_email_to_subscribers import send_license_email_to_subscriber
-from serverless.types import SimulateInputType, SimulateOutputType, SimulateResultType
+from serverless.types import CellRangeValue, CellValue, SimulateInputType, SimulateOutputType, SimulateResultType
 from serverless.util import LicenseKeyError, get_license, get_name_from_path, is_license_key_valid_for_host
 
 MAX_XLSX_FILE_SIZE = 2 * 1024 * 1024
@@ -520,16 +522,54 @@ def simulate(request: HttpRequest, workbook_id: str) -> Union[HttpResponse, Json
 
     with SuppressEvaluationErrors():
         for sheet_name, assignments in inputs.items():
-            for cell_ref, value in assignments.items():
-                equalto_workbook.sheets[sheet_name][cell_ref].value = value
+            try:
+                sheet = equalto_workbook.sheets[sheet_name]
+            except WorkbookError as err:
+                return HttpResponseBadRequest(str(err))
 
-    results: SimulateResultType = {}
-    for sheet_name, cell_refs in outputs.items():  # noqa: WPS440
-        results[sheet_name] = {}
-        for cell_ref in cell_refs:  # noqa: WPS440
-            results[sheet_name][cell_ref] = equalto_workbook.sheets[sheet_name][cell_ref].value
+            for ref, value in assignments.items():
+                try:
+                    _set_cell_or_range_value(sheet, ref, value)
+                except (ValueError, CellReferenceError) as err:
+                    return HttpResponseBadRequest(str(err))
+
+    results: SimulateResultType = defaultdict(dict)
+    for sheet_name, refs in outputs.items():
+        try:
+            sheet = equalto_workbook.sheets[sheet_name]
+        except WorkbookError as err:
+            return HttpResponseBadRequest(str(err))
+
+        try:
+            for ref in refs:
+                if ":" in ref:
+                    results[sheet_name][ref] = [[cell.value for cell in row] for row in sheet.cell_range(ref)]
+                else:
+                    results[sheet_name][ref] = sheet[ref].value
+        except CellReferenceError as err:
+            return HttpResponseBadRequest(str(err))
 
     return JsonResponse(results)
+
+
+def _set_cell_or_range_value(sheet: Sheet, ref: str, value: CellValue | CellRangeValue) -> None:  # noqa: WPS238
+    error_message = f"{value} is not a valid value for {ref}"
+
+    if ":" in ref:
+        cell_range = sheet.cell_range(ref)
+        if not isinstance(value, list) or len(value) != len(cell_range):
+            raise ValueError(error_message)
+        for row, row_data in zip(cell_range, value):
+            if not isinstance(row_data, list) or len(row_data) != len(row):
+                raise ValueError(error_message)
+            for cell, cell_value in zip(row, row_data):
+                if cell_value is not None and not isinstance(cell_value, (str, float, bool, int)):
+                    raise ValueError(error_message)
+                cell.value = cell_value
+    else:
+        if value is not None and not isinstance(value, (str, float, bool, int)):
+            raise ValueError(error_message)
+        sheet[ref].value = value
 
 
 class LicenseGraphQLView(GraphQLView):

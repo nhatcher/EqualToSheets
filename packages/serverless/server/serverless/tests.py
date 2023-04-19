@@ -11,6 +11,7 @@ import equalto
 from asgiref.sync import sync_to_async
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.http import HttpResponse
 from django.test import AsyncClient, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.utils.http import urlencode
 from equalto.exceptions import SuppressEvaluationErrors
@@ -1310,6 +1311,47 @@ class SimpleTest(TestCase):
             },
         )
 
+        # confirm that ranges are supported
+        inputs = {
+            "Sheet1": {
+                "A1:A6": [
+                    [55],
+                    [30],
+                    [0.08],
+                    ["xyz"],
+                    [500],
+                    [False],
+                ],
+            },
+        }
+        outputs = {
+            "Sheet1": ["A1:B6", "W1:Z1"],
+        }
+        response = self.client.get(
+            f"/api/v1/workbooks/{workbook.id}/simulate",
+            {"inputs": json.dumps(inputs), "outputs": json.dumps(outputs)},
+            HTTP_AUTHORIZATION="Bearer %s" % license.key,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content.decode("utf-8")),
+            {
+                "Sheet1": {
+                    "A1:B6": [
+                        [55, 56],
+                        [30, 60],
+                        [0.08, 0.04],
+                        ["xyz", "xyzpqr"],
+                        [500, 500],
+                        [False, False],
+                    ],
+                    "W1:Z1": [
+                        ["", "", "", ""],
+                    ],
+                },
+            },
+        )
+
         # simulate using POST
         inputs = {"Sheet1": {"A1": 99.0}}
         outputs = {
@@ -1357,6 +1399,61 @@ class SimpleTest(TestCase):
                 },
             },
         )
+
+    def test_simulate_data_validation(self) -> None:
+        license = create_verified_license(domains="")
+        workbook = create_workbook(license)
+
+        def simulate(inputs: SimulateInputType, outputs: SimulateOutputType) -> HttpResponse:
+            return self.client.get(
+                f"/api/v1/workbooks/{workbook.id}/simulate",
+                {"inputs": json.dumps(inputs), "outputs": json.dumps(outputs)},
+                HTTP_AUTHORIZATION="Bearer %s" % license.key,
+            )
+
+        response = simulate(inputs={"NonExistent": {"A1": 1}}, outputs={})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'"NonExistent" sheet does not exist')
+
+        response = simulate(inputs={"Sheet1": {"1A": 1}}, outputs={})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'"1A" reference cannot be parsed')
+
+        response = simulate(inputs={"Sheet1": {"A1": [[1]]}}, outputs={})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"[[1]] is not a valid value for A1")
+
+        response = simulate(inputs={"Sheet1": {"B1:1B": [[1]]}}, outputs={})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'"B1:1B" reference cannot be parsed')
+
+        response = simulate(inputs={"Sheet1": {"A1:B2": 1}}, outputs={})  # not a list of lists
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"1 is not a valid value for A1:B2")
+
+        response = simulate(inputs={"Sheet1": {"A1:B2": [1]}}, outputs={})  # type: ignore  # not a list of lists
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"[1] is not a valid value for A1:B2")
+
+        response = simulate(inputs={"Sheet1": {"A1:B2": [[1]]}}, outputs={})  # invalid number of rows
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"[[1]] is not a valid value for A1:B2")
+
+        response = simulate(inputs={"Sheet1": {"A1:B2": [[1], [1]]}}, outputs={})  # invalid number of columns per row
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"[[1], [1]] is not a valid value for A1:B2")
+
+        response = simulate(inputs={}, outputs={"NonExistent": ["A1"]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'"NonExistent" sheet does not exist')
+
+        response = simulate(inputs={}, outputs={"Sheet1": ["1A"]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'"1A" reference cannot be parsed')
+
+        response = simulate(inputs={}, outputs={"Sheet1": ["B1:1B"]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'"B1:1B" reference cannot be parsed')
 
     def test_simulate_unsupported_function(self) -> None:
         license = create_verified_license(domains="")
