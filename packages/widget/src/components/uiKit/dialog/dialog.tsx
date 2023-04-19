@@ -88,6 +88,8 @@ const Dialog: React.FC<DialogProps> = (properties) => (
         $width={properties.$width}
         $height={properties.$height}
         $maxHeight={properties.$maxHeight}
+        onKeyDown={(e) => e.stopPropagation()}
+        onKeyUp={(e) => e.stopPropagation()}
       >
         {properties.title !== null && (
           <DialogHeader>
