@@ -205,7 +205,7 @@ class SimpleTest(TestCase):
                     name
                     id
                     sheets {
-                        id
+                        index
                         name
                     }
                 }
@@ -223,14 +223,14 @@ class SimpleTest(TestCase):
         self.assertCountEqual(
             data["data"]["workbooks"][0]["sheets"],
             [
-                {"id": 1, "name": "Sheet1"},
-                {"id": 3, "name": "Second"},
-                {"id": 8, "name": "Sheet4"},
-                {"id": 9, "name": "shared"},
-                {"id": 7, "name": "Table"},
-                {"id": 2, "name": "Sheet2"},
-                {"id": 4, "name": "Created fourth"},
-                {"id": 5, "name": "Hidden"},
+                {"index": 1, "name": "Sheet1"},
+                {"index": 2, "name": "Second"},
+                {"index": 3, "name": "Sheet4"},
+                {"index": 4, "name": "shared"},
+                {"index": 5, "name": "Table"},
+                {"index": 6, "name": "Sheet2"},
+                {"index": 7, "name": "Created fourth"},
+                {"index": 8, "name": "Hidden"},
             ],
         )
 
@@ -525,13 +525,13 @@ class SimpleTest(TestCase):
         data = graphql_query(
             """
             mutation SetCellWorkbook($workbook_id: String!) {
-                B2: setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "B2", input: "=B2") { workbook { id } }
-                A1: setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "$2.50") { workbook { id } }
-                output: setCellInput(workbookId: $workbook_id, sheetId: 1, row: 1, col: 2, input: "=A1*2") {
+                B2: setCellInput(workbookId: $workbook_id, sheetIndex: 1, ref: "B2", input: "=B2") { workbook { id } }
+                A1: setCellInput(workbookId: $workbook_id, sheetIndex: 1, ref: "A1", input: "$2.50") { workbook { id } }
+                output: setCellInput(workbookId: $workbook_id, sheetIndex: 1, row: 1, col: 2, input: "=A1*2") {
                     workbook {
                         id
-                        sheet(sheetId: 1) {
-                            id
+                        sheet(sheetIndex: 1) {
+                            index
                             B1: cell(ref: "B1") {
                                 formattedValue
                                 value {
@@ -557,7 +557,7 @@ class SimpleTest(TestCase):
                 "workbook": {
                     "id": str(workbook.id),
                     "sheet": {
-                        "id": 1,
+                        "index": 1,
                         "B1": {"formattedValue": "$5.00", "value": {"number": 5}, "formula": "=A1*2"},
                         "B2": {"formattedValue": "#CIRC!"},
                     },
@@ -573,7 +573,7 @@ class SimpleTest(TestCase):
         data = graphql_query(
             """
             mutation {
-                set_cell_input: setCellInput(workbookId:"%s", sheetId:1, ref: "A1", input: "100") {
+                set_cell_input: setCellInput(workbookId:"%s", sheetIndex:1, ref: "A1", input: "100") {
                     workbook{ id }
                 }
             }
@@ -593,7 +593,7 @@ class SimpleTest(TestCase):
         graphql_query(
             """
             mutation SetCellInput($workbook_id: String!) {
-                setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "%s") { workbook { revision } }
+                setCellInput(workbookId: $workbook_id, sheetIndex: 1, ref: "A1", input: "%s") { workbook { revision } }
             }
             """
             % (" " * (MAX_WORKBOOK_INPUT_SIZE)),
@@ -608,7 +608,7 @@ class SimpleTest(TestCase):
             graphql_query(
                 """
                 mutation SetCellInput($workbook_id: String!) {
-                    setCellInput(workbookId: $workbook_id, sheetId: 1, ref: "A1", input: "%s") { workbook { id } }
+                    setCellInput(workbookId: $workbook_id, sheetIndex: 1, ref: "A1", input: "%s") { workbook { id } }
                 }
                 """
                 % (" " * (MAX_WORKBOOK_INPUT_SIZE + 1)),
@@ -775,7 +775,7 @@ class SimpleTest(TestCase):
                 query {
                     workbook(workbookId: "%s") {
                         sheets {
-                            id
+                            index
                             name
                         }
                     }
@@ -788,8 +788,8 @@ class SimpleTest(TestCase):
                 "data": {
                     "workbook": {
                         "sheets": [
-                            {"id": 1, "name": "Calculation"},
-                            {"id": 2, "name": "Data"},
+                            {"index": 1, "name": "Calculation"},
+                            {"index": 2, "name": "Data"},
                         ],
                     },
                 },
@@ -805,12 +805,12 @@ class SimpleTest(TestCase):
                 """
                 query {
                     workbook(workbookId: "%s") {
-                        sheet_2: sheet(sheetId: 2) {
-                            id
+                        sheet_2: sheet(sheetIndex: 2) {
+                            index
                             name
                         }
                         sheet_data: sheet(name: "Data") {
-                            id
+                            index
                             name
                         }
                     }
@@ -822,8 +822,8 @@ class SimpleTest(TestCase):
             {
                 "data": {
                     "workbook": {
-                        "sheet_2": {"id": 2, "name": "Calculation"},
-                        "sheet_data": {"id": 3, "name": "Data"},
+                        "sheet_2": {"index": 2, "name": "Calculation"},
+                        "sheet_data": {"index": 3, "name": "Data"},
                     },
                 },
             },
@@ -839,7 +839,7 @@ class SimpleTest(TestCase):
                 query {
                     workbook(workbookId: "%s") {
                         sheet(name: "Sheet") {
-                            id
+                            index
                             A1: cell(ref: "A1") {
                                 formattedValue
                                 value {
@@ -898,7 +898,7 @@ class SimpleTest(TestCase):
                 "data": {
                     "workbook": {
                         "sheet": {
-                            "id": 1,
+                            "index": 1,
                             "A1": {
                                 "formattedValue": "$2.50",
                                 "value": {"text": None, "number": 2.5, "boolean": None},
@@ -971,15 +971,15 @@ class SimpleTest(TestCase):
         response = graphql_query(
             """
             mutation CreateSheets($workbook_id: String!) {
-                createSheet(workbookId: $workbook_id) { sheet { id } }
+                createSheet(workbookId: $workbook_id) { sheet { index } }
                 output: createSheet(workbookId: $workbook_id, sheetName: "Analytics") {
                     sheet {
-                        id
+                        index
                         name
                     }
                     workbook {
                         sheets {
-                            id
+                            index
                             name
                         }
                     }
@@ -993,13 +993,13 @@ class SimpleTest(TestCase):
         self.assertEqual(
             response["data"]["output"],
             {
-                "sheet": {"id": 4, "name": "Analytics"},
+                "sheet": {"index": 4, "name": "Analytics"},
                 "workbook": {
                     "sheets": [
-                        {"id": 1, "name": "Calculation"},
-                        {"id": 2, "name": "Data"},
-                        {"id": 3, "name": "Sheet1"},  # new sheet using the default name
-                        {"id": 4, "name": "Analytics"},
+                        {"index": 1, "name": "Calculation"},
+                        {"index": 2, "name": "Data"},
+                        {"index": 3, "name": "Sheet1"},  # new sheet using the default name
+                        {"index": 4, "name": "Analytics"},
                     ],
                 },
             },
@@ -1023,7 +1023,7 @@ class SimpleTest(TestCase):
                 mutation CreateSheets($workbook_id: String!) {
                     createSheet(workbookId: $workbook_id, sheetName: "Sheet") {
                         sheet {
-                            id
+                            index
                         }
                     }
                 }""",
@@ -1049,7 +1049,7 @@ class SimpleTest(TestCase):
             mutation CreateSheets($workbook_id: String!) {
                 output: createSheet(workbookId: $workbook_id, sheetName: "Analytics") {
                     sheet {
-                        id
+                        index
                         name
                     }
                 }
@@ -1077,10 +1077,10 @@ class SimpleTest(TestCase):
         response = graphql_query(
             """
             mutation DeleteSheet($workbook_id: String!) {
-                output: deleteSheet(workbookId: $workbook_id, sheetId: 1) {
+                output: deleteSheet(workbookId: $workbook_id, sheetIndex: 1) {
                     workbook {
                         sheets {
-                            id
+                            index
                             name
                         }
                     }
@@ -1096,7 +1096,7 @@ class SimpleTest(TestCase):
             {
                 "workbook": {
                     "sheets": [
-                        {"id": 2, "name": "Data"},
+                        {"index": 1, "name": "Data"},
                     ],
                 },
             },
@@ -1117,10 +1117,10 @@ class SimpleTest(TestCase):
         response = graphql_query(
             """
             mutation DeleteSheet($workbook_id: String!) {
-                output: deleteSheet(workbookId: $workbook_id, sheetId: 1) {
+                output: deleteSheet(workbookId: $workbook_id, sheetIndex: 1) {
                     workbook {
                         sheets {
-                            id
+                            index
                             name
                         }
                     }
@@ -1149,14 +1149,14 @@ class SimpleTest(TestCase):
         response = graphql_query(
             """
             mutation RenameSheet($workbook_id: String!) {
-                output: renameSheet(workbookId: $workbook_id, sheetId: 1, newName: "Analytics") {
+                output: renameSheet(workbookId: $workbook_id, sheetIndex: 1, newName: "Analytics") {
                     sheet {
-                        id
+                        index
                         name
                     }
                     workbook {
                         sheets {
-                            id
+                            index
                             name
                         }
                     }
@@ -1170,11 +1170,11 @@ class SimpleTest(TestCase):
         self.assertEqual(
             response["data"]["output"],
             {
-                "sheet": {"id": 1, "name": "Analytics"},
+                "sheet": {"index": 1, "name": "Analytics"},
                 "workbook": {
                     "sheets": [
-                        {"id": 1, "name": "Analytics"},
-                        {"id": 2, "name": "Data"},
+                        {"index": 1, "name": "Analytics"},
+                        {"index": 2, "name": "Data"},
                     ],
                 },
             },
@@ -1196,9 +1196,9 @@ class SimpleTest(TestCase):
             graphql_query(
                 """
                 mutation RenameSheet($workbook_id: String!) {
-                    renameSheet(workbookId: $workbook_id, sheetId: 1, newName: "Data") {
+                    renameSheet(workbookId: $workbook_id, sheetIndex: 1, newName: "Data") {
                         sheet {
-                            id
+                            index
                         }
                     }
                 }""",
@@ -1222,10 +1222,10 @@ class SimpleTest(TestCase):
         response = graphql_query(
             """
             mutation RenameSheet($workbook_id: String!) {
-                output: renameSheet(workbookId: $workbook_id, sheetId: 1, newName: "Analytics") {
+                output: renameSheet(workbookId: $workbook_id, sheetIndex: 1, newName: "Analytics") {
                     workbook {
                         sheets {
-                            id
+                            index
                             name
                         }
                     }

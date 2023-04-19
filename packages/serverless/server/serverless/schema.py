@@ -101,13 +101,13 @@ class Sheet(graphene.ObjectType):
         self._calc_sheet = calc_sheet
 
     name = graphene.String()
-    id = graphene.Int()
+    index = graphene.Int()
 
     def resolve_name(self, info: graphene.ResolveInfo) -> str:
         return self._calc_sheet.name
 
-    def resolve_id(self, info: graphene.ResolveInfo) -> int:
-        return self._calc_sheet.sheet_id
+    def resolve_index(self, info: graphene.ResolveInfo) -> int:
+        return self._calc_sheet.index + 1
 
     cell = graphene.Field(Cell, required=True, ref=graphene.String(), row=graphene.Int(), col=graphene.Int())
 
@@ -139,13 +139,18 @@ class Workbook(DjangoObjectType):
             "name",
         )
 
-    sheet = graphene.Field(Sheet, sheet_id=graphene.Int(), name=graphene.String())
+    sheet = graphene.Field(Sheet, sheet_index=graphene.Int(), name=graphene.String())
     sheets = graphene.List(Sheet)
 
-    def resolve_sheet(self, info: graphene.ResolveInfo, sheet_id: int | None = None, name: str | None = None) -> Sheet:
-        if sheet_id is not None and name is None:
-            return Sheet(calc_sheet=self.calc.sheets.get_sheet_by_id(sheet_id))
-        elif sheet_id is None and name is not None:
+    def resolve_sheet(
+        self,
+        info: graphene.ResolveInfo,
+        sheet_index: int | None = None,
+        name: str | None = None,
+    ) -> Sheet:
+        if sheet_index is not None and name is None:
+            return Sheet(calc_sheet=self.calc.sheets[sheet_index - 1])
+        elif sheet_index is None and name is not None:
             return Sheet(calc_sheet=self.calc.sheets[name])
         else:
             log.error("ERROR - name/id")
@@ -211,7 +216,7 @@ class SetCellInput(graphene.Mutation):
     # simulates entering text in the spreadsheet widget
     class Arguments:
         workbook_id = graphene.String(required=True)
-        sheet_id = graphene.Int()
+        sheet_index = graphene.Int()
         sheet_name = graphene.String()
         ref = graphene.String()
         row = graphene.Int()
@@ -229,7 +234,7 @@ class SetCellInput(graphene.Mutation):
         info: graphene.ResolveInfo,
         workbook_id: str,
         input: str,
-        sheet_id: int | None = None,
+        sheet_index: int | None = None,
         sheet_name: str | None = None,
         ref: str | None = None,
         row: int | None = None,
@@ -241,11 +246,11 @@ class SetCellInput(graphene.Mutation):
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
         if sheet_name is not None:
-            assert sheet_id is None
+            assert sheet_index is None
             sheet = workbook.calc.sheets[sheet_name]
         else:
-            assert sheet_id is not None
-            sheet = workbook.calc.sheets.get_sheet_by_id(sheet_id)
+            assert sheet_index is not None
+            sheet = workbook.calc.sheets[sheet_index - 1]
 
         if ref is not None:
             assert row is None and col is None
@@ -283,16 +288,16 @@ class CreateSheet(graphene.Mutation):
 class DeleteSheet(graphene.Mutation):
     class Arguments:
         workbook_id = graphene.String(required=True)
-        sheet_id = graphene.Int(required=True)
+        sheet_index = graphene.Int(required=True)
 
     workbook = graphene.Field(Workbook, required=True)
 
     @classmethod
     @validate_license_for_workbook_mutation
-    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_id: int) -> Self:
+    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_index: int) -> Self:
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
-        workbook.calc.sheets.get_sheet_by_id(sheet_id).delete()
+        workbook.calc.sheets[sheet_index - 1].delete()
 
         workbook.set_workbook_json(workbook.calc.json)
         return cls(workbook=workbook)
@@ -301,7 +306,7 @@ class DeleteSheet(graphene.Mutation):
 class RenameSheet(graphene.Mutation):
     class Arguments:
         workbook_id = graphene.String(required=True)
-        sheet_id = graphene.Int(required=True)
+        sheet_index = graphene.Int(required=True)
         new_name = graphene.String(required=True)
 
     workbook = graphene.Field(Workbook, required=True)
@@ -309,10 +314,10 @@ class RenameSheet(graphene.Mutation):
 
     @classmethod
     @validate_license_for_workbook_mutation
-    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_id: int, new_name: str) -> Self:
+    def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_index: int, new_name: str) -> Self:
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
-        calc_sheet = workbook.calc.sheets.get_sheet_by_id(sheet_id)
+        calc_sheet = workbook.calc.sheets[sheet_index - 1]
         calc_sheet.name = new_name
 
         workbook.set_workbook_json(workbook.calc.json)

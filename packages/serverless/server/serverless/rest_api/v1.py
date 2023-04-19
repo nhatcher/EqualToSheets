@@ -62,9 +62,9 @@ class ServerlessView(APIView):
         except Workbook.DoesNotExist:
             raise NotFound("Workbook not found")
 
-    def _get_sheet(self, workbook: Workbook, sheet_id: int) -> equalto.sheet.Sheet:
+    def _get_sheet(self, workbook: Workbook, sheet_index: int) -> equalto.sheet.Sheet:
         try:
-            return workbook.calc.sheets.get_sheet_by_id(sheet_id)
+            return workbook.calc.sheets[sheet_index - 1]
         except equalto.exceptions.WorkbookError:
             raise NotFound("Sheet not found")
 
@@ -269,13 +269,13 @@ class SheetListView(ServerlessView):
 
 
 class SheetDetailView(ServerlessView):
-    def get(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
+    def get(self, request: Request, workbook_id: str, sheet_index: int) -> Response:
         """Get the metadata of a sheet in a workbook."""
-        sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_id)
+        sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_index)
         return Response(serialize_sheet(sheet))
 
     @transaction.atomic
-    def put(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
+    def put(self, request: Request, workbook_id: str, sheet_index: int) -> Response:
         """Rename a sheet in a workbook."""
         new_name = request.data.get("new_name")
         if not new_name:
@@ -283,7 +283,7 @@ class SheetDetailView(ServerlessView):
 
         workbook = self._get_workbook(workbook_id)
 
-        sheet = self._get_sheet(workbook, sheet_id)
+        sheet = self._get_sheet(workbook, sheet_index)
         sheet.name = new_name
 
         workbook.set_workbook_json(workbook.calc.json)
@@ -291,11 +291,11 @@ class SheetDetailView(ServerlessView):
         return Response(serialize_sheet(sheet))
 
     @transaction.atomic
-    def delete(self, request: Request, workbook_id: str, sheet_id: int) -> Response:
+    def delete(self, request: Request, workbook_id: str, sheet_index: int) -> Response:
         """Delete a sheet in a workbook."""
         workbook = self._get_workbook(workbook_id)
 
-        self._get_sheet(workbook, sheet_id).delete()
+        self._get_sheet(workbook, sheet_index).delete()
 
         workbook.set_workbook_json(workbook.calc.json)
 
@@ -303,9 +303,9 @@ class SheetDetailView(ServerlessView):
 
 
 class CellByIndexView(ServerlessView):
-    def get(self, request: Request, workbook_id: str, sheet_id: int, row: int, col: int) -> Response:
+    def get(self, request: Request, workbook_id: str, sheet_index: int, row: int, col: int) -> Response:
         """Get all the cell data."""
-        sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_id)
+        sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_index)
         try:
             cell = sheet.cell(row, col)
         except equalto.exceptions.WorkbookError:
@@ -313,7 +313,7 @@ class CellByIndexView(ServerlessView):
         return Response(serialize_cell(cell))
 
     @transaction.atomic
-    def put(self, request: Request, workbook_id: str, sheet_id: int, row: int, col: int) -> Response:
+    def put(self, request: Request, workbook_id: str, sheet_index: int, row: int, col: int) -> Response:
         """Update the cell data."""
         cell_input = request.data.get("input")
         cell_value = request.data.get("value")
@@ -321,7 +321,7 @@ class CellByIndexView(ServerlessView):
             raise BadRequestError("Either 'input' or 'value' parameter needs to be provided, but not both")
 
         workbook = self._get_workbook(workbook_id)
-        sheet = self._get_sheet(workbook, sheet_id)
+        sheet = self._get_sheet(workbook, sheet_index)
 
         try:
             cell = sheet.cell(row, col)

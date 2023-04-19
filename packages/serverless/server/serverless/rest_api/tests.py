@@ -702,12 +702,12 @@ class RestAPITest(TestCase):
         self.assertEqual(self.workbook.revision, 1)
 
     def test_delete_last_sheet(self) -> None:
-        self.license_client.delete(f"/api/v1/workbooks/{self.workbook.id}/sheets/1")
+        self.license_client.delete(f"/api/v1/workbooks/{self.workbook.id}/sheets/2")
 
         self.workbook.refresh_from_db()
         self.assertEqual(self.workbook.revision, 2)
 
-        response = self.license_client.delete(f"/api/v1/workbooks/{self.workbook.id}/sheets/2")
+        response = self.license_client.delete(f"/api/v1/workbooks/{self.workbook.id}/sheets/1")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             json.loads(response.content),

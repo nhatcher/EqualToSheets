@@ -21,6 +21,9 @@ urlpatterns = [
     path("v1/workbooks/<uuid:workbook_id>", WorkbookDetailView.as_view()),
     path("v1/workbooks/<uuid:workbook_id>/xlsx", WorkbookXLSXView.as_view()),
     path("v1/workbooks/<uuid:workbook_id>/sheets", SheetListView.as_view()),
-    path("v1/workbooks/<uuid:workbook_id>/sheets/<int:sheet_id>", SheetDetailView.as_view()),
-    path("v1/workbooks/<uuid:workbook_id>/sheets/<int:sheet_id>/cells/<int:row>/<int:col>", CellByIndexView.as_view()),
+    path("v1/workbooks/<uuid:workbook_id>/sheets/<int:sheet_index>", SheetDetailView.as_view()),
+    path(
+        "v1/workbooks/<uuid:workbook_id>/sheets/<int:sheet_index>/cells/<int:row>/<int:col>",
+        CellByIndexView.as_view(),
+    ),
 ]

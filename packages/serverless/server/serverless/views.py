@@ -5,6 +5,7 @@ from asyncio import sleep
 from collections import defaultdict
 from typing import Any, Union
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import equalto
 from asgiref.sync import sync_to_async
@@ -81,7 +82,18 @@ def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
         license.validated_datetime = timezone.now()
         license.save()
 
-    workbook = Workbook.objects.filter(license=license).order_by("create_datetime").first()
+    # The "new" sample workbooks (for the open beta) were created with a created_datetime of 2023-04-19 12:00:00 UTC in
+    # migration 0007_create_new_beta_workbook.py.We want to make sure that we return the first workbook associated with
+    # a license key, on or after 2023-04-19 12:00:00 UTC, so that license keys created prior to 2023-04-19 12:00:00 get
+    # the new workbook, not the "old" sample workbook.
+    workbook = (
+        Workbook.objects.filter(
+            license=license,
+            create_datetime__gte=timezone.datetime(2023, 4, 19, 12, 0, 0, tzinfo=ZoneInfo("UTC")),
+        )
+        .order_by("create_datetime")  # noqa: WPS348
+        .first()  # noqa: WPS348
+    )
     if workbook is None:
         # create a new workbook which can be used in the sample snippet
         workbook = Workbook.objects.create(

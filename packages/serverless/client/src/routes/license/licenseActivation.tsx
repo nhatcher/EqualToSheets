@@ -391,18 +391,18 @@ const GraphQLPanel = ({ licenseKey, workbookId }: { licenseKey: string; workbook
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetId%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"A1")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Aquery%20%7B%0A%20%20workbook(workbookId%3A%20"${workbookId}")%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20sheet(sheetIndex%3A%201)%20%7B%0A%20%20%20%20%20%20cell(ref%3A%20"C6")%20%7B%0A%20%20%20%20%20%20%20%20value%20%7B%0A%20%20%20%20%20%20%20%20%20%20boolean%0A%20%20%20%20%20%20%20%20%20%20text%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20formattedValue%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A%0A`}
           >
-            View the value in cell Sheet1!A1 of your sample workbook
+            View the value in cell Sheet1!C6 of your sample workbook
             <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
         <li>
           <ExternalGraphQLLink
             target="_blank"
-            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Amutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetId%3A%201%2C%20row%3A%201%2C%20col%3A%201%2C%20input%3A%20"300%24")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}
+            href={`./graphql?license=${licenseKey}#query=%23%20WARNING%3A%20you%20should%20not%20share%20the%20above%20URL.%20It%20contains%0A%23%20%20%20%20%20%20%20%20%20%20your%20license%20key%2C%20which%20grants%20full%20access%20to%20all%0A%23%20%20%20%20%20%20%20%20%20%20your%20EqualTo%20Sheets%20data.%0A%0Amutation%20%7B%0A%20%20setCellInput(workbookId%3A"${workbookId}"%2C%20sheetIndex%3A%201%2C%20row%3A%206%2C%20col%3A%203%2C%20input%3A%20"%245800")%20%7B%0A%20%20%20%20__typename%0A%20%20%7D%20%0A%7D%0A%0A%0A`}
           >
-            Change the value of cell Sheet1!A1 in your sample workbook
+            Change the value of cell Sheet1!C6 to $5,800 in your sample workbook
             <StyledArrowIcon />
           </ExternalGraphQLLink>
         </li>
@@ -436,7 +436,7 @@ const RestAPIPanel = ({
   };
 
   const getInterestEarned = async () => {
-    const response = await fetch(`./api/v1/workbooks/${workbookId}/sheets/1/cells/10/6`, {
+    const response = await fetch(`./api/v1/workbooks/${workbookId}/sheets/1/cells/16/3`, {
       method: 'GET',
       headers: new Headers({
         Authorization: `Bearer ${licenseKey}`,
@@ -475,7 +475,7 @@ const RestAPIPanel = ({
   };
 
   const curlSetInvestmentCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/sheets/1/cells/6/3 -X PUT -H 'Authorization: Bearer ${licenseKey}' -H 'content-type: application/json' --data-raw '{"value":25000}'`;
-  const curlGetInterestCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/sheets/1/cells/10/6 -X GET -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlGetInterestCommand = `curl ${window.location.origin}/api/v1/workbooks/${workbookId}/sheets/1/cells/16/3 -X GET -H 'Authorization: Bearer ${licenseKey}'`;
   const curlGetWorkbooksCommand = `curl ${window.location.origin}/api/v1/workbooks -X GET -H 'Authorization: Bearer ${licenseKey}'`;
   const curlCreatewWorkbookCommand = `curl ${window.location.origin}/api/v1/workbooks -X POST -H 'Authorization: Bearer ${licenseKey}'`;
 
@@ -494,7 +494,7 @@ const RestAPIPanel = ({
         </li>
         <li>
           <ClickableSpan onClick={getInterestEarned}>
-            Get the interest earned (Sheet1!F10)
+            Get the interest earned (Sheet1!C16)
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlGetInterestCommand} copyToClipboard={copyToClipboard} />
@@ -546,7 +546,7 @@ const SimulationAPIPanel = ({
   const simulateInterest = async () => {
     const url = new URL(`${window.location.origin}/api/v1/workbooks/${workbookId}/simulate`);
     url.searchParams.append('inputs', JSON.stringify({ Sheet1: { C6: 50000 } }));
-    url.searchParams.append('outputs', JSON.stringify({ Sheet1: ['F10'] }));
+    url.searchParams.append('outputs', JSON.stringify({ Sheet1: ['C16'] }));
     const response = await fetch(url.href, {
       method: 'GET',
       headers: new Headers({
@@ -560,8 +560,8 @@ const SimulationAPIPanel = ({
 
   const simulateCapital = async () => {
     const url = new URL(`${window.location.origin}/api/v1/workbooks/${workbookId}/simulate`);
-    url.searchParams.append('inputs', JSON.stringify({ Sheet1: { F4: 15 } }));
-    url.searchParams.append('outputs', JSON.stringify({ Sheet1: ['F6'] }));
+    url.searchParams.append('inputs', JSON.stringify({ Sheet1: { C9: 15 } }));
+    url.searchParams.append('outputs', JSON.stringify({ "Sheet1": ['C13'] }));
     const response = await fetch(url.href, {
       method: 'GET',
       headers: new Headers({
@@ -573,8 +573,8 @@ const SimulationAPIPanel = ({
     setResponse(JSON.stringify(responseJson, null, 2));
   };
 
-  const curlSimulateInterestCommand = `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22C6%22%3A50000%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F10%22%5D%7D' -H 'Authorization: Bearer ${licenseKey}'`;
-  const curlSimulateCapitalCommand = `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22F4%22%3A15%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22F6%22%5D%7D' -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlSimulateInterestCommand = `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22C6%22%3A50000%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22C16%22%5D%7D' -H 'Authorization: Bearer ${licenseKey}'`;
+  const curlSimulateCapitalCommand = `curl '${window.location.origin}/api/v1/workbooks/${workbookId}/simulate?inputs=%7B%22Sheet1%22%3A%7B%22C9%22%3A15%7D%7D&outputs=%7B%22Sheet1%22%3A%5B%22C13%22%5D%7D' -H 'Authorization: Bearer ${licenseKey}'`;
 
   return (
     <TabTextSection>
@@ -584,14 +584,14 @@ const SimulationAPIPanel = ({
       <ul>
         <li>
           <ClickableSpan onClick={simulateInterest}>
-            The interest earned, if the initial investment is $50,000 (Sheet1!F10 if Sheet1!C6=50000)
+            The interest earned, if the initial investment is $50,000 (Sheet1!C16 if Sheet1!C6=50000)
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlSimulateInterestCommand} copyToClipboard={copyToClipboard} />
         </li>
         <li>
           <ClickableSpan onClick={simulateCapital}>
-            Capital at the end of a term of 15 years (Sheet1!F6 if Sheet1!C12=15)
+            Capital at the end of a term of 15 years (Sheet1!C13 if Sheet1!C9=15)
             <StyledArrowIcon />
           </ClickableSpan>
           <CurlOneliner snippet={curlSimulateCapitalCommand} copyToClipboard={copyToClipboard} />
