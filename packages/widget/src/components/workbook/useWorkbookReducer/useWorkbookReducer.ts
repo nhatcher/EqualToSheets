@@ -143,7 +143,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
         return state;
       }
       const { row, column } = selectedCell;
-      let text = model.getFormulaOrValue(selectedSheet, row, column);
+      let text = model.getCellEditorInput(selectedSheet, row, column);
       if (!action.payload.ignoreQuotePrefix && model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }
@@ -175,7 +175,7 @@ export const defaultWorkbookReducer: WorkbookReducer = (state, action): Workbook
       // Start completely new edit
       const { selectedCell, selectedSheet } = state;
       const { row, column } = selectedCell;
-      let text = model.getFormulaOrValue(selectedSheet, row, column);
+      let text = model.getCellEditorInput(selectedSheet, row, column);
       if (model.isQuotePrefix(selectedSheet, row, column)) {
         text = `'${text}`;
       }

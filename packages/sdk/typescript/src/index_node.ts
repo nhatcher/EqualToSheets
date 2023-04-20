@@ -14,6 +14,7 @@ export type {
   FormulaToken,
 } from './core';
 export { CalcError, ErrorKind } from './errors';
+export { convertSpreadsheetDateToISOString } from './utils';
 
 // @ts-ignore
 setDefaultWasmInit(() => wasm());

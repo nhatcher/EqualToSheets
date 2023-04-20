@@ -8,11 +8,17 @@ export interface CalcModule {
 
 export async function getModule(): Promise<CalcModule> {
   const module = await initialize();
-  const getTokens = module.utils.getFormulaTokens;
+  const { isLikelyDateNumberFormat, getFormulaTokens: getTokens } = module.utils;
   const workbookFromJson = module.loadWorkbookFromJson;
+
   function newEmpty(): Model {
     const workbook = module.newWorkbook();
-    return new Model({ workbook, getTokens, workbookFromJson });
+    return new Model({
+      workbook,
+      getTokens,
+      workbookFromJson,
+      isLikelyDateNumberFormat,
+    });
   }
 
   return {

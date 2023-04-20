@@ -5,6 +5,7 @@ import {
   ISheet,
   IWorkbook,
   NavigationDirection,
+  convertSpreadsheetDateToISOString,
 } from '@equalto-software/calc';
 import Papa from 'papaparse';
 import { TabsInput } from './components/navigation/common';
@@ -31,6 +32,7 @@ interface ModelSettings {
   workbook: IWorkbook;
   getTokens: (formula: string) => FormulaToken[];
   workbookFromJson: (workbookJson: string) => IWorkbook;
+  isLikelyDateNumberFormat: (formula: string) => boolean;
 }
 
 interface SheetArea extends Area {
@@ -87,6 +89,8 @@ export default class Model implements IModel {
 
   private workbookFromJson: (workbookJson: string) => IWorkbook;
 
+  private isLikelyDateNumberFormat: (formula: string) => boolean;
+
   private history: ActionHistory;
 
   private workbook: IWorkbook;
@@ -102,6 +106,7 @@ export default class Model implements IModel {
     this.history = new ActionHistory();
     this.getTokens = options.getTokens;
     this.workbookFromJson = options.workbookFromJson;
+    this.isLikelyDateNumberFormat = options.isLikelyDateNumberFormat;
   }
 
   replaceWithJson(workbookJson: string) {
@@ -304,9 +309,31 @@ export default class Model implements IModel {
     return this.getCellStyle(sheet, row, column).hasQuotePrefix;
   }
 
-  getFormulaOrValue(sheet: number, row: number, column: number): string {
+  /**
+   * Returns display input for given cell. This is not so simple as displaying formula or raw value
+   * because of the support for "special formats" like dates.
+   */
+  getCellEditorInput(sheet: number, row: number, column: number): string {
     const cell = this.workbook.cell(sheet, row, column);
-    return cell.formula ?? `${cell.value ?? ''}`;
+    const { formula } = cell;
+    if (formula) {
+      return formula;
+    }
+
+    if (this.isLikelyDateNumberFormat(cell.style.numberFormat)) {
+      const { value } = cell;
+      if (typeof value === 'number') {
+        const isoDate = convertSpreadsheetDateToISOString(value);
+        const date = new Date(isoDate);
+        const dayOfMonth = date.getUTCDate().toString().padStart(2, '0');
+        const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+        const year = date.getUTCFullYear().toString();
+        return `${dayOfMonth}/${month}/${year}`;
+      }
+      // Invalid date, what now?
+    }
+
+    return `${cell.value ?? ''}`;
   }
 
   hasFormula(sheet: number, row: number, column: number): boolean {

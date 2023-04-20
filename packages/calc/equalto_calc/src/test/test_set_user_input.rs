@@ -472,4 +472,9 @@ fn input_dates() {
         model.get_cell_value_by_ref("Sheet1!A1"),
         Ok(CellValue::Number(45750.0))
     );
+
+    // further date assignments do not change the format
+    model.set_user_input(0, 1, 1, "08-08-2028".to_string());
+    model.evaluate();
+    assert_eq!(model._get_text("A1"), "8/8/2028");
 }

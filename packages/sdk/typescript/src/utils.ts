@@ -52,6 +52,10 @@ export function convertSpreadsheetDateToDayjsUTC(excelDate: number): Dayjs {
   return baseDate.add(fullDays, 'day').add(seconds, 'second');
 }
 
+export function convertSpreadsheetDateToISOString(excelDate: number): string {
+  return convertSpreadsheetDateToDayjsUTC(excelDate).toISOString();
+}
+
 /**
  * This function is incompatible with Excel for dates before March 1900.
  * GSheets seem to behave consistently.

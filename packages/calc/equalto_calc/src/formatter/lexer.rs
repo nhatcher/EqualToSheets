@@ -61,6 +61,7 @@ impl Token {
             || self == &Token::DayPadded
             || self == &Token::DayNameShort
             || self == &Token::DayName
+            || self == &Token::MonthName
             || self == &Token::MonthNameShort
             || self == &Token::Month
             || self == &Token::MonthPadded
@@ -389,6 +390,19 @@ impl Lexer {
                 }
             },
             None => Token::EOF,
+        }
+    }
+}
+
+pub fn is_likely_date_number_format(format: &str) -> bool {
+    let mut lexer = Lexer::new(format);
+    loop {
+        let token = lexer.next_token();
+        if token == Token::EOF {
+            return false;
+        }
+        if token.is_date() {
+            return true;
         }
     }
 }

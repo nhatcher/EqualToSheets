@@ -6,7 +6,7 @@ import {
   loadWorkbookFromJson,
 } from './api/workbook';
 import './dayjsConfig';
-import { getFormulaTokens } from './api/utils';
+import { getFormulaTokens, isLikelyDateNumberFormat } from './api/utils';
 
 export type { IWorkbook } from './api/workbook';
 export type { IWorkbookSheets } from './api/workbookSheets';
@@ -31,6 +31,7 @@ type SheetsApi = {
   loadWorkbookFromJson(workbookJson: string): IWorkbook;
   utils: {
     getFormulaTokens: typeof getFormulaTokens;
+    isLikelyDateNumberFormat: typeof isLikelyDateNumberFormat;
   };
 };
 
@@ -51,6 +52,7 @@ export async function initialize(): Promise<SheetsApi> {
     loadWorkbookFromJson,
     utils: {
       getFormulaTokens,
+      isLikelyDateNumberFormat,
     },
   };
 }

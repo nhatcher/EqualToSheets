@@ -1,8 +1,12 @@
-use equalto_calc::expressions::{
-    lexer::util::{get_tokens, MarkedToken},
-    token::{OpCompare, OpProduct, OpSum, TokenType},
+use equalto_calc::{
+    expressions::{
+        lexer::util::{get_tokens, MarkedToken},
+        token::{OpCompare, OpProduct, OpSum, TokenType},
+    },
+    formatter::lexer,
 };
 
+use js_sys::Boolean;
 use serde_json::json;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
@@ -194,4 +198,12 @@ pub fn get_formula_tokens(formula: &str) -> Result<String, JsError> {
         tokens_json.push(to_json_string(&marked_token));
     }
     Ok(format!("[{}]", tokens_json.join(",")))
+}
+
+/// Returns if format can be potentially a date number format (meaning: has any part of date related
+/// tokens in the format)
+#[wasm_bindgen(js_name = "isLikelyDateNumberFormat")]
+#[allow(dead_code)] // code is not dead, for some reason wasm_bindgen doesn't mark it as in use
+pub fn is_likely_date_number_format(format: &str) -> Result<Boolean, JsError> {
+    Ok(lexer::is_likely_date_number_format(format).into())
 }

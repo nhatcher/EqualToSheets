@@ -1,4 +1,7 @@
-import { getFormulaTokens as wasmGetFormulaTokens } from '../__generated_pkg/equalto_wasm';
+import {
+  getFormulaTokens as wasmGetFormulaTokens,
+  isLikelyDateNumberFormat as wasmIsLikelyDateNumberFormat,
+} from '../__generated_pkg/equalto_wasm';
 
 export enum FormulaErrorCode {
   REF = 0,
@@ -102,4 +105,8 @@ export function getFormulaTokens(formula: string): FormulaToken[] {
   const jsonResponse = wasmGetFormulaTokens(formula);
   const response = JSON.parse(jsonResponse);
   return response as FormulaToken[];
+}
+
+export function isLikelyDateNumberFormat(formula: string): boolean {
+  return wasmIsLikelyDateNumberFormat(formula);
 }

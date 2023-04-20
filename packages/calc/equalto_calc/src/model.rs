@@ -22,7 +22,10 @@ use crate::{
         },
         utils::is_valid_column_number,
     },
-    formatter::format::{format_number, parse_formatted_number},
+    formatter::{
+        format::{format_number, parse_formatted_number},
+        lexer::is_likely_date_number_format,
+    },
     functions::util::compare_values,
     implicit_intersection::implicit_intersection,
     language::{get_language, Language},
@@ -1116,10 +1119,17 @@ impl Model {
                 //  We try to parse as number
                 if let Ok((v, number_format)) = parse_formatted_number(&value, &currencies) {
                     if let Some(num_fmt) = number_format {
-                        new_style_index = self
-                            .workbook
-                            .styles
-                            .get_style_with_format(new_style_index, &num_fmt);
+                        // Should not apply the format in the following cases:
+                        // - we assign a date to already date-formatted cell
+                        let should_apply_format = !(is_likely_date_number_format(
+                            &self.workbook.styles.get_style(new_style_index).num_fmt,
+                        ) && is_likely_date_number_format(&num_fmt));
+                        if should_apply_format {
+                            new_style_index = self
+                                .workbook
+                                .styles
+                                .get_style_with_format(new_style_index, &num_fmt);
+                        }
                     }
                     worksheet.set_cell_with_number(row, column, v, new_style_index);
                     return;

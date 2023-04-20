@@ -59,7 +59,7 @@ const Editor: FunctionComponent<{
     if (previousInitialText !== null) {
       setPreviousInitialText(null);
     }
-    const formula = model?.getFormulaOrValue(selectedSheet, selectedCell.row, selectedCell.column);
+    const formula = model?.getCellEditorInput(selectedSheet, selectedCell.row, selectedCell.column);
     const newText = formula ?? '';
     if (text !== newText) {
       setText(newText);
