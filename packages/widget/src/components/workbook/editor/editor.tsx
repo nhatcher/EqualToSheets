@@ -89,7 +89,7 @@ const Editor: FunctionComponent<{
     selectedSheet,
   ]);
 
-  const cellEditorKeyDown = useEditorKeyDown({
+  const { onKeyDown: cellEditorKeyDown, onCellEditingChange } = useEditorKeyDown({
     onMoveCaretToStart: () => cellInput.current?.setSelectionRange(0, 0),
     onMoveCaretToEnd: () =>
       cellInput.current?.setSelectionRange(
@@ -102,6 +102,10 @@ const Editor: FunctionComponent<{
     text,
     setText,
   });
+
+  useEffect(() => {
+    onCellEditingChange();
+  }, [onCellEditingChange, cellEditing?.id]);
 
   const displayCellEditor = !!cellEditing && cellEditing.sheet === selectedSheet;
 
