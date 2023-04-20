@@ -619,6 +619,25 @@ class SimpleTest(TestCase):
         workbook.refresh_from_db()
         self.assertEqual(workbook.revision, 2)
 
+    def test_set_cell_input_invalid_sheet_index(self) -> None:
+        license = create_verified_license(email="joe@example.com")
+        workbook = create_workbook(license)
+        self.assertEqual(workbook.revision, 1)
+
+        with self.assertRaisesMessage(GraphQLError, "sheet_index must be >= 1"):
+            graphql_query(
+                """
+                mutation SetCellInput($workbook_id: String!) {
+                    setCellInput(workbookId: $workbook_id, sheetIndex: 0, ref: "A1", input: "123") { workbook { id } }
+                }
+                """,
+                "example.com",
+                license.key,
+                {"workbook_id": str(workbook.id)},
+            )
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+
     def test_save_workbook(self) -> None:
         license = create_verified_license()
         workbook = create_workbook(license)
@@ -963,6 +982,25 @@ class SimpleTest(TestCase):
                 {"data": {"workbook": {"sheet": None}}},
             )
 
+    def test_query_sheet_invalid_sheet_index(self) -> None:
+        license = create_verified_license()
+        workbook = create_workbook(license, {"Sheet": {"A1": "$2.50", "A2": "foobar", "A3": "true", "A4": "=2+2*2"}})
+        with self.assertRaisesMessage(GraphQLError, "sheet_index must be >= 1"):
+            graphql_query(
+                """
+                query {
+                    workbook(workbookId: "%s") {
+                        sheet(sheetIndex: 0) {
+                            index
+                        }
+                    }
+                }
+                """
+                % workbook.id,
+                "example.com",
+                license.key,
+            )
+
     def test_create_sheet(self) -> None:
         license = create_verified_license()
         workbook = create_workbook(license, {"Calculation": {}, "Data": {}})
@@ -1141,6 +1179,38 @@ class SimpleTest(TestCase):
             ["Calculation", "Data"],
         )
 
+    def test_delete_sheet_invalid_sheet_index(self) -> None:
+        license = create_verified_license()
+        workbook = create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        response = graphql_query(
+            """
+            mutation DeleteSheet($workbook_id: String!) {
+                output: deleteSheet(workbookId: $workbook_id, sheetIndex: 0) {
+                    workbook {
+                        sheets {
+                            index
+                            name
+                        }
+                    }
+                }
+            }""",
+            "example.com",
+            create_verified_license("bob@example.com").key,
+            {"workbook_id": str(workbook.id)},
+            suppress_errors=True,
+        )
+
+        self.assertIsNone(response["data"]["output"])
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data"],
+        )
+
     def test_rename_sheet(self) -> None:
         license = create_verified_license()
         workbook = create_workbook(license, {"Calculation": {}, "Data": {}})
@@ -1197,6 +1267,33 @@ class SimpleTest(TestCase):
                 """
                 mutation RenameSheet($workbook_id: String!) {
                     renameSheet(workbookId: $workbook_id, sheetIndex: 1, newName: "Data") {
+                        sheet {
+                            index
+                        }
+                    }
+                }""",
+                "example.com",
+                license.key,
+                {"workbook_id": str(workbook.id)},
+            )
+
+        workbook.refresh_from_db()
+        self.assertEqual(workbook.revision, 1)
+        self.assertEqual(
+            [sheet.name for sheet in workbook.calc.sheets],
+            ["Calculation", "Data"],
+        )
+
+    def test_rename_sheet_invalid_sheet_index(self) -> None:
+        license = create_verified_license()
+        workbook = create_workbook(license, {"Calculation": {}, "Data": {}})
+        self.assertEqual(workbook.revision, 1)
+
+        with self.assertRaisesMessage(GraphQLError, "sheet_index must be >= 1"):
+            graphql_query(
+                """
+                mutation RenameSheet($workbook_id: String!) {
+                    renameSheet(workbookId: $workbook_id, sheetIndex: 0, newName: "ABC") {
                         sheet {
                             index
                         }

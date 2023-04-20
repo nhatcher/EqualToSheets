@@ -149,6 +149,8 @@ class Workbook(DjangoObjectType):
         name: str | None = None,
     ) -> Sheet:
         if sheet_index is not None and name is None:
+            if sheet_index <= 0:
+                raise GraphQLError("sheet_index must be >= 1")
             return Sheet(calc_sheet=self.calc.sheets[sheet_index - 1])
         elif sheet_index is None and name is not None:
             return Sheet(calc_sheet=self.calc.sheets[name])
@@ -250,6 +252,8 @@ class SetCellInput(graphene.Mutation):
             sheet = workbook.calc.sheets[sheet_name]
         else:
             assert sheet_index is not None
+            if sheet_index <= 0:
+                raise GraphQLError("sheet_index must be >= 1")
             sheet = workbook.calc.sheets[sheet_index - 1]
 
         if ref is not None:
@@ -295,6 +299,9 @@ class DeleteSheet(graphene.Mutation):
     @classmethod
     @validate_license_for_workbook_mutation
     def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_index: int) -> Self:
+        if sheet_index <= 0:
+            raise GraphQLError("sheet_index must be >= 1")
+
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
         workbook.calc.sheets[sheet_index - 1].delete()
@@ -315,6 +322,9 @@ class RenameSheet(graphene.Mutation):
     @classmethod
     @validate_license_for_workbook_mutation
     def mutate(cls, root: Any, info: graphene.ResolveInfo, workbook_id: str, sheet_index: int, new_name: str) -> Self:
+        if sheet_index <= 0:
+            raise GraphQLError("sheet_index must be >= 1")
+
         workbook = models.Workbook.objects.select_for_update().get(id=workbook_id)
 
         calc_sheet = workbook.calc.sheets[sheet_index - 1]

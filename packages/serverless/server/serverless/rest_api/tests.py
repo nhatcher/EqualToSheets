@@ -584,6 +584,12 @@ class RestAPITest(TestCase):
         response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}/sheets/3")
         self.assertEqual(response.status_code, 404)
 
+        response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}/sheets/0")
+        self.assertEqual(response.status_code, 404)
+
+        response = self.license_client.get(f"/api/v1/workbooks/{self.workbook.id}/sheets/-1")
+        self.assertEqual(response.status_code, 404)
+
     def test_get_sheet_missing_license(self) -> None:
         response = self.unauthorized_client.get(f"/api/v1/workbooks/{self.workbook.id}/sheets/2")
         self.assertEqual(response.status_code, 403)

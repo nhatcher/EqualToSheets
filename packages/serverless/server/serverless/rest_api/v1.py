@@ -63,6 +63,8 @@ class ServerlessView(APIView):
             raise NotFound("Workbook not found")
 
     def _get_sheet(self, workbook: Workbook, sheet_index: int) -> equalto.sheet.Sheet:
+        if sheet_index <= 0:
+            raise NotFound("Sheet index must be >= 1")
         try:
             return workbook.calc.sheets[sheet_index - 1]
         except equalto.exceptions.WorkbookError:
