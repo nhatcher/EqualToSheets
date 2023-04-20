@@ -37,6 +37,7 @@ impl Workbook {
     {
         let cell = self.parse_cell_reference(cell)?;
         match value.into() {
+            cell::CellValue::None => self.set_empty(&cell),
             cell::CellValue::Number(number) => self.set_number(&cell, number),
             cell::CellValue::String(text) => self.set_text(&cell, text),
             cell::CellValue::Boolean(boolean) => self.set_bool(&cell, boolean),
@@ -68,6 +69,12 @@ impl Workbook {
         )?;
         self.calc_model.evaluate_with_error_check()?;
         Ok(())
+    }
+
+    fn set_empty(&mut self, cell: &calc_result::CellReference) {
+        self.calc_model
+            .set_cell_empty(cell.sheet, cell.row, cell.column)
+            .expect("invalid cell");
     }
 
     fn set_number(&mut self, cell: &calc_result::CellReference, value: f64) {

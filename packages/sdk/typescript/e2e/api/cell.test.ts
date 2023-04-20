@@ -73,7 +73,7 @@ describe('Workbook - Cell operations', () => {
     expect(cell.formattedValue).toEqual('200%');
 
     cell.delete();
-    expect(cell.value).toEqual('');
+    expect(cell.value).toEqual(null);
     expect(cell.formattedValue).toEqual('');
 
     cell.value = 2;
@@ -125,7 +125,8 @@ describe('Workbook - Cell operations', () => {
     let workbook = newWorkbook();
 
     let cell = workbook.cell('Sheet1!A1');
-    expect(cell.stringValue).toEqual('');
+    expect(cell.value).toEqual(null);
+    expect(() => cell.stringValue).toThrow(`Type of cell's value is not string, cell value: null`);
 
     cell.value = 'hello world';
     expect(cell.stringValue).toEqual('hello world');

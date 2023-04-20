@@ -8,6 +8,7 @@ use serde_json::json;
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CellValue {
+    None,
     String(String),
     Number(f64),
     Boolean(bool),
@@ -16,6 +17,7 @@ pub enum CellValue {
 impl CellValue {
     pub fn to_json_str(&self) -> String {
         match &self {
+            CellValue::None => "null".to_string(),
             CellValue::String(s) => json!(s).to_string(),
             CellValue::Number(f) => json!(f).to_string(),
             CellValue::Boolean(b) => json!(b).to_string(),
@@ -137,6 +139,7 @@ impl Cell {
 
     pub fn get_text(&self, shared_strings: &[String], language: &Language) -> String {
         match self.value(shared_strings, language) {
+            CellValue::None => "".to_string(),
             CellValue::String(v) => v,
             CellValue::Boolean(v) => v.to_string().to_uppercase(),
             CellValue::Number(v) => to_excel_precision_str(v),
@@ -145,7 +148,7 @@ impl Cell {
 
     pub fn value(&self, shared_strings: &[String], language: &Language) -> CellValue {
         match self {
-            Cell::EmptyCell { .. } => CellValue::String("".to_string()),
+            Cell::EmptyCell { .. } => CellValue::None,
             Cell::BooleanCell { v, s: _ } => CellValue::Boolean(*v),
             Cell::NumberCell { v, s: _ } => CellValue::Number(*v),
             Cell::ErrorCell { ei, .. } => {
@@ -181,6 +184,7 @@ impl Cell {
         F: Fn(f64) -> String,
     {
         match self.value(shared_strings, language) {
+            CellValue::None => "".to_string(),
             CellValue::String(value) => value,
             CellValue::Boolean(value) => value.to_string().to_uppercase(),
             CellValue::Number(value) => format_number(value),

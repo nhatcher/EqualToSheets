@@ -238,6 +238,7 @@ impl WasmWorkbook {
                 .get_cell_value_by_index(sheet.try_into().unwrap(), row, column)
                 .map_err(WorkbookError::from)?
             {
+                CellValue::None => JsValue::NULL,
                 CellValue::String(s) => JsValue::from(s),
                 CellValue::Number(f) => JsValue::from(f),
                 CellValue::Boolean(b) => JsValue::from(b),

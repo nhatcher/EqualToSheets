@@ -55,10 +55,9 @@ class Cell:
 
     @value.setter
     def value(self, value: float | bool | str | date | datetime | None) -> None:
-        if value is None:
-            value = ""
-
-        if isinstance(value, str):
+        if value is None:  # noqa: WPS223
+            self._model.set_cell_empty(*self.cell_ref)
+        elif isinstance(value, str):
             # NOTE: At the moment we can't manually set an error value, i.e. "#VALUE!" will be
             #       treated as string.
             self._model.update_cell_with_text(*self.cell_ref, value)

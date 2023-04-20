@@ -87,6 +87,11 @@ def test_formula_cell_type(cell: Cell, formula: str, cell_type: CellType) -> Non
     assert cell.type == cell_type
 
 
+def test_empty_cell_value(cell: Cell) -> None:
+    cell.value = None
+    assert cell.value is None
+
+
 def test_delete_cell(cell: Cell) -> None:
     cell.style.format = "#.###"
     cell.value = 9.87654
@@ -106,7 +111,7 @@ def test_int_value(cell: Cell) -> None:
     [
         ("foobar", "'foobar' is not a number"),
         (True, "True is not a number"),
-        (None, "'' is not a number"),
+        (None, "None is not a number"),
         ("4", "'4' is not a number"),  # the value is not automatically converted
         (4.2, "4.2 is not an integer"),
     ],
@@ -128,7 +133,7 @@ def test_float_value(cell: Cell, value: float) -> None:
     [
         ("foobar", "'foobar' is not a number"),
         (True, "True is not a number"),
-        (None, "'' is not a number"),
+        (None, "None is not a number"),
         ("4.2", "'4.2' is not a number"),  # the value is not automatically converted
     ],
 )

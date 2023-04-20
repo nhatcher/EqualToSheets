@@ -1306,7 +1306,7 @@ class SimpleTest(TestCase):
                     "B4": "xyzpqr",
                     "B5": 500,
                     "B6": False,
-                    "B500": "",
+                    "B500": None,
                 },
             },
         )
@@ -1346,7 +1346,7 @@ class SimpleTest(TestCase):
                         [False, False],
                     ],
                     "W1:Z1": [
-                        ["", "", "", ""],
+                        [None, None, None, None],
                     ],
                 },
             },
@@ -1395,7 +1395,7 @@ class SimpleTest(TestCase):
                     "B4": "89pqr",
                     "B5": "jkl",
                     "B6": "mno",
-                    "B500": "",
+                    "B500": None,
                 },
             },
         )
