@@ -297,10 +297,19 @@ export default class Model implements IModel {
     }));
   }
 
-  toggleFontStyle(sheet: number, area: Area, fontStyle: keyof ICell['style']['font']): void {
-    this.setCellsStyle(sheet, area, (style) => ({
+  toggleFontStyle(
+    sheet: number,
+    selectedCellRow: number,
+    selectedCellColumn: number,
+    area: Area,
+    fontStyle: keyof ICell['style']['font'],
+  ): void {
+    const newValue = !this.workbook.cell(sheet, selectedCellRow, selectedCellColumn).style.font[
+      fontStyle
+    ];
+    this.setCellsStyle(sheet, area, () => ({
       font: {
-        [fontStyle]: !style.font[fontStyle],
+        [fontStyle]: newValue,
       },
     }));
   }

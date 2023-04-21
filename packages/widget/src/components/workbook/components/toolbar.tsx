@@ -59,8 +59,14 @@ const WorkbookToolbar: FunctionComponent<ToolbarProps> = (properties) => {
   const onToggleAlign = (align: Parameters<Model['toggleAlign']>[2]) =>
     model.toggleAlign(selectedSheet, selectedArea, align);
 
-  const onToggleFontStyle = (fontStyle: Parameters<Model['toggleFontStyle']>[2]) =>
-    model.toggleFontStyle(selectedSheet, selectedArea, fontStyle);
+  const onToggleFontStyle = (fontStyle: Parameters<Model['toggleFontStyle']>[4]) =>
+    model.toggleFontStyle(
+      selectedSheet,
+      selectedCell.row,
+      selectedCell.column,
+      selectedArea,
+      fontStyle,
+    );
 
   // NB: model.canUndo(), model.canRedo() won't subscribe to changes so if nothing else would
   // change then it wouldn't update the toolbar. But in real usage it can't really happen.

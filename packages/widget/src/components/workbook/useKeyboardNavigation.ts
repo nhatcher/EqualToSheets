@@ -13,7 +13,7 @@ interface Options {
 
 const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardEvent) => void } => {
   const { model, editorState, editorActions } = options;
-  const { selectedSheet, selectedArea } = editorState;
+  const { selectedSheet, selectedArea, selectedCell } = editorState;
 
   // TODO: We can probably drop the useCallback
   const onKeyDown = useCallback(
@@ -44,21 +44,39 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
             break;
           }
           case 'b': {
-            model?.toggleFontStyle(selectedSheet, selectedArea, 'bold');
+            model?.toggleFontStyle(
+              selectedSheet,
+              selectedCell.row,
+              selectedCell.column,
+              selectedArea,
+              'bold',
+            );
             event.stopPropagation();
             event.preventDefault();
 
             break;
           }
           case 'i': {
-            model?.toggleFontStyle(selectedSheet, selectedArea, 'italics');
+            model?.toggleFontStyle(
+              selectedSheet,
+              selectedCell.row,
+              selectedCell.column,
+              selectedArea,
+              'italics',
+            );
             event.stopPropagation();
             event.preventDefault();
 
             break;
           }
           case 'u': {
-            model?.toggleFontStyle(selectedSheet, selectedArea, 'underline');
+            model?.toggleFontStyle(
+              selectedSheet,
+              selectedCell.row,
+              selectedCell.column,
+              selectedArea,
+              'underline',
+            );
             event.stopPropagation();
             event.preventDefault();
 
@@ -168,7 +186,15 @@ const useKeyboardNavigation = (options: Options): { onKeyDown: (event: KeyboardE
       event.stopPropagation();
       event.preventDefault();
     },
-    [editorActions, model, options, selectedArea, selectedSheet],
+    [
+      editorActions,
+      model,
+      options,
+      selectedCell.row,
+      selectedCell.column,
+      selectedArea,
+      selectedSheet,
+    ],
   );
   return { onKeyDown };
 };
