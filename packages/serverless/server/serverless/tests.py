@@ -1456,7 +1456,8 @@ class SimpleTest(TestCase):
         }
         response = self.client.post(
             f"/api/v1/workbooks/{workbook.id}/simulate",
-            {"inputs": json.dumps(inputs), "outputs": json.dumps(outputs)},
+            {"inputs": inputs, "outputs": outputs},
+            content_type="application/json",
             HTTP_AUTHORIZATION="Bearer %s" % license.key,
         )
         self.assertEqual(response.status_code, 200)
@@ -1497,9 +1498,46 @@ class SimpleTest(TestCase):
             },
         )
 
+    def test_simulate_method_not_allowed(self) -> None:
+        license = create_verified_license(domains="")
+        workbook = create_workbook(license)
+
+        self.assertEqual(
+            self.client.delete(
+                f"/api/v1/workbooks/{workbook.id}/simulate",
+                HTTP_AUTHORIZATION=f"Bearer {license.key}",
+            ).status_code,
+            405,
+        )
+
     def test_simulate_data_validation(self) -> None:
         license = create_verified_license(domains="")
         workbook = create_workbook(license)
+
+        response = self.client.post(
+            f"/api/v1/workbooks/{workbook.id}/simulate",
+            "not a JSON",
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {license.key}",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"Invalid POST data: b'not a JSON'")
+
+        response = self.client.get(
+            f"/api/v1/workbooks/{workbook.id}/simulate",
+            {"inputs": "not a JSON", "outputs": json.dumps({})},
+            HTTP_AUTHORIZATION=f"Bearer {license.key}",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"Invalid inputs: not a JSON")
+
+        response = self.client.get(
+            f"/api/v1/workbooks/{workbook.id}/simulate",
+            {"inputs": json.dumps({}), "outputs": "not a JSON"},
+            HTTP_AUTHORIZATION=f"Bearer {license.key}",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b"Invalid outputs: not a JSON")
 
         def simulate(inputs: SimulateInputType, outputs: SimulateOutputType) -> HttpResponse:
             return self.client.get(

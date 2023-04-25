@@ -512,25 +512,33 @@ def simulate(request: HttpRequest, workbook_id: str) -> Union[HttpResponse, Json
         error("License key %s is not valid for %s." % (license.key, origin))
         return HttpResponseForbidden("License key is not valid")
 
-    def get(param: str) -> str:
-        post_param = request.POST.get(param)
-        return post_param if post_param else request.GET.get(param)
-
     workbook = get_object_or_404(Workbook, license=license, id=workbook_id)
 
     equalto_workbook = workbook.calc
 
-    inputs_str = get("inputs")
-    try:
-        inputs: SimulateInputType = json.loads(inputs_str)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest(f"Invalid inputs: {inputs_str}")
+    inputs: SimulateInputType
+    outputs: SimulateOutputType
+    if request.method == "GET":
+        inputs_str = request.GET.get("inputs")
+        try:
+            inputs = json.loads(inputs_str)
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest(f"Invalid inputs: {inputs_str}")
 
-    outputs_str = get("outputs")
-    try:
-        outputs: SimulateOutputType = json.loads(outputs_str)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest(f"Invalid outputs: {outputs_str}")
+        outputs_str = request.GET.get("outputs")
+        try:
+            outputs = json.loads(outputs_str)
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest(f"Invalid outputs: {outputs_str}")
+    elif request.method == "POST":
+        try:  # noqa: WPS229
+            request_data = json.loads(request.body)
+            inputs = request_data["inputs"]
+            outputs = request_data["outputs"]
+        except (ValueError, KeyError):
+            return HttpResponseBadRequest(f"Invalid POST data: {request.body}")
+    else:
+        return HttpResponseNotAllowed("Method not allowed")
 
     with SuppressEvaluationErrors():
         for sheet_name, assignments in inputs.items():
