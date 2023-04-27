@@ -19,7 +19,7 @@ from django.http import (
     HttpResponseNotFound,
     JsonResponse,
 )
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from equalto.exceptions import CellReferenceError, SuppressEvaluationErrors, WorkbookError
 from equalto.sheet import Sheet
@@ -67,6 +67,10 @@ def send_license_key(request: HttpRequest) -> HttpResponse:
     send_license_activation_email(license)
 
     return HttpResponse(status=201)
+
+
+def redirect_to_gitbook_docs(request: HttpRequest) -> HttpResponse:
+    return redirect("https://docs.equalto.com", permanent=False)
 
 
 def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
