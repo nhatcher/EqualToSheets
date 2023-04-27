@@ -74,7 +74,7 @@ export const LicenseRequestPage = () => {
         <VideoEmbed />
         <Subtitle>
           {'Learn more from '}
-          <ExternalLink target="_blank" href="https://sheets.equalto.com/beta-readme">
+          <ExternalLink target="_blank" href="https://docs.equalto.com">
             our docs
           </ExternalLink>
         </Subtitle>

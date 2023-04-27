@@ -10,6 +10,8 @@ import equalto.workbook
 from django.db import transaction
 from django.db.models import QuerySet
 from django.http import HttpResponse
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, NotFound
 from rest_framework.request import Request
@@ -24,6 +26,20 @@ from serverless.views import MAX_XLSX_FILE_SIZE
 
 class BadRequestError(Exception):
     """Exception translated to 400 Bad Request response."""
+
+
+def serialize_sheet(sheet: equalto.sheet.Sheet) -> dict[str, Any]:
+    return {"id": sheet.sheet_id, "name": sheet.name, "index": sheet.index}
+
+
+def serialize_cell(cell: equalto.cell.Cell) -> dict[str, Any]:
+    return {
+        "formatted_value": str(cell),
+        "value": cell.value,
+        "format": cell.style.format,
+        "type": cell.type.name,
+        "formula": cell.formula,
+    }
 
 
 def custom_exception_handler(exception: Exception, context: Any) -> Response:
@@ -93,6 +109,7 @@ class CreateWorkbookType(enum.Enum):
 
 
 class WorkbookListView(ServerlessView):
+    @extend_schema(responses={(201, "application/json"): WorkbookSerializer(many=True)})
     def get(self, request: Request) -> Response:
         """Get a list of all workbooks."""
         serializer = WorkbookSerializer(self._get_workbooks().order_by("create_datetime"), many=True)
@@ -225,6 +242,7 @@ class WorkbookListView(ServerlessView):
 
 
 class WorkbookDetailView(ServerlessView):
+    @extend_schema(responses={(200, "application/json"): WorkbookDetailSerializer(many=True)})
     def get(self, request: Request, workbook_id: Workbook) -> Response:
         """Get the workbook data."""
         serializer = WorkbookDetailSerializer(self._get_workbook(workbook_id))
@@ -232,6 +250,11 @@ class WorkbookDetailView(ServerlessView):
 
 
 class WorkbookXLSXView(ServerlessView):
+    @extend_schema(
+        responses={
+            (200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"): OpenApiTypes.BINARY,
+        },
+    )
     def get(self, request: Request, workbook_id: Workbook) -> HttpResponse:
         """Export workbook as a Microsoft XLSX file."""
         workbook = self._get_workbook(workbook_id)
@@ -250,6 +273,7 @@ class WorkbookXLSXView(ServerlessView):
 
 
 class SheetListView(ServerlessView):
+    @extend_schema(responses={(200, "application/json"): serialize_sheet})
     def get(self, request: Request, workbook_id: str) -> Response:
         """Get the sheets in a workbook."""
         workbook = self._get_workbook(workbook_id)
@@ -257,6 +281,7 @@ class SheetListView(ServerlessView):
         return Response({"sheets": [serialize_sheet(sheet) for sheet in sheets]})
 
     @transaction.atomic
+    @extend_schema(responses={(201, "application/json"): serialize_sheet})
     def post(self, request: Request, workbook_id: str) -> Response:
         """Create a new blank sheet in a workbook."""
         name = request.data.get("name")
@@ -271,11 +296,13 @@ class SheetListView(ServerlessView):
 
 
 class SheetDetailView(ServerlessView):
+    @extend_schema(responses={(200, "application/json"): serialize_sheet})
     def get(self, request: Request, workbook_id: str, sheet_index: int) -> Response:
         """Get the metadata of a sheet in a workbook."""
         sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_index)
         return Response(serialize_sheet(sheet))
 
+    @extend_schema(responses={(200, "application/json"): serialize_sheet})
     @transaction.atomic
     def put(self, request: Request, workbook_id: str, sheet_index: int) -> Response:
         """Rename a sheet in a workbook."""
@@ -305,6 +332,7 @@ class SheetDetailView(ServerlessView):
 
 
 class CellByIndexView(ServerlessView):
+    @extend_schema(responses={(200, "application/json"): serialize_cell})
     def get(self, request: Request, workbook_id: str, sheet_index: int, row: int, col: int) -> Response:
         """Get all the cell data."""
         sheet = self._get_sheet(self._get_workbook(workbook_id), sheet_index)
@@ -314,6 +342,7 @@ class CellByIndexView(ServerlessView):
             raise NotFound("Cell not found")
         return Response(serialize_cell(cell))
 
+    @extend_schema(responses={(200, "application/json"): serialize_cell})
     @transaction.atomic
     def put(self, request: Request, workbook_id: str, sheet_index: int, row: int, col: int) -> Response:
         """Update the cell data."""
@@ -341,17 +370,3 @@ class CellByIndexView(ServerlessView):
         workbook.set_workbook_json(workbook.calc.json)
 
         return Response(serialize_cell(cell))
-
-
-def serialize_sheet(sheet: equalto.sheet.Sheet) -> dict[str, Any]:
-    return {"id": sheet.sheet_id, "name": sheet.name, "index": sheet.index}
-
-
-def serialize_cell(cell: equalto.cell.Cell) -> dict[str, Any]:
-    return {
-        "formatted_value": str(cell),
-        "value": cell.value,
-        "format": cell.style.format,
-        "type": cell.type.name,
-        "formula": cell.formula,
-    }

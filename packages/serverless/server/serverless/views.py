@@ -69,11 +69,6 @@ def send_license_key(request: HttpRequest) -> HttpResponse:
     return HttpResponse(status=201)
 
 
-def equalto_sheets_beta_readme(request: HttpRequest) -> HttpResponse:
-    with open("serverless/data/EqualTo Sheets beta README.html") as readme:
-        return HttpResponse(readme.read(), content_type="text/html")
-
-
 def activate_license_key(request: HttpRequest, license_id: str) -> HttpResponse:
     license = get_object_or_404(License, id=license_id)
 

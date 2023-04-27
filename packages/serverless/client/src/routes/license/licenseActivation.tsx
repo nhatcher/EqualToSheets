@@ -202,7 +202,7 @@ const getDownloadCurlSnippet = (licenseKey: LicenseKey, workbookId: string) =>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" marginTop="24px">
         <FooterText>
           {'What more information? Check out our '}
-          <DocumentationLink>README</DocumentationLink> and <RESTDocumentationLink>REST docs</RESTDocumentationLink>.
+          <DocumentationLink>API documentation</DocumentationLink>.
         </FooterText>
         <BookmarkText>We recommend bookmarking this page</BookmarkText>
       </Stack>
@@ -219,7 +219,7 @@ const getDownloadCurlSnippet = (licenseKey: LicenseKey, workbookId: string) =>
 const DocumentationLink = ({ children }: { children: ReactNode }) => {
   return (
     <ExternalLink
-      href="/beta-readme"
+      href="https://docs.equalto.com"
       target="_blank"
     >
       {children}
@@ -229,7 +229,7 @@ const DocumentationLink = ({ children }: { children: ReactNode }) => {
 const SimulationDocumentationLink = ({ children }: { children: ReactNode }) => {
   return (
     <ExternalLink
-      href="/beta-readme#simulation-api"
+      href="https://docs.equalto.com/rest-api/simulation-api"
       target="_blank"
     >
       {children}
@@ -237,16 +237,6 @@ const SimulationDocumentationLink = ({ children }: { children: ReactNode }) => {
   );
 };
 
-const RESTDocumentationLink = ({ children }: { children: ReactNode }) => {
-  return (
-    <ExternalLink
-      href="/docs/"
-      target="_blank"
-    >
-      {children}
-    </ExternalLink>
-  );
-};
 
 type Workbook = {
   id: string;
@@ -518,7 +508,7 @@ const RestAPIPanel = ({
         </li>
       </ul>
       <div style={{ fontSize: 'inherit' }}>
-        For more information review our <RESTDocumentationLink>REST documentation</RESTDocumentationLink>.
+        For more information review our <DocumentationLink>API documentation</DocumentationLink>.
       </div>
       <br />
       {response !== '' ? (
@@ -598,7 +588,7 @@ const SimulationAPIPanel = ({
         </li>
       </ul>
       <div style={{ fontSize: 'inherit' }}>
-        Our <SimulationDocumentationLink>README</SimulationDocumentationLink> contains some more information on the Simulation API.
+        Our <SimulationDocumentationLink>API documentation</SimulationDocumentationLink> contains some more information on the Simulation API.
       </div>
       <br />
       {response !== '' ? (

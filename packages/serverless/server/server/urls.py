@@ -1,19 +1,10 @@
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-
-from serverless.views import (
-    activate_license_key,
-    create_workbook_from_xlsx,
-    edit_workbook,
-    equalto_sheets_beta_readme,
-    get_updated_workbook,
-    graphql_view,
-    hacky_send_email_to_subscriber,
-    send_license_key,
-    simulate,
-    unsubscribe_email,
-)
+from serverless.views import (activate_license_key, create_workbook_from_xlsx,
+                              edit_workbook, get_updated_workbook,
+                              graphql_view, hacky_send_email_to_subscriber,
+                              send_license_key, simulate, unsubscribe_email)
 
 admin.autodiscover()
 
@@ -33,7 +24,6 @@ urlpatterns = [
     path("sso/", include("serverless.sso.urls")),
     path("hacky_send_email_to_subscriber/<str:email>", hacky_send_email_to_subscriber),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("beta-readme", equalto_sheets_beta_readme),
     path(
         "docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),
