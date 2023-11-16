@@ -1,3 +1,5 @@
+This repository is archived and for historical interest only, further work in https://github.com/ironcalc
+
 # EqualToSheets
 EqualTo Sheets a spreadsheet library, originally built for the EqualTo commission platform. We prioritized high-performance
 and MS Excel compatibility in its development.
